@@ -1,12 +1,44 @@
-# 📦 Lagerbestellung Web-App – Projektplanung v3
+# 📦 Lagerbestellung Web-App – Projektplanung v4
 
 ### Digitale Lagerkontrolle für den Rettungsdienst
+
+> 📎 **Siehe auch:** `mockup.html` – Interaktives UI-Mockup aller Screens
 
 -----
 
 ## 📋 Projektübersicht
 
-Ziel ist eine moderne, mobile-freundliche Web-App zur digitalen Durchführung der wöchentlichen Lagerbestellung auf der Rettungswache. Sie ersetzt das bisherige Klemmbrett-System durch einen geführten digitalen Workflow – inklusive Unterschrift, PDF-Generierung, Wachenleiter-Portal, Admin-Bereich und automatischem Charge/Verfall-Tracking per Barcode oder Kamera.
+Moderne, mobile-freundliche Web-App zur digitalen Durchführung der wöchentlichen Lagerbestellung auf der Rettungswache. Ersetzt das bisherige Klemmbrett-System durch einen geführten digitalen Workflow – inklusive Lagersuche, Unterschrift, PDF-Generierung, Charge/Verfall-Tracking und Wachenleiter-Portal.
+
+-----
+
+## 🖼️ App-Screens (Übersicht)
+
+```
+┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐
+│  01 STARTSEITE  │  │   02 PIN-LOGIN  │  │  03 LAGERCHECK  │
+│                 │  │                 │  │                 │
+│  🔍 Artikelsuche│  │  ● ● ● ○        │  │  ████░░░░ 42%   │
+│  ─────────────  │  │                 │  │                 │
+│  📦 Schrank 2   │  │  [1][2][3]      │  │  Tubus Gr.8     │
+│  Regal 3 Fach 1 │  │  [4][5][6]      │  │  Soll: 5-10 [8] │
+│                 │  │  [7][8][9]      │  │                 │
+│  [Lagercheck]   │  │  [←][0][✓]     │  │  [← Zurück]     │
+│  [Login]        │  │  Name eingeben  │  │  [Weiter →]     │
+└─────────────────┘  └─────────────────┘  └─────────────────┘
+
+┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐
+│ 04 UNTERSCHRIFT │  │ 05 WACHENLEITER │  │   06 ADMIN      │
+│                 │  │                 │  │                 │
+│  48/48 ✅       │  │  ⚠️ 3 Warnungen │  │  📦 Artikel     │
+│  3 nachbestellen│  │  ───────────── │  │  📸 Fotos       │
+│                 │  │  🔴 Adrenalin   │  │  🔍 Scanner     │
+│  ~~Unterschrift~│  │     3 Tage!    │  │  🏠 Bereiche    │
+│  ─────────────  │  │  🟡 NaCl 18 T. │  │  👥 Accounts    │
+│                 │  │  ───────────── │  │  🔑 PIN         │
+│  [PDF senden]   │  │  [↓ PDF] ...   │  │                 │
+└─────────────────┘  └─────────────────┘  └─────────────────┘
+```
 
 -----
 
@@ -16,6 +48,7 @@ Ziel ist eine moderne, mobile-freundliche Web-App zur digitalen Durchführung de
 |----------------------------|-----------|------------|-----|
 |PIN-Login                   |✅          |—           |—    |
 |E-Mail + Passwort Login     |—          |✅           |✅    |
+|Lagersuche (Startseite)     |✅          |✅           |✅    |
 |Lagercheck durchführen      |✅          |✅           |✅    |
 |Unterschreiben              |✅          |✅           |✅    |
 |Barcode scannen             |✅          |✅           |✅    |
@@ -32,156 +65,138 @@ Ziel ist eine moderne, mobile-freundliche Web-App zur digitalen Durchführung de
 
 -----
 
-## 🔄 App-Ablauf (Mitarbeiter)
+## 🔄 App-Ablauf
 
-### 1. PIN-Eingabe
+### Screen 1 – Startseite
 
-- 4-stelliger PIN als Zugungsschutz
-- PIN ist vom Admin jederzeit änderbar
+- **Lagersuche** immer sichtbar, kein Login nötig
+- Artikel eingeben → Standort wird angezeigt (Schrank / Regal / Fach)
+- Produktfoto wird direkt neben dem Suchergebnis angezeigt
+- Buttons: „Lagercheck starten” und „Wachenleiter / Admin Login”
+- **Datenbank:** Firebase Firestore (migriert aus bestehendem Google Sheets)
 
-### 2. Namenseingabe
+### Screen 2 – PIN & Name
 
-- Mitarbeiter gibt seinen Namen ein
-- Bestätigung per „Start”-Button
+- 4-stelliger PIN (vom Admin änderbar)
+- Name des Mitarbeiters eingeben → Start
 
-### 3. Bestandscheck (Bereich für Bereich)
+### Screen 3 – Bestandscheck
 
 - Geführt durch alle Bereiche: Schränke 1–5, Sauerstofflager, Küche, Hygieneraum, etc.
 - Pro Artikel: Soll-Menge sichtbar, Ist-Menge eintragen
-- **ℹ️ Info-Icon** pro Einheit → zeigt Foto des Soll-Zustands
-- **Fortschrittsbalken** oben (z. B. „Bereich 3 von 9 – 33 %”)
-- **Vor/Zurück-Navigation** zwischen den Bereichen
+- **ℹ️ Info-Icon** → Referenzfoto des Soll-Zustands
+- **Fortschrittsbalken** oben
+- **Vor/Zurück-Navigation**
 
-### 4. Unterschrift
+### Screen 4 – Unterschrift & Abschluss
 
-- Touch-/Maus-Unterschrift am Ende des Checks
+- Zusammenfassung: Mitarbeiter, Datum, geprüfte Artikel, Nachbestellungen
+- Touch-/Maus-Unterschrift
+- PDF automatisch generiert → ins Wachenleiter-Portal + Mail-Benachrichtigung
 
-### 5. Abschluss
+### Screen 5 – Wachenleiter-Portal
 
-- PDF wird automatisch generiert (vollständige ausgefüllte Liste)
-- PDF wird im **Wachenleiter-Portal** bereitgestellt
-- **E-Mail-Benachrichtigung** an den Wachenleiter („Neue Lagerbestellung eingegangen”)
+- Verfalls-Dashboard mit Ampel-System (🔴 / 🟡 / 🟢)
+- Chronologische Bestellhistorie mit PDF-Download
+- Automatische Warnmails bei kritischen Verfallsdaten
+
+### Screen 6 – Admin-Bereich
+
+- Vollständige Verwaltung aller Inhalte der App
+- Fotos hochladen, Artikel und Bereiche bearbeiten
+- Accounts und PIN verwalten
 
 -----
 
 ## 📷 Charge & Verfall-Tracking
 
-### Für alle Rollen – Scannen & Speichern
+**Für alle Rollen – Scannen & Speichern**
 
-**Schritt 1 – Barcode scannen (bevorzugt)**
+|Methode         |Beschreibung                                                         |
+|----------------|---------------------------------------------------------------------|
+|**Barcode-Scan**|GS1-Datamatrix-Code scannen → Charge + Verfall automatisch ausgelesen|
+|**Foto + KI**   |Foto vom Produkt → Anthropic Vision API liest Text aus (Fallback)    |
 
-- Kamera scannt den **GS1-Datamatrix-Code** des Produkts
-- Chargennummer + Verfallsdatum werden automatisch ausgelesen
-- Sofort gespeichert nach Bestätigung
+- Nutzer bestätigt kurz → gespeichert
+- Keine manuelle Eingabe nötig
 
-**Schritt 2 – Foto + KI (Fallback)**
+**Für Wachenleiter & Admin – Automatische Warnungen**
 
-- Falls kein Barcode vorhanden: Foto vom Produkt machen
-- **Anthropic Vision API** liest Chargennummer und Verfallsdatum automatisch aus
-- Kurze Bestätigung durch den Nutzer → gespeichert
-
-### Für Wachenleiter & Admin – Dashboard & Warnungen
-
-- 🟡 Automatische Warnung **30 Tage** vor Verfall
-- 🔴 Automatische Warnung **7 Tage** vor Verfall
-- 📧 Automatische Mail an Wachenleiter bei kritischen Artikeln
-- 📊 Dashboard mit Übersicht aller Artikel mit Verfall-Status
+- 🟡 Warnung **30 Tage** vor Verfall
+- 🔴 Warnung **7 Tage** vor Verfall
+- 📧 Automatische Mail bei kritischen Artikeln
+- 📊 Dashboard mit vollständiger Verfall-Übersicht
 
 -----
 
-## 🖥️ Wachenleiter-Portal
+## 🔍 Lagersuche
 
-- Login per E-Mail + Passwort
-- Chronologische Übersicht aller abgeschlossenen Bestellungen
-- PDF-Download direkt aus dem Portal
-- Sofort sichtbar: Wer hat unterschrieben und wann
-- Verfalls-Dashboard mit Ampel-System (grün / gelb / rot)
-
------
-
-## 🔧 Admin-Bereich
-
-- Login per E-Mail + Passwort
-- **Artikelverwaltung:** Artikel hinzufügen, bearbeiten, löschen
-- **Soll-Mengen:** Jederzeit anpassbar
-- **Fotos:** Referenzfotos pro Artikel hochladen (Firebase Storage)
-- **Bereiche:** Schränke und Bereiche umbenennen, hinzufügen oder entfernen
-- **PIN:** Mitarbeiter-PIN jederzeit ändern
-- **Accounts:** Wachenleiter-Accounts anlegen und verwalten
-- Volles Zugriff auf Verfalls-Dashboard und Bestellhistorie
+- Direkt auf der Startseite, ohne Login
+- Suchfeld → Artikel eingeben → Standort + Foto wird angezeigt
+- Gleiche Datenbank wie der Rest der App (Firebase Firestore)
+- Bestehende Google Sheets Datenbank wird einmalig migriert
+- Danach nur noch über Admin-Bereich gepflegt
 
 -----
 
 ## 🎨 Design
 
 - **Look:** Clean, modern, professionell
-- **Farbschema:** Dunkles Blau/Anthrazit als Basis, Akzentfarbe (z. B. Orange oder Cyan)
-- **Schrift:** Groß, klar, gut lesbar
-- **Buttons:** Groß und daumenfreundlich (auch mit Handschuhen bedienbar)
-- **Responsive:** Optimiert für Handy (Hochformat), Tablet und PC
+- **Farbschema:** Dunkel (Anthrazit/Navy) mit Orange + Cyan als Akzente
+- **Schrift:** Groß, klar, gut lesbar – daumenfreundlich
+- **Buttons:** Groß (auch mit Handschuhen bedienbar)
+- **Responsive:** Handy · Tablet · PC
 
 -----
 
-## ⚙️ Technik
+## ⚙️ Technik-Stack
 
-|Bereich                  |Lösung                                            |
-|-------------------------|--------------------------------------------------|
-|**Frontend**             |HTML / CSS / JavaScript                           |
-|**Hosting**              |GitHub Pages (kostenlos)                          |
-|**Datenbank**            |Firebase Firestore                                |
-|**Authentifizierung**    |Firebase Authentication (Rollen via Custom Claims)|
-|**Datei-Speicher**       |Firebase Storage (PDFs & Fotos)                   |
-|**Mail-Benachrichtigung**|Firebase Cloud Functions                          |
-|**PDF-Generierung**      |Client-seitig (jsPDF)                             |
-|**Barcode-Scanner**      |ZXing.js (kostenlose JS-Bibliothek)               |
-|**KI-Texterkennung**     |Anthropic Vision API                              |
+|Bereich                  |Lösung                                 |
+|-------------------------|---------------------------------------|
+|**Frontend**             |HTML / CSS / JavaScript                |
+|**Hosting**              |GitHub Pages (kostenlos)               |
+|**Datenbank**            |Firebase Firestore                     |
+|**Authentifizierung**    |Firebase Authentication (Custom Claims)|
+|**Datei-Speicher**       |Firebase Storage (PDFs & Fotos)        |
+|**Mail-Benachrichtigung**|Firebase Cloud Functions               |
+|**PDF-Generierung**      |jsPDF (client-seitig)                  |
+|**Barcode-Scanner**      |ZXing.js                               |
+|**KI-Texterkennung**     |Anthropic Vision API                   |
 
-### Architektur-Übersicht
+### Architektur
 
 ```
 GitHub Pages (Frontend)
         │
-        ├── Firebase Authentication  →  Rollenverwaltung (Mitarbeiter / Wachenleiter / Admin)
-        │
-        ├── Firebase Firestore       →  Artikelliste, Bestellungen, Chargen, Verfallsdaten, PIN
-        │
+        ├── Firebase Authentication  →  Rollen: Mitarbeiter / Wachenleiter / Admin
+        ├── Firebase Firestore       →  Artikel, Lagerstruktur, Chargen, Bestellungen, PIN
         ├── Firebase Storage         →  PDFs, Referenzfotos
-        │
-        ├── Firebase Cloud Functions →  Mail-Benachrichtigungen (neue Bestellung / Verfall-Warnung)
-        │
-        └── Anthropic Vision API     →  KI-Texterkennung für Charge & Verfallsdatum aus Foto
+        ├── Firebase Cloud Functions →  Mails (neue Bestellung / Verfall-Warnung)
+        └── Anthropic Vision API     →  KI-Erkennung Charge & Verfall aus Foto
 ```
-
------
-
-## 📸 Foto-Feature (Referenzbilder)
-
-- Jeder Artikel/Bereich kann ein Referenzfoto hinterlegt bekommen
-- Zeigt den **Soll-Zustand** der Einheit
-- Fotos werden vom Admin direkt in der App hochgeladen
-- Besonders hilfreich für neue Kollegen
 
 -----
 
 ## ✅ Was noch fehlt / vorzubereiten ist
 
 - [ ] Artikelliste bereitstellen (Foto, Excel oder PDF)
+- [ ] Lager-Datenbank (Google Sheets Export) für Migration
 - [ ] Referenzfotos der Schränke/Einheiten im Soll-Zustand aufnehmen
 - [ ] E-Mail-Adresse des Wachenleiters
-- [ ] GitHub-Account (für Hosting)
-- [ ] Firebase-Projekt anlegen (kostenlos unter firebase.google.com)
+- [ ] GitHub-Account
+- [ ] Firebase-Projekt anlegen → firebase.google.com (kostenlos)
 - [ ] Anthropic API Key (für KI-Texterkennung)
 
 -----
 
 ## 🚀 Nächste Schritte
 
-1. Artikelliste bereitstellen → App-Struktur wird daraus aufgebaut
-1. Firebase-Projekt anlegen
-1. GitHub Repository erstellen
+1. Artikelliste + Lager-Datenbank bereitstellen
+1. Firebase-Projekt & GitHub Repository anlegen
 1. App entwickeln & testen
-1. Referenzfotos aufnehmen & im Admin-Bereich hochladen
+1. Daten aus Google Sheets migrieren
+1. Referenzfotos aufnehmen & hochladen
 
 -----
 
-*Erstellt: 2026 | Projekt: Digitale Lagerbestellung – Rettungswache | Version 3.0*
+*Erstellt: 2026 | Projekt: Digitale Lagerbestellung – Rettungswache | Version 4.0*
