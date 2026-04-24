@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="de" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Lagercheck – LAGER//APP</title>
+  <link rel="stylesheet" href="../css/main.css">
+  <style>
+    .check-page { min-height: 100vh; display: flex; flex-direction: column; }
+
+    /* ── PIN ── */
+    .pin-screen { flex: 1; display: flex; align-items: center; justify-content: center; padding: 24px; }
+    .pin-box { width: 100%; max-width: 380px; display: flex; flex-direction: column; gap: 24px; align-items: center; }
+    .pin-header { text-align: center; }
+    .pin-logo  { font-family: 'IBM Plex Mono', monospace; font-size: 1.1rem; font-weight: 600; color: var(--accent); margin-bottom: 8px; }
+    .pin-title { font-size: 1.3rem; font-weight: 700; margin-bottom: 4px; }
+    .pin-sub   { font-size: 0.85rem; color: var(--text2); }
+    .pin-card  { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 28px 24px; width: 100%; display: flex; flex-direction: column; gap: 20px; }
+    .pin-dots  { display: flex; justify-content: center; gap: 16px; padding: 8px 0; }
+    .pin-dot   { width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--border); transition: all 0.15s; }
+    .pin-dot.filled { background: var(--accent); border-color: var(--accent); transform: scale(1.1); }
+    .pin-grid  { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .pin-key {
+      aspect-ratio: 1; border-radius: 12px; border: 1px solid var(--border);
+      background: var(--surface2); color: var(--text);
+      font-family: 'IBM Plex Mono', monospace; font-size: 1.4rem; font-weight: 600;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      user-select: none; -webkit-user-select: none;
+      touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+      transition: background 0.1s, transform 0.1s, border-color 0.1s;
+    }
+    .pin-key.pressed, .pin-key:active { background: var(--surface3); transform: scale(0.91); border-color: var(--accent); color: var(--accent); }
+    .pin-key.confirm { background: var(--accent); border-color: var(--accent); color: white; }
+    .pin-key.confirm.pressed, .pin-key.confirm:active { background: var(--accent-hover); }
+    .pin-key.del { color: var(--muted); }
+    .name-input { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 13px 16px; font-family: 'DM Sans', sans-serif; font-size: 1rem; color: var(--text); outline: none; transition: border-color 0.2s; width: 100%; text-align: center; }
+    .name-input:focus { border-color: var(--accent2); }
+    .name-input::placeholder { color: var(--muted); }
+    .pin-error { text-align: center; font-size: 0.82rem; color: var(--red); min-height: 22px; }
+
+    /* ── ERKLÄRUNG ── */
+    .erklaerung {
+      background: rgba(14,165,233,0.08);
+      border: 1px solid rgba(14,165,233,0.25);
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin: 12px 14px 0;
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+    .erklaerung-icon { font-size: 1.3rem; flex-shrink: 0; margin-top: 1px; }
+    .erklaerung-text { font-size: 0.82rem; color: var(--accent2); line-height: 1.5; }
+    .erklaerung-text strong { font-weight: 700; }
+
+    /* ── CHECK SCREEN ── */
+    .check-screen { flex: 1; display: flex; flex-direction: column; padding-bottom: 88px; }
+
+    .check-header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 16px 12px;
+      position: sticky;
+      top: 56px;
+      z-index: 10;
+    }
+
+    .check-bereich-name {
+      font-weight: 700;
+      color: var(--accent);
+      font-size: 1rem;
+      margin-bottom: 8px;
+    }
+
+    .check-body {
+      flex: 1;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      max-width: 800px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    /* ── ARTIKEL CARD ── */
+    .artikel-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .artikel-card.bestellen {
+      border-color: var(--red);
+      box-shadow: 0 0 0 2px rgba(239,68,68,0.15);
+    }
+
+    .artikel-card.ok {
+      border-color: var(--green);
+      box-shadow: 0 0 0 2px rgba(34,197,94,0.1);
+    }
+
+    /* Artikel Header */
+    .artikel-header {
+      padding: 16px 16px 12px;
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+
+    .artikel-foto-btn {
+      width: 56px;
+      height: 56px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      overflow: hidden;
+      flex-shrink: 0;
+      cursor: pointer;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.4rem;
+      transition: opacity 0.15s;
+      position: relative;
+    }
+
+    .artikel-foto-btn:active { opacity: 0.7; }
+    .artikel-foto-btn img { width: 100%; height: 100%; object-fit: cover; }
+
+    .foto-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+    }
+
+    .artikel-info { flex: 1; min-width: 0; }
+
+    .artikel-name {
+      font-size: 1rem;
+      font-weight: 700;
+      line-height: 1.3;
+      margin-bottom: 4px;
+    }
+
+    .artikel-lp {
+      font-size: 0.72rem;
+      color: var(--muted);
+      font-family: 'IBM Plex Mono', monospace;
+      margin-bottom: 8px;
+    }
+
+    /* MIN MAX – groß und deutlich */
+    .minmax-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    .minmax-badge {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 5px 12px;
+      min-width: 64px;
+    }
+
+    .minmax-label {
+      font-size: 0.58rem;
+      color: var(--muted);
+      font-family: 'IBM Plex Mono', monospace;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    .minmax-value {
+      font-size: 1.1rem;
+      font-weight: 800;
+      font-family: 'IBM Plex Mono', monospace;
+      color: var(--text);
+      line-height: 1.2;
+    }
+
+    .minmax-unit {
+      font-size: 0.65rem;
+      color: var(--text2);
+      font-family: 'IBM Plex Mono', monospace;
+    }
+
+    .minmax-badge.min .minmax-value { color: var(--yellow); }
+    .minmax-badge.max .minmax-value { color: var(--green); }
+
+    /* Hinweis */
+    .artikel-hinweis {
+      font-size: 0.72rem;
+      color: var(--accent2);
+      padding: 0 16px 10px;
+    }
+
+    /* ── BESTELL SECTION ── */
+    .bestell-divider {
+      height: 1px;
+      background: var(--border);
+      margin: 0 16px;
+    }
+
+    .bestell-section {
+      padding: 14px 16px 16px;
+    }
+
+    .bestell-frage {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text2);
+      margin-bottom: 12px;
+    }
+
+    /* Ja/Nein Toggle */
+    .ja-nein-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .ja-nein-btn {
+      height: 56px;
+      border-radius: 12px;
+      border: 2px solid var(--border);
+      background: var(--surface2);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      transition: all 0.15s;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .ja-nein-btn:active { transform: scale(0.95); }
+
+    .ja-nein-btn.nein.selected {
+      background: rgba(34,197,94,0.12);
+      border-color: var(--green);
+      color: var(--green);
+    }
+
+    .ja-nein-btn.ja.selected {
+      background: rgba(239,68,68,0.12);
+      border-color: var(--red);
+      color: var(--red);
+    }
+
+    /* Mengenauswahl (nur wenn Ja) */
+    .menge-wrap {
+      display: none;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .menge-wrap.visible { display: flex; }
+
+    .menge-label {
+      font-size: 0.78rem;
+      color: var(--text2);
+      font-weight: 600;
+    }
+
+    /* Schnell-Chips */
+    .chips-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .chip {
+      min-width: 52px;
+      height: 52px;
+      border-radius: 12px;
+      border: 2px solid var(--border);
+      background: var(--surface2);
+      color: var(--text);
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 1.05rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 10px;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      transition: all 0.12s;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .chip:active, .chip.pressed { transform: scale(0.89); }
+    .chip.selected { background: var(--red); border-color: var(--red); color: white; }
+
+    /* Plus/Minus */
+    .plusminus-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .pm-btn {
+      width: 56px;
+      height: 56px;
+      border-radius: 14px;
+      border: 2px solid var(--border);
+      background: var(--surface2);
+      color: var(--text);
+      font-size: 1.6rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      transition: all 0.1s;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .pm-btn:active, .pm-btn.pressed { transform: scale(0.88); background: var(--surface3); }
+    .pm-btn.minus:active, .pm-btn.minus.pressed { border-color: var(--red); color: var(--red); }
+    .pm-btn.plus:active,  .pm-btn.plus.pressed  { border-color: var(--green); color: var(--green); }
+
+    .pm-display {
+      flex: 1;
+      height: 56px;
+      border-radius: 14px;
+      border: 2px solid var(--border);
+      background: var(--surface2);
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: var(--red);
+      text-align: center;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .pm-display:focus { border-color: var(--red); }
+
+    /* ── FIXED BOTTOM NAV ── */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      padding: 12px 16px;
+      display: flex;
+      gap: 10px;
+      z-index: 20;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+
+    .bnav-btn {
+      flex: 1;
+      height: 56px;
+      border-radius: 14px;
+      border: 2px solid var(--border);
+      background: var(--surface2);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      transition: all 0.15s;
+      user-select: none;
+    }
+
+    .bnav-btn:active { transform: scale(0.96); }
+    .bnav-btn:disabled { opacity: 0.3; cursor: not-allowed; transform: none; }
+    .bnav-btn.weiter  { background: var(--accent);  border-color: var(--accent);  color: white; flex: 2; }
+    .bnav-btn.finish  { background: var(--green);   border-color: var(--green);   color: white; flex: 2; }
+
+    /* ── UNTERSCHRIFT ── */
+    .sig-screen { flex: 1; display: flex; align-items: center; justify-content: center; padding: 20px; }
+    .sig-box { width: 100%; max-width: 480px; display: flex; flex-direction: column; gap: 18px; }
+    .sig-title { font-size: 1.1rem; font-weight: 700; text-align: center; }
+    .summary-grid { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+    .summary-row { display: flex; justify-content: space-between; padding: 13px 16px; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
+    .summary-row:last-child { border-bottom: none; }
+    .summary-key { color: var(--muted); }
+    .summary-val { font-family: 'IBM Plex Mono', monospace; font-size: 0.85rem; font-weight: 700; }
+    .sig-canvas-wrap { background: var(--surface); border: 2px dashed var(--border); border-radius: 14px; overflow: hidden; position: relative; }
+    #sig-canvas { display: block; width: 100%; height: 160px; cursor: crosshair; touch-action: none; }
+    .sig-line { position: absolute; bottom: 28px; left: 16px; right: 16px; height: 1px; background: var(--border); pointer-events: none; }
+    .sig-hint { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); font-size: 0.75rem; color: var(--muted); pointer-events: none; font-family: 'IBM Plex Mono', monospace; transition: opacity 0.2s; }
+    .sig-clear { position: absolute; top: 10px; right: 10px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; color: var(--muted); font-size: 0.72rem; padding: 5px 12px; cursor: pointer; font-family: 'IBM Plex Mono', monospace; touch-action: manipulation; }
+
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body class="check-page">
+
+  <nav class="navbar">
+    <div class="navbar-inner">
+      <a href="../index.html" class="nav-logo">LAGER<span>//</span>APP</a>
+      <div class="nav-right">
+        <span id="nav-user" class="mono text-xs text-muted hide-mobile"></span>
+        <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()">☀️</button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ── PIN ── -->
+  <div id="screen-pin" class="pin-screen">
+    <div class="pin-box">
+      <div class="pin-header">
+        <div class="pin-logo">LAGER//APP</div>
+        <h1 class="pin-title">Lagercheck</h1>
+        <p class="pin-sub">PIN eingeben und Name eintragen</p>
+      </div>
+      <div class="pin-card">
+        <input type="text" id="name-input" class="name-input" placeholder="Dein Name..." maxlength="40" autocomplete="off">
+        <div class="pin-dots">
+          <div class="pin-dot" id="dot-0"></div>
+          <div class="pin-dot" id="dot-1"></div>
+          <div class="pin-dot" id="dot-2"></div>
+          <div class="pin-dot" id="dot-3"></div>
+        </div>
+        <div class="pin-grid">
+          <div class="pin-key" data-key="1">1</div>
+          <div class="pin-key" data-key="2">2</div>
+          <div class="pin-key" data-key="3">3</div>
+          <div class="pin-key" data-key="4">4</div>
+          <div class="pin-key" data-key="5">5</div>
+          <div class="pin-key" data-key="6">6</div>
+          <div class="pin-key" data-key="7">7</div>
+          <div class="pin-key" data-key="8">8</div>
+          <div class="pin-key" data-key="9">9</div>
+          <div class="pin-key del" data-key="del">⌫</div>
+          <div class="pin-key" data-key="0">0</div>
+          <div class="pin-key confirm" data-key="confirm">✓</div>
+        </div>
+        <div class="pin-error" id="pin-error"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── CHECK ── -->
+  <div id="screen-check" class="check-screen hidden">
+
+    <!-- Erklärung -->
+    <div class="erklaerung">
+      <div class="erklaerung-icon">ℹ️</div>
+      <div class="erklaerung-text">
+        <strong>So funktioniert der Lagercheck:</strong><br>
+        Schau bei jedem Artikel nach dem Bestand. Wenn etwas nachbestellt werden muss, tippe auf <strong>„Ja"</strong> und wähle die benötigte Menge. Bei ausreichendem Bestand tippe auf <strong>„Nein"</strong>.
+      </div>
+    </div>
+
+    <div class="check-header">
+      <div class="check-bereich-name" id="check-bereich-name">Bereich</div>
+      <div class="progress-wrap"><div class="progress-fill" id="check-progress"></div></div>
+      <div style="display:flex;justify-content:space-between;font-size:0.65rem;color:var(--muted);font-family:'IBM Plex Mono',monospace;margin-top:4px;">
+        <span id="check-progress-label">Bereich 1 von 1</span>
+        <span id="check-progress-pct">0%</span>
+      </div>
+    </div>
+
+    <div class="check-body" id="check-body"></div>
+
+    <!-- Fixed Bottom Nav -->
+    <div class="bottom-nav">
+      <button class="bnav-btn" id="btn-prev" onclick="prevBereich()">← Zurück</button>
+      <button class="bnav-btn weiter" id="btn-weiter" onclick="nextBereich()">Weiter →</button>
+      <button class="bnav-btn finish hidden" id="btn-finish" onclick="showSignature()">✅ Abschließen</button>
+    </div>
+  </div>
+
+  <!-- ── UNTERSCHRIFT ── -->
+  <div id="screen-sig" class="sig-screen hidden">
+    <div class="sig-box">
+      <div class="sig-title">✅ Check abgeschlossen</div>
+      <div class="summary-grid" id="summary-grid"></div>
+      <div>
+        <div class="section-label mb-8">Unterschrift</div>
+        <div class="sig-canvas-wrap">
+          <canvas id="sig-canvas"></canvas>
+          <div class="sig-line"></div>
+          <div class="sig-hint" id="sig-hint">Hier unterschreiben...</div>
+          <button class="sig-clear" onclick="clearSig()">Löschen</button>
+        </div>
+      </div>
+      <button class="btn btn-primary btn-full" style="height:56px;font-size:1rem;" onclick="submitCheck()">📄 Absenden & Fertig</button>
+      <button class="btn btn-ghost btn-full" style="height:52px;" onclick="backToCheck()">← Zurück zum Check</button>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp }  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getFirestore, collection, getDocs, doc, getDoc, addDoc, query, orderBy, serverTimestamp }
+                              from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+    // Theme
+    const savedTheme  = localStorage.getItem('lager-theme');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const theme       = savedTheme || (prefersDark ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    document.getElementById('theme-toggle').textContent = theme === 'dark' ? '☀️' : '🌙';
+    window.toggleTheme = function() {
+      const cur  = document.documentElement.getAttribute('data-theme');
+      const next = cur === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      localStorage.setItem('lager-theme', next);
+      document.getElementById('theme-toggle').textContent = next === 'dark' ? '☀️' : '🌙';
+    };
+
+    // Firebase
+    const firebaseConfig = {
+      apiKey:            "AIzaSyD1YY-cFQxyykfYQYPORwulzuF8t6Wgid4",
+      authDomain:        "lagerbestellung-19970.firebaseapp.com",
+      projectId:         "lagerbestellung-19970",
+      storageBucket:     "lagerbestellung-19970.firebasestorage.app",
+      messagingSenderId: "939056339904",
+      appId:             "1:939056339904:web:6f33ca2f5a4cebd2780625",
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db  = getFirestore(app);
+
+    let correctPin   = '1234';
+    let alleArtikel  = [];
+    let alleBereiche = [];
+    let bestellungen = {}; // artikelId → { bestellen: bool, menge: number }
+    let currentIdx   = 0;
+    let userName     = '';
+    let pinValue     = '';
+
+    const QUICK_VALUES = [1, 2, 3, 5, 10];
+
+    // ── PIN ──
+    function handlePinKey(key) {
+      document.getElementById('pin-error').textContent = '';
+      if (key === 'del') {
+        pinValue = pinValue.slice(0, -1);
+        updateDots();
+      } else if (key === 'confirm') {
+        pinConfirm();
+      } else {
+        if (pinValue.length >= 4) return;
+        pinValue += key;
+        updateDots();
+      }
+    }
+
+    function updateDots() {
+      for (let i = 0; i < 4; i++)
+        document.getElementById(`dot-${i}`).classList.toggle('filled', i < pinValue.length);
+    }
+
+    document.querySelectorAll('.pin-key').forEach(btn => {
+      const key = btn.dataset.key;
+      btn.addEventListener('touchstart', e => {
+        e.preventDefault();
+        btn.classList.add('pressed');
+        handlePinKey(key);
+      }, { passive: false });
+      btn.addEventListener('touchend', () => setTimeout(() => btn.classList.remove('pressed'), 100));
+      btn.addEventListener('click', () => handlePinKey(key));
+    });
+
+    async function pinConfirm() {
+      userName = document.getElementById('name-input').value.trim();
+      const err = document.getElementById('pin-error');
+      if (!userName) { err.textContent = 'Bitte deinen Namen eingeben.'; return; }
+      if (pinValue.length < 4) { err.textContent = 'Bitte 4-stelligen PIN eingeben.'; return; }
+      try {
+        const snap = await getDoc(doc(db, 'config', 'app'));
+        if (snap.exists()) correctPin = snap.data().pin || '1234';
+      } catch {}
+      if (pinValue !== correctPin) {
+        err.textContent = 'Falscher PIN. Bitte nochmal versuchen.';
+        pinValue = ''; updateDots(); return;
+      }
+      document.getElementById('nav-user').textContent = userName;
+      await loadCheckData();
+      showScreen('check');
+    }
+
+    // ── Load ──
+    async function loadCheckData() {
+      const [bSnap, aSnap] = await Promise.all([
+        getDocs(query(collection(db, 'bereiche'), orderBy('reihenfolge'))),
+        getDocs(collection(db, 'artikel')),
+      ]);
+      alleBereiche = bSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+      alleArtikel  = aSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+      renderBereich(0);
+    }
+
+    // ── Render Bereich ──
+    function renderBereich(idx) {
+      currentIdx = idx;
+      const bereich = alleBereiche[idx];
+      const artikel = alleArtikel.filter(a => a.bereich === bereich.id);
+      const pct     = Math.round(((idx + 1) / alleBereiche.length) * 100);
+      const isLast  = idx === alleBereiche.length - 1;
+
+      document.getElementById('check-bereich-name').textContent  = bereich.name;
+      document.getElementById('check-progress').style.width       = pct + '%';
+      document.getElementById('check-progress-label').textContent = `Bereich ${idx + 1} von ${alleBereiche.length}`;
+      document.getElementById('check-progress-pct').textContent   = pct + '%';
+      document.getElementById('btn-prev').disabled = idx === 0;
+      document.getElementById('btn-weiter').classList.toggle('hidden', isLast);
+      document.getElementById('btn-finish').classList.toggle('hidden', !isLast);
+
+      document.getElementById('check-body').innerHTML = artikel.map(a => {
+        const state   = bestellungen[a.id] || { bestellen: null, menge: 1 };
+        const bestell = state.bestellen;
+        const menge   = state.menge || 1;
+
+        const minHtml = a.min != null ? `
+          <div class="minmax-badge min">
+            <span class="minmax-label">MIN</span>
+            <span class="minmax-value">${a.min}</span>
+            <span class="minmax-unit">${a.minEinheit||'Stk'}</span>
+          </div>` : '';
+
+        const maxHtml = a.max != null ? `
+          <div class="minmax-badge max">
+            <span class="minmax-label">MAX</span>
+            <span class="minmax-value">${a.max}</span>
+            <span class="minmax-unit">${a.maxEinheit||'Stk'}</span>
+          </div>` : '';
+
+        // Produkt-Foto für Artikel, Lagerort-Foto als Extra-Button
+        const fotoHtml = (a.fotoUrl || a.lagerFotoUrl)
+          ? `<div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0;">
+               ${a.fotoUrl ? `
+                 <div class="artikel-foto-btn" data-foto="${a.fotoUrl}" data-name="${a.name.replace(/"/g,'&quot;')}" title="Produkt ansehen">
+                   <img src="${a.fotoUrl}" alt="${a.name}">
+                   <div class="foto-overlay">📦</div>
+                 </div>` : ''}
+               ${a.lagerFotoUrl ? `
+                 <div class="artikel-foto-btn" data-foto="${a.lagerFotoUrl}" data-name="Lagerort: ${a.name.replace(/"/g,'&quot;')}" title="Lagerort ansehen" style="background:var(--surface3);">
+                   <img src="${a.lagerFotoUrl}" alt="Lagerort">
+                   <div class="foto-overlay">🗄️</div>
+                 </div>` : ''}
+             </div>`
+          : `<div class="artikel-foto-btn" style="cursor:default;opacity:0.4;">📦</div>`;
+
+        const chipsHtml = QUICK_VALUES.map(v => `
+          <div class="chip ${menge === v && bestell ? 'selected' : ''}" data-id="${a.id}" data-val="${v}">${v}</div>
+        `).join('');
+
+        return `
+          <div class="artikel-card ${bestell===true?'bestellen':bestell===false?'ok':''}" id="card-${a.id}">
+            <div class="artikel-header">
+              ${fotoHtml}
+              <div class="artikel-info">
+                <div class="artikel-name">${a.name}</div>
+                <div class="artikel-lp">${a.lp||''} · ${a.location||''}</div>
+                <div class="minmax-row">
+                  ${minHtml}
+                  ${maxHtml}
+                </div>
+              </div>
+            </div>
+            ${a.hinweis ? `<div class="artikel-hinweis">💡 ${a.hinweis}</div>` : ''}
+            <div class="bestell-divider"></div>
+            <div class="bestell-section">
+              <div class="bestell-frage">Muss bestellt werden?</div>
+              <div class="ja-nein-row">
+                <button class="ja-nein-btn nein ${bestell===false?'selected':''}" data-id="${a.id}" data-val="nein">✅ Nein</button>
+                <button class="ja-nein-btn ja   ${bestell===true ?'selected':''}" data-id="${a.id}" data-val="ja">⚠️ Ja</button>
+              </div>
+              <div class="menge-wrap ${bestell===true?'visible':''}" id="menge-${a.id}">
+                <div class="menge-label">Wie viel soll bestellt werden?</div>
+                <div class="chips-row" data-id="${a.id}">${chipsHtml}</div>
+                <div class="plusminus-row">
+                  <button class="pm-btn minus" data-id="${a.id}" data-action="minus">−</button>
+                  <input class="pm-display" id="pm-${a.id}" type="number" inputmode="numeric" value="${menge}" min="1">
+                  <button class="pm-btn plus"  data-id="${a.id}" data-action="plus">+</button>
+                </div>
+              </div>
+            </div>
+          </div>`;
+      }).join('') || `<div class="text-muted text-sm" style="padding:30px;text-align:center;font-size:1rem;">Keine Artikel in diesem Bereich</div>`;
+
+      attachListeners();
+      window.scrollTo(0, 0);
+    }
+
+    // ── Listeners ──
+    function attachListeners() {
+
+      // Ja/Nein
+      document.querySelectorAll('.ja-nein-btn').forEach(btn => {
+        const id  = btn.dataset.id;
+        const val = btn.dataset.val;
+
+        function handle() {
+          const bestellen = val === 'ja';
+          if (!bestellungen[id]) bestellungen[id] = { bestellen: null, menge: 1 };
+          bestellungen[id].bestellen = bestellen;
+
+          // Update card
+          const card = document.getElementById(`card-${id}`);
+          card.className = `artikel-card ${bestellen ? 'bestellen' : 'ok'}`;
+
+          // Update buttons
+          document.querySelectorAll(`.ja-nein-btn[data-id="${id}"]`).forEach(b => {
+            b.classList.toggle('selected', b.dataset.val === val);
+          });
+
+          // Show/hide menge
+          const mengeWrap = document.getElementById(`menge-${id}`);
+          mengeWrap.classList.toggle('visible', bestellen);
+        }
+
+        btn.addEventListener('touchstart', e => { e.preventDefault(); btn.style.transform='scale(0.95)'; handle(); }, { passive: false });
+        btn.addEventListener('touchend',   () => { btn.style.transform=''; });
+        btn.addEventListener('click', handle);
+      });
+
+      // Chips
+      document.querySelectorAll('.chip').forEach(chip => {
+        const id  = chip.dataset.id;
+        const val = parseInt(chip.dataset.val);
+
+        function handle() {
+          setMenge(id, val);
+        }
+
+        chip.addEventListener('touchstart', e => { e.preventDefault(); chip.classList.add('pressed'); handle(); }, { passive: false });
+        chip.addEventListener('touchend',   () => setTimeout(() => chip.classList.remove('pressed'), 100));
+        chip.addEventListener('click', handle);
+      });
+
+      // +/- Buttons
+      document.querySelectorAll('.pm-btn').forEach(btn => {
+        const id     = btn.dataset.id;
+        const action = btn.dataset.action;
+
+        function handle() {
+          const cur  = parseInt(document.getElementById(`pm-${id}`).value) || 1;
+          const next = action === 'plus' ? cur + 1 : Math.max(1, cur - 1);
+          setMenge(id, next);
+        }
+
+        btn.addEventListener('touchstart', e => { e.preventDefault(); btn.classList.add('pressed'); handle(); }, { passive: false });
+        btn.addEventListener('touchend',   () => setTimeout(() => btn.classList.remove('pressed'), 100));
+        btn.addEventListener('click', handle);
+      });
+
+      // Direct input
+      document.querySelectorAll('.pm-display').forEach(input => {
+        const id = input.id.replace('pm-', '');
+        input.addEventListener('change', () => setMenge(id, Math.max(1, parseInt(input.value) || 1)));
+      });
+
+      // Foto buttons
+      document.querySelectorAll('.artikel-foto-btn[data-foto]').forEach(btn => {
+        btn.addEventListener('click', () => openFoto(btn.dataset.foto, btn.dataset.name));
+      });
+    }
+
+    function setMenge(id, val) {
+      if (!bestellungen[id]) bestellungen[id] = { bestellen: true, menge: val };
+      bestellungen[id].menge = val;
+
+      const input = document.getElementById(`pm-${id}`);
+      if (input) input.value = val;
+
+      document.querySelectorAll(`.chip[data-id="${id}"]`).forEach(chip => {
+        chip.classList.toggle('selected', parseInt(chip.dataset.val) === val);
+      });
+    }
+
+    window.prevBereich = () => { if (currentIdx > 0) renderBereich(currentIdx - 1); };
+    window.nextBereich = () => { if (currentIdx < alleBereiche.length - 1) renderBereich(currentIdx + 1); };
+
+    // ── Signature ──
+    window.showSignature = function() {
+      const zuBestellen = Object.entries(bestellungen).filter(([, v]) => v.bestellen === true);
+      const bearbeitet  = Object.keys(bestellungen).length;
+
+      document.getElementById('summary-grid').innerHTML = `
+        <div class="summary-row"><span class="summary-key">Mitarbeiter</span><span class="summary-val">${userName}</span></div>
+        <div class="summary-row"><span class="summary-key">Datum</span><span class="summary-val">${new Date().toLocaleDateString('de-DE')} · ${new Date().toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'})}</span></div>
+        <div class="summary-row"><span class="summary-key">Bearbeitet</span><span class="summary-val">${bearbeitet} / ${alleArtikel.length} Artikel</span></div>
+        <div class="summary-row"><span class="summary-key">Zu bestellen</span><span class="summary-val" style="color:${zuBestellen.length>0?'var(--red)':'var(--green)'}">${zuBestellen.length} Artikel</span></div>`;
+      showScreen('sig');
+      initCanvas();
+    };
+
+    window.backToCheck = () => {
+      showScreen('check');
+      renderBereich(currentIdx);
+    };
+
+    // ── Canvas ──
+    let drawing = false, hasSig = false;
+    function initCanvas() {
+      const canvas = document.getElementById('sig-canvas');
+      const ctx    = canvas.getContext('2d');
+      canvas.width  = canvas.parentElement.clientWidth;
+      canvas.height = 160;
+      ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
+      ctx.lineWidth = 2.5; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+      function getPos(e) {
+        const r = canvas.getBoundingClientRect();
+        const t = e.touches ? e.touches[0] : e;
+        return { x: (t.clientX-r.left)*(canvas.width/r.width), y: (t.clientY-r.top)*(canvas.height/r.height) };
+      }
+      canvas.addEventListener('mousedown',  e => { drawing=true; ctx.beginPath(); const p=getPos(e); ctx.moveTo(p.x,p.y); });
+      canvas.addEventListener('mousemove',  e => { if(!drawing)return; const p=getPos(e); ctx.lineTo(p.x,p.y); ctx.stroke(); hasSig=true; document.getElementById('sig-hint').style.opacity='0'; });
+      canvas.addEventListener('mouseup',    ()=>drawing=false);
+      canvas.addEventListener('mouseleave', ()=>drawing=false);
+      canvas.addEventListener('touchstart', e=>{ e.preventDefault(); drawing=true; ctx.beginPath(); const p=getPos(e); ctx.moveTo(p.x,p.y); },{passive:false});
+      canvas.addEventListener('touchmove',  e=>{ e.preventDefault(); if(!drawing)return; const p=getPos(e); ctx.lineTo(p.x,p.y); ctx.stroke(); hasSig=true; document.getElementById('sig-hint').style.opacity='0'; },{passive:false});
+      canvas.addEventListener('touchend',   ()=>drawing=false);
+    }
+
+    window.clearSig = function() {
+      const c = document.getElementById('sig-canvas');
+      c.getContext('2d').clearRect(0,0,c.width,c.height);
+      hasSig=false;
+      document.getElementById('sig-hint').style.opacity='1';
+    };
+
+    // ── Submit ──
+    window.submitCheck = async function() {
+      if (!hasSig) { alert('Bitte zuerst unterschreiben!'); return; }
+
+      const nachbestellungen = alleArtikel
+        .filter(a => bestellungen[a.id]?.bestellen === true)
+        .map(a => ({
+          id:       a.id,
+          name:     a.name,
+          location: a.location,
+          lp:       a.lp,
+          menge:    bestellungen[a.id].menge,
+          einheit:  a.minEinheit || 'Stk',
+        }));
+
+      try {
+        await addDoc(collection(db, 'bestellungen'), {
+          mitarbeiter:   userName,
+          datum:         serverTimestamp(),
+          bestellungen,
+          nachbestellungen,
+          unterschrift:  document.getElementById('sig-canvas').toDataURL('image/png'),
+          status:        'abgeschlossen',
+        });
+        alert(`✅ Lagercheck abgeschlossen!\n\n${nachbestellungen.length} Artikel wurden zur Bestellung gemeldet.`);
+        window.location.href = '../index.html';
+      } catch(e) { alert('Fehler: '+e.message); }
+    };
+
+    // ── Foto Modal ──
+    window.openFoto = function(url, name) {
+      const modal = document.createElement('div');
+      modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px;';
+      modal.innerHTML = `
+        <div style="background:var(--surface);border-radius:18px;overflow:hidden;max-width:440px;width:100%;">
+          <div style="padding:14px 18px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+            <span style="font-size:0.95rem;font-weight:700;">${name}</span>
+            <button onclick="this.closest('div[style]').remove()" style="background:none;border:none;color:var(--muted);font-size:1.3rem;cursor:pointer;padding:4px 8px;touch-action:manipulation;">✕</button>
+          </div>
+          <img src="${url}" style="width:100%;max-height:400px;object-fit:contain;background:var(--surface2);">
+          <div style="padding:10px 16px;font-size:0.72rem;color:var(--muted);font-family:'IBM Plex Mono',monospace;text-align:center;">Soll-Zustand</div>
+        </div>`;
+      modal.onclick = e => { if(e.target===modal) modal.remove(); };
+      document.body.appendChild(modal);
+    };
+
+    // ── Screens ──
+    function showScreen(name) {
+      ['pin','check','sig'].forEach(s =>
+        document.getElementById(`screen-${s}`).classList.toggle('hidden', s !== name)
+      );
+    }
+  </script>
+</body>
+</html>
