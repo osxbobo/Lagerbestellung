@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="de" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LAGER//APP – Rettungswache Malmsheim</title>
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/index.css">
+</head>
+<body>
+
+  <!-- ── NAVBAR ── -->
+  <nav class="navbar">
+    <div class="navbar-inner">
+      <a href="index.html" class="nav-logo">LAGER<span>//</span>APP</a>
+      <div class="nav-right">
+        <a href="pages/check.html" class="nav-btn primary hide-mobile">
+          🗂 Lagercheck
+        </a>
+        <a href="pages/login.html" class="nav-btn hide-mobile">
+          🔐 Login
+        </a>
+        <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" title="Hell/Dunkel wechseln">☀️</button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ── HERO ── -->
+  <div class="hero">
+    <div class="hero-inner container">
+      <div class="hero-tag mono">DRK · Rettungswache Malmsheim</div>
+      <h1 class="hero-title">Lager<span class="accent">//</span>App</h1>
+      <p class="hero-sub">Digitale Lagerverwaltung & Bestandskontrolle</p>
+
+      <!-- Schnellzugriff Buttons -->
+      <div class="hero-actions">
+        <a href="pages/check.html" class="btn btn-primary">🗂 Lagercheck starten</a>
+        <a href="pages/login.html" class="btn btn-ghost">🔐 Wachenleiter / Admin</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── LAGERSUCHE ── -->
+  <main class="main-content container">
+
+    <div class="search-section">
+      <div class="section-label">Artikelsuche</div>
+
+      <!-- Suchfeld -->
+      <div class="search-wrap">
+        <div class="search-icon">🔍</div>
+        <input
+          type="text"
+          id="search-input"
+          class="search-input"
+          placeholder="Artikel suchen... z.B. Tubus, Viggo, Adrenalin"
+          autocomplete="off"
+          autocorrect="off"
+          spellcheck="false"
+        >
+        <button class="search-clear hidden" id="search-clear" onclick="clearSearch()">✕</button>
+      </div>
+
+      <!-- Status -->
+      <div class="search-status" id="search-status">
+        <div class="status-idle">
+          <span class="mono text-muted text-xs">245 Artikel · 13 Bereiche</span>
+        </div>
+      </div>
+
+      <!-- Ergebnisse -->
+      <div id="search-results" class="search-results hidden"></div>
+
+      <!-- Leer-State -->
+      <div id="empty-state" class="empty-state hidden">
+        <div class="empty-icon">🔍</div>
+        <div class="empty-title">Kein Artikel gefunden</div>
+        <div class="empty-sub">Versuche es mit einem anderen Suchbegriff oder einem Alias</div>
+      </div>
+
+      <!-- Lade-State -->
+      <div id="loading-state" class="loading-state hidden">
+        <div class="spinner"></div>
+        <span class="text-muted text-sm">Datenbank wird geladen...</span>
+      </div>
+    </div>
+
+    <!-- Bereiche Übersicht -->
+    <div class="bereiche-section" id="bereiche-section">
+      <div class="section-label">Bereiche</div>
+      <div class="bereiche-grid" id="bereiche-grid">
+        <!-- Wird per JS befüllt -->
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ── FOOTER ── -->
+  <footer class="footer">
+    <div class="container">
+      <span class="mono text-xs text-muted">LAGER//APP · DRK Rettungswache Malmsheim · 2026</span>
+    </div>
+  </footer>
+
+  <!-- Firebase -->
+  <script type="module">
+    import { initializeApp }       from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getFirestore, collection, getDocs, query, orderBy }
+                                   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { firebaseConfig }      from "./js/firebase-config.js";
+    import { initTheme, toggleTheme } from "./js/theme.js";
+
+    window.toggleTheme = toggleTheme;
+    initTheme();
+
+    const app = initializeApp(firebaseConfig);
+    const db  = getFirestore(app);
+
+    let alleArtikel  = [];
+    let alleBereiche = [];
+    let searchTimer  = null;
+
+    // ── Daten laden ──
+    async function loadData() {
+      document.getElementById('loading-state').classList.remove('hidden');
+      document.getElementById('bereiche-section').classList.add('hidden');
+
+      try {
+        // Bereiche
+        const bereicheSnap = await getDocs(query(collection(db, 'bereiche'), orderBy('reihenfolge')));
+        alleBereiche = bereicheSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+        // Artikel
+        const artikelSnap = await getDocs(collection(db, 'artikel'));
+        alleArtikel = artikelSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+        document.getElementById('loading-state').classList.add('hidden');
+        document.getElementById('bereiche-section').classList.remove('hidden');
+        renderBereiche();
+
+        document.querySelector('.status-idle').innerHTML =
+          `<span class="mono text-muted text-xs">${alleArtikel.length} Artikel · ${alleBereiche.length} Bereiche</span>`;
+
+      } catch (e) {
+        document.getElementById('loading-state').classList.add('hidden');
+        document.getElementById('search-status').innerHTML =
+          `<div class="alert alert-error text-xs">Fehler beim Laden: ${e.message}</div>`;
+      }
+    }
+
+    // ── Bereiche rendern ──
+    function renderBereiche() {
+      const grid = document.getElementById('bereiche-grid');
+      grid.innerHTML = alleBereiche.map(b => {
+        const count = alleArtikel.filter(a => a.bereich === b.id).length;
+        const icon = getBereichIcon(b.name);
+        return `
+          <div class="bereich-card" onclick="filterByBereich('${b.id}', '${b.name}')">
+            <div class="bereich-icon">${icon}</div>
+            <div class="bereich-info">
+              <div class="bereich-name">${b.name}</div>
+              <div class="bereich-count mono">${count} Artikel</div>
+            </div>
+          </div>`;
+      }).join('');
+    }
+
+    function getBereichIcon(name) {
+      const n = name.toLowerCase();
+      if (n.includes('schrank')) return '🗄️';
+      if (n.includes('regal'))   return '📦';
+      if (n.includes('sauer'))   return '🫧';
+      if (n.includes('büro'))    return '📋';
+      if (n.includes('küche'))   return '🍽️';
+      if (n.includes('wasch'))   return '🚿';
+      if (n.includes('mpg'))     return '🔋';
+      if (n.includes('medika'))  return '💊';
+      return '📁';
+    }
+
+    // ── Suche ──
+    function search(query) {
+      const q = query.toLowerCase().trim();
+      if (!q) {
+        clearSearch();
+        return;
+      }
+
+      const results = alleArtikel.filter(a => {
+        const inName    = a.name?.toLowerCase().includes(q);
+        const inAliases = a.aliases?.some(al => al.toLowerCase().includes(q));
+        const inLp      = a.lp?.toLowerCase().includes(q);
+        return inName || inAliases || inLp;
+      });
+
+      renderResults(results, q);
+    }
+
+    function renderResults(results, query) {
+      const container = document.getElementById('search-results');
+      const empty     = document.getElementById('empty-state');
+      const bereiche  = document.getElementById('bereiche-section');
+
+      bereiche.classList.add('hidden');
+
+      if (results.length === 0) {
+        container.classList.add('hidden');
+        empty.classList.remove('hidden');
+        return;
+      }
+
+      empty.classList.add('hidden');
+      container.classList.remove('hidden');
+
+      document.querySelector('.status-idle').innerHTML =
+        `<span class="mono text-xs" style="color:var(--accent2)">${results.length} Treffer für „${query}"</span>`;
+
+      container.innerHTML = results.map(a => {
+        const bereich = alleBereiche.find(b => b.id === a.bereich);
+        const minMax  = a.min != null && a.max != null
+          ? `<span class="result-minmax">MIN: ${a.min} ${a.minEinheit || ''} · MAX: ${a.max} ${a.maxEinheit || ''}</span>`
+          : '';
+        const hinweis = a.hinweis
+          ? `<span class="result-hinweis">💡 ${a.hinweis}</span>`
+          : '';
+        return `
+          <div class="result-card fade-in">
+            <div class="result-photo" onclick="openPhoto('${a.fotoUrl}', '${a.name}')">
+              ${a.fotoUrl
+                ? `<img src="${a.fotoUrl}" alt="${a.name}" loading="lazy">`
+                : `<div class="result-photo-placeholder">${getBereichIcon(bereich?.name || '')}</div>`
+              }
+            </div>
+            <div class="result-body">
+              <div class="result-name">${highlight(a.name, query)}</div>
+              <div class="result-location">
+                <span class="mono" style="color:var(--accent)">📦 ${formatLocation(a.location)}</span>
+                ${bereich ? `<span class="result-bereich">${bereich.name}</span>` : ''}
+              </div>
+              ${minMax}
+              ${hinweis}
+              ${a.lp ? `<div class="result-lp mono text-xs text-muted">LP: ${a.lp}</div>` : ''}
+            </div>
+          </div>`;
+      }).join('');
+    }
+
+    function highlight(text, query) {
+      if (!query) return text;
+      const re = new RegExp(`(${query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+      return text.replace(re, '<mark>$1</mark>');
+    }
+
+    function formatLocation(loc) {
+      if (!loc) return '–';
+      return loc.replace(/\./g, ' · ');
+    }
+
+    // ── Bereich filtern ──
+    window.filterByBereich = function(bereichId, bereichName) {
+      const filtered = alleArtikel.filter(a => a.bereich === bereichId);
+      document.getElementById('search-input').value = '';
+      document.getElementById('search-clear').classList.remove('hidden');
+      document.querySelector('.status-idle').innerHTML =
+        `<span class="mono text-xs" style="color:var(--accent2)">${filtered.length} Artikel in „${bereichName}"</span>`;
+      renderResults(filtered, '');
+    };
+
+    // ── Clear ──
+    window.clearSearch = function() {
+      document.getElementById('search-input').value = '';
+      document.getElementById('search-results').classList.add('hidden');
+      document.getElementById('empty-state').classList.add('hidden');
+      document.getElementById('search-clear').classList.add('hidden');
+      document.getElementById('bereiche-section').classList.remove('hidden');
+      document.querySelector('.status-idle').innerHTML =
+        `<span class="mono text-muted text-xs">${alleArtikel.length} Artikel · ${alleBereiche.length} Bereiche</span>`;
+    };
+
+    // ── Foto Modal ──
+    window.openPhoto = function(url, name) {
+      if (!url) return;
+      const modal = document.getElementById('photo-modal');
+      document.getElementById('modal-img').src = url;
+      document.getElementById('modal-title').textContent = name;
+      modal.classList.remove('hidden');
+    };
+
+    window.closeModal = function() {
+      document.getElementById('photo-modal').classList.add('hidden');
+    };
+
+    // ── Event Listeners ──
+    const input = document.getElementById('search-input');
+    input.addEventListener('input', e => {
+      const val = e.target.value;
+      document.getElementById('search-clear').classList.toggle('hidden', !val);
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(() => search(val), 200);
+    });
+
+    // Start
+    loadData();
+  </script>
+
+  <!-- Foto Modal -->
+  <div id="photo-modal" class="modal hidden" onclick="if(event.target===this)closeModal()">
+    <div class="modal-box">
+      <div class="modal-header">
+        <span id="modal-title" class="modal-title"></span>
+        <button class="modal-close" onclick="closeModal()">✕</button>
+      </div>
+      <img id="modal-img" class="modal-img" src="" alt="">
+    </div>
+  </div>
+
+</body>
+</html>
