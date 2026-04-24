@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="de" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wachenleiter Portal – LAGER//APP</title>
+  <link rel="stylesheet" href="../css/main.css">
+  <style>
+    .portal-page { min-height: 100vh; display: flex; flex-direction: column; }
+    .portal-main { flex: 1; padding: 24px 20px 48px; max-width: 1100px; margin: 0 auto; width: 100%; display: flex; flex-direction: column; gap: 28px; }
+
+    /* ── KPI ROW ── */
+    .kpi-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .kpi-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 4px; }
+    .kpi-label { font-size: 0.6rem; color: var(--muted); font-family: 'IBM Plex Mono', monospace; text-transform: uppercase; letter-spacing: 0.15em; }
+    .kpi-value { font-size: 1.6rem; font-weight: 700; font-family: 'IBM Plex Mono', monospace; line-height: 1; }
+    .kpi-sub   { font-size: 0.68rem; color: var(--text2); margin-top: 2px; }
+
+    /* ── SECTION ── */
+    .portal-section { display: flex; flex-direction: column; gap: 12px; }
+    .section-header { display: flex; align-items: center; justify-content: space-between; }
+
+    /* ── VERFALL ── */
+    .verfall-list { display: flex; flex-direction: column; gap: 8px; }
+    .verfall-item { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; display: flex; align-items: center; gap: 12px; }
+    .verfall-dot  { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .verfall-info { flex: 1; min-width: 0; }
+    .verfall-name { font-size: 0.82rem; font-weight: 600; }
+    .verfall-charge { font-size: 0.65rem; color: var(--muted); font-family: 'IBM Plex Mono', monospace; margin-top: 2px; }
+    .verfall-days { font-size: 0.72rem; font-family: 'IBM Plex Mono', monospace; font-weight: 600; flex-shrink: 0; }
+
+    /* ── BESTELLUNGEN ── */
+    .bestellung-list { display: flex; flex-direction: column; gap: 8px; }
+    .bestellung-item { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; display: flex; align-items: center; gap: 14px; cursor: pointer; transition: border-color 0.2s; }
+    .bestellung-item:hover { border-color: var(--border2); }
+    .bestellung-icon { width: 36px; height: 36px; border-radius: 8px; background: var(--surface2); display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0; }
+    .bestellung-info { flex: 1; min-width: 0; }
+    .bestellung-name { font-size: 0.85rem; font-weight: 600; }
+    .bestellung-meta { font-size: 0.68rem; color: var(--muted); font-family: 'IBM Plex Mono', monospace; margin-top: 2px; }
+    .bestellung-warn { font-size: 0.68rem; color: var(--red); margin-top: 2px; }
+    .bestellung-actions { display: flex; gap: 6px; flex-shrink: 0; }
+
+    .action-btn { padding: 6px 12px; border-radius: 7px; border: 1px solid var(--border); background: var(--surface2); color: var(--text2); font-size: 0.72rem; font-family: 'IBM Plex Mono', monospace; cursor: pointer; transition: all 0.15s; white-space: nowrap; }
+    .action-btn:hover { border-color: var(--accent2); color: var(--accent2); }
+    .action-btn.pdf:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* ── DETAIL MODAL ── */
+    .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.75); backdrop-filter: blur(4px); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 20px; }
+    .modal-box { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; width: 100%; max-width: 600px; max-height: 85vh; display: flex; flex-direction: column; box-shadow: var(--shadow-lg); }
+    .modal-head { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+    .modal-title { font-size: 0.9rem; font-weight: 700; }
+    .modal-close { background: none; border: none; color: var(--muted); font-size: 1.1rem; cursor: pointer; padding: 4px 8px; border-radius: 6px; transition: color 0.15s; }
+    .modal-close:hover { color: var(--text); }
+    .modal-body { padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; }
+    .modal-foot { padding: 14px 20px; border-top: 1px solid var(--border); display: flex; gap: 8px; flex-shrink: 0; }
+
+    .detail-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 0.82rem; }
+    .detail-row:last-child { border-bottom: none; }
+    .detail-key { color: var(--muted); }
+    .detail-val { font-family: 'IBM Plex Mono', monospace; font-size: 0.78rem; font-weight: 600; }
+
+    .nachbest-item { display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: rgba(239,68,68,0.06); border: 1px solid rgba(239,68,68,0.15); border-radius: 8px; }
+    .nachbest-name { font-size: 0.78rem; font-weight: 600; flex: 1; }
+    .nachbest-ist  { font-size: 0.7rem; font-family: 'IBM Plex Mono', monospace; color: var(--red); }
+
+    .sig-img { width: 100%; border-radius: 8px; border: 1px solid var(--border); background: var(--surface2); }
+
+    /* ── EMPTY ── */
+    .empty { text-align: center; padding: 40px 20px; color: var(--muted); font-size: 0.85rem; }
+
+    /* ── LOADING ── */
+    .loading { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 40px; color: var(--muted); font-size: 0.85rem; }
+
+    /* ── LOGOUT ── */
+    .logout-btn { padding: 7px 14px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface2); color: var(--text2); font-size: 0.82rem; cursor: pointer; transition: all 0.2s; }
+    .logout-btn:hover { border-color: var(--red); color: var(--red); }
+
+    .hidden { display: none !important; }
+
+    @media (max-width: 640px) {
+      .kpi-row { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+      .kpi-value { font-size: 1.2rem; }
+      .bestellung-actions { flex-direction: column; }
+      .portal-main { padding: 16px 16px 40px; gap: 20px; }
+    }
+
+    @media (min-width: 1025px) {
+      .portal-main { display: grid; grid-template-columns: 1fr 320px; grid-template-rows: auto 1fr; gap: 28px; }
+      .kpi-row { grid-column: 1 / -1; }
+      .bestellungen-section { grid-column: 1; }
+      .verfall-section { grid-column: 2; grid-row: 2; }
+    }
+  </style>
+</head>
+<body class="portal-page">
+
+  <!-- NAVBAR -->
+  <nav class="navbar">
+    <div class="navbar-inner">
+      <a href="../index.html" class="nav-logo">LAGER<span>//</span>APP</a>
+      <div class="nav-right">
+        <span id="nav-user" class="mono text-xs text-muted hide-mobile"></span>
+        <span class="badge badge-blue hide-mobile">WACHENLEITER</span>
+        <button class="logout-btn" onclick="doLogout()">Abmelden</button>
+        <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()">☀️</button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- AUTH CHECK -->
+  <div id="auth-loading" class="loading">
+    <div class="spinner"></div>
+    <span>Authentifizierung...</span>
+  </div>
+
+  <!-- MAIN -->
+  <main class="portal-main hidden" id="portal-main">
+
+    <!-- KPIs -->
+    <div class="kpi-row">
+      <div class="kpi-card">
+        <div class="kpi-label">Letzte Bestellung</div>
+        <div class="kpi-value" id="kpi-last">–</div>
+        <div class="kpi-sub" id="kpi-last-sub">Noch keine</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Gesamt Bestellungen</div>
+        <div class="kpi-value" id="kpi-total" style="color:var(--accent2)">0</div>
+        <div class="kpi-sub">Abgeschlossen</div>
+      </div>
+      <div class="kpi-card">
+        <div class="kpi-label">Verfallswarnungen</div>
+        <div class="kpi-value" id="kpi-verfall" style="color:var(--red)">0</div>
+        <div class="kpi-sub">Artikel kritisch</div>
+      </div>
+    </div>
+
+    <!-- BESTELLUNGEN -->
+    <div class="portal-section bestellungen-section">
+      <div class="section-header">
+        <div class="section-label" style="margin:0">Bestellhistorie</div>
+      </div>
+      <div id="bestellungen-list" class="bestellung-list">
+        <div class="loading"><div class="spinner"></div><span>Lade Bestellungen...</span></div>
+      </div>
+    </div>
+
+    <!-- VERFALL -->
+    <div class="portal-section verfall-section">
+      <div class="section-header">
+        <div class="section-label" style="margin:0">Verfallswarnungen</div>
+      </div>
+      <div id="verfall-list" class="verfall-list">
+        <div class="loading"><div class="spinner"></div><span>Lade...</span></div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- DETAIL MODAL -->
+  <div id="detail-modal" class="modal hidden" onclick="if(event.target===this)closeModal()">
+    <div class="modal-box">
+      <div class="modal-head">
+        <span class="modal-title" id="modal-title">Lagercheck Details</span>
+        <button class="modal-close" onclick="closeModal()">✕</button>
+      </div>
+      <div class="modal-body" id="modal-body"></div>
+      <div class="modal-foot">
+        <button class="btn btn-primary" style="flex:1" onclick="generatePDF()">📄 PDF erstellen</button>
+        <button class="btn btn-ghost" onclick="closeModal()">Schließen</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- jsPDF -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+  <script type="module">
+    import { initializeApp }  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signOut }
+                              from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    import { getFirestore, collection, getDocs, doc, getDoc, query, orderBy, limit }
+                              from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+    // ── Theme ──
+    const savedTheme  = localStorage.getItem('lager-theme');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const theme       = savedTheme || (prefersDark ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    document.getElementById('theme-toggle').textContent = theme === 'dark' ? '☀️' : '🌙';
+    window.toggleTheme = function() {
+      const cur = document.documentElement.getAttribute('data-theme');
+      const next = cur === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      localStorage.setItem('lager-theme', next);
+      document.getElementById('theme-toggle').textContent = next === 'dark' ? '☀️' : '🌙';
+    };
+
+    // ── Firebase ──
+    const firebaseConfig = {
+      apiKey:            "AIzaSyD1YY-cFQxyykfYQYPORwulzuF8t6Wgid4",
+      authDomain:        "lagerbestellung-19970.firebaseapp.com",
+      projectId:         "lagerbestellung-19970",
+      storageBucket:     "lagerbestellung-19970.firebasestorage.app",
+      messagingSenderId: "939056339904",
+      appId:             "1:939056339904:web:6f33ca2f5a4cebd2780625",
+    };
+
+    const app  = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db   = getFirestore(app);
+
+    let alleArtikel   = [];
+    let alleBereiche  = [];
+    let bestellungen  = [];
+    let currentBest   = null;
+
+    // Globalen Zugriff für PDF-Funktion ermöglichen
+    window._getArtikel  = () => alleArtikel;
+    window._getBereiche = () => alleBereiche;
+
+    // ── Auth ──
+    onAuthStateChanged(auth, async user => {
+      if (!user) { window.location.href = 'login.html'; return; }
+
+      const userSnap = await getDoc(doc(db, 'users', user.uid));
+      const role     = userSnap.exists() ? userSnap.data().role : null;
+
+      if (role !== 'wachenleiter' && role !== 'admin') {
+        window.location.href = '../index.html';
+        return;
+      }
+
+      document.getElementById('nav-user').textContent = user.email;
+      document.getElementById('auth-loading').classList.add('hidden');
+      document.getElementById('portal-main').classList.remove('hidden');
+
+      await loadData();
+    });
+
+    window.doLogout = async function() {
+      await signOut(auth);
+      window.location.href = 'login.html';
+    };
+
+    // ── Load Data ──
+    async function loadData() {
+      const [artikelSnap, bereicheSnap, bestSnap] = await Promise.all([
+        getDocs(collection(db, 'artikel')),
+        getDocs(query(collection(db, 'bereiche'), orderBy('reihenfolge'))),
+        getDocs(query(collection(db, 'bestellungen'), orderBy('datum', 'desc'), limit(50))),
+      ]);
+
+      alleArtikel  = artikelSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+      alleBereiche = bereicheSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+      bestellungen = bestSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+      renderKPIs();
+      renderBestellungen();
+      renderVerfall();
+    }
+
+    // ── KPIs ──
+    function renderKPIs() {
+      document.getElementById('kpi-total').textContent = bestellungen.length;
+
+      if (bestellungen.length > 0) {
+        const last = bestellungen[0];
+        const datum = last.datum?.toDate ? last.datum.toDate() : new Date();
+        document.getElementById('kpi-last').textContent = datum.toLocaleDateString('de-DE');
+        document.getElementById('kpi-last-sub').textContent = last.mitarbeiter || '–';
+      }
+
+      const kritisch = alleArtikel.filter(a => {
+        if (!a.chargen || a.chargen.length === 0) return false;
+        return a.chargen.some(c => {
+          if (!c.verfall) return false;
+          const diff = (new Date(c.verfall) - new Date()) / (1000 * 60 * 60 * 24);
+          return diff <= 30;
+        });
+      }).length;
+
+      document.getElementById('kpi-verfall').textContent = kritisch;
+      if (kritisch > 0) document.getElementById('kpi-verfall').style.color = 'var(--red)';
+    }
+
+    // ── Bestellungen ──
+    function renderBestellungen() {
+      const list = document.getElementById('bestellungen-list');
+
+      if (bestellungen.length === 0) {
+        list.innerHTML = '<div class="empty">Noch keine Lagerchecks vorhanden.</div>';
+        return;
+      }
+
+      list.innerHTML = bestellungen.map((b, i) => {
+        const datum   = b.datum?.toDate ? b.datum.toDate() : new Date();
+        const dateStr = datum.toLocaleDateString('de-DE') + ' · ' + datum.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+        const nb      = b.nachbestellungen?.length || 0;
+        return `
+          <div class="bestellung-item" onclick="openDetail('${b.id}')">
+            <div class="bestellung-icon">📋</div>
+            <div class="bestellung-info">
+              <div class="bestellung-name">${b.mitarbeiter || 'Unbekannt'}</div>
+              <div class="bestellung-meta">${dateStr}</div>
+              ${nb > 0 ? `<div class="bestellung-warn">⚠️ ${nb} Artikel nachbestellen</div>` : '<div style="font-size:0.68rem;color:var(--green);">✅ Alles in Ordnung</div>'}
+            </div>
+            <div class="bestellung-actions">
+              <button class="action-btn pdf" onclick="event.stopPropagation();quickPDF('${b.id}')">↓ PDF</button>
+            </div>
+          </div>`;
+      }).join('');
+    }
+
+    // ── Verfall ──
+    function renderVerfall() {
+      const list = document.getElementById('verfall-list');
+      const heute = new Date();
+
+      const warnings = [];
+      for (const a of alleArtikel) {
+        if (!a.chargen || a.chargen.length === 0) continue;
+        for (const c of a.chargen) {
+          if (!c.verfall) continue;
+          const diff = Math.round((new Date(c.verfall) - heute) / (1000 * 60 * 60 * 24));
+          if (diff <= 30) warnings.push({ artikel: a, charge: c, diff });
+        }
+      }
+
+      warnings.sort((a, b) => a.diff - b.diff);
+
+      if (warnings.length === 0) {
+        list.innerHTML = '<div class="empty" style="padding:20px">🟢 Keine ablaufenden Artikel</div>';
+        return;
+      }
+
+      list.innerHTML = warnings.map(w => {
+        const color = w.diff <= 7 ? 'var(--red)' : w.diff <= 14 ? 'var(--yellow)' : 'var(--accent2)';
+        const label = w.diff <= 0 ? 'ABGELAUFEN' : `${w.diff} Tage`;
+        return `
+          <div class="verfall-item" style="border-left:3px solid ${color}">
+            <div class="verfall-dot" style="background:${color}"></div>
+            <div class="verfall-info">
+              <div class="verfall-name">${w.artikel.name}</div>
+              <div class="verfall-charge">${w.charge.charge || 'Charge unbekannt'} · ${w.charge.verfall || ''}</div>
+            </div>
+            <div class="verfall-days" style="color:${color}">${label}</div>
+          </div>`;
+      }).join('');
+    }
+
+    // ── Detail Modal ──
+    window.openDetail = function(id) {
+      const b = bestellungen.find(x => x.id === id);
+      if (!b) return;
+      currentBest = b;
+
+      const datum   = b.datum?.toDate ? b.datum.toDate() : new Date();
+      const dateStr = datum.toLocaleDateString('de-DE') + ' · ' + datum.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+      const nb      = b.nachbestellungen || [];
+      const total   = Object.keys(b.istMengen || {}).length;
+
+      document.getElementById('modal-title').textContent = `Lagercheck – ${b.mitarbeiter}`;
+
+      document.getElementById('modal-body').innerHTML = `
+        <div>
+          <div class="section-label mb-8">Zusammenfassung</div>
+          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;overflow:hidden;">
+            <div class="detail-row"><span class="detail-key">Mitarbeiter</span><span class="detail-val">${b.mitarbeiter || '–'}</span></div>
+            <div class="detail-row"><span class="detail-key">Datum</span><span class="detail-val">${dateStr}</span></div>
+            <div class="detail-row"><span class="detail-key">Geprüfte Artikel</span><span class="detail-val">${total}</span></div>
+            <div class="detail-row"><span class="detail-key">Nachbestellungen</span><span class="detail-val" style="color:${nb.length>0?'var(--red)':'var(--green)'}">${nb.length} Artikel</span></div>
+          </div>
+        </div>
+
+        ${nb.length > 0 ? `
+        <div>
+          <div class="section-label mb-8">Nachbestellungen</div>
+          <div style="display:flex;flex-direction:column;gap:6px;">
+            ${nb.map(a => `
+              <div class="nachbest-item">
+                <div class="nachbest-name">${a.name}</div>
+                <div class="nachbest-ist">IST: ${a.ist} | MIN: ${a.min} ${a.minEinheit||''}</div>
+              </div>`).join('')}
+          </div>
+        </div>` : '<div class="alert alert-success">✅ Alle Artikel im Soll-Bereich</div>'}
+
+        ${b.unterschrift ? `
+        <div>
+          <div class="section-label mb-8">Unterschrift</div>
+          <img class="sig-img" src="${b.unterschrift}" alt="Unterschrift">
+        </div>` : ''}
+      `;
+
+      document.getElementById('detail-modal').classList.remove('hidden');
+    };
+
+    window.closeModal = function() {
+      document.getElementById('detail-modal').classList.add('hidden');
+      currentBest = null;
+    };
+
+    // ── PDF ──
+    window.quickPDF = function(id) {
+      const b = bestellungen.find(x => x.id === id);
+      if (b) { currentBest = b; generatePDF(); }
+    };
+
+    window.generatePDF = function() {
+      if (!currentBest) return;
+      const b      = currentBest;
+      const { jsPDF } = window.jspdf;
+      const pdf    = new jsPDF();
+      const datum  = b.datum?.toDate ? b.datum.toDate() : new Date();
+      const dateStr = datum.toLocaleDateString('de-DE');
+      const timeStr = datum.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+
+      // Nachbestellungen – neues Format (bestellen + menge) oder altes Format
+      const nachbest = b.nachbestellungen || [];
+
+      // Alle Artikel & Bereiche holen
+      const alleArtikel  = window._getArtikel();
+      const alleBereiche = window._getBereiche();
+      const bereiche = [...new Set(alleArtikel.map(a => a.bereich))];
+
+      // ── HEADER ──
+      // Roter DRK Balken oben
+      pdf.setFillColor(204, 0, 0);
+      pdf.rect(0, 0, 210, 18, 'F');
+
+      // DRK Logo Text
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(13);
+      pdf.setTextColor(255, 255, 255);
+      pdf.text('Deutsches Rotes Kreuz', 14, 9);
+      pdf.setFontSize(8);
+      pdf.setFont('helvetica', 'normal');
+      pdf.text('DRK-Rettungsdienst gGmbH · Böblingen', 14, 14);
+
+      // Rechts: STABIL SOZIAL Box
+      pdf.setDrawColor(255, 255, 255);
+      pdf.setLineWidth(0.5);
+      pdf.rect(150, 3, 48, 12);
+      pdf.setFontSize(7);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setTextColor(255, 255, 255);
+      pdf.text('STABIL SOZIAL', 174, 10, { align: 'center' });
+
+      pdf.setTextColor(0, 0, 0);
+      pdf.setLineWidth(0.2);
+
+      // ── TITEL BOX ──
+      let y = 26;
+      pdf.setFillColor(240, 240, 240);
+      pdf.rect(14, y, 182, 10, 'F');
+      pdf.setDrawColor(180);
+      pdf.rect(14, y, 182, 10);
+      pdf.setFont('helvetica', 'bold');
+      pdf.setFontSize(13);
+      pdf.setTextColor(0);
+      pdf.text('Lagerbestellung Rettungswache Malmsheim', 105, y + 7, { align: 'center' });
+
+      y += 14;
+
+      // ── META ZEILE ──
+      pdf.setFontSize(9);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setTextColor(60);
+      pdf.text(`Erstellt am: ${dateStr} um ${timeStr} Uhr`, 14, y);
+      pdf.text(`Name: ${b.mitarbeiter || '–'}`, 105, y);
+      pdf.text(`Seite 1`, 196, y, { align: 'right' });
+      y += 4;
+      pdf.setDrawColor(180);
+      pdf.line(14, y, 196, y);
+      y += 6;
+
+      // ── TABELLEN HEADER ──
+      const COL = { lp: 14, produkt: 42, bestellen: 148, status: 172 };
+      const ROW_H = 7;
+
+      function drawTableHeader() {
+        pdf.setFillColor(50, 50, 50);
+        pdf.rect(14, y, 182, ROW_H, 'F');
+        pdf.setFont('helvetica', 'bold');
+        pdf.setFontSize(8);
+        pdf.setTextColor(255, 255, 255);
+        pdf.text('LP', COL.lp + 2, y + 5);
+        pdf.text('Produkt', COL.produkt + 2, y + 5);
+        pdf.text('Bestellen', COL.bestellen + 2, y + 5);
+        pdf.text('Status', COL.status + 2, y + 5);
+        pdf.setTextColor(0);
+        y += ROW_H;
+      }
+
+      drawTableHeader();
+
+      // ── BEREICHE & ARTIKEL ──
+      let rowCount = 0;
+
+      for (const bereichId of bereiche) {
+        const bereichArtikel = alleArtikel.filter(a => a.bereich === bereichId);
+        if (bereichArtikel.length === 0) continue;
+
+        const bereichObj = alleBereiche.find(x => x.id === bereichId);
+        const bereichName = bereichObj?.name || bereichId;
+
+        // Bereich Header
+        if (y > 268) { pdf.addPage(); y = 20; drawTableHeader(); }
+        pdf.setFillColor(220, 220, 220);
+        pdf.rect(14, y, 182, ROW_H, 'F');
+        pdf.setDrawColor(180);
+        pdf.rect(14, y, 182, ROW_H);
+        pdf.setFont('helvetica', 'bold');
+        pdf.setFontSize(8);
+        pdf.setTextColor(0);
+        pdf.text(bereichName, COL.lp + 2, y + 5);
+        y += ROW_H;
+
+        // Artikel
+        for (const a of bereichArtikel) {
+          if (y > 268) { pdf.addPage(); y = 20; drawTableHeader(); }
+
+          const nb      = nachbest.find(x => x.id === a.id || x.name === a.name);
+          const bestellt = nb ? true : (b.bestellungen?.[a.id]?.bestellen === true);
+          const menge    = nb?.menge || b.bestellungen?.[a.id]?.menge || '';
+          const einheit  = nb?.einheit || a.minEinheit || '';
+
+          // Zebrierung
+          if (rowCount % 2 === 0) {
+            pdf.setFillColor(252, 252, 252);
+            pdf.rect(14, y, 182, ROW_H, 'F');
+          }
+
+          pdf.setDrawColor(210);
+          pdf.rect(14, y, 182, ROW_H);
+
+          // LP
+          pdf.setFont('helvetica', 'normal');
+          pdf.setFontSize(7.5);
+          pdf.setTextColor(100);
+          pdf.text(a.lp || '–', COL.lp + 2, y + 5);
+
+          // Name
+          pdf.setTextColor(0);
+          const name = a.name.length > 38 ? a.name.substring(0, 35) + '...' : a.name;
+          pdf.text(name, COL.produkt + 2, y + 5);
+
+          // Bestellen Menge
+          if (bestellt && menge) {
+            pdf.setFont('helvetica', 'bold');
+            pdf.setTextColor(180, 0, 0);
+            pdf.text(`${menge} ${einheit}`, COL.bestellen + 2, y + 5);
+          }
+
+          // Status
+          pdf.setFont('helvetica', 'normal');
+          if (bestellt) {
+            pdf.setTextColor(180, 0, 0);
+            pdf.text('Bestellen', COL.status + 2, y + 5);
+          } else if (b.bestellungen?.[a.id]?.bestellen === false) {
+            pdf.setTextColor(0, 140, 0);
+            pdf.text('Genuegend', COL.status + 2, y + 5);
+          } else {
+            pdf.setTextColor(150);
+            pdf.text('–', COL.status + 2, y + 5);
+          }
+
+          pdf.setTextColor(0);
+          y += ROW_H;
+          rowCount++;
+        }
+      }
+
+      // ── UNTERSCHRIFT ──
+      y += 8;
+      if (y > 230) { pdf.addPage(); y = 20; }
+
+      // Abkürzungslegende
+      pdf.setFillColor(248, 248, 248);
+      pdf.rect(14, y, 182, 18, 'F');
+      pdf.setDrawColor(180);
+      pdf.rect(14, y, 182, 18);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setFontSize(7);
+      pdf.setTextColor(80);
+      pdf.text('Stk. = Stück    VE = Verpackungseinheit    P = Pack    R = Rolle    K = Kanister    Fl. = Flasche', 105, y + 6, { align: 'center' });
+      pdf.text('S = Schrank    L = Lagerplatz    R = Regal    B = Bögen', 105, y + 13, { align: 'center' });
+      y += 24;
+
+      // Bestellt am / Name / Unterschrift
+      pdf.setFontSize(9);
+      pdf.setFont('helvetica', 'normal');
+      pdf.setTextColor(0);
+      pdf.text(`Bestellt am: ${dateStr}`, 14, y);
+      y += 8;
+      pdf.text('Name Besteller*in:', 14, y);
+      pdf.setDrawColor(0);
+      pdf.line(60, y, 130, y);
+      pdf.text(b.mitarbeiter || '', 62, y - 1);
+      y += 10;
+
+      pdf.text('Unterschrift Besteller*in:', 14, y);
+      if (b.unterschrift) {
+        pdf.addImage(b.unterschrift, 'PNG', 60, y - 8, 60, 18);
+      }
+      pdf.line(60, y + 8, 130, y + 8);
+      y += 16;
+
+      // ── FOOTER ──
+      const pageCount = pdf.getNumberOfPages();
+      for (let i = 1; i <= pageCount; i++) {
+        pdf.setPage(i);
+        pdf.setFontSize(7.5);
+        pdf.setTextColor(130);
+        pdf.text(`Erstellt: ${dateStr}`, 14, 290);
+        pdf.text(`Seite ${i} von ${pageCount}`, 105, 290, { align: 'center' });
+        pdf.text('Stand: ' + dateStr, 196, 290, { align: 'right' });
+      }
+
+      pdf.save(`Lagerbestellung_${b.mitarbeiter}_${dateStr.replace(/\./g,'-')}.pdf`);
+    };
+  </script>
+
+</body>
+</html>
