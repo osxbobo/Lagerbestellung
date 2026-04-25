@@ -1,6 +1,6 @@
 # 🚑 LAGER//APP
 ### Digitale Lagerverwaltung & Bestandskontrolle
-**DRK-Rettungsdienst gGmbH · Böblingen · Rettungswache Malmsheim**
+
 
 ---
 
@@ -576,9 +576,8 @@ Danach müssen die Security Rules aktualisiert werden (siehe oben).
 
 ## Kontakt & Support
 
-**Erstellt von:** Benni Trost  
-**Organisation:** DRK-Rettungsdienst gGmbH · Böblingen  
-**Wache:** Rettungswache Malmsheim  
+**Erstellt von:** Benjamin Trost  
+
 
 ---
 
