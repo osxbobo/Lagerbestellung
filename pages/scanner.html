@@ -782,16 +782,21 @@
             const yy = secData.substring(0, 2);
             const mm = secData.substring(2, 4);
 
-            if (/^[0-9]{2}$/.test(yy) && /^[0-9]{2}$/.test(mm)) {
-              const jahr   = '20' + yy;
-              const monat  = mm.padStart(2, '0');
-              const letzter = new Date(parseInt(jahr), parseInt(monat), 0).getDate();
-              result.verfall = `${jahr}-${monat}-${String(letzter).padStart(2, '0')}`;
+            // HIBC Datum Format: MMYY (nicht YYMM!)
+          // $$1028 = MM=10 (Oktober), YY=28 (2028)
+          const mm_str = secData.substring(0, 2); // Monat
+          const yy_str = secData.substring(2, 4); // Jahr
 
-              // LOT: nach YYMM (4 Zeichen), letztes Zeichen = Check → entfernen
-              const lotRaw = secData.substring(4);
-              result.lot = lotRaw.length > 1 ? lotRaw.slice(0, -1).trim() : lotRaw.trim();
-            }
+          if (/^[0-9]{2}$/.test(mm_str) && /^[0-9]{2}$/.test(yy_str)) {
+            const monat   = parseInt(mm_str);
+            const jahr    = 2000 + parseInt(yy_str);
+            const letzter = new Date(jahr, monat, 0).getDate();
+            result.verfall = `${jahr}-${String(monat).padStart(2,'0')}-${String(letzter).padStart(2,'0')}`;
+
+            // LOT: nach MMYY (4 Zeichen), letztes Zeichen = Check → entfernen
+            const lotRaw = secData.substring(4);
+            result.lot = lotRaw.length > 1 ? lotRaw.slice(0, -1).trim() : lotRaw.trim();
+          }
           }
         }
 
