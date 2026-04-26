@@ -720,6 +720,64 @@
       return result;
     }
 
+    // ── HIBC Parser ──
+    // Format: +[LIC][Produkt ID][Menge][Einheit][LOT/Datum][Check]
+    // Sekundär: /$$[JJMM][LOT]
+    function parseHIBC(raw) {
+      const result = { gtin: null, lot: null, verfall: null, raw, hibc: true };
+      try {
+        // HIBC beginnt mit + oder /
+        if (!raw.startsWith('+') && !raw.startsWith('/')) return null;
+
+        // Primär Code: +[LIC 4 Zeichen][Produkt][$$][Datum][LOT][Check]
+        if (raw.startsWith('+')) {
+          // Produkt ID = alles nach dem LIC (4 Zeichen) bis zum $$ oder /
+          const primary = raw.substring(1); // ohne +
+
+          // Datum Format: $$JJMM = Monat/Jahr
+          // $$0928 = September 2028
+          const datumMatch = raw.match(/\$\$(\d{2})(\d{2})/);
+          if (datumMatch) {
+            const jahr   = '20' + datumMatch[1];
+            const monat  = datumMatch[2];
+            // Letzter Tag des Monats als Verfall
+            const letzter = new Date(parseInt(jahr), parseInt(monat), 0).getDate();
+            result.verfall = `${jahr}-${monat}-${String(letzter).padStart(2,'0')}`;
+          }
+
+          // LOT nach $$ Datum: nächste Zeichenfolge bis Check-Zeichen
+          const lotMatch = raw.match(/\$\$\d{4}([A-Z0-9]+)[A-Z]?\s*$/i);
+          if (lotMatch) result.lot = lotMatch[1].trim();
+
+          // Falls kein $$ – LOT direkt suchen
+          if (!result.lot) {
+            const lotDirect = raw.match(/\/([A-Z0-9]+)\s/i);
+            if (lotDirect) result.lot = lotDirect[1];
+          }
+
+          // Produkt ID als GTIN-Ersatz (LIC = erste 4 Zeichen)
+          const prodMatch = primary.match(/^([A-Z0-9]{4,20}?)[\/$]/i);
+          if (prodMatch) result.gtin = prodMatch[1];
+        }
+
+        // Datum auch als JJMM-Format auf Etikett
+        if (!result.verfall) {
+          const m = raw.match(/(\d{4})-(\d{2})/);
+          if (m) result.verfall = `${m[1]}-${m[2]}-01`;
+        }
+
+        // LOT direkt vom Etikett (Zahl auf Packung)
+        if (!result.lot) {
+          const m = raw.match(/(\d{6,10})/);
+          if (m) result.lot = m[1];
+        }
+
+      } catch(e) { console.error('HIBC Parse Fehler:', e); }
+
+      console.log('HIBC Ergebnis:', result);
+      return result;
+    }
+
     // ── Tage bis Verfall berechnen ──
     function daysUntil(dateStr) {
       if (!dateStr) return null;
@@ -769,8 +827,19 @@
       // Vibration als Feedback
       if (navigator.vibrate) navigator.vibrate(100);
 
-      const parsed = parseGS1(raw);
-      scanResult   = parsed;
+      // Format erkennen: HIBC oder GS1
+      let parsed;
+      if (raw.startsWith('+') || raw.startsWith('/')) {
+        // HIBC Code
+        parsed = parseHIBC(raw);
+        if (!parsed || (!parsed.lot && !parsed.verfall)) {
+          parsed = parseGS1(raw); // Fallback auf GS1
+        }
+      } else {
+        parsed = parseGS1(raw);
+      }
+
+      scanResult = parsed;
 
       // Artikel anhand GTIN finden
       const gefunden = parsed.gtin ? findArtikelByGtin(parsed.gtin) : null;
