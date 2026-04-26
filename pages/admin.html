@@ -1207,6 +1207,192 @@
         renderUsers();
       } catch (e) { toast(e.message, 'error'); }
     };
+
+    // ── Backup Funktionen global verfügbar machen ──
+    window.exportDB = async function(typ) {
+      toast('Export wird erstellt...');
+      try {
+        const timestamp = new Date().toISOString().split('T')[0];
+        let exportObj = { exportiert: new Date().toISOString(), typ, version: '1.0' };
+        let filename = '';
+
+        if (typ === 'komplett' || typ === 'artikel') {
+          const aSnap = await getDocs(collection(db, 'artikel'));
+          exportObj.artikel = aSnap.docs.map(d => ({ _id: d.id, ...d.data() }));
+          document.getElementById('export-artikel-count').textContent = exportObj.artikel.length;
+        }
+        if (typ === 'komplett') {
+          const bSnap = await getDocs(query(collection(db, 'bereiche'), orderBy('reihenfolge')));
+          exportObj.bereiche = bSnap.docs.map(d => ({ _id: d.id, ...d.data() }));
+          document.getElementById('export-bereiche-count').textContent = exportObj.bereiche.length;
+          const cSnap = await getDoc(doc(db, 'config', 'app'));
+          if (cSnap.exists()) exportObj.config = cSnap.data();
+          const bestSnap = await getDocs(query(collection(db, 'bestellungen'), orderBy('datum', 'desc')));
+          exportObj.bestellungen = bestSnap.docs.map(d => ({
+            _id: d.id, ...d.data(),
+            datum: d.data().datum?.toDate?.().toISOString() || d.data().datum,
+          }));
+          document.getElementById('export-bestellungen-count').textContent = exportObj.bestellungen.length;
+          filename = `lagerapp_backup_${timestamp}.json`;
+        } else if (typ === 'artikel') {
+          filename = `lagerapp_artikel_${timestamp}.json`;
+        } else if (typ === 'chargen') {
+          const aSnap = await getDocs(collection(db, 'artikel'));
+          exportObj.artikel = aSnap.docs.map(d => ({ _id: d.id, ...d.data() }))
+            .filter(a => a.chargen && a.chargen.length > 0)
+            .map(a => ({ _id: a._id, name: a.name, gtin: a.gtin, gtins: a.gtins, chargen: a.chargen }));
+          filename = `lagerapp_chargen_${timestamp}.json`;
+        }
+
+        const blob = new Blob([JSON.stringify(exportObj, null, 2)], { type: 'application/json' });
+        const url  = URL.createObjectURL(blob);
+        const a    = document.createElement('a');
+        a.href = url; a.download = filename; a.click();
+        URL.revokeObjectURL(url);
+
+        // History speichern
+        const hist = JSON.parse(localStorage.getItem('lagerapp-backups') || '[]');
+        hist.unshift({ datum: new Date().toISOString(), filename });
+        localStorage.setItem('lagerapp-backups', JSON.stringify(hist.slice(0, 5)));
+        renderBackupHistory();
+        toast('✅ ' + filename);
+      } catch(e) { toast(e.message, 'error'); }
+    };
+
+    function renderBackupHistory() {
+      const el   = document.getElementById('backup-history');
+      if (!el) return;
+      const hist = JSON.parse(localStorage.getItem('lagerapp-backups') || '[]');
+      if (hist.length === 0) { el.textContent = 'Noch keine Backups erstellt'; return; }
+      el.innerHTML = hist.map(h => `
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:0.78rem;">
+          <span style="font-family:'IBM Plex Mono',monospace;font-size:0.72rem;">${h.filename}</span>
+          <span style="color:var(--muted);">${new Date(h.datum).toLocaleDateString('de-DE')}</span>
+        </div>`).join('');
+    }
+
+    window.loadImportFile = function(input) {
+      const file = input.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = e => {
+        try {
+          window._importData = JSON.parse(e.target.result);
+          const infos = [];
+          if (window._importData.artikel)      infos.push(`📦 ${window._importData.artikel.length} Artikel`);
+          if (window._importData.bereiche)     infos.push(`🏠 ${window._importData.bereiche.length} Bereiche`);
+          if (window._importData.bestellungen) infos.push(`📋 ${window._importData.bestellungen.length} Bestellungen`);
+          if (window._importData.config)       infos.push(`⚙️ Config`);
+          document.getElementById('import-preview').classList.remove('hidden');
+          document.getElementById('import-preview-content').innerHTML = `
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+              ${infos.map(i => `<span class="badge badge-blue">${i}</span>`).join('')}
+            </div>
+            <div style="font-size:0.72rem;color:var(--muted);">
+              Exportiert: ${window._importData.exportiert ? new Date(window._importData.exportiert).toLocaleString('de-DE') : 'Unbekannt'}
+            </div>`;
+          const btn = document.getElementById('btn-import-start');
+          btn.disabled = false; btn.style.opacity = '1';
+          document.getElementById('drop-zone').style.borderColor = 'var(--green)';
+        } catch(e) { toast('Ungültige Datei: ' + e.message, 'error'); }
+      };
+      reader.readAsText(file);
+    };
+
+    window.startImport = async function() {
+      const importData = window._importData;
+      if (!importData) return;
+      const mode    = document.querySelector('input[name="import-mode"]:checked').value;
+      const logEl   = document.getElementById('import-log');
+      const progEl  = document.getElementById('import-progress-fill');
+      const textEl  = document.getElementById('import-progress-text');
+      document.getElementById('import-progress').classList.remove('hidden');
+      document.getElementById('btn-import-start').disabled = true;
+      logEl.innerHTML = '';
+
+      function log(msg, color = 'var(--text2)') {
+        const d = document.createElement('div');
+        d.style.color = color; d.textContent = msg;
+        logEl.appendChild(d); logEl.scrollTop = logEl.scrollHeight;
+      }
+      function setProgress(pct) {
+        progEl.style.width = pct + '%';
+        textEl.textContent = Math.round(pct) + '%';
+      }
+
+      try {
+        if (mode === 'replace') {
+          log('🗑️ Lösche bestehende Daten...');
+          if (importData.artikel) {
+            const aSnap = await getDocs(collection(db, 'artikel'));
+            if (aSnap.size > 0) {
+              const b = writeBatch(db);
+              aSnap.docs.forEach(d => b.delete(d.ref));
+              await b.commit();
+            }
+            log(`   ✅ ${aSnap.size} Artikel gelöscht`, 'var(--yellow)');
+          }
+          if (importData.bereiche) {
+            const bSnap = await getDocs(collection(db, 'bereiche'));
+            if (bSnap.size > 0) {
+              const b = writeBatch(db);
+              bSnap.docs.forEach(d => b.delete(d.ref));
+              await b.commit();
+            }
+            log(`   ✅ ${bSnap.size} Bereiche gelöscht`, 'var(--yellow)');
+          }
+        }
+
+        const total = (importData.artikel?.length || 0) + (importData.bereiche?.length || 0);
+        let done = 0;
+
+        if (importData.artikel?.length > 0) {
+          log('📦 Importiere Artikel...');
+          for (let i = 0; i < importData.artikel.length; i += 400) {
+            const b     = writeBatch(db);
+            const chunk = importData.artikel.slice(i, i + 400);
+            for (const a of chunk) {
+              const { _id, ...data } = a;
+              const r = _id ? doc(db, 'artikel', _id) : doc(collection(db, 'artikel'));
+              b.set(r, data, { merge: mode === 'merge' });
+              done++; setProgress(total > 0 ? done/total*100 : 50);
+            }
+            await b.commit();
+            log(`   ✅ ${Math.min(i+400, importData.artikel.length)} / ${importData.artikel.length}`, 'var(--green)');
+          }
+        }
+
+        if (importData.bereiche?.length > 0) {
+          log('🏠 Importiere Bereiche...');
+          for (const be of importData.bereiche) {
+            const { _id, ...data } = be;
+            const r = _id ? doc(db, 'bereiche', _id) : doc(collection(db, 'bereiche'));
+            await setDoc(r, data, { merge: mode === 'merge' });
+            done++; setProgress(total > 0 ? done/total*100 : 75);
+          }
+          log(`   ✅ ${importData.bereiche.length} Bereiche`, 'var(--green)');
+        }
+
+        if (importData.config) {
+          await setDoc(doc(db, 'config', 'app'), importData.config, { merge: true });
+          log('   ✅ Config importiert', 'var(--green)');
+        }
+
+        setProgress(100);
+        log('🎉 Import abgeschlossen!', 'var(--green)');
+        toast('Import abgeschlossen ✅');
+        await loadAll();
+
+      } catch(e) {
+        log('❌ ' + e.message, 'var(--red)');
+        toast(e.message, 'error');
+        document.getElementById('btn-import-start').disabled = false;
+      }
+    };
+
+    // Init
+    renderBackupHistory();
+
   </script>
 
   <script src="../js/pwa.js"></script>
