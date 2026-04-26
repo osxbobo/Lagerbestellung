@@ -198,7 +198,7 @@
         <span id="nav-user" class="mono text-xs text-muted hide-mobile"></span>
         <span class="badge badge-blue hide-mobile">WACHENLEITER</span>
         <div id="notif-btn-wrap"></div>
-        <a href="admin.html" class="nav-action-btn hide-mobile">⚙️ Admin</a>
+        <!-- Admin Button nur wenn von Admin-Seite weitergeleitet -->
         <button class="nav-action-btn logout" onclick="doLogout()">Abmelden</button>
         <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()">☀️</button>
       </div>
@@ -503,6 +503,16 @@
       document.getElementById('mobile-nav').classList.remove('hidden');
       document.getElementById('dashboard-greeting').textContent =
         `Willkommen, ${snap.data()?.name || user.email}`;
+
+      // Admin-Button nur für Admins anzeigen
+      if (role === 'admin') {
+        const adminBtn = document.createElement('a');
+        adminBtn.href = 'admin.html';
+        adminBtn.className = 'nav-action-btn hide-mobile';
+        adminBtn.textContent = '⚙️ Admin';
+        document.getElementById('notif-btn-wrap').before(adminBtn);
+      }
+
       await loadAll();
     });
 
@@ -600,7 +610,12 @@
             <td style="padding:10px 14px;font-size:0.82rem;font-weight:600;border-bottom:1px solid var(--border);">${b.mitarbeiter||'–'}</td>
             <td style="padding:10px 14px;font-size:0.75rem;font-family:'IBM Plex Mono',monospace;color:var(--muted);border-bottom:1px solid var(--border);">${d.toLocaleDateString('de-DE')}</td>
             <td style="padding:10px 14px;font-size:0.75rem;border-bottom:1px solid var(--border);color:${nb>0?'var(--red)':'var(--green)'};">${nb>0?`⚠️ ${nb}`:'✅ Keine'}</td>
-            <td style="padding:10px 14px;border-bottom:1px solid var(--border);"><button class="tbl-btn" onclick="event.stopPropagation();quickPDF('${b.id}')">↓ PDF</button></td>
+            <td style="padding:10px 14px;border-bottom:1px solid var(--border);">
+              <div style="display:flex;gap:4px;">
+                <button class="tbl-btn" onclick="event.stopPropagation();quickPDF('${b.id}')">↓ PDF</button>
+                <button class="tbl-btn del" onclick="event.stopPropagation();deleteBestellung('${b.id}')">🗑️</button>
+              </div>
+            </td>
           </tr>`;
         }).join('')}</tbody>
       </table>`;
@@ -1017,6 +1032,18 @@
     };
 
     window.closeDetailModal = () => document.getElementById('detail-modal').classList.add('hidden');
+
+    // ── Bestellung löschen ──
+    window.deleteBestellung = async function(id) {
+      if (!confirm('Bestellung wirklich löschen?')) return;
+      try {
+        await deleteDoc(doc(db, 'bestellungen', id));
+        alleBestellungen = alleBestellungen.filter(b => b.id !== id);
+        renderDashboard();
+        renderBestellungen();
+        toast('Bestellung gelöscht');
+      } catch(e) { toast(e.message, 'error'); }
+    };
 
     // ── PDF ──
     window.quickPDF = function(id) {
