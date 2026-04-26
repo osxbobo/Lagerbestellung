@@ -199,6 +199,7 @@
     <button class="mobile-nav-btn" onclick="showSection('fotos','this')">📸 Fotos</button>
     <button class="mobile-nav-btn" onclick="showSection('pin','this')">🔑 PIN</button>
     <button class="mobile-nav-btn" onclick="showSection('users','this')">👥 Accounts</button>
+    <button class="mobile-nav-btn" onclick="showSection('backup','this')">💾 Backup</button>
   </div>
 
   <!-- MAIN LAYOUT -->
@@ -222,6 +223,10 @@
         </div>
         <div class="sidebar-item" onclick="window.location.href='scanner.html'">
           <span class="icon">📷</span> Charge-Scanner
+        </div>
+        <div class="sidebar-divider"></div>
+        <div class="sidebar-item" id="nav-backup" onclick="showSection('backup')">
+          <span class="icon">💾</span> Backup & Import
         </div>
         <div class="sidebar-divider"></div>
         <div class="sidebar-item" id="nav-pin" onclick="showSection('pin')">
@@ -415,6 +420,98 @@
         </div>
       </section>
 
+      <!-- ── BACKUP & IMPORT ── -->
+      <section class="content-section" id="section-backup">
+        <div class="page-header">
+          <div class="page-title">Backup & Import</div>
+          <div class="page-sub">Datenbank exportieren und importieren</div>
+        </div>
+
+        <!-- EXPORT -->
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px;">
+          <div style="font-size:0.9rem;font-weight:700;margin-bottom:6px;">📤 Datenbank exportieren</div>
+          <div style="font-size:0.8rem;color:var(--text2);margin-bottom:16px;">
+            Exportiert alle Artikel, Bereiche und Konfiguration als JSON-Datei. Ideal als Backup oder zur Übertragung auf eine andere Wache.
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:16px;">
+            <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center;">
+              <div style="font-size:1.3rem;font-weight:700;font-family:'IBM Plex Mono',monospace;" id="export-artikel-count">–</div>
+              <div style="font-size:0.62rem;color:var(--muted);font-family:'IBM Plex Mono',monospace;text-transform:uppercase;margin-top:2px;">Artikel</div>
+            </div>
+            <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center;">
+              <div style="font-size:1.3rem;font-weight:700;font-family:'IBM Plex Mono',monospace;" id="export-bereiche-count">–</div>
+              <div style="font-size:0.62rem;color:var(--muted);font-family:'IBM Plex Mono',monospace;text-transform:uppercase;margin-top:2px;">Bereiche</div>
+            </div>
+            <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center;">
+              <div style="font-size:1.3rem;font-weight:700;font-family:'IBM Plex Mono',monospace;" id="export-bestellungen-count">–</div>
+              <div style="font-size:0.62rem;color:var(--muted);font-family:'IBM Plex Mono',monospace;text-transform:uppercase;margin-top:2px;">Bestellungen</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            <button class="btn btn-primary" onclick="exportDB('komplett')">📥 Komplett exportieren</button>
+            <button class="btn btn-ghost" onclick="exportDB('artikel')">📦 Nur Artikel</button>
+            <button class="btn btn-ghost" onclick="exportDB('chargen')">🗄️ Nur Chargen</button>
+          </div>
+        </div>
+
+        <!-- IMPORT -->
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px;">
+          <div style="font-size:0.9rem;font-weight:700;margin-bottom:6px;">📤 Datenbank importieren</div>
+          <div style="font-size:0.8rem;color:var(--text2);margin-bottom:16px;">
+            Importiert eine zuvor exportierte JSON-Datei. Wähle ob bestehende Daten ersetzt oder ergänzt werden sollen.
+          </div>
+
+          <div style="display:flex;flex-direction:column;gap:12px;">
+            <div style="background:var(--surface2);border:2px dashed var(--border);border-radius:10px;padding:24px;text-align:center;cursor:pointer;" 
+              onclick="document.getElementById('import-file').click()" id="drop-zone">
+              <div style="font-size:2rem;margin-bottom:8px;">📁</div>
+              <div style="font-size:0.85rem;font-weight:600;margin-bottom:4px;">JSON-Datei auswählen</div>
+              <div style="font-size:0.72rem;color:var(--muted);">oder hier reinziehen</div>
+              <input type="file" id="import-file" accept=".json" style="display:none" onchange="loadImportFile(this)">
+            </div>
+
+            <div id="import-preview" class="hidden" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px;">
+              <div style="font-size:0.82rem;font-weight:700;margin-bottom:10px;">📋 Vorschau</div>
+              <div id="import-preview-content"></div>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:8px;">
+              <div style="font-size:0.78rem;font-weight:600;">Import-Modus:</div>
+              <label style="display:flex;align-items:center;gap:8px;font-size:0.82rem;cursor:pointer;">
+                <input type="radio" name="import-mode" value="merge" checked> 
+                <span><strong>Ergänzen</strong> – Neue Artikel hinzufügen, bestehende behalten</span>
+              </label>
+              <label style="display:flex;align-items:center;gap:8px;font-size:0.82rem;cursor:pointer;">
+                <input type="radio" name="import-mode" value="replace">
+                <span><strong>Ersetzen</strong> – Alle bestehenden Daten werden überschrieben</span>
+              </label>
+            </div>
+
+            <div class="alert alert-warn hidden" id="import-warn" style="font-size:0.78rem;">
+              ⚠️ Im Ersetzen-Modus werden ALLE bestehenden Artikel und Bereiche gelöscht!
+            </div>
+
+            <div id="import-progress" class="hidden" style="display:flex;flex-direction:column;gap:8px;">
+              <div class="progress-wrap"><div class="progress-fill" id="import-progress-fill" style="width:0%"></div></div>
+              <div style="font-size:0.72rem;color:var(--muted);font-family:'IBM Plex Mono',monospace;text-align:right;" id="import-progress-text">0%</div>
+              <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px;height:120px;overflow-y:auto;font-family:'IBM Plex Mono',monospace;font-size:0.65rem;line-height:1.6;" id="import-log"></div>
+            </div>
+
+            <button class="btn btn-primary" id="btn-import-start" onclick="startImport()" disabled 
+              style="opacity:0.4;">
+              🚀 Import starten
+            </button>
+          </div>
+        </div>
+
+        <!-- HISTORY -->
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;">
+          <div style="font-size:0.9rem;font-weight:700;margin-bottom:6px;">🕐 Letzte Backups</div>
+          <div id="backup-history" style="font-size:0.82rem;color:var(--muted);">Noch keine Backups erstellt</div>
+        </div>
+
+      </section>
+
     </main>
   </div>
 
@@ -512,7 +609,7 @@
     import { initializeApp }  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getAuth, onAuthStateChanged, signOut }
                               from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-    import { getFirestore, collection, getDocs, doc, getDoc, setDoc, addDoc, updateDoc, deleteDoc, query, orderBy, limit }
+    import { getFirestore, collection, getDocs, doc, getDoc, setDoc, addDoc, updateDoc, deleteDoc, writeBatch, query, orderBy, limit }
                               from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
 
