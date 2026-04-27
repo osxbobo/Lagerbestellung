@@ -786,7 +786,7 @@
         if (banner) banner.remove();
 
         // Check-Screen neu rendern
-        renderCheck();
+        renderBereich(currentIdx);
         showToast(`Fortschritt von ${data.mitarbeiter} wiederhergestellt ✅`);
       } catch(e) { showToast('Fehler: ' + e.message, 'error'); }
     };
