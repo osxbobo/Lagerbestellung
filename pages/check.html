@@ -573,7 +573,7 @@
 
   <script type="module">
     import { initializeApp }  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getFirestore, collection, getDocs, doc, getDoc, addDoc, query, orderBy, serverTimestamp }
+    import { getFirestore, collection, getDocs, doc, getDoc, addDoc, updateDoc, deleteDoc, query, orderBy, limit, serverTimestamp }
                               from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
     // Theme
@@ -1002,7 +1002,10 @@
     }
 
     window.prevBereich = () => { if (currentIdx > 0) renderBereich(currentIdx - 1); };
-    window.nextBereich = () => { if (currentIdx < alleBereiche.length - 1) renderBereich(currentIdx + 1); };
+    window.nextBereich = () => {
+      autoSave(); // Bei jedem Weiter automatisch speichern
+      if (currentIdx < alleBereiche.length - 1) renderBereich(currentIdx + 1);
+    };
 
     // ── Signature ──
     window.showSignature = function() {
