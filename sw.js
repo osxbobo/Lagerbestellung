@@ -3,7 +3,12 @@
 // PWA + Push Notifications + Offline Cache
 // ═══════════════════════════════════════════════
 
-const CACHE_NAME    = 'lagerapp-v1';
+// ── VERSION ──
+// Diese Nummer bei jedem GitHub Upload um 1 erhöhen
+// z.B. v2, v3, v4 ...
+// → Browser erkennt automatisch die neue Version und lädt alles neu
+const CACHE_VERSION = 'v7';
+const CACHE_NAME    = `lagerapp-${CACHE_VERSION}`;
 const BASE_PATH     = '/Lagerbestellung';
 
 // Dateien die offline verfügbar sein sollen
@@ -32,13 +37,30 @@ self.addEventListener('install', event => {
 // ── ACTIVATE ──
 self.addEventListener('activate', event => {
   event.waitUntil(
-    caches.keys().then(keys =>
-      Promise.all(
-        keys
-          .filter(key => key !== CACHE_NAME)
-          .map(key => caches.delete(key))
+    caches.keys()
+      .then(keys =>
+        Promise.all(
+          keys
+            .filter(key => key !== CACHE_NAME)
+            .map(key => {
+              console.log(`🗑️ Alter Cache gelöscht: ${key}`);
+              return caches.delete(key);
+            })
+        )
       )
-    ).then(() => self.clients.claim())
+      .then(() => {
+        console.log(`✅ LAGER//APP ${CACHE_VERSION} aktiv`);
+        return self.clients.claim();
+      })
+      .then(() => {
+        // Alle offenen Tabs über Update informieren
+        return self.clients.matchAll({ type: 'window' });
+      })
+      .then(clients => {
+        clients.forEach(client => {
+          client.postMessage({ type: 'SW_UPDATED', version: CACHE_VERSION });
+        });
+      })
   );
 });
 
