@@ -461,6 +461,10 @@
       flex-shrink: 0;
     }
 
+    /* ── JOIN SCREEN ── */
+    #bereich-select-list::-webkit-scrollbar { width: 4px; }
+    #bereich-select-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
     .hidden { display: none !important; }
   </style>
 </head>
@@ -512,6 +516,40 @@
   </div>
 
   <!-- ── CHECK ── -->
+  <!-- ── BEREICHS-AUSWAHL SCREEN ── -->
+  <div id="screen-join" class="pin-screen hidden">
+    <div class="pin-box">
+      <div class="pin-title">Lagerbestellung</div>
+      <div class="pin-sub" id="join-sub">Bereiche auswählen</div>
+
+      <!-- Offene Session von anderen -->
+      <div id="join-session-wrap" class="hidden" style="margin-bottom:16px;">
+        <div style="background:rgba(14,165,233,0.08);border:1px solid rgba(14,165,233,0.3);border-radius:12px;padding:14px;">
+          <div style="font-size:0.78rem;font-weight:700;color:var(--accent2);margin-bottom:8px;">👥 Laufende Bestellung</div>
+          <div id="join-session-info" style="font-size:0.75rem;color:var(--text2);margin-bottom:10px;"></div>
+          <button onclick="joinSession()" class="btn btn-primary btn-full" style="font-size:0.85rem;">
+            👥 Mitmachen & Bereiche wählen
+          </button>
+        </div>
+      </div>
+
+      <!-- Bereiche Liste -->
+      <div style="font-size:0.78rem;font-weight:600;color:var(--text2);margin-bottom:8px;" id="bereich-select-label">
+        Deine Bereiche auswählen:
+      </div>
+      <div id="bereich-select-list" style="display:flex;flex-direction:column;gap:6px;max-height:320px;overflow-y:auto;margin-bottom:14px;"></div>
+
+      <div style="display:flex;gap:8px;">
+        <button onclick="startAlleAllein()" class="btn btn-ghost btn-full" style="font-size:0.82rem;">
+          📋 Alle Bereiche alleine
+        </button>
+        <button onclick="startMitAuswahl()" class="btn btn-primary btn-full" style="font-size:0.82rem;" id="btn-start-auswahl">
+          ✅ Starten
+        </button>
+      </div>
+    </div>
+  </div>
+
   <div id="screen-check" class="check-screen hidden">
 
     <!-- Erklärung -->
@@ -604,14 +642,17 @@
     const db  = getFirestore(app);
 
     let correctPin   = '1234';
-    let alleArtikel  = [];
-    let alleBereiche = [];
-    let bestellungen = {}; // artikelId → { bestellen: bool, menge: number }
-    let currentIdx   = 0;
-    let userName     = '';
-    let pinValue     = '';
-    let autoSaveId   = null; // Firestore ID der laufenden Bestellung
-    let autoSaveTimer = null;
+    let alleArtikel     = [];
+    let alleBereiche    = [];
+    let bestellungen    = {}; // artikelId → { bestellen: bool, menge: number }
+    let currentIdx      = 0;
+    let userName        = '';
+    let pinValue        = '';
+    let autoSaveId      = null;   // Firestore ID der laufenden Bestellung
+    let autoSaveTimer   = null;
+    let sessionId       = null;   // Gemeinsame Session ID (multi-user)
+    let meineBereiche   = [];     // Bereiche die dieser Nutzer bearbeitet
+    let sessionDraft    = null;   // Aktuelle Session aus Firestore
 
     const QUICK_VALUES = [1, 2, 3, 5, 10];
 
@@ -665,31 +706,39 @@
       sessionStorage.setItem('lager-pin-name', userName);
       await loadCheckData();
 
-      // Prüfen ob offene Bestellung vorhanden
-      await checkForDraft();
-
-      showScreen('check');
-      startAutoSave();
+      // Zur Bereichs-Auswahl gehen
+      await showJoinScreen();
     }
 
     // ── Load ──
     // ── AUTO-SAVE ──
     async function autoSave() {
-      if (!userName || Object.keys(bestellungen).length === 0) return;
+      if (!userName) return;
       try {
-        const data = {
-          mitarbeiter:  userName,
-          datum:        new Date().toISOString(),
-          status:       'pausiert',
-          currentIdx,
-          bestellungen,
-          fortschritt:  Math.round((currentIdx / Math.max(alleBereiche.length, 1)) * 100),
-        };
-        if (autoSaveId) {
-          await updateDoc(doc(db, 'bestellungen_draft', autoSaveId), data);
-        } else {
-          const ref = await addDoc(collection(db, 'bestellungen_draft'), data);
-          autoSaveId = ref.id;
+        if (sessionId) {
+          // Multi-user: In Session speichern
+          const allBestellungen = { ...(sessionDraft?.bestellungen || {}), ...bestellungen };
+          await updateDoc(doc(db, 'bestellungen_session', sessionId), {
+            bestellungen: allBestellungen,
+            [`fortschritt_${userName}`]: Math.round((currentIdx / Math.max(alleBereiche.length, 1)) * 100),
+            zuletzt: new Date().toISOString(),
+          });
+        } else if (Object.keys(bestellungen).length > 0) {
+          // Single-user: Draft speichern
+          const data = {
+            mitarbeiter: userName,
+            datum:       new Date().toISOString(),
+            status:      'pausiert',
+            currentIdx,
+            bestellungen,
+            fortschritt: Math.round((currentIdx / Math.max(alleBereiche.length, 1)) * 100),
+          };
+          if (autoSaveId) {
+            await updateDoc(doc(db, 'bestellungen_draft', autoSaveId), data);
+          } else {
+            const ref = await addDoc(collection(db, 'bestellungen_draft'), data);
+            autoSaveId = ref.id;
+          }
         }
       } catch(e) { console.log('AutoSave:', e.message); }
     }
@@ -827,8 +876,15 @@
       currentIdx = idx;
       const bereich = alleBereiche[idx];
       const artikel = alleArtikel.filter(a => a.bereich === bereich.id);
-      const pct     = Math.round(((idx + 1) / alleBereiche.length) * 100);
-      const isLast  = idx === alleBereiche.length - 1;
+      // Fortschritt nur über meine Bereiche berechnen
+      const meineIdx = meineBereiche.length > 0
+        ? meineBereiche.indexOf(alleBereiche[idx]?.id) + 1
+        : idx + 1;
+      const meineTotal = meineBereiche.length > 0 ? meineBereiche.length : alleBereiche.length;
+      const pct     = Math.round((meineIdx / meineTotal) * 100);
+      const isLast  = meineBereiche.length > 0
+        ? meineBereiche[meineBereiche.length - 1] === alleBereiche[idx]?.id
+        : idx === alleBereiche.length - 1;
 
       document.getElementById('check-bereich-name').textContent  = bereich.name;
       document.getElementById('check-progress').style.width       = pct + '%';
@@ -1003,8 +1059,20 @@
 
     window.prevBereich = () => { if (currentIdx > 0) renderBereich(currentIdx - 1); };
     window.nextBereich = () => {
-      autoSave(); // Bei jedem Weiter automatisch speichern
-      if (currentIdx < alleBereiche.length - 1) renderBereich(currentIdx + 1);
+      autoSave();
+      // Nur innerhalb meiner Bereiche navigieren
+      if (meineBereiche.length > 0) {
+        const meinIdx    = meineBereiche.indexOf(alleBereiche[currentIdx]?.id);
+        const naechster  = meineBereiche[meinIdx + 1];
+        if (naechster) {
+          const naechsterIdx = alleBereiche.findIndex(b => b.id === naechster);
+          renderBereich(naechsterIdx);
+        } else {
+          showSignature(); // Letzter Bereich → zur Unterschrift
+        }
+      } else {
+        if (currentIdx < alleBereiche.length - 1) renderBereich(currentIdx + 1);
+      }
     };
 
     // ── Signature ──
@@ -1072,15 +1140,93 @@
         }));
 
       try {
-        await addDoc(collection(db, 'bestellungen'), {
-          mitarbeiter:   userName,
-          datum:         serverTimestamp(),
-          bestellungen,
-          nachbestellungen,
-          unterschrift:  document.getElementById('sig-canvas').toDataURL('image/png'),
-          status:        'abgeschlossen',
-        });
-        alert(`✅ Lagercheck abgeschlossen!\n\n${nachbestellungen.length} Artikel wurden zur Bestellung gemeldet.`);
+        stopAutoSave();
+
+        // ── Multi-User Session ──
+        let alleNamen = [userName];
+
+        if (sessionId) {
+          // Session als abgeschlossen markieren
+          const sessionSnap = await getDoc(doc(db, 'bestellungen_session', sessionId));
+          const sessionData = sessionSnap.exists() ? sessionSnap.data() : {};
+
+          // Alle Bestellungen aus Session + meine zusammenführen
+          const alleBestellungen = { ...(sessionData.bestellungen || {}), ...bestellungen };
+
+          // Alle Nachbestellungen neu berechnen
+          const alleNachbest = alleArtikel
+            .filter(a => alleBestellungen[a.id]?.bestellen === true)
+            .map(a => ({
+              id:      a.id,
+              name:    a.name,
+              location:a.location,
+              lp:      a.lp,
+              menge:   alleBestellungen[a.id].menge,
+              einheit: a.minEinheit || 'Stk',
+            }));
+
+          alleNamen = (sessionData.teilnehmer || [{ name: userName }]).map(t => t.name);
+
+          // Session abschließen
+          await updateDoc(doc(db, 'bestellungen_session', sessionId), {
+            status: 'abgeschlossen',
+            abgeschlossen: new Date().toISOString(),
+          });
+
+          // Finale Bestellung speichern
+          await addDoc(collection(db, 'bestellungen'), {
+            mitarbeiter:     alleNamen.join(' · '),
+            mitarbeiterListe:alleNamen,
+            datum:           serverTimestamp(),
+            bestellungen:    alleBestellungen,
+            nachbestellungen:alleNachbest,
+            unterschrift:    document.getElementById('sig-canvas').toDataURL('image/png'),
+            status:          'abgeschlossen',
+            sessionId,
+          });
+
+          // Session löschen
+          try { await deleteDoc(doc(db, 'bestellungen_session', sessionId)); } catch(e) {}
+
+        } else {
+          // ── Single-User ──
+          await addDoc(collection(db, 'bestellungen'), {
+            mitarbeiter:     userName,
+            mitarbeiterListe:[userName],
+            datum:           serverTimestamp(),
+            bestellungen,
+            nachbestellungen,
+            unterschrift:    document.getElementById('sig-canvas').toDataURL('image/png'),
+            status:          'abgeschlossen',
+          });
+        }
+
+        // ── Draft löschen ──
+        if (autoSaveId && !sessionId) {
+          try {
+            await deleteDoc(doc(db, 'bestellungen_draft', autoSaveId));
+          } catch(e) {}
+        }
+
+        // Alle Drafts dieses Nutzers löschen
+        try {
+          const drafts = await getDocs(query(collection(db, 'bestellungen_draft'), orderBy('datum', 'desc')));
+          for (const d of drafts.docs) {
+            if (d.data().mitarbeiter === userName) {
+              await deleteDoc(doc(db, 'bestellungen_draft', d.id));
+            }
+          }
+        } catch(e) {}
+
+        autoSaveId = null;
+        sessionId  = null;
+
+        // Push Benachrichtigung
+        if (typeof PWA !== 'undefined') {
+          await PWA.notifyLagercheck(alleNamen.join(' & '), nachbestellungen.length);
+        }
+
+        alert(`✅ Lagerbestellung abgeschlossen!\n\n${nachbestellungen.length} Artikel wurden zur Bestellung gemeldet.`);
         window.location.href = '../index.html';
       } catch(e) { alert('Fehler: '+e.message); }
     };
@@ -1103,8 +1249,217 @@
     };
 
     // ── Screens ──
+    // ── JOIN SCREEN ──
+    async function showJoinScreen() {
+      showScreen('join');
+
+      // Bereiche-Liste aufbauen
+      const listEl = document.getElementById('bereich-select-list');
+      listEl.innerHTML = '';
+
+      // Offene Sessions prüfen
+      let openSession = null;
+      try {
+        const sessions = await getDocs(query(
+          collection(db, 'bestellungen_session'),
+          orderBy('startzeit', 'desc'),
+          limit(1)
+        ));
+        if (!sessions.empty) {
+          const s = { id: sessions.docs[0].id, ...sessions.docs[0].data() };
+          // Nur zeigen wenn nicht älter als 4 Stunden und noch nicht abgeschlossen
+          const alter = (new Date() - new Date(s.startzeit)) / (1000*60*60);
+          if (alter < 4 && s.status !== 'abgeschlossen') {
+            openSession = s;
+          }
+        }
+      } catch(e) {}
+
+      // Offene Session anzeigen
+      const sessionWrap = document.getElementById('join-session-wrap');
+      if (openSession) {
+        const mitarbeiter = openSession.teilnehmer?.map(t => t.name).join(', ') || '–';
+        const erledigte   = openSession.erledigteBereiche?.length || 0;
+        const gesamt      = alleBereiche.length;
+        document.getElementById('join-session-info').innerHTML = `
+          <strong>${mitarbeiter}</strong> macht gerade die Lagerbestellung<br>
+          ${erledigte} von ${gesamt} Bereichen erledigt`;
+        sessionWrap.classList.remove('hidden');
+        window._openSession = openSession;
+      } else {
+        sessionWrap.classList.add('hidden');
+        window._openSession = null;
+      }
+
+      // Bereiche mit Status anzeigen
+      const gesperrte = openSession?.erledigteBereiche || [];
+      const vergeben  = openSession?.vergebeneBereiche || {};
+
+      alleBereiche.forEach((b, i) => {
+        const istGesperrt  = gesperrte.includes(b.id);
+        const istVergeben  = vergeben[b.id] && vergeben[b.id] !== userName;
+        const artikelCount = alleArtikel.filter(a => a.bereich === b.id).length;
+        const icon = getBereichIcon(b.name);
+
+        const div = document.createElement('div');
+        div.style.cssText = `
+          display:flex;align-items:center;gap:10px;padding:10px 12px;
+          border-radius:10px;border:1.5px solid ${istGesperrt ? 'var(--green)' : istVergeben ? 'var(--border)' : 'var(--border)'};
+          background:${istGesperrt ? 'rgba(34,197,94,0.06)' : istVergeben ? 'var(--surface2)' : 'var(--surface)'};
+          opacity:${istGesperrt || istVergeben ? '0.6' : '1'};
+          cursor:${istGesperrt || istVergeben ? 'default' : 'pointer'};
+          transition:all 0.15s;
+          -webkit-tap-highlight-color:transparent;
+        `;
+        div.dataset.bereichId = b.id;
+        div.dataset.selected  = 'false';
+        div.dataset.gesperrt  = istGesperrt || istVergeben ? 'true' : 'false';
+
+        div.innerHTML = `
+          <span style="font-size:1.1rem;">${istGesperrt ? '✅' : icon}</span>
+          <div style="flex:1;">
+            <div style="font-size:0.82rem;font-weight:600;">${b.name}</div>
+            <div style="font-size:0.62rem;color:var(--muted);font-family:'IBM Plex Mono',monospace;margin-top:1px;">
+              ${artikelCount} Artikel${istGesperrt ? ' · Erledigt' : istVergeben ? ` · ${vergeben[b.id]}` : ''}
+            </div>
+          </div>
+          <div class="bereich-checkbox" style="
+            width:22px;height:22px;border-radius:6px;
+            border:2px solid ${istGesperrt ? 'var(--green)' : 'var(--border)'};
+            background:${istGesperrt ? 'var(--green)' : 'transparent'};
+            display:flex;align-items:center;justify-content:center;
+            font-size:0.75rem;color:white;flex-shrink:0;
+          ">${istGesperrt ? '✓' : ''}</div>
+        `;
+
+        if (!istGesperrt && !istVergeben) {
+          div.addEventListener('click', () => toggleBereich(div, b.id));
+        }
+
+        listEl.appendChild(div);
+      });
+    }
+
+    function getBereichIcon(name) {
+      const n = name.toLowerCase();
+      if (n.includes('schrank')) return '🗄️';
+      if (n.includes('regal'))   return '📦';
+      if (n.includes('sauer'))   return '🫧';
+      if (n.includes('büro'))    return '📋';
+      if (n.includes('küche'))   return '🍽️';
+      if (n.includes('wasch'))   return '🚿';
+      if (n.includes('mpg'))     return '🔋';
+      if (n.includes('medika'))  return '💊';
+      return '📁';
+    }
+
+    function toggleBereich(div, bereichId) {
+      const selected = div.dataset.selected === 'true';
+      div.dataset.selected = (!selected).toString();
+      const checkbox = div.querySelector('.bereich-checkbox');
+      if (!selected) {
+        div.style.border      = '1.5px solid var(--accent2)';
+        div.style.background  = 'rgba(14,165,233,0.08)';
+        checkbox.style.background   = 'var(--accent2)';
+        checkbox.style.borderColor  = 'var(--accent2)';
+        checkbox.textContent         = '✓';
+      } else {
+        div.style.border      = '1.5px solid var(--border)';
+        div.style.background  = 'var(--surface)';
+        checkbox.style.background   = 'transparent';
+        checkbox.style.borderColor  = 'var(--border)';
+        checkbox.textContent         = '';
+      }
+    }
+
+    // Alle Bereiche alleine machen
+    window.startAlleAllein = async function() {
+      meineBereiche = alleBereiche.map(b => b.id);
+      await startSession(false);
+    };
+
+    // Nur ausgewählte Bereiche
+    window.startMitAuswahl = async function() {
+      const selected = [...document.querySelectorAll('[data-selected="true"]')]
+        .map(d => d.dataset.bereichId);
+      if (selected.length === 0) {
+        showToast('Bitte mindestens einen Bereich auswählen', 'error');
+        return;
+      }
+      meineBereiche = selected;
+      await startSession(false);
+    };
+
+    // Laufende Session beitreten
+    window.joinSession = async function() {
+      const selected = [...document.querySelectorAll('[data-selected="true"]')]
+        .map(d => d.dataset.bereichId);
+      if (selected.length === 0) {
+        showToast('Bitte Bereiche auswählen die du übernimmst', 'error');
+        return;
+      }
+      meineBereiche = selected;
+      await startSession(true);
+    };
+
+    async function startSession(joinExisting) {
+      try {
+        if (joinExisting && window._openSession) {
+          // Bestehende Session beitreten
+          sessionId = window._openSession.id;
+          const sessionRef = doc(db, 'bestellungen_session', sessionId);
+
+          // Vergabene Bereiche updaten
+          const vergeben = window._openSession.vergebeneBereiche || {};
+          meineBereiche.forEach(bid => vergeben[bid] = userName);
+
+          // Teilnehmer hinzufügen
+          const teilnehmer = window._openSession.teilnehmer || [];
+          if (!teilnehmer.find(t => t.name === userName)) {
+            teilnehmer.push({ name: userName, beitritt: new Date().toISOString() });
+          }
+
+          await updateDoc(sessionRef, { vergeben, teilnehmer });
+          sessionDraft = { ...window._openSession, vergeben, teilnehmer };
+
+        } else {
+          // Neue Session erstellen
+          const vergeben = {};
+          meineBereiche.forEach(bid => vergeben[bid] = userName);
+
+          const sessionRef = await addDoc(collection(db, 'bestellungen_session'), {
+            startzeit:          new Date().toISOString(),
+            status:             'aktiv',
+            teilnehmer:         [{ name: userName, beitritt: new Date().toISOString() }],
+            vergebeneBereiche:  vergeben,
+            erledigteBereiche:  [],
+            bestellungen:       {},
+          });
+          sessionId   = sessionRef.id;
+          sessionDraft = { id: sessionId, bestellungen: {}, erledigteBereiche: [], teilnehmer: [{ name: userName }] };
+        }
+
+        // autoSaveId auf Session setzen
+        autoSaveId = sessionId;
+
+        // Nur meine Bereiche in alleBereiche filtern
+        const gefilterteBereiche = alleBereiche.filter(b => meineBereiche.includes(b.id));
+
+        // currentIdx auf ersteren meiner Bereiche setzen
+        const ersterIdx = alleBereiche.findIndex(b => meineBereiche.includes(b.id));
+        currentIdx = ersterIdx >= 0 ? ersterIdx : 0;
+
+        showScreen('check');
+        startAutoSave();
+        renderBereich(currentIdx);
+
+      } catch(e) {
+        showToast('Fehler: ' + e.message, 'error');
+      }
+    }
+
     function showScreen(name) {
-      ['pin','check','sig'].forEach(s =>
+      ['pin','join','check','sig'].forEach(s =>
         document.getElementById(`screen-${s}`).classList.toggle('hidden', s !== name)
       );
     }
