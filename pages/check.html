@@ -597,6 +597,27 @@
     const app = initializeApp(firebaseConfig);
     const db  = getFirestore(app);
 
+    // ── Auto-Login ──
+    (async function checkAutoLogin() {
+      const savedName = localStorage.getItem('lager-saved-name');
+      const savedPin  = localStorage.getItem('lager-saved-pin');
+      if (!savedName || !savedPin) return;
+      try {
+        const cfg        = await getDoc(doc(db, 'config', 'app'));
+        const correctPin = cfg.exists() ? cfg.data().pin : '1234';
+        if (savedPin !== correctPin) {
+          localStorage.removeItem('lager-saved-pin');
+          return;
+        }
+        userName = savedName;
+        document.getElementById('nav-user').textContent = userName;
+        sessionStorage.setItem('lager-pin-auth', 'true');
+        sessionStorage.setItem('lager-pin-name', userName);
+        await loadCheckData();
+        await showJoinScreen();
+      } catch(e) { console.log('Auto-Login:', e.message); }
+    })();
+
     let correctPin   = '1234';
     let alleArtikel     = [];
     let alleBereiche    = [];

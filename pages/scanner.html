@@ -619,10 +619,12 @@
     // ── Auth Check ──
     // Scanner ist durch PIN geschützt (sessionStorage) ODER durch Login
     onAuthStateChanged(auth, async user => {
-      const pinAuth = sessionStorage.getItem('lager-pin-auth');
+      const pinAuth     = sessionStorage.getItem('lager-pin-auth');
+      const savedPin    = localStorage.getItem('lager-saved-pin');
+      const savedName   = localStorage.getItem('lager-saved-name');
 
-      if (!user && !pinAuth) {
-        // Kein Login und kein PIN – zurück zur Startseite
+      // Auth: Login ODER sessionStorage ODER localStorage (gespeicherter User)
+      if (!user && !pinAuth && !savedPin) {
         window.location.href = '../index.html';
         return;
       }
@@ -632,9 +634,13 @@
         userRole    = snap.exists() ? snap.data().role : null;
         currentUser = user;
       } else {
-        // PIN-authentifizierter Nutzer
+        // PIN-authentifizierter Nutzer (session oder gespeichert)
         userRole    = 'scanner';
-        currentUser = { displayName: sessionStorage.getItem('lager-pin-name') || 'Mitarbeiter' };
+        const name  = sessionStorage.getItem('lager-pin-name') || savedName || 'Mitarbeiter';
+        currentUser = { displayName: name };
+        // Session aktualisieren falls nur localStorage vorhanden
+        sessionStorage.setItem('lager-pin-auth', 'true');
+        sessionStorage.setItem('lager-pin-name', name);
       }
 
       await loadArtikel();
