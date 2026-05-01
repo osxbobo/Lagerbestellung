@@ -440,6 +440,6 @@ git clone https://github.com/osxbobo/Lagerbestellung.git
 
 ---
 
-**Erstellt von:** Benjamin Trost · DRK-Rettungsdienst gGmbH · Böblingen
+**Erstellt von:** Benjamin Trost
 
 *Stand: Mai 2026 · LAGER//APP v2.0.0*
