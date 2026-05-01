@@ -13,7 +13,7 @@
   <!-- ZXing für DataMatrix & QR -->
   <script src="https://unpkg.com/@zxing/library@0.19.1/umd/index.min.js"></script>
   <!-- QuaGGA2 für Code128/GS1-128 lineare Barcodes -->
-  <script src="https://cdn.jsdelivr.net/npm/@ericblade/quagga2@1.8.4/dist/quagga.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@ericblade/quagga2@1.2.6/dist/quagga.min.js"></script>
   <style>
     .scanner-page { min-height: 100vh; display: flex; flex-direction: column; background: var(--bg); }
 
@@ -448,8 +448,8 @@
     autocorrect="off"
     autocapitalize="off"
     spellcheck="false"
-    style="position:fixed;opacity:0;width:1px;height:1px;top:-100px;left:-100px;pointer-events:none;"
-    aria-hidden="true"
+    tabindex="-1"
+    style="position:fixed;opacity:0;width:1px;height:1px;top:-100px;left:-100px;pointer-events:none;border:none;outline:none;"
   >
 
   <!-- CONTENT -->
@@ -1440,7 +1440,8 @@
     // BT Input fokussieren
     window.focusBtInput = function() {
       const input = document.getElementById('bt-input');
-      input.focus();
+      if (!input) return;
+      try { input.focus(); } catch(e) {}
       setBtActive(true);
     };
 
@@ -1449,12 +1450,13 @@
       const dot   = document.getElementById('bt-dot');
       const label = document.getElementById('bt-label');
       const sub   = document.getElementById('bt-sub');
+      if (!dot || !label || !sub) return; // Elemente noch nicht geladen
 
       if (active) {
         dot.style.background   = 'var(--green)';
         dot.style.boxShadow    = '0 0 6px var(--green)';
         label.textContent      = '📡 Bluetooth-Scanner aktiv';
-        sub.textContent        = 'Bereit zum Scannen – Scanner auf Code halten';
+        sub.textContent        = 'Bereit zum Scannen';
         label.style.color      = 'var(--green)';
       } else {
         dot.style.background   = 'var(--muted)';
@@ -1534,10 +1536,14 @@
       }
     });
 
-    // Beim Laden automatisch fokussieren
-    setTimeout(() => {
-      focusBtInput();
-    }, 1000);
+    // Beim Laden automatisch fokussieren (nach DOM ready)
+    document.addEventListener('DOMContentLoaded', () => {
+      setTimeout(() => focusBtInput(), 800);
+    });
+    // Fallback falls DOMContentLoaded schon gefeuert
+    if (document.readyState === 'complete') {
+      setTimeout(() => focusBtInput(), 800);
+    }
 
   </script>
 
