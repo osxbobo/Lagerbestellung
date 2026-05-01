@@ -10,8 +10,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Verfallsscan – LAGER//APP</title>
   <link rel="stylesheet" href="../css/main.css">
-  <!-- ZXing Barcode Scanner -->
+  <!-- ZXing für DataMatrix & QR -->
   <script src="https://unpkg.com/@zxing/library@0.19.1/umd/index.min.js"></script>
+  <!-- QuaGGA2 für Code128/GS1-128 lineare Barcodes -->
+  <script src="https://cdn.jsdelivr.net/npm/@ericblade/quagga2@1.8.4/dist/quagga.min.js"></script>
   <style>
     .scanner-page { min-height: 100vh; display: flex; flex-direction: column; background: var(--bg); }
 
@@ -848,26 +850,27 @@
       return Math.round(diff);
     }
 
-    // ── Scanner starten ──
+    // ── Scanner starten (Dual: ZXing + QuaGGA2) ──
+    let quaggaRunning = false;
+
     async function startScanner() {
       try {
+        // ── ZXing für DataMatrix & QR ──
         const hints = new Map();
-        const formats = [
+        hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, [
           ZXing.BarcodeFormat.DATA_MATRIX,
           ZXing.BarcodeFormat.QR_CODE,
-          ZXing.BarcodeFormat.EAN_13,
-          ZXing.BarcodeFormat.CODE_128,
-          ZXing.BarcodeFormat.CODE_39,
-        ];
-        hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, formats);
+        ]);
         hints.set(ZXing.DecodeHintType.TRY_HARDER, true);
 
         codeReader = new ZXing.BrowserMultiFormatReader(hints);
 
+        const facingMode = currentCamera === 'back' ? 'environment' : 'user';
+
         const constraints = {
           video: {
-            facingMode: currentCamera === 'back' ? 'environment' : 'user',
-            width: { ideal: 1280 },
+            facingMode,
+            width:  { ideal: 1280 },
             height: { ideal: 720 },
           }
         };
@@ -875,13 +878,71 @@
         await codeReader.decodeFromConstraints(constraints, 'video', (result, err) => {
           if (result && scanning) {
             scanning = false;
+            stopQuaGGA();
             onScanResult(result.getText());
           }
         });
 
+        // ── QuaGGA2 für Code128 / GS1-128 / EAN-13 ──
+        startQuaGGA(facingMode);
+
       } catch (e) {
         console.error('Scanner error:', e);
         showToast('Kamera konnte nicht gestartet werden: ' + e.message, 'error');
+      }
+    }
+
+    function startQuaGGA(facingMode) {
+      if (typeof Quagga === 'undefined') return;
+      if (quaggaRunning) Quagga.stop();
+
+      Quagga.init({
+        inputStream: {
+          name:        'Live',
+          type:        'LiveStream',
+          target:      document.getElementById('video').parentElement,
+          constraints: { facingMode, width: 1280, height: 720 },
+        },
+        decoder: {
+          readers: [
+            'code_128_reader',
+            'ean_reader',
+            'ean_8_reader',
+            'code_39_reader',
+          ],
+          multiple: false,
+        },
+        locate:   true,
+        numOfWorkers: 2,
+        frequency: 10,
+      }, err => {
+        if (err) { console.warn('QuaGGA init:', err); return; }
+        quaggaRunning = true;
+        Quagga.start();
+      });
+
+      Quagga.onDetected(result => {
+        if (!scanning) return;
+        const code = result?.codeResult?.code;
+        if (!code || code.length < 4) return;
+
+        // Konfidenz prüfen
+        const err = result.codeResult.decodedCodes
+          .filter(x => x.error !== undefined)
+          .map(x => x.error);
+        const avgErr = err.reduce((s, e) => s + e, 0) / (err.length || 1);
+        if (avgErr > 0.25) return; // Zu ungenau → ignorieren
+
+        scanning = false;
+        stopQuaGGA();
+        onScanResult(code);
+      });
+    }
+
+    function stopQuaGGA() {
+      if (typeof Quagga !== 'undefined' && quaggaRunning) {
+        try { Quagga.stop(); } catch {}
+        quaggaRunning = false;
       }
     }
 
@@ -1249,6 +1310,7 @@
       scanResult      = null;
       selectedArtikel = null;
       scanning        = true;
+      stopQuaGGA();
       document.getElementById('result-card').classList.add('hidden');
       document.getElementById('chargen-section').classList.add('hidden');
       document.getElementById('status-idle').classList.remove('hidden');
@@ -1265,6 +1327,7 @@
       currentCamera = side;
       document.getElementById('btn-cam-back').classList.toggle('active', side === 'back');
       document.getElementById('btn-cam-front').classList.toggle('active', side === 'front');
+      stopQuaGGA();
       if (codeReader) codeReader.reset();
       scanning = true;
       await startScanner();
