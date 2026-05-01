@@ -1,6 +1,5 @@
 # 🚑 LAGER//APP
 ### Digitale Lagerverwaltung & Bestandskontrolle
-**DRK-Rettungsdienst gGmbH · Böblingen · Rettungswache Malmsheim**
 
 ---
 
