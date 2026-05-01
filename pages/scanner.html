@@ -438,6 +438,18 @@
     <button class="cam-btn" id="btn-torch" onclick="toggleTorch()">🔦 Licht</button>
   </div>
 
+  <!-- BLUETOOTH SCANNER INPUT (unsichtbar, immer aktiv) -->
+  <input
+    type="text"
+    id="bt-input"
+    autocomplete="off"
+    autocorrect="off"
+    autocapitalize="off"
+    spellcheck="false"
+    style="position:fixed;opacity:0;width:1px;height:1px;top:-100px;left:-100px;pointer-events:none;"
+    aria-hidden="true"
+  >
+
   <!-- CONTENT -->
   <div class="scanner-content">
 
@@ -1282,6 +1294,113 @@
       document.body.appendChild(t);
       setTimeout(() => t.remove(), 2500);
     }
+    // ── BLUETOOTH SCANNER ──
+    let btBuffer   = '';
+    let btTimer    = null;
+    let btActive   = false;
+
+    // BT Input fokussieren
+    window.focusBtInput = function() {
+      const input = document.getElementById('bt-input');
+      input.focus();
+      setBtActive(true);
+    };
+
+    function setBtActive(active) {
+      btActive = active;
+      const dot   = document.getElementById('bt-dot');
+      const label = document.getElementById('bt-label');
+      const sub   = document.getElementById('bt-sub');
+
+      if (active) {
+        dot.style.background   = 'var(--green)';
+        dot.style.boxShadow    = '0 0 6px var(--green)';
+        label.textContent      = '📡 Bluetooth-Scanner aktiv';
+        sub.textContent        = 'Bereit zum Scannen – Scanner auf Code halten';
+        label.style.color      = 'var(--green)';
+      } else {
+        dot.style.background   = 'var(--muted)';
+        dot.style.boxShadow    = 'none';
+        label.textContent      = '📡 Bluetooth-Scanner';
+        sub.textContent        = 'Tippen zum Aktivieren';
+        label.style.color      = 'var(--text2)';
+      }
+    }
+
+    // BT Input Event – sammelt Zeichen und verarbeitet nach Pause
+    const btInput = document.getElementById('bt-input');
+
+    btInput.addEventListener('focus', () => setBtActive(true));
+    btInput.addEventListener('blur',  () => {
+      // Kurze Verzögerung – vielleicht klickt Nutzer auf etwas anderes
+      setTimeout(() => {
+        if (document.activeElement !== btInput) setBtActive(false);
+      }, 200);
+    });
+
+    btInput.addEventListener('input', () => {
+      btBuffer += btInput.value;
+      btInput.value = '';
+
+      // Timer zurücksetzen – wenn nach 100ms kein neues Zeichen kommt → verarbeiten
+      if (btTimer) clearTimeout(btTimer);
+      btTimer = setTimeout(() => {
+        if (btBuffer.trim().length > 2) {
+          processBtCode(btBuffer.trim());
+          btBuffer = '';
+        }
+      }, 100);
+    });
+
+    // Enter/CR als Abschluss des Scans
+    btInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && btBuffer.trim().length > 2) {
+        if (btTimer) clearTimeout(btTimer);
+        processBtCode(btBuffer.trim());
+        btBuffer = '';
+        btInput.value = '';
+      }
+    });
+
+    // BT Code verarbeiten – gleiche Logik wie Kamera-Scan
+    function processBtCode(raw) {
+      if (!raw || raw.length < 3) return;
+
+      // Vibration als Feedback
+      if (navigator.vibrate) navigator.vibrate([50, 30, 50]);
+
+      // Kurzes visuelles Feedback
+      const dot = document.getElementById('bt-dot');
+      dot.style.background = 'var(--accent)';
+      setTimeout(() => dot.style.background = 'var(--green)', 300);
+
+      // Gleiche Parse-Logik wie Kamera
+      let parsed;
+      if (raw.startsWith('+') || raw.startsWith('/')) {
+        parsed = parseHIBC(raw);
+        if (!parsed || (!parsed.lot && !parsed.verfall)) parsed = parseGS1(raw);
+      } else {
+        parsed = parseGS1(raw);
+      }
+
+      // Kamera-Scan Ergebnis-Verarbeitung nutzen
+      scanning = false;
+      onScanResult(raw);
+    }
+
+    // Seite angeklickt → BT Input fokussieren wenn kein anderes Element aktiv
+    document.addEventListener('click', (e) => {
+      const interactable = ['INPUT','BUTTON','SELECT','TEXTAREA','A'];
+      if (!interactable.includes(e.target.tagName)) {
+        focusBtInput();
+      }
+    });
+
+    // Beim Laden automatisch fokussieren
+    setTimeout(() => {
+      focusBtInput();
+    }, 1000);
+
   </script>
 
   <script src="../js/pwa.js"></script>
