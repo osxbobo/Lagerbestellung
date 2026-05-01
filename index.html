@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="LAGER//APP">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>LAGER//APP – Rettungswache Malmsheim</title>
   <link rel="stylesheet" href="css/main.css">
   <link rel="stylesheet" href="css/index.css">
@@ -69,7 +69,8 @@
     <div class="navbar-inner">
       <a href="index.html" class="nav-logo">LAGER<span>//</span>APP</a>
       <div class="nav-right">
-        <a href="pages/check.html" class="nav-btn primary hide-mobile">📋 Lagerbestellung</a>
+        <button onclick="openPinModal('check')" class="nav-btn primary hide-mobile">📋 Lagerbestellung</button>
+        <button onclick="openPinModal('scanner')" class="nav-btn hide-mobile">📷 Verfallsscan</button>
         <a href="pages/login.html" class="nav-btn hide-mobile">🔐 Login</a>
         <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" title="Hell/Dunkel">☀️</button>
       </div>
@@ -83,7 +84,8 @@
       <h1 class="hero-title">LAGER<span class="accent">//</span>APP</h1>
       <p class="hero-sub">Digitale Lagerverwaltung & Bestandskontrolle</p>
       <div class="hero-actions">
-        <a href="pages/check.html" class="btn btn-primary">📋 Lagerbestellung starten</a>
+        <button onclick="openPinModal('check')" class="btn btn-primary">📋 Lagerbestellung</button>
+        <button onclick="openPinModal('scanner')" class="btn btn-secondary">📷 Verfallsscan</button>
         <a href="pages/login.html" class="btn btn-ghost">🔐 Wachenleiter / Admin</a>
       </div>
     </div>
@@ -336,6 +338,189 @@
 
     // ── Start ──
     loadData();
+  </script>
+
+  <!-- ── PIN MODAL ── -->
+  <div id="pin-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);
+    backdrop-filter:blur(4px);z-index:1000;align-items:center;justify-content:center;padding:20px;">
+    <div style="background:var(--surface,#111827);border:1px solid var(--border,#1f2937);
+      border-radius:20px;padding:28px 24px;width:100%;max-width:360px;
+      box-shadow:0 25px 50px rgba(0,0,0,0.5);">
+
+      <!-- Header -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
+        <div>
+          <div style="font-size:1rem;font-weight:700;" id="pin-modal-title">PIN eingeben</div>
+          <div style="font-size:0.72rem;color:#6b7280;margin-top:2px;" id="pin-modal-sub">Lagerbestellung</div>
+        </div>
+        <button onclick="closePinModal()" style="background:none;border:none;color:#6b7280;
+          font-size:1.2rem;cursor:pointer;padding:4px 8px;border-radius:6px;">✕</button>
+      </div>
+
+      <!-- Name -->
+      <div style="margin-bottom:16px;">
+        <input type="text" id="modal-name" placeholder="Dein Name"
+          style="width:100%;padding:14px 16px;border-radius:12px;
+            border:1.5px solid var(--border,#1f2937);background:var(--surface2,#1f2937);
+            color:var(--text,#f9fafb);font-size:1rem;font-family:'DM Sans',sans-serif;
+            outline:none;box-sizing:border-box;"
+          inputmode="text" enterkeyhint="done"
+          onkeydown="if(event.key==='Enter')this.blur()">
+      </div>
+
+      <!-- PIN Dots -->
+      <div style="display:flex;gap:10px;justify-content:center;margin-bottom:16px;">
+        <div class="modal-pin-dot" id="mpd-0"></div>
+        <div class="modal-pin-dot" id="mpd-1"></div>
+        <div class="modal-pin-dot" id="mpd-2"></div>
+        <div class="modal-pin-dot" id="mpd-3"></div>
+      </div>
+
+      <!-- Numpad -->
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px;">
+        <button class="modal-pin-key" onclick="modalPinKey('1')">1</button>
+        <button class="modal-pin-key" onclick="modalPinKey('2')">2</button>
+        <button class="modal-pin-key" onclick="modalPinKey('3')">3</button>
+        <button class="modal-pin-key" onclick="modalPinKey('4')">4</button>
+        <button class="modal-pin-key" onclick="modalPinKey('5')">5</button>
+        <button class="modal-pin-key" onclick="modalPinKey('6')">6</button>
+        <button class="modal-pin-key" onclick="modalPinKey('7')">7</button>
+        <button class="modal-pin-key" onclick="modalPinKey('8')">8</button>
+        <button class="modal-pin-key" onclick="modalPinKey('9')">9</button>
+        <button class="modal-pin-key" onclick="modalPinDel()" style="color:#9ca3af;">⌫</button>
+        <button class="modal-pin-key" onclick="modalPinKey('0')">0</button>
+        <button class="modal-pin-key" style="background:#f97316;color:white;" onclick="modalPinConfirm()">✓</button>
+      </div>
+
+      <div id="pin-modal-error" style="font-size:0.75rem;color:#ef4444;text-align:center;min-height:18px;"></div>
+    </div>
+  </div>
+
+  <style>
+    .btn-secondary {
+      background: rgba(14,165,233,0.15);
+      color: #0ea5e9;
+      border: 1.5px solid rgba(14,165,233,0.3);
+    }
+    .btn-secondary:hover { background: rgba(14,165,233,0.25); }
+
+    .modal-pin-dot {
+      width: 14px; height: 14px; border-radius: 50%;
+      border: 2px solid #374151; transition: all 0.15s;
+    }
+    .modal-pin-dot.filled { background: #f97316; border-color: #f97316; }
+
+    .modal-pin-key {
+      aspect-ratio: 1; border-radius: 10px;
+      border: 1px solid var(--border, #1f2937);
+      background: var(--surface2, #1f2937);
+      color: var(--text, #f9fafb);
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 1.1rem; font-weight: 600;
+      cursor: pointer; transition: all 0.15s;
+      touch-action: manipulation;
+    }
+    .modal-pin-key:active { transform: scale(0.93); }
+  </style>
+
+  <script>
+    let _modalPin    = '';
+    let _modalTarget = 'check';
+
+    window.openPinModal = async function(target) {
+      _modalTarget = target;
+      _modalPin    = '';
+      document.getElementById('modal-name').value    = '';
+      document.getElementById('pin-modal-error').textContent = '';
+      updateModalDots();
+
+      const titles = {
+        check:   ['📋 PIN eingeben', 'Lagerbestellung starten'],
+        scanner: ['📷 PIN eingeben', 'Verfallsscan starten'],
+      };
+      document.getElementById('pin-modal-title').textContent = titles[target][0];
+      document.getElementById('pin-modal-sub').textContent   = titles[target][1];
+
+      document.getElementById('pin-modal').style.display = 'flex';
+      setTimeout(() => document.getElementById('modal-name').focus(), 100);
+    };
+
+    window.closePinModal = function() {
+      document.getElementById('pin-modal').style.display = 'none';
+    };
+
+    window.modalPinKey = function(d) {
+      if (_modalPin.length >= 4) return;
+      _modalPin += d;
+      updateModalDots();
+      if (_modalPin.length === 4) setTimeout(modalPinConfirm, 150);
+    };
+
+    window.modalPinDel = function() {
+      _modalPin = _modalPin.slice(0, -1);
+      updateModalDots();
+    };
+
+    function updateModalDots() {
+      for (let i = 0; i < 4; i++) {
+        document.getElementById(`mpd-${i}`).classList.toggle('filled', i < _modalPin.length);
+      }
+    }
+
+    window.modalPinConfirm = async function() {
+      const name = document.getElementById('modal-name').value.trim();
+      const errEl = document.getElementById('pin-modal-error');
+
+      if (!name) { errEl.textContent = 'Bitte deinen Namen eingeben'; return; }
+      if (_modalPin.length < 4) { errEl.textContent = 'Bitte 4-stelligen PIN eingeben'; return; }
+
+      // PIN aus Firestore prüfen
+      try {
+        const { initializeApp, getApps } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
+        const { getFirestore, doc, getDoc } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
+
+        const firebaseConfig = {
+          apiKey:            "AIzaSyD1YY-cFQxyykfYQYPORwulzuF8t6Wgid4",
+          authDomain:        "lagerbestellung-19970.firebaseapp.com",
+          projectId:         "lagerbestellung-19970",
+          storageBucket:     "lagerbestellung-19970.firebasestorage.app",
+          messagingSenderId: "939056339904",
+          appId:             "1:939056339904:web:6f33ca2f5a4cebd2780625",
+        };
+
+        const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
+        const db  = getFirestore(app);
+        const cfg = await getDoc(doc(db, 'config', 'app'));
+        const correctPin = cfg.exists() ? cfg.data().pin : '1234';
+
+        if (_modalPin !== correctPin) {
+          errEl.textContent = 'Falscher PIN – bitte nochmal versuchen';
+          _modalPin = '';
+          updateModalDots();
+          return;
+        }
+
+        // PIN korrekt – Session speichern und weiterleiten
+        sessionStorage.setItem('lager-pin-auth', 'true');
+        sessionStorage.setItem('lager-pin-name', name);
+
+        closePinModal();
+
+        if (_modalTarget === 'scanner') {
+          window.location.href = 'pages/scanner.html';
+        } else {
+          window.location.href = 'pages/check.html';
+        }
+
+      } catch(e) {
+        errEl.textContent = 'Fehler: ' + e.message;
+      }
+    };
+
+    // Modal schließen bei Klick außerhalb
+    document.getElementById('pin-modal').addEventListener('click', function(e) {
+      if (e.target === this) closePinModal();
+    });
   </script>
 
   <script src="js/pwa.js"></script>
