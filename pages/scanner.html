@@ -469,7 +469,7 @@
           </div>
           <div>
             <div style="font-size:0.65rem;color:var(--muted);font-family:'IBM Plex Mono',monospace;margin-bottom:4px;">VERFALLSDATUM</div>
-            <input type="month" id="manual-verfall" class="artikel-search-input">
+            <input type="date" id="manual-verfall" class="artikel-search-input">
           </div>
         </div>
         <button class="big-btn green" onclick="saveManual()">✅ Manuell speichern</button>
@@ -518,6 +518,26 @@
           autocomplete="off"
         >
         <div class="artikel-suggestions" id="artikel-suggestions"></div>
+      </div>
+
+      <!-- Fehlende Daten manuell ergänzen -->
+      <div id="missing-data-section" class="hidden" style="background:rgba(249,115,22,0.06);
+        border:1px solid rgba(249,115,22,0.25);border-radius:10px;padding:12px;
+        display:flex;flex-direction:column;gap:10px;">
+        <div style="font-size:0.75rem;font-weight:600;color:var(--accent);">
+          ⚠️ Fehlende Daten – bitte ergänzen
+        </div>
+        <div id="missing-lot-wrap" style="display:flex;flex-direction:column;gap:4px;">
+          <div style="font-size:0.62rem;color:var(--muted);font-family:'IBM Plex Mono',monospace;">CHARGE / LOT</div>
+          <input type="text" id="missing-lot" class="artikel-search-input"
+            placeholder="z.B. 44310832" autocomplete="off"
+            oninput="updateScanResult('lot', this.value)">
+        </div>
+        <div id="missing-verfall-wrap" style="display:flex;flex-direction:column;gap:4px;">
+          <div style="font-size:0.62rem;color:var(--muted);font-family:'IBM Plex Mono',monospace;">VERFALLSDATUM</div>
+          <input type="date" id="missing-verfall" class="artikel-search-input"
+            oninput="updateScanResult('verfall', this.value)">
+        </div>
       </div>
 
       <div class="action-row">
@@ -891,6 +911,20 @@
       // LOT
       document.getElementById('result-lot').textContent = parsed.lot || '–';
 
+      // Wenn Lot oder Verfall fehlt → manuelle Eingabe einblenden
+      const hasLot    = !!parsed.lot;
+      const hasVerfall= !!parsed.verfall;
+      const missingEl = document.getElementById('missing-data-section');
+      if (!hasLot || !hasVerfall) {
+        missingEl.classList.remove('hidden');
+        if (!hasLot)    document.getElementById('missing-lot').value     = '';
+        if (!hasVerfall)document.getElementById('missing-verfall').value = '';
+        document.getElementById('missing-lot-wrap').style.display    = hasLot    ? 'none' : 'flex';
+        document.getElementById('missing-verfall-wrap').style.display = hasVerfall ? 'none' : 'flex';
+      } else {
+        missingEl.classList.add('hidden');
+      }
+
       // Verfallsdatum
       const days = daysUntil(parsed.verfall);
       document.getElementById('result-verfall').textContent =
@@ -1035,6 +1069,32 @@
       showChargen(selectedArtikel);
     };
 
+    // ── Fehlende Daten ergänzen ──
+    window.updateScanResult = function(field, value) {
+      if (!scanResult) return;
+      if (field === 'lot')    {
+        scanResult.lot = value;
+        document.getElementById('result-lot').textContent = value || '–';
+      }
+      if (field === 'verfall') {
+        scanResult.verfall = value;
+        document.getElementById('result-verfall').textContent =
+          value ? new Date(value + 'T12:00:00').toLocaleDateString('de-DE') : '–';
+        // Tage neu berechnen
+        const days = value ? Math.round((new Date(value) - new Date()) / (1000*60*60*24)) : null;
+        if (days !== null) {
+          const dEl = document.getElementById('result-days');
+          const sEl = document.getElementById('result-status');
+          dEl.textContent = days <= 0 ? 'ABGELAUFEN' : `${days} Tage`;
+          dEl.className   = `scan-info-value ${days <= 30 ? 'warn' : 'ok'}`;
+          if (days <= 0)       { sEl.textContent = '🔴 Abgelaufen'; sEl.className = 'scan-info-value warn'; }
+          else if (days <= 7)  { sEl.textContent = '🔴 Kritisch';   sEl.className = 'scan-info-value warn'; }
+          else if (days <= 30) { sEl.textContent = '🟡 Bald';       sEl.className = 'scan-info-value warn'; }
+          else                 { sEl.textContent = '🟢 OK';         sEl.className = 'scan-info-value ok';   }
+        }
+      }
+    };
+
     // ── Speichern ──
     window.speichern = async function() {
       if (!selectedArtikel) {
@@ -1138,12 +1198,10 @@
         showToast('Nur Wachenleiter & Admin können speichern', 'error'); return;
       }
 
-      // Verfall: YYYY-MM → letzter Tag des Monats
+      // Verfall: YYYY-MM-DD direkt verwenden
       let verfall = null;
       if (verfallRaw) {
-        const [j, m] = verfallRaw.split('-');
-        const letzter = new Date(parseInt(j), parseInt(m), 0).getDate();
-        verfall = `${j}-${m}-${String(letzter).padStart(2,'0')}`;
+        verfall = verfallRaw; // Direkt als YYYY-MM-DD
       }
 
       const artikelRef  = doc(db, 'artikel', artikelId);
