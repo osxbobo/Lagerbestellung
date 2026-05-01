@@ -1,13 +1,13 @@
 # 🚑 LAGER//APP
 ### Digitale Lagerverwaltung & Bestandskontrolle
-
+**DRK-Rettungsdienst gGmbH · Böblingen · Rettungswache Malmsheim**
 
 ---
 
-![Version](https://img.shields.io/badge/Version-1.0.0-f97316)
+![Version](https://img.shields.io/badge/Version-2.0.0-f97316)
 ![Status](https://img.shields.io/badge/Status-Live-22c55e)
 ![Platform](https://img.shields.io/badge/Platform-GitHub%20Pages-0ea5e9)
-![Firebase](https://img.shields.io/badge/Backend-Firebase-f97316)
+![Firebase](https://img.shields.io/badge/Backend-Firebase%20Blaze-f97316)
 ![PWA](https://img.shields.io/badge/PWA-Ready-22c55e)
 
 ---
@@ -16,17 +16,16 @@
 
 - [Übersicht](#übersicht)
 - [Live-Demo](#live-demo)
-- [Funktionen](#funktionen)
+- [Drei Kernfunktionen](#drei-kernfunktionen)
+- [Alle Features im Detail](#alle-features-im-detail)
 - [Rollen & Berechtigungen](#rollen--berechtigungen)
-- [Seiten & Navigation](#seiten--navigation)
 - [Tech Stack](#tech-stack)
 - [Projektstruktur](#projektstruktur)
-- [Setup & Installation](#setup--installation)
 - [Firebase Konfiguration](#firebase-konfiguration)
+- [Firestore Datenstruktur](#firestore-datenstruktur)
+- [Scanner – Unterstützte Formate](#scanner--unterstützte-formate)
 - [PWA & Push Notifications](#pwa--push-notifications)
-- [PDF-Generierung](#pdf-generierung)
-- [Foto-Upload](#foto-upload)
-- [QR/Barcode Scanner](#qrbarcode-scanner)
+- [Setup & Installation](#setup--installation)
 - [Sicherheit](#sicherheit)
 - [Roadmap](#roadmap)
 
@@ -34,13 +33,14 @@
 
 ## Übersicht
 
-LAGER//APP ersetzt das bisherige Klemmbrett-System der Rettungswache Malmsheim durch eine vollständig digitale Lösung. Die App läuft direkt im Browser – ohne Installation, ohne App Store – und ist für Smartphone, Tablet und PC optimiert.
+LAGER//APP ersetzt das Klemmbrett-System der Rettungswache Malmsheim durch eine vollständig digitale Lösung. Die App läuft direkt im Browser – ohne Installation, ohne App Store – und ist für Smartphone, Tablet und PC optimiert.
 
-**Kernproblem das gelöst wird:**
-- Wöchentliche Lagerbestellung war papierbasiert und aufwändig
+**Gelöste Probleme:**
+- Wöchentliche Lagerbestellung war papierbasiert und zeitaufwändig
 - Kein Überblick über Verfallsdaten und Chargen
 - Keine digitale Bestellhistorie für den Wachenleiter
 - Kein schneller Zugriff auf Lagerorte von Materialien
+- Kein koordiniertes Arbeiten mehrerer Kollegen gleichzeitig
 
 ---
 
@@ -52,158 +52,125 @@ https://osxbobo.github.io/Lagerbestellung
 
 ---
 
-## Funktionen
+## Drei Kernfunktionen
 
-### 🔍 Lagersuche (öffentlich)
-- Echtzeit-Suche durch alle 245+ Artikel ohne Login
-- Suche nach Name, Aliases (auch umgangssprachliche Begriffe) und LP-Nummer
-- Ergebnis zeigt: Produktfoto, Bereich, Lagerplatznummer (LP)
-- Bereiche-Übersicht als Kacheln zum Filtern
-- Beispiel: Suche nach „Kotztüte" → findet SIC SAC-Brechbeutel
+```
+┌─────────────────────────────────────┐
+│  🔍 Lagersuche      → offen         │
+│  📋 Lagerbestellung → PIN           │
+│  📷 Verfallsscan    → PIN           │
+│  🔐 Wachenleiter    → Login         │
+└─────────────────────────────────────┘
+```
 
-### 🗂 Lagercheck (PIN-geschützt)
-- Zugang über 4-stelligen PIN (vom Admin änderbar)
-- Namenseingabe des Mitarbeiters
+---
+
+## Alle Features im Detail
+
+### 🔍 Lagersuche (öffentlich, kein Login)
+- Echtzeit-Suche durch alle 245+ Artikel
+- Suche nach Name, Aliases und LP-Nummer
+- Zeigt: Produktfoto, Bereich, LP-Nummer
+- Bereiche-Übersicht als Kacheln
+- Beispiel: „Kotztüte" → findet SIC SAC-Brechbeutel
+
+---
+
+### 📋 Lagerbestellung (PIN-geschützt)
+- Auto-Login: Name + PIN werden gespeichert, kein erneutes Einloggen nötig
+- PIN-Eingabe direkt auf der Startseite als Modal
 - Geführt durch alle 13 Bereiche mit Fortschrittsbalken
-- Pro Artikel:
-  - **MIN/MAX** groß und deutlich angezeigt
-  - **Produktfoto** (Soll-Zustand) per Tippen anzeigbar
-  - **Lagerort-Foto** (wo liegt es im Schrank) anzeigbar
-  - **„Muss bestellt werden?"** – Ja / Nein Auswahl
-  - Bei Ja: Mengenauswahl per Schnell-Chips `[1][2][3][5][10]` + Plus/Minus
-- Erklärungs-Banner für neue Kollegen
-- Fixe Navigation unten (Zurück / Weiter)
-- „Abschließen" nur auf letzter Seite sichtbar
+- Pro Artikel: MIN/MAX, Produktfoto, Lagerort-Foto, Ja/Nein Auswahl
+- Bei Ja: Schnell-Chips `[1][2][3][5][10]` + Plus/Minus
 - Touch-Unterschrift am Ende
-- Automatische Speicherung in Firestore
 - Push-Benachrichtigung an Wachenleiter nach Abschluss
 
-### 📷 Charge-Scanner (PIN-geschützt, nach Check-PIN)
-- Zugang über Scanner-Banner im Lagercheck (nach PIN)
-- Kamera scannt automatisch GS1-DataMatrix, QR-Code und Barcodes
+**⭐ Multi-User Lagerbestellung:**
+- Mehrere Kollegen können gleichzeitig verschiedene Bereiche bearbeiten
+- Bereiche auswählen und aufteilen (z.B. Schrank 1-3 / Schrank 4-6 / Büro)
+- Laufende Session sichtbar für alle die einsteigen wollen
+- Alleine starten – andere können jederzeit mitmachen und Bereiche übernehmen
+- PDF zeigt alle beteiligten Namen: `Benni · Timo · Florian`
+
+**⭐ Auto-Save / Pause-Funktion:**
+- Automatisch gespeichert bei jedem „Weiter →"
+- Alle 30 Sekunden im Hintergrund gespeichert
+- Bei Einsatzalarm: App einfach schließen – Fortschritt bleibt erhalten
+- Beim nächsten Öffnen: Banner zeigt offene Bestellung mit Fortschritt
+- Andere Kollegen können pausierte Bestellung fortführen
+- Draft wird nach Abschluss automatisch gelöscht
+
+---
+
+### 📷 Verfallsscan (PIN-geschützt)
+- Direkt von der Startseite erreichbar (nach PIN)
+- Kamera scannt GS1-DataMatrix, QR-Code, Code-128, GS1-128, EAN-13
+- HIBC DataMatrix (Medizinprodukte) vollständig unterstützt
 - Erkennt automatisch: GTIN, Charge/LOT, Verfallsdatum
-- **Bekannte Produkte** → sofort Charge + Verfall speichern
+- **Bekannte Produkte** → direkt Charge + Verfall speichern
 - **Unbekannte Produkte** → einmalig Artikel zuordnen → danach automatisch erkannt
 - Sofort-Vorschläge beim Antippen des Suchfelds
-- Sortierung: Artikel mit Chargen zuerst (nach frühestem Verfall)
-- Vibration als Scan-Feedback
-- Taschenlampe & Kamera wechseln
-- Alle Chargen pro Artikel anzeigbar (mit Ampelsystem 🔴🟡🟢)
-- Charge löschen (Wachenleiter & Admin)
 - Mehrere Chargen pro Artikel möglich
+- Fehlende Daten (LOT/Verfall) manuell ergänzbar
+- Vibration als Scan-Feedback + Taschenlampe
+
+**⭐ Dual-Scanner (Kamera):**
+- ZXing.js → für DataMatrix & QR
+- QuaGGA2 → für Code-128 & GS1-128 (lineare Barcodes)
+- Beide laufen parallel – wer zuerst erkennt gewinnt
+
+**⭐ Bluetooth-Scanner Support:**
+- Handscanner (z.B. Netum NT-1228BL) per Bluetooth koppeln
+- Funktioniert als Tastatur-Eingabe (HID Mode)
+- Status-Anzeige: grau = inaktiv, grün = bereit
+- Automatisch aktiv beim Seitenaufruf
+- Gleiche GS1/HIBC Logik wie Kamera-Scanner
+
+---
 
 ### 🖥️ Wachenleiter-Portal (Login)
 
-**Tab: Bestellungen**
-- Chronologische Bestellhistorie
-- Mitarbeiter, Datum, Anzahl Nachbestellungen
-- PDF-Download pro Bestellung
+Gleicher Sidebar-Style wie Admin. Vollzugang außer Benutzerverwaltung.
 
-**Tab: Alle Chargen (Ebene 3)**
-- Vollständige Übersicht aller erfassten Chargen
-- Filter: Alle / Kritisch (≤30 Tage) / OK
-- Sortiert nach Verfallsdatum (früheste zuerst)
-- Charge direkt löschen
+| Tab | Inhalt |
+|---|---|
+| 📊 Dashboard | KPIs, letzte Lagerchecks, Verfallswarnungen |
+| 📋 Bestellungen | Komplette Historie, Detail-Modal, PDF, Löschen |
+| 🗄️ Chargen & Verfall | Fach für Fach sortiert, Ampelsystem, löschen |
+| 📦 Artikelverwaltung | Bearbeiten, neu anlegen, löschen, suchen |
+| 🏠 Bereiche | Verwalten, Reihenfolge, neu anlegen |
+| 📸 Fotos & Bilder | Produkt- + Lagerort-Fotos via Cloudinary |
+| 🔑 PIN ändern | 4-stelligen PIN per Tastenfeld ändern |
 
-**Tab: Artikel**
-- Artikel bearbeiten (Name, MIN/MAX, Hinweis)
-- Neuen Artikel anlegen
-- Artikel löschen
+**Verfall – 3 Ebenen:**
+- **Ebene 1:** Dashboard – nur kritische Artikel (≤30 Tage)
+- **Ebene 2:** Tippen → alle Chargen dieses Artikels
+- **Ebene 3:** Tab „Chargen & Verfall" – alle Artikel, alle Chargen, filterbar
 
-**Verfallswarnungen (Ebene 1)**
-- Nur Artikel unter 30 Tagen (filter umstellbar auf „Alle")
-- Tippen auf Artikel → Ebene 2 öffnet sich
-- 🔴 Abgelaufen / ≤7 Tage · 🟡 ≤30 Tage · 🟢 OK
-
-**Tippen auf Verfalls-Artikel (Ebene 2)**
-- Alle Chargen dieses Artikels mit Ampel
-- LOT-Nummer, Verfallsdatum, GTIN
-- Charge löschen
-
-**KPI-Dashboard**
-- Letzte Bestellung (Wer, Wann)
-- Gesamtanzahl Bestellungen
-- Anzahl kritischer Verfallswarnungen
+---
 
 ### 🔧 Admin-Bereich (Login)
 
-**Dashboard**
-- Übersicht: Artikel, Bereiche, Bestellungen, Artikel ohne Foto
-- Letzte 5 Lagerchecks
+Alles was Wachenleiter kann + Benutzerverwaltung + Backup.
 
-**Artikelverwaltung**
-- Alle 245+ Artikel mit Suche und Bereichsfilter
-- Artikel bearbeiten: Name, LP, Standort, Bereich, MIN/MAX, Aliases, Hinweis
-- Neuen Artikel anlegen
-- Artikel löschen
+**Zusätzlich zu Wachenleiter:**
+- 👤 Benutzer direkt anlegen (Name, E-Mail, Passwort, Rolle)
+- 🔑 Rollen vergeben und ändern
+- 💾 Backup & Import:
+  - Export: Komplett / Nur Artikel / Nur Chargen als JSON
+  - Import: Ergänzen oder Ersetzen mit Live-Fortschrittsbalken
+  - Drag & Drop für Importdatei
 
-**Bereiche verwalten**
-- Alle 13 Bereiche (Schränke, Regale, Sauerstofflager, Büro, Küche etc.)
-- Bereich bearbeiten (Name, Reihenfolge)
-- Neuen Bereich anlegen
-
-**Fotos & Referenzbilder**
-- Zwei Foto-Typen pro Artikel:
-  - **Produktfoto** – wie sieht das Produkt aus? (Lagersuche)
-  - **Lagerort-Foto** – wo liegt es im Schrank? (Lagercheck)
-- Upload via Cloudinary (kein Firebase Storage nötig)
-- Vorschau nach Upload
-- Übersicht aller Artikel ohne Foto
-
-**Charge-Scanner** (Link zu scanner.html)
-
-**PIN ändern**
-- Aktuellen PIN anzeigen/verstecken
-- Neuen PIN per Tastenfeld eingeben
-- Sofort in Firestore gespeichert
-
-**Account-Verwaltung**
-- Bestehende Nutzer mit Rolle anzeigen
-- Rolle ändern (Wachenleiter ↔ Admin)
-- **Neuen Benutzer direkt anlegen** – kein Firebase Console nötig
-  - Name, E-Mail, temporäres Passwort, Rolle
-  - Firebase Authentication REST API
-
-### 🔐 Login
-- E-Mail + Passwort via Firebase Authentication
-- Automatische Weiterleitung je nach Rolle:
-  - Admin → Admin-Bereich
-  - Wachenleiter → Wachenleiter-Portal
-- Fehlermeldungen auf Deutsch
+---
 
 ### 📄 PDF-Generierung
-- Layout identisch zum Original-Papierdokument
-- Inhalte:
-  - Titel-Box „Lagerbestellung Rettungswache Malmsheim"
-  - Tabelle mit LP, Produkt, MIN, MAX, Hinweis, Bestellen
-  - Bereiche als graue Trennzeilen
-  - Zebrierung für bessere Lesbarkeit
-  - Bestellen-Spalte: Menge bei bestellten Artikeln, leer bei ausreichenden
-  - Abkürzungslegende (Stk, VE, P, R, K, Fl...)
-  - Felder für Datum, Name, Unterschrift
-  - Roter Hinweis-Rahmen
-  - Seitennummer auf jeder Seite (X von Y)
-- Download als PDF mit Dateiname: `Lagerbestellung_[Name]_[Datum].pdf`
 
-### 🌙 Dark / Light Mode
-- Umschaltbar per Toggle (☀️/🌙) in der Navbar
-- Einstellung wird gespeichert (localStorage)
-- Respektiert Systemeinstellung automatisch
-
-### 📱 PWA (Progressive Web App)
-- Installierbar als App auf Homescreen (Android & iPhone)
-- Offline-Fähigkeit für alle Seiten (Service Worker)
-- Update-Banner wenn neue Version verfügbar
-- **iPhone:** Safari → Teilen → „Zum Home-Bildschirm"
-- **Android:** Chrome zeigt „App installieren" Banner automatisch
-
-### 🔔 Push Notifications
-- Benachrichtigung nach abgeschlossenem Lagercheck
-- Automatische Verfallswarnungen:
-  - 🔴 Kritisch: ≤7 Tage oder abgelaufen
-  - 🟡 Bald: ≤30 Tage
-- Einmalig „Erlauben" tippen genügt
-- Funktioniert am Desktop (Chrome, Edge, Safari/Mac) und Handy
+Identisch zum offiziellen DRK-Formular:
+- Titel-Box, Tabelle (LP · Produkt · MIN · MAX · Hinweis · Bestellen)
+- Bereiche als graue Trennzeilen, Zebrierung
+- Abkürzungslegende, Unterschrift, roter Hinweis-Rahmen
+- Seitennummer auf jeder Seite
+- Löschen-Button direkt in der Bestellliste
 
 ---
 
@@ -212,33 +179,20 @@ https://osxbobo.github.io/Lagerbestellung
 | Funktion | Mitarbeiter | Wachenleiter | Admin |
 |---|:---:|:---:|:---:|
 | Lagersuche | ✅ | ✅ | ✅ |
-| Lagercheck (PIN) | ✅ | ✅ | ✅ |
-| Charge scannen (nach PIN) | ✅ | ✅ | ✅ |
+| Lagerbestellung (PIN) | ✅ | ✅ | ✅ |
+| Verfallsscan (PIN) | ✅ | ✅ | ✅ |
 | Charge speichern | ❌ | ✅ | ✅ |
 | Charge löschen | ❌ | ✅ | ✅ |
 | Wachenleiter-Portal | ❌ | ✅ | ✅ |
 | PDF herunterladen | ❌ | ✅ | ✅ |
-| Verfallswarnungen | ❌ | ✅ | ✅ |
+| PDF löschen | ❌ | ✅ | ✅ |
 | Artikel bearbeiten | ❌ | ✅ | ✅ |
-| Artikel löschen | ❌ | ✅ | ✅ |
-| Fotos hochladen | ❌ | ❌ | ✅ |
-| Bereiche verwalten | ❌ | ❌ | ✅ |
-| PIN ändern | ❌ | ❌ | ✅ |
+| Bereiche verwalten | ❌ | ✅ | ✅ |
+| Fotos hochladen | ❌ | ✅ | ✅ |
+| PIN ändern | ❌ | ✅ | ✅ |
 | Benutzer anlegen | ❌ | ❌ | ✅ |
 | Rollen vergeben | ❌ | ❌ | ✅ |
-
----
-
-## Seiten & Navigation
-
-```
-/index.html                  → Startseite: Lagersuche + Bereiche-Übersicht
-/pages/check.html            → Lagercheck (PIN-geschützt)
-/pages/scanner.html          → Charge-Scanner (PIN-geschützt via Session)
-/pages/login.html            → Login für Wachenleiter & Admin
-/pages/portal.html           → Wachenleiter-Portal
-/pages/admin.html            → Admin-Bereich
-```
+| Backup & Import | ❌ | ❌ | ✅ |
 
 ---
 
@@ -247,12 +201,14 @@ https://osxbobo.github.io/Lagerbestellung
 | Bereich | Technologie |
 |---|---|
 | **Frontend** | HTML5 · CSS3 · Vanilla JavaScript |
-| **Hosting** | GitHub Pages (kostenlos) |
-| **Datenbank** | Firebase Firestore |
+| **Hosting** | GitHub Pages |
+| **Datenbank** | Firebase Firestore (Blaze Plan) |
 | **Authentifizierung** | Firebase Authentication |
-| **Foto-Upload** | Cloudinary (kostenloser Plan) |
-| **PDF-Generierung** | jsPDF (CDN) |
-| **Barcode-Scanner** | ZXing.js (CDN) |
+| **Foto-Upload** | Cloudinary (Unsigned Preset) |
+| **PDF** | jsPDF (CDN) |
+| **Scanner 2D** | ZXing.js – DataMatrix, QR |
+| **Scanner 1D** | QuaGGA2 – Code128, GS1-128, EAN |
+| **Bluetooth-Scanner** | HID Keyboard Input |
 | **PWA** | Service Worker · Web Push API |
 | **Schriften** | IBM Plex Mono · DM Sans (Google Fonts) |
 
@@ -262,94 +218,47 @@ https://osxbobo.github.io/Lagerbestellung
 
 ```
 Lagerbestellung/
-├── index.html                  # Startseite / Lagersuche
-├── manifest.json               # PWA Manifest
-├── sw.js                       # Service Worker (PWA + Push)
-├── README.md                   # Diese Datei
+├── index.html              # Startseite – Lagersuche + PIN Modal
+├── manifest.json           # PWA Manifest
+├── sw.js                   # Service Worker (Cache + Push)
+├── README.md
 │
 ├── css/
-│   ├── main.css                # Globale Styles + Theme System
-│   └── index.css               # Startseiten-spezifische Styles
+│   ├── main.css            # Globale Styles + Theme System
+│   └── index.css           # Startseiten-Styles
 │
 ├── js/
-│   ├── firebase-config.js      # Firebase Konfiguration
-│   ├── theme.js                # Dark/Light Mode
-│   └── pwa.js                  # PWA + Push Notification Manager
+│   ├── firebase-config.js  # Firebase Konfiguration
+│   ├── theme.js            # Dark/Light Mode
+│   └── pwa.js              # PWA + Push Manager
 │
 ├── icons/
-│   ├── icon-192.png            # PWA Icon (klein)
-│   └── icon-512.png            # PWA Icon (groß)
+│   ├── icon-192.png        # PWA Icon
+│   └── icon-512.png        # PWA Icon
 │
 └── pages/
-    ├── check.html              # Lagercheck
-    ├── scanner.html            # Charge-Scanner
-    ├── login.html              # Login
-    ├── portal.html             # Wachenleiter-Portal
-    └── admin.html              # Admin-Bereich
+    ├── check.html          # Lagerbestellung (Multi-User + Auto-Save)
+    ├── scanner.html        # Verfallsscan (Dual-Kamera + Bluetooth)
+    ├── login.html          # Login
+    ├── portal.html         # Wachenleiter-Portal
+    └── admin.html          # Admin-Bereich
 ```
-
----
-
-## Setup & Installation
-
-### Voraussetzungen
-- GitHub Account
-- Firebase Account (kostenlos)
-- Cloudinary Account (kostenlos, für Fotos)
-
-### 1. Repository forken / klonen
-```bash
-git clone https://github.com/osxbobo/Lagerbestellung.git
-```
-
-### 2. Firebase Projekt anlegen
-1. [firebase.google.com](https://firebase.google.com) → Neues Projekt
-2. **Firestore Database** aktivieren
-3. **Authentication** → E-Mail/Passwort aktivieren
-4. **Projekteinstellungen** → Web-App hinzufügen → `firebaseConfig` kopieren
-
-### 3. Firebase Config eintragen
-In `js/firebase-config.js`:
-```javascript
-export const firebaseConfig = {
-  apiKey:            "DEIN_API_KEY",
-  authDomain:        "DEIN_PROJEKT.firebaseapp.com",
-  projectId:         "DEIN_PROJEKT",
-  storageBucket:     "DEIN_PROJEKT.firebasestorage.app",
-  messagingSenderId: "DEINE_ID",
-  appId:             "DEINE_APP_ID",
-};
-```
-
-### 4. Daten importieren
-Die `firebase-import-tool-v2.html` lokal im Browser öffnen:
-- API Key + Project ID eingeben
-- „Import starten" → alle 245 Artikel werden importiert
-
-### 5. Ersten Admin anlegen
-1. Firebase Console → Authentication → Nutzer hinzufügen
-2. `rollen-import.html` lokal öffnen → UID + Rolle eintragen
-
-### 6. GitHub Pages aktivieren
-GitHub Repository → Settings → Pages → Branch: `main` → Save
-
-### 7. Autorisierte Domain hinzufügen
-Firebase Console → Authentication → Settings → Autorisierte Domains → `[username].github.io` hinzufügen
 
 ---
 
 ## Firebase Konfiguration
 
 ### Firestore Security Rules
+
 ```javascript
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Artikel & Bereiche – jeder darf lesen (Lagersuche)
     match /artikel/{id} {
       allow read: if true;
-      allow write: if request.auth != null;
+      allow create, delete: if request.auth != null;
+      allow update: if true;
     }
 
     match /bereiche/{id} {
@@ -357,18 +266,25 @@ service cloud.firestore {
       allow write: if request.auth != null;
     }
 
-    // Config (PIN) – nur authentifiziert
     match /config/{id} {
       allow read: if true;
       allow write: if request.auth != null;
     }
 
-    // Bestellungen – nur authentifiziert
     match /bestellungen/{id} {
-      allow read, write: if request.auth != null;
+      allow read:           if request.auth != null;
+      allow create:         if true;
+      allow update, delete: if request.auth != null;
     }
 
-    // Benutzer-Rollen – nur authentifiziert
+    match /bestellungen_draft/{id} {
+      allow read, write: if true;
+    }
+
+    match /bestellungen_session/{id} {
+      allow read, write: if true;
+    }
+
     match /users/{id} {
       allow read, write: if request.auth != null;
     }
@@ -376,180 +292,137 @@ service cloud.firestore {
 }
 ```
 
-### Firestore Datenstruktur
+---
+
+## Firestore Datenstruktur
+
 ```
 /artikel/{id}
-  name:        string
-  lp:          string       # Lagerplatznummer
-  location:    string       # Standort-Code
-  bereich:     string       # Bereich-ID
-  min:         number
-  minEinheit:  string
-  max:         number
-  maxEinheit:  string
-  aliases:     string[]     # Suchbegriffe
-  hinweis:     string
-  fotoUrl:     string       # Produktfoto (Cloudinary)
-  lagerFotoUrl:string       # Lagerort-Foto (Cloudinary)
-  gtin:        string       # Primäre GTIN (vom Scanner)
-  gtins:       string[]     # Alle bekannten GTINs
-  chargen:     [            # Erfasste Chargen
-    {
-      lot:     string
-      verfall: string       # ISO Datum: 2029-11-30
-      gtin:    string
-      erfasst: string       # ISO Timestamp
-    }
-  ]
-  aktiv:       boolean
+  name, lp, location, bereich
+  min, minEinheit, max, maxEinheit
+  aliases[], hinweis
+  fotoUrl, lagerFotoUrl
+  gtin, gtins[]
+  chargen: [{ lot, verfall, gtin, erfasst }]
 
 /bereiche/{id}
-  name:        string
-  reihenfolge: number
-  aktiv:       boolean
+  name, reihenfolge, aktiv
 
 /config/app
-  pin:              string
-  wacheName:        string
-  wachenleiterEmail:string
-  updatedAt:        string
+  pin, wacheName, updatedAt
 
 /bestellungen/{id}
-  mitarbeiter:      string
-  datum:            timestamp
-  bestellungen:     object    # artikelId → {bestellen, menge}
-  nachbestellungen: array     # [{id, name, location, menge, einheit}]
-  unterschrift:     string    # Base64 PNG
-  status:           string
+  mitarbeiter, mitarbeiterListe[]
+  datum, bestellungen{}, nachbestellungen[]
+  unterschrift (base64), status, sessionId
+
+/bestellungen_draft/{id}
+  mitarbeiter, datum, status
+  currentIdx, bestellungen{}, fortschritt
+
+/bestellungen_session/{id}
+  startzeit, status, teilnehmer[]
+  vergebeneBereiche{}, erledigteBereiche[]
+  bestellungen{}
 
 /users/{uid}
-  name:      string
-  email:     string
-  role:      string    # 'admin' | 'wachenleiter'
-  createdAt: string
+  name, email, role, createdAt
 ```
 
 ---
 
-## PWA & Push Notifications
+## Scanner – Unterstützte Formate
 
-### App auf Homescreen installieren
+### GS1 DataMatrix / GS1-128
 
-**iPhone (iOS):**
-1. Safari öffnen
-2. `osxbobo.github.io/Lagerbestellung` aufrufen
-3. Teilen-Button → „Zum Home-Bildschirm"
-4. Name bestätigen → Hinzufügen
-
-**Android:**
-1. Chrome öffnen
-2. URL aufrufen
-3. Banner „App installieren" tippen
-4. Oder: Menü → „Zum Startbildschirm hinzufügen"
-
-### Push Notifications aktivieren
-1. Im Wachenleiter-Portal anmelden
-2. Button „🔔 Benachrichtigungen erlauben" tippen
-3. Browser-Dialog bestätigen → fertig
-
-### Benachrichtigungen
-| Ereignis | Empfänger |
-|---|---|
-| Lagercheck abgeschlossen | Wer Portal offen hat |
-| Artikel ≤7 Tage / abgelaufen | Beim Öffnen des Portals |
-| Artikel ≤30 Tage | Beim Öffnen des Portals |
-
----
-
-## PDF-Generierung
-
-Das generierte PDF entspricht dem offiziellen DRK-Formular:
-
-- **Spalten:** LP · Produkt · MIN · MAX · Hinweis · Bestellen
-- **Bereiche** als graue Trennzeilen
-- **Bestellen-Spalte:** Menge bei bestellten Artikeln, leer bei ausreichenden
-- **Legende** am Ende (Stk, VE, Pack, Rolle, Kanister, Flasche)
-- **Unterschrift** des Bestellers
-- **Roter Hinweis:** „Nur den Bestand im Regal über den Schränken kontrollieren"
-- **Footer:** Erstellt · Seite X von Y · Stand
-
----
-
-## Foto-Upload
-
-Fotos werden über **Cloudinary** gespeichert (kein Firebase Storage nötig).
-
-### Setup
-1. [cloudinary.com](https://cloudinary.com) → kostenlosen Account anlegen
-2. Settings → Upload → Upload Presets → „Add Upload Preset"
-3. Signing Mode: **Unsigned**
-4. Asset Folder: `lagerapp`
-5. Preset-Name notieren
-
-### In Admin-Bereich
-1. Admin → Fotos & Bilder
-2. Artikel aus Liste wählen
-3. **Produktfoto** hochladen (für Lagersuche)
-4. **Lagerort-Foto** hochladen (für Lagercheck – zeigt wo es liegt)
-
----
-
-## QR/Barcode Scanner
-
-### Unterstützte Formate
-- GS1-DataMatrix (Standard auf Medizinprodukten)
-- QR-Code
-- EAN-13
-- Code 128
-- Code 39
-
-### GS1 Application Identifiers
 | AI | Bedeutung |
 |---|---|
-| `(01)` | GTIN – Produktnummer |
-| `(10)` | LOT/Charge |
-| `(17)` | Verfallsdatum (YYMMDD) |
+| `(01)` | GTIN – 14 Zeichen |
+| `(17)` | Verfallsdatum – YYMMDD |
+| `(10)` | LOT/Charge – variabel |
 
-### Ablauf
-1. PIN eingeben → Lagercheck-Screen
-2. „📷 Charge & Verfallsdatum scannen" tippen
-3. Kamera auf GS1-Code halten
-4. Bekanntes Produkt → bestätigen → gespeichert
-5. Unbekanntes Produkt → Artikel aus Liste wählen → GTIN wird dauerhaft verknüpft
+```
+(01)06955824005646(17)290728(10)20240815
+→ GTIN: 06955824005646 · Verfall: 2029-07-28 · LOT: 20240815
+```
+
+### HIBC DataMatrix
+
+```
++EORONB4509F6010/$$10282521960E
+→ Verfall: Oktober 2028 · LOT: 2521960
+```
+
+Format: `+[LIC][PCN]/$$[MMYY][LOT][Check]`
+
+### Bluetooth-Scanner (Netum NT-1228BL)
+1. Scanner einschalten → per Bluetooth koppeln (BT HID Mode)
+2. Verfallsscan öffnen → grüner Punkt = bereit
+3. Scanner auf Code halten → automatisch verarbeitet
+
+---
+
+## PWA – Automatisches Cache-Update
+
+Bei jedem GitHub-Upload `CACHE_VERSION` in `sw.js` erhöhen:
+
+```javascript
+const CACHE_VERSION = 'v8'; // → v9, v10 ...
+```
+
+Alle Geräte laden beim nächsten Öffnen automatisch die neue Version.
+
+**App installieren:**
+- **iPhone:** Safari → Teilen → „Zum Home-Bildschirm"
+- **Android:** Chrome → Menü → „Zum Startbildschirm hinzufügen"
+
+---
+
+## Setup & Installation
+
+1. **Repository klonen**
+```bash
+git clone https://github.com/osxbobo/Lagerbestellung.git
+```
+
+2. **Firebase Projekt anlegen** – Firestore + Auth aktivieren, `firebaseConfig` eintragen
+
+3. **Daten importieren** – `firebase-import-tool-v2.html` lokal öffnen
+
+4. **Ersten Admin anlegen** – Firebase Console → Auth → Nutzer, dann `rollen-import.html`
+
+5. **GitHub Pages aktivieren** – Settings → Pages → Branch: `main`
+
+6. **Domain autorisieren** – Firebase Console → Auth → Autorisierte Domains → `[username].github.io`
+
+7. **Firestore Rules** einfügen und veröffentlichen
 
 ---
 
 ## Sicherheit
 
-### Aktuell (Test-Modus)
-⚠️ **Firestore läuft im Test-Modus bis 23. Mai 2026!**
-Danach müssen die Security Rules aktualisiert werden (siehe oben).
+| Bereich | Schutz |
+|---|---|
+| Lagersuche | Öffentlich (nur Lesen) |
+| Lagerbestellung | 4-stelliger PIN (localStorage) |
+| Verfallsscan | PIN (localStorage) |
+| Portal / Admin | Firebase Auth |
+| Rollen | Firestore `users` Collection |
 
-### Zugriffsschutz
-- **Lagersuche:** Öffentlich (nur lesen)
-- **Lagercheck:** 4-stelliger PIN
-- **Scanner:** PIN-Session (sessionStorage)
-- **Portal/Admin:** Firebase Authentication (E-Mail + Passwort)
-- **Rollen:** Firestore `users` Collection
-
-### Empfehlungen vor Go-Live
-- [ ] Firestore Security Rules auf Produktion umstellen
-- [ ] PIN vom Standard `1234` ändern
-- [ ] Cloudinary Upload Preset auf „Signed" umstellen
-- [ ] API Keys in GitHub Secrets auslagern (optional)
+**Empfehlungen:**
+- PIN nach Go-Live vom Standard `1234` ändern
+- Budget-Alert in Firebase auf 5€/Monat setzen
+- Cloudinary Preset nach Go-Live auf „Signed" umstellen
 
 ---
 
 ## Roadmap
 
-### In Entwicklung
-- 🔲 KI-Texterkennung für Chargen (Anthropic Vision API) – wartet auf Finanzierung
-- 🔲 E-Mail Benachrichtigungen (EmailJS)
-- 🔲 Barcode-Scanner auch im Admin-Bereich
-
-### Geplant
-- 🔲 Statistiken – welche Artikel werden am häufigsten bestellt
-- 🔲 Automatische Mindestbestand-Anpassung basierend auf Verbrauch
+- 🔲 KI-Texterkennung für Chargen (Anthropic Vision API)
+- 🔲 Verbrauchsstatistik – meistbestellte Artikel
+- 🔲 Automatische wöchentliche Verfallserinnerung
+- 🔲 Bilder löschen / ersetzen
+- 🔲 Excel-Export der Bestellhistorie
 - 🔲 Mehrwachen-Unterstützung
 
 ---
@@ -560,25 +433,13 @@ Danach müssen die Security Rules aktualisiert werden (siehe oben).
 |---|---|
 | LP | Lagerplatznummer |
 | VE | Verpackungseinheit |
-| Stk | Stück |
-| P | Pack |
-| R | Rolle |
-| K | Kanister |
-| Fl | Flasche |
-| B | Bögen |
-| S | Schrank |
-| L | Lagerplatz |
-| GS1 | Global Standards 1 (Barcode-Standard) |
+| GS1 | Global Standards 1 |
+| HIBC | Health Industry Bar Code |
 | GTIN | Global Trade Item Number |
 | LOT | Chargennummer |
 
 ---
 
-## Kontakt & Support
+**Erstellt von:** Benjamin Trost · DRK-Rettungsdienst gGmbH · Böblingen
 
-**Erstellt von:** Benjamin Trost  
-
-
----
-
-*Erstellt: April 2026 · LAGER//APP v1.0.0*
+*Stand: Mai 2026 · LAGER//APP v2.0.0*
