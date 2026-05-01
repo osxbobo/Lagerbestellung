@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="LAGER//APP">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"> 
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>LAGER//APP – Rettungswache Malmsheim</title>
   <link rel="stylesheet" href="css/main.css">
   <link rel="stylesheet" href="css/index.css">
@@ -83,6 +83,17 @@
       <div class="hero-tag mono">DRK · Rettungswache Malmsheim</div>
       <h1 class="hero-title">LAGER<span class="accent">//</span>APP</h1>
       <p class="hero-sub">Digitale Lagerverwaltung & Bestandskontrolle</p>
+      <!-- Eingeloggter User -->
+      <div id="saved-user-bar" style="display:none;align-items:center;gap:10px;
+        background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.25);
+        border-radius:12px;padding:10px 16px;margin-bottom:12px;font-size:0.82rem;">
+        <span>👤 Eingeloggt als <strong id="saved-user-name"></strong></span>
+        <button onclick="logoutPin()" style="margin-left:auto;background:none;border:1px solid rgba(249,115,22,0.4);
+          border-radius:6px;padding:4px 10px;color:#f97316;font-size:0.72rem;cursor:pointer;">
+          Abmelden
+        </button>
+      </div>
+
       <div class="hero-actions">
         <button onclick="openPinModal('check')" class="btn btn-primary">📋 Lagerbestellung</button>
         <button onclick="openPinModal('scanner')" class="btn btn-secondary">📷 Verfallsscan</button>
@@ -430,9 +441,12 @@
     window.openPinModal = async function(target) {
       _modalTarget = target;
       _modalPin    = '';
-      document.getElementById('modal-name').value    = '';
       document.getElementById('pin-modal-error').textContent = '';
       updateModalDots();
+
+      // Gespeicherten Namen vorausfüllen
+      const savedName = localStorage.getItem('lager-saved-name') || '';
+      document.getElementById('modal-name').value = savedName;
 
       const titles = {
         check:   ['📋 PIN eingeben', 'Lagerbestellung starten'],
@@ -442,7 +456,28 @@
       document.getElementById('pin-modal-sub').textContent   = titles[target][1];
 
       document.getElementById('pin-modal').style.display = 'flex';
-      setTimeout(() => document.getElementById('modal-name').focus(), 100);
+
+      // Wenn Name schon da → direkt zum PIN
+      if (savedName) {
+        // Gespeicherten PIN prüfen
+        const savedPin = localStorage.getItem('lager-saved-pin');
+        if (savedPin) {
+          // Auto-Login: direkt weiterleiten ohne Modal
+          document.getElementById('pin-modal').style.display = 'none';
+          sessionStorage.setItem('lager-pin-auth', 'true');
+          sessionStorage.setItem('lager-pin-name', savedName);
+          if (target === 'scanner') {
+            window.location.href = 'pages/scanner.html';
+          } else {
+            window.location.href = 'pages/check.html';
+          }
+          return;
+        }
+        // Name da aber kein PIN → direkt zum PIN-Pad springen
+        setTimeout(() => document.querySelector('.modal-pin-key').focus(), 100);
+      } else {
+        setTimeout(() => document.getElementById('modal-name').focus(), 100);
+      }
     };
 
     window.closePinModal = function() {
@@ -500,9 +535,13 @@
           return;
         }
 
-        // PIN korrekt – Session speichern und weiterleiten
+        // PIN korrekt – Session + dauerhaft speichern
         sessionStorage.setItem('lager-pin-auth', 'true');
         sessionStorage.setItem('lager-pin-name', name);
+
+        // Dauerhaft speichern → beim nächsten Öffnen automatisch eingeloggt
+        localStorage.setItem('lager-saved-name', name);
+        localStorage.setItem('lager-saved-pin',  _modalPin);
 
         closePinModal();
 
@@ -521,6 +560,25 @@
     document.getElementById('pin-modal').addEventListener('click', function(e) {
       if (e.target === this) closePinModal();
     });
+
+    // Abmelden
+    window.logoutPin = function() {
+      localStorage.removeItem('lager-saved-name');
+      localStorage.removeItem('lager-saved-pin');
+      sessionStorage.removeItem('lager-pin-auth');
+      sessionStorage.removeItem('lager-pin-name');
+      document.getElementById('saved-user-bar').style.display = 'none';
+    };
+
+    // Beim Laden: gespeicherten User anzeigen
+    (function() {
+      const savedName = localStorage.getItem('lager-saved-name');
+      if (savedName) {
+        const bar = document.getElementById('saved-user-bar');
+        document.getElementById('saved-user-name').textContent = savedName;
+        bar.style.display = 'flex';
+      }
+    })();
   </script>
 
   <script src="js/pwa.js"></script>
