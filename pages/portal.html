@@ -217,6 +217,7 @@
     <button class="mobile-nav-btn" onclick="showSection('bereiche')">🏠 Bereiche</button>
     <button class="mobile-nav-btn" onclick="showSection('fotos')">📸 Fotos</button>
     <button class="mobile-nav-btn" onclick="showSection('pin')">🔑 PIN</button>
+    <button class="mobile-nav-btn" onclick="showSection('statistik')">📊 Statistik</button>
   </div>
 
   <!-- LAYOUT -->
@@ -236,6 +237,8 @@
         <div class="sidebar-item" id="nav-fotos" onclick="showSection('fotos')"><span class="icon">📸</span> Fotos & Bilder</div>
         <div class="sidebar-divider"></div>
         <div class="sidebar-item" id="nav-pin" onclick="showSection('pin')"><span class="icon">🔑</span> PIN ändern</div>
+        <div class="sidebar-divider"></div>
+        <div class="sidebar-item" id="nav-statistik" onclick="showSection('statistik')"><span class="icon">📊</span> Statistik</div>
       </nav>
       <div class="sidebar-bottom">
         <a href="scanner.html" class="sidebar-item" style="text-decoration:none;"><span class="icon">📷</span> Charge-Scanner</a>
@@ -375,6 +378,57 @@
           </div>
           <div id="pin-msg" style="font-size:0.78rem;text-align:center;min-height:20px;"></div>
         </div>
+      </section>
+
+      <!-- ── STATISTIK ── -->
+      <section class="content-section" id="section-statistik">
+        <div class="page-header">
+          <div class="page-title">Statistik</div>
+          <div class="page-sub">Auswertung aller Lagerchecks</div>
+        </div>
+
+        <!-- KPI Row -->
+        <div class="kpi-row" style="margin-bottom:20px;">
+          <div class="kpi-card"><div class="kpi-label">Lagerchecks gesamt</div><div class="kpi-value" id="stat-total" style="color:var(--accent2)">–</div></div>
+          <div class="kpi-card"><div class="kpi-label">Nachbestellungen</div><div class="kpi-value" id="stat-orders" style="color:var(--accent)">–</div></div>
+          <div class="kpi-card"><div class="kpi-label">Ø pro Check</div><div class="kpi-value" id="stat-avg" style="color:var(--green)">–</div></div>
+
+        </div>
+
+        <!-- Top Artikel -->
+        <div style="margin-bottom:16px;">
+          <div class="table-wrap">
+            <div style="padding:14px 16px;border-bottom:1px solid var(--border);font-size:0.85rem;font-weight:700;">
+              🔴 Meistbestellte Artikel
+            </div>
+            <div id="stat-top-artikel" style="padding:8px 0;">
+              <div class="loading-state"><div class="spinner"></div></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Verlauf -->
+        <div class="table-wrap" style="margin-bottom:16px;">
+          <div style="padding:14px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+            <div style="font-size:0.85rem;font-weight:700;">📅 Checks pro Woche</div>
+            <div style="font-size:0.72rem;color:var(--muted);">Letzte 12 Wochen</div>
+          </div>
+          <div style="padding:16px;overflow-x:auto;">
+            <canvas id="stat-chart" height="80"></canvas>
+          </div>
+        </div>
+
+        <!-- MIN/MAX Analyse -->
+        <div class="table-wrap">
+          <div style="padding:14px 16px;border-bottom:1px solid var(--border);font-size:0.85rem;font-weight:700;">
+            ⚡ MIN/MAX Empfehlungen
+            <div style="font-size:0.68rem;color:var(--muted);font-weight:400;margin-top:2px;">Artikel die regelmäßig nachbestellt werden – MIN erhöhen?</div>
+          </div>
+          <div id="stat-empfehlungen" style="padding:8px 0;">
+            <div class="loading-state"><div class="spinner"></div></div>
+          </div>
+        </div>
+
       </section>
 
     </main>
@@ -1162,6 +1216,201 @@
       }
       pdf.save(`Lagerbestellung_${(b.mitarbeiter||'').replace(/\s/g,'_')}_${dateStr.replace(/\./g,'-')}.pdf`);
     };
+
+
+    // ── STATISTIK ──
+    window.showSection_orig = window.showSection;
+    const _origShow = window.showSection;
+    window.showSection = function(name) {
+      _origShow(name);
+      if (name === 'statistik') renderStatistik();
+    };
+
+    async function renderStatistik() {
+      // Alle Bestellungen laden
+      const snap = await getDocs(query(collection(db, 'bestellungen'), orderBy('datum', 'desc')));
+      const alle = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+      if (alle.length === 0) {
+        document.getElementById('stat-total').textContent = '0';
+        document.getElementById('stat-orders').textContent = '0';
+        document.getElementById('stat-avg').textContent = '0';
+        document.getElementById('stat-top').textContent = '–';
+        document.getElementById('stat-top-artikel').innerHTML = '<div class="empty-state">Noch keine Daten</div>';
+        document.getElementById('stat-mitarbeiter').innerHTML = '<div class="empty-state">Noch keine Daten</div>';
+        document.getElementById('stat-empfehlungen').innerHTML = '<div class="empty-state">Noch keine Daten</div>';
+        return;
+      }
+
+      // ── Artikel-Häufigkeit berechnen ──
+      const artikelCount = {};
+      let totalNachbest = 0;
+
+      for (const b of alle) {
+        const nb = b.nachbestellungen || [];
+        totalNachbest += nb.length;
+        for (const a of nb) {
+          const key = a.name || a.id;
+          artikelCount[key] = (artikelCount[key] || 0) + 1;
+        }
+      }
+
+      // ── KPIs ──
+      document.getElementById('stat-total').textContent  = alle.length;
+      document.getElementById('stat-orders').textContent = totalNachbest;
+      document.getElementById('stat-avg').textContent    = (totalNachbest / alle.length).toFixed(1);
+
+      // ── Mitarbeiter-Häufigkeit ──
+      const mitarbeiterCount = {};
+      for (const b of alle) {
+        const namen = b.mitarbeiterListe || [b.mitarbeiter || '–'];
+        for (const n of namen) {
+          if (n) mitarbeiterCount[n] = (mitarbeiterCount[n] || 0) + 1;
+        }
+      }
+
+      const topMitarbeiter = Object.entries(mitarbeiterCount)
+        .sort((a, b) => b[1] - a[1]);
+
+
+
+      // ── Top Artikel ──
+      const topArtikel = Object.entries(artikelCount)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 10);
+
+      const maxCount = topArtikel[0]?.[1] || 1;
+
+      document.getElementById('stat-top-artikel').innerHTML = topArtikel.length === 0
+        ? '<div class="empty-state">Keine Nachbestellungen</div>'
+        : topArtikel.map(([name, count], i) => {
+            const pct = Math.round((count / maxCount) * 100);
+            const color = i < 3 ? 'var(--red)' : i < 6 ? 'var(--yellow)' : 'var(--accent2)';
+            return `
+              <div style="padding:8px 16px;border-bottom:1px solid var(--border);">
+                <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+                  <span style="font-size:0.78rem;font-weight:600;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${name}</span>
+                  <span style="font-size:0.72rem;font-family:'IBM Plex Mono',monospace;color:${color};flex-shrink:0;margin-left:8px;">${count}×</span>
+                </div>
+                <div style="background:var(--surface2);border-radius:4px;height:4px;overflow:hidden;">
+                  <div style="width:${pct}%;height:100%;background:${color};border-radius:4px;transition:width 0.5s ease;"></div>
+                </div>
+              </div>`;
+          }).join('');
+
+
+
+      // ── Wochenverlauf (letzte 12 Wochen) ──
+      const wochen = {};
+      const jetzt  = new Date();
+
+      for (let i = 11; i >= 0; i--) {
+        const d = new Date(jetzt);
+        d.setDate(d.getDate() - i * 7);
+        const key = `KW${getWeek(d)}`;
+        wochen[key] = { label: key, count: 0, nb: 0 };
+      }
+
+      for (const b of alle) {
+        const d = b.datum?.toDate ? b.datum.toDate() : new Date(b.datum);
+        const key = `KW${getWeek(d)}`;
+        if (wochen[key]) {
+          wochen[key].count++;
+          wochen[key].nb += (b.nachbestellungen || []).length;
+        }
+      }
+
+      drawChart(Object.values(wochen));
+
+      // ── MIN/MAX Empfehlungen ──
+      // Artikel die in mehr als 30% aller Checks nachbestellt wurden
+      const threshold = alle.length * 0.3;
+      const empf = Object.entries(artikelCount)
+        .filter(([, count]) => count >= threshold && count >= 2)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 8);
+
+      document.getElementById('stat-empfehlungen').innerHTML = empf.length === 0
+        ? '<div class="empty-state" style="padding:20px;">✅ Alle Artikel scheinen gut bestandsmäßig versorgt</div>'
+        : empf.map(([name, count]) => {
+            const pct = Math.round((count / alle.length) * 100);
+            const artikel = alleArtikel.find(a => a.name === name);
+            return `
+              <div style="padding:10px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px;">
+                <div style="flex:1;min-width:0;">
+                  <div style="font-size:0.8rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${name}</div>
+                  <div style="font-size:0.65rem;color:var(--muted);font-family:'IBM Plex Mono',monospace;margin-top:2px;">
+                    In ${pct}% aller Checks nachbestellt · ${count}× total
+                    ${artikel ? ` · MIN: ${artikel.min||'–'} ${artikel.minEinheit||''}` : ''}
+                  </div>
+                </div>
+                <div style="background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);border-radius:6px;padding:3px 8px;font-size:0.65rem;color:var(--accent);font-family:'IBM Plex Mono',monospace;white-space:nowrap;flex-shrink:0;">
+                  MIN erhöhen?
+                </div>
+              </div>`;
+          }).join('');
+    }
+
+    function getWeek(d) {
+      const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+      const dayNum = date.getUTCDay() || 7;
+      date.setUTCDate(date.getUTCDate() + 4 - dayNum);
+      const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+      return Math.ceil((((date - yearStart) / 86400000) + 1) / 7);
+    }
+
+    function drawChart(wochen) {
+      const canvas = document.getElementById('stat-chart');
+      if (!canvas) return;
+      const ctx    = canvas.getContext('2d');
+      const W      = canvas.offsetWidth || 600;
+      const H      = 80;
+      canvas.width  = W;
+      canvas.height = H;
+
+      const max    = Math.max(...wochen.map(w => w.count), 1);
+      const barW   = (W - 40) / wochen.length;
+      const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+      const barColor  = '#f97316';
+      const textColor = isDark ? '#6b7280' : '#9ca3af';
+
+      ctx.clearRect(0, 0, W, H);
+
+      wochen.forEach((w, i) => {
+        const x   = 20 + i * barW;
+        const pct = w.count / max;
+        const bh  = Math.max(pct * (H - 24), w.count > 0 ? 4 : 0);
+        const y   = H - 16 - bh;
+
+        // Bar
+        ctx.fillStyle = w.count > 0 ? barColor : (isDark ? '#1f2937' : '#f3f4f6');
+        const r = 3;
+        ctx.beginPath();
+        ctx.moveTo(x + r, y);
+        ctx.lineTo(x + barW - 4 - r, y);
+        ctx.arcTo(x + barW - 4, y, x + barW - 4, y + r, r);
+        ctx.lineTo(x + barW - 4, y + bh);
+        ctx.lineTo(x, y + bh);
+        ctx.arcTo(x, y, x + r, y, r);
+        ctx.closePath();
+        ctx.fill();
+
+        // Count label
+        if (w.count > 0) {
+          ctx.fillStyle = barColor;
+          ctx.font      = `bold 9px 'IBM Plex Mono'`;
+          ctx.textAlign = 'center';
+          ctx.fillText(w.count, x + (barW - 4) / 2, y - 3);
+        }
+
+        // Week label
+        ctx.fillStyle = textColor;
+        ctx.font      = '8px IBM Plex Mono';
+        ctx.textAlign = 'center';
+        ctx.fillText(w.label, x + (barW - 4) / 2, H - 3);
+      });
+    }
+
   </script>
   <script src="../js/pwa.js"></script>
 </body>
