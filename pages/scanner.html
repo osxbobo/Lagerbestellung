@@ -896,53 +896,122 @@
       if (typeof Quagga === 'undefined') return;
       if (quaggaRunning) Quagga.stop();
 
-      Quagga.init({
-        inputStream: {
-          name:        'Live',
-          type:        'LiveStream',
-          target:      document.getElementById('video').parentElement,
-          constraints: { facingMode, width: 1280, height: 720 },
-        },
-        decoder: {
-          readers: [
-            'code_128_reader',
-            'ean_reader',
-            'ean_8_reader',
-            'code_39_reader',
-          ],
-          multiple: false,
-        },
-        locate:   true,
-        numOfWorkers: 2,
-        frequency: 10,
-      }, err => {
-        if (err) { console.warn('QuaGGA init:', err); return; }
-        quaggaRunning = true;
-        Quagga.start();
-      });
+      // QuaGGA nutzt den vorhandenen Video-Stream von ZXing
+      // Keine neue Kamera öffnen – direkt auf dem Video-Element arbeiten
+      const videoEl = document.getElementById('video');
 
-      Quagga.onDetected(result => {
-        if (!scanning) return;
-        const code = result?.codeResult?.code;
-        if (!code || code.length < 4) return;
+      // Warten bis ZXing Stream läuft
+      const checkStream = setInterval(() => {
+        if (!videoEl.srcObject) return;
+        clearInterval(checkStream);
 
-        // Konfidenz prüfen
-        const err = result.codeResult.decodedCodes
-          .filter(x => x.error !== undefined)
-          .map(x => x.error);
-        const avgErr = err.reduce((s, e) => s + e, 0) / (err.length || 1);
-        if (avgErr > 0.25) return; // Zu ungenau → ignorieren
+        try {
+          Quagga.init({
+            inputStream: {
+              name: 'Live',
+              type: 'LiveStream',
+              target: videoEl,         // vorhandenes Video-Element nutzen
+              constraints: { facingMode },
+            },
+            decoder: {
+              readers: [
+                'code_128_reader',
+                'ean_reader',
+                'ean_8_reader',
+                'code_39_reader',
+              ],
+              multiple: false,
+            },
+            locate:       true,
+            numOfWorkers: 0,           // Kein Worker – nutzt bestehenden Stream
+            frequency:    8,
+          }, err => {
+            if (err) {
+              console.warn('QuaGGA init:', err);
+              // Fallback: QuaGGA als separate Instanz ohne Video-Anzeige
+              startQuaGGAFallback(facingMode);
+              return;
+            }
+            quaggaRunning = true;
+            Quagga.start();
+          });
 
-        scanning = false;
-        stopQuaGGA();
-        onScanResult(code);
-      });
+          Quagga.onDetected(result => {
+            if (!scanning) return;
+            const code = result?.codeResult?.code;
+            if (!code || code.length < 4) return;
+
+            const errs = result.codeResult.decodedCodes
+              .filter(x => x.error !== undefined)
+              .map(x => x.error);
+            const avgErr = errs.length > 0
+              ? errs.reduce((s, e) => s + e, 0) / errs.length
+              : 0;
+            if (avgErr > 0.3) return;
+
+            scanning = false;
+            stopQuaGGA();
+            onScanResult(code);
+          });
+
+        } catch(e) {
+          console.warn('QuaGGA Fehler:', e);
+        }
+      }, 500);
+    }
+
+    // Fallback: QuaGGA analysiert Kamera-Frames ohne eigenes Video-Element
+    function startQuaGGAFallback(facingMode) {
+      const videoEl = document.getElementById('video');
+      if (!videoEl.srcObject) return;
+
+      const canvas  = document.createElement('canvas');
+      const ctx     = canvas.getContext('2d');
+      let   running = true;
+
+      quaggaRunning = true;
+
+      function processFrame() {
+        if (!running || !scanning) return;
+        if (videoEl.readyState !== videoEl.HAVE_ENOUGH_DATA) {
+          requestAnimationFrame(processFrame);
+          return;
+        }
+
+        canvas.width  = videoEl.videoWidth;
+        canvas.height = videoEl.videoHeight;
+        ctx.drawImage(videoEl, 0, 0);
+
+        Quagga.decodeSingle({
+          src: canvas.toDataURL('image/jpeg', 0.8),
+          numOfWorkers: 0,
+          decoder: { readers: ['code_128_reader', 'ean_reader', 'ean_8_reader'] },
+          locate: true,
+        }, result => {
+          if (result?.codeResult?.code && scanning) {
+            scanning = false;
+            running  = false;
+            onScanResult(result.codeResult.code);
+          }
+        });
+
+        setTimeout(() => requestAnimationFrame(processFrame), 150);
+      }
+
+      requestAnimationFrame(processFrame);
+
+      // stopQuaGGA setzt running = false
+      window._quaggaFallbackStop = () => { running = false; };
     }
 
     function stopQuaGGA() {
       if (typeof Quagga !== 'undefined' && quaggaRunning) {
         try { Quagga.stop(); } catch {}
         quaggaRunning = false;
+      }
+      if (window._quaggaFallbackStop) {
+        window._quaggaFallbackStop();
+        window._quaggaFallbackStop = null;
       }
     }
 
