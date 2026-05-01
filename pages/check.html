@@ -425,41 +425,7 @@
     .sig-hint { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); font-size: 0.75rem; color: var(--muted); pointer-events: none; font-family: 'IBM Plex Mono', monospace; transition: opacity 0.2s; }
     .sig-clear { position: absolute; top: 10px; right: 10px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; color: var(--muted); font-size: 0.72rem; padding: 5px 12px; cursor: pointer; font-family: 'IBM Plex Mono', monospace; touch-action: manipulation; }
 
-    /* ── VERFALLSSCAN BANNER ── */
-    .scanner-banner {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 14px 20px;
-      background: rgba(14,165,233,0.08);
-      border: 1px solid rgba(14,165,233,0.25);
-      border-radius: 12px;
-      margin: 12px 16px 4px;
-      cursor: pointer;
-      touch-action: manipulation;
-      -webkit-tap-highlight-color: transparent;
-      transition: all 0.15s;
-      text-decoration: none;
-    }
 
-    .scanner-banner:active { background: rgba(14,165,233,0.15); }
-
-    .scanner-banner-icon {
-      font-size: 1.6rem;
-      flex-shrink: 0;
-    }
-
-    .scanner-banner-text {
-      font-size: 0.95rem;
-      font-weight: 700;
-      color: var(--accent2);
-    }
-
-    .scanner-banner-arrow {
-      font-size: 1.3rem;
-      color: var(--accent2);
-      flex-shrink: 0;
-    }
 
     /* ── JOIN SCREEN ── */
     #bereich-select-list::-webkit-scrollbar { width: 4px; }
@@ -568,16 +534,6 @@
         <span id="check-progress-label">Bereich 1 von 1</span>
         <span id="check-progress-pct">0%</span>
       </div>
-    </div>
-
-    <!-- Scanner Banner – nur nach PIN sichtbar -->
-    <div class="scanner-banner" onclick="window.location.href='scanner.html'">
-      <span class="scanner-banner-icon">📷</span>
-      <div style="flex:1;">
-        <div class="scanner-banner-text">Verfallsscan starten</div>
-        <div style="font-size:0.7rem;color:var(--muted);margin-top:1px;">Charge & Verfallsdatum mit Kamera erfassen</div>
-      </div>
-      <span class="scanner-banner-arrow">›</span>
     </div>
 
     <div class="check-body" id="check-body"></div>
@@ -1405,25 +1361,36 @@
     async function startSession(joinExisting) {
       try {
         if (joinExisting && window._openSession) {
-          // Bestehende Session beitreten
+          // ── Bestehende Session beitreten ──
           sessionId = window._openSession.id;
           const sessionRef = doc(db, 'bestellungen_session', sessionId);
 
           // Vergabene Bereiche updaten
-          const vergeben = window._openSession.vergebeneBereiche || {};
-          meineBereiche.forEach(bid => vergeben[bid] = userName);
+          const vergeben = { ...(window._openSession.vergebeneBereiche || {}) };
+
+          // Bereiche vom vorherigen Besitzer übernehmen
+          meineBereiche.forEach(bid => {
+            vergeben[bid] = userName;
+          });
 
           // Teilnehmer hinzufügen
-          const teilnehmer = window._openSession.teilnehmer || [];
+          const teilnehmer = [...(window._openSession.teilnehmer || [])];
           if (!teilnehmer.find(t => t.name === userName)) {
             teilnehmer.push({ name: userName, beitritt: new Date().toISOString() });
           }
 
-          await updateDoc(sessionRef, { vergeben, teilnehmer });
-          sessionDraft = { ...window._openSession, vergeben, teilnehmer };
+          await updateDoc(sessionRef, {
+            vergebeneBereiche: vergeben,
+            teilnehmer,
+          });
+          sessionDraft = { ...window._openSession, vergebeneBereiche: vergeben, teilnehmer };
+
+          // Erste anderen Nutzer auch updaten (Live-Änderung der Bereiche)
+          // Anderen Nutzer bekommen beim nächsten autoSave die neuen Bereiche
 
         } else {
-          // Neue Session erstellen
+          // ── Neue Session erstellen (auch wenn alleine!) ──
+          // Andere können dann jederzeit beitreten
           const vergeben = {};
           meineBereiche.forEach(bid => vergeben[bid] = userName);
 
@@ -1435,17 +1402,16 @@
             erledigteBereiche:  [],
             bestellungen:       {},
           });
-          sessionId   = sessionRef.id;
-          sessionDraft = { id: sessionId, bestellungen: {}, erledigteBereiche: [], teilnehmer: [{ name: userName }] };
+          sessionId    = sessionRef.id;
+          sessionDraft = {
+            id: sessionId, bestellungen: {}, erledigteBereiche: [],
+            teilnehmer: [{ name: userName }], vergebeneBereiche: vergeben,
+          };
         }
 
-        // autoSaveId auf Session setzen
         autoSaveId = sessionId;
 
-        // Nur meine Bereiche in alleBereiche filtern
-        const gefilterteBereiche = alleBereiche.filter(b => meineBereiche.includes(b.id));
-
-        // currentIdx auf ersteren meiner Bereiche setzen
+        // currentIdx auf ersten meiner Bereiche setzen
         const ersterIdx = alleBereiche.findIndex(b => meineBereiche.includes(b.id));
         currentIdx = ersterIdx >= 0 ? ersterIdx : 0;
 

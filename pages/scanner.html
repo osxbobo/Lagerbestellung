@@ -402,7 +402,7 @@
   <nav class="navbar">
     <div class="navbar-inner">
       <div style="display:flex;align-items:center;gap:10px;">
-        <button onclick="history.back()" style="
+        <button onclick="window.location.href='../index.html'" style="
           width:36px;height:36px;border-radius:8px;
           border:1px solid var(--border);background:var(--surface2);
           color:var(--text);font-size:1.1rem;cursor:pointer;
@@ -588,8 +588,8 @@
       const pinAuth = sessionStorage.getItem('lager-pin-auth');
 
       if (!user && !pinAuth) {
-        // Kein Login und kein PIN – zurück zur Check-Seite
-        window.location.href = 'check.html';
+        // Kein Login und kein PIN – zurück zur Startseite
+        window.location.href = '../index.html';
         return;
       }
 
