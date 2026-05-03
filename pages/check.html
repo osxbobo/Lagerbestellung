@@ -855,41 +855,86 @@
 
     // ── Lagerbestellung stornieren ──
     window.storniereBestellung = async function() {
-      const confirmed = confirm(
-        'Lagerbestellung wirklich stornieren?\n\nAlle bisherigen Eingaben gehen verloren.'
-      );
-      if (!confirmed) return;
-
       try {
         stopAutoSave();
 
-        // Session löschen
         if (sessionId) {
-          await deleteDoc(doc(db, 'bestellungen_session', sessionId));
-          sessionId = null;
-        }
+          // Session aus Firestore holen – prüfen ob andere noch dabei sind
+          const sessionSnap = await getDoc(doc(db, 'bestellungen_session', sessionId));
+          if (sessionSnap.exists()) {
+            const sessionData  = sessionSnap.data();
+            const andereAktive = (sessionData.teilnehmer || [])
+              .filter(t => t.name !== userName);
 
-        // Draft löschen
-        if (autoSaveId) {
-          await deleteDoc(doc(db, 'bestellungen_draft', autoSaveId));
-          autoSaveId = null;
-        }
+            if (andereAktive.length > 0) {
+              // Andere arbeiten noch → nur selbst austreten
+              const namen = andereAktive.map(t => t.name).join(', ');
+              const confirmed = confirm(
+                `${namen} ${andereAktive.length === 1 ? 'arbeitet' : 'arbeiten'} noch an der Bestellung.\n\nNur deinen Teil stornieren und die anderen weitermachen lassen?`
+              );
+              if (!confirmed) return;
 
-        // Alle Drafts dieses Nutzers löschen
-        try {
-          const drafts = await getDocs(query(collection(db, 'bestellungen_draft'), orderBy('datum', 'desc')));
-          for (const d of drafts.docs) {
-            if (d.data().mitarbeiter === userName) {
-              await deleteDoc(doc(db, 'bestellungen_draft', d.id));
+              // Nur eigene Bereiche freigeben + aus Teilnehmer entfernen
+              const vergeben   = { ...(sessionData.vergebeneBereiche || {}) };
+              const teilnehmer = (sessionData.teilnehmer || []).filter(t => t.name !== userName);
+
+              // Eigene Bereiche aus vergeben entfernen
+              Object.keys(vergeben).forEach(bid => {
+                if (vergeben[bid] === userName) delete vergeben[bid];
+              });
+
+              // Eigene Bestellungen aus Session entfernen
+              const bestellungen = { ...(sessionData.bestellungen || {}) };
+              // Artikel die diesem Nutzer gehören entfernen
+              meineBereiche.forEach(bid => {
+                const artikelImBereich = alleArtikel.filter(a => a.bereich === bid);
+                artikelImBereich.forEach(a => delete bestellungen[a.id]);
+              });
+
+              await updateDoc(doc(db, 'bestellungen_session', sessionId), {
+                vergeben, teilnehmer, bestellungen,
+              });
+
+            } else {
+              // Nur ich bin dabei → komplette Session löschen
+              const confirmed = confirm(
+                'Lagerbestellung wirklich stornieren?\n\nAlle bisherigen Eingaben gehen verloren.'
+              );
+              if (!confirmed) return;
+
+              await deleteDoc(doc(db, 'bestellungen_session', sessionId));
             }
           }
-        } catch(e) {}
+          sessionId  = null;
+          autoSaveId = null;
+
+        } else {
+          // Einzelner Nutzer ohne Session
+          const confirmed = confirm(
+            'Lagerbestellung wirklich stornieren?\n\nAlle bisherigen Eingaben gehen verloren.'
+          );
+          if (!confirmed) return;
+
+          // Draft löschen
+          if (autoSaveId) {
+            await deleteDoc(doc(db, 'bestellungen_draft', autoSaveId));
+            autoSaveId = null;
+          }
+          // Alle eigenen Drafts löschen
+          try {
+            const drafts = await getDocs(query(collection(db, 'bestellungen_draft'), orderBy('datum', 'desc')));
+            for (const d of drafts.docs) {
+              if (d.data().mitarbeiter === userName) {
+                await deleteDoc(doc(db, 'bestellungen_draft', d.id));
+              }
+            }
+          } catch(e) {}
+        }
 
       } catch(e) {
-        console.log('Storno:', e.message);
+        console.log('Storno Fehler:', e.message);
       }
 
-      // Zurück zur Startseite
       window.location.href = '../index.html';
     };
 
