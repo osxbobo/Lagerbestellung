@@ -389,7 +389,7 @@
 
         <!-- KPI Row -->
         <div class="kpi-row" style="margin-bottom:20px;">
-          <div class="kpi-card"><div class="kpi-label">Lagerchecks gesamt</div><div class="kpi-value" id="stat-total" style="color:var(--accent2)">–</div></div>
+          <div class="kpi-card"><div class="kpi-label">Lagerbestellungen gesamt</div><div class="kpi-value" id="stat-total" style="color:var(--accent2)">–</div></div>
           <div class="kpi-card"><div class="kpi-label">Nachbestellungen</div><div class="kpi-value" id="stat-orders" style="color:var(--accent)">–</div></div>
           <div class="kpi-card"><div class="kpi-label">Ø pro Check</div><div class="kpi-value" id="stat-avg" style="color:var(--green)">–</div></div>
 
@@ -410,7 +410,7 @@
         <!-- Verlauf -->
         <div class="table-wrap" style="margin-bottom:16px;">
           <div style="padding:14px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
-            <div style="font-size:0.85rem;font-weight:700;">📅 Checks pro Woche</div>
+            <div style="font-size:0.85rem;font-weight:700;">📅 Bestellungen pro Woche</div>
             <div style="font-size:0.72rem;color:var(--muted);">Letzte 12 Wochen</div>
           </div>
           <div style="padding:16px;overflow-x:auto;">
@@ -607,9 +607,10 @@
       document.getElementById(`section-${name}`).classList.add('active');
       const nav = document.getElementById(`nav-${name}`);
       if (nav) nav.classList.add('active');
-      // Mobile nav active
       const mBtns = document.querySelectorAll('.mobile-nav-btn');
       mBtns.forEach(b => { if (b.getAttribute('onclick')?.includes(name)) b.classList.add('active'); });
+      // Statistik laden wenn Tab geöffnet wird
+      if (name === 'statistik') renderStatistik();
     };
 
     // ── Toast ──
@@ -764,6 +765,18 @@
       }
     }
 
+    // ── Natürliche Sortierung für LP-Nummern ──
+    function naturalSort(a, b) {
+      const seg = s => (s||'').split(/[.\-]/).map(x => isNaN(x) ? x : parseInt(x,10));
+      const sa = seg(a), sb = seg(b);
+      for (let i = 0; i < Math.max(sa.length, sb.length); i++) {
+        const va = sa[i] ?? '', vb = sb[i] ?? '';
+        if (va < vb) return -1;
+        if (va > vb) return  1;
+      }
+      return 0;
+    }
+
     function getBereichIcon(name) {
       const n = name.toLowerCase();
       if (n.includes('schrank')) return '🗄️';
@@ -790,6 +803,7 @@
 
     // ── ARTIKEL ──
     function renderArtikelTable(data) {
+      data = [...data].sort((a,b) => naturalSort(a.lp||'', b.lp||''));
       const tbody = document.getElementById('artikel-tbody');
       tbody.innerHTML = data.map(a => {
         const b = alleBereiche.find(x => x.id === a.bereich);
@@ -1149,7 +1163,9 @@
       let rowCount = 0;
 
       for (const bereichObj of alleBereiche) {
-        const bereichArtikel = alleArtikel.filter(a => a.bereich === bereichObj.id);
+        const bereichArtikel = alleArtikel
+          .filter(a => a.bereich === bereichObj.id)
+          .sort((a, b) => naturalSort(a.lp||'', b.lp||''));
         if (bereichArtikel.length === 0) continue;
         if (y > 268) { pdf.addPage(); y = 14; drawHeader(); }
         pdf.setFillColor(180,180,180);
@@ -1219,26 +1235,17 @@
 
 
     // ── STATISTIK ──
-    window.showSection_orig = window.showSection;
-    const _origShow = window.showSection;
-    window.showSection = function(name) {
-      _origShow(name);
-      if (name === 'statistik') renderStatistik();
-    };
 
     async function renderStatistik() {
-      // Alle Bestellungen laden
-      const snap = await getDocs(query(collection(db, 'bestellungen'), orderBy('datum', 'desc')));
-      const alle = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      // Bereits geladene Bestellungen nutzen
+      const alle = alleBestellungen;
 
       if (alle.length === 0) {
-        document.getElementById('stat-total').textContent = '0';
+        document.getElementById('stat-total').textContent  = '0';
         document.getElementById('stat-orders').textContent = '0';
-        document.getElementById('stat-avg').textContent = '0';
-        document.getElementById('stat-top').textContent = '–';
-        document.getElementById('stat-top-artikel').innerHTML = '<div class="empty-state">Noch keine Daten</div>';
-        document.getElementById('stat-mitarbeiter').innerHTML = '<div class="empty-state">Noch keine Daten</div>';
-        document.getElementById('stat-empfehlungen').innerHTML = '<div class="empty-state">Noch keine Daten</div>';
+        document.getElementById('stat-avg').textContent    = '0';
+        document.getElementById('stat-top-artikel').innerHTML   = '<div class="empty-state">Noch keine Daten</div>';
+        document.getElementById('stat-empfehlungen').innerHTML  = '<div class="empty-state">Noch keine Daten</div>';
         return;
       }
 
@@ -1323,7 +1330,7 @@
       drawChart(Object.values(wochen));
 
       // ── MIN/MAX Empfehlungen ──
-      // Artikel die in mehr als 30% aller Checks nachbestellt wurden
+      // Artikel die in mehr als 30% aller Bestellungen nachbestellt wurden
       const threshold = alle.length * 0.3;
       const empf = Object.entries(artikelCount)
         .filter(([, count]) => count >= threshold && count >= 2)
@@ -1340,7 +1347,7 @@
                 <div style="flex:1;min-width:0;">
                   <div style="font-size:0.8rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${name}</div>
                   <div style="font-size:0.65rem;color:var(--muted);font-family:'IBM Plex Mono',monospace;margin-top:2px;">
-                    In ${pct}% aller Checks nachbestellt · ${count}× total
+                    In ${pct}% aller Bestellungen nachbestellt · ${count}× total
                     ${artikel ? ` · MIN: ${artikel.min||'–'} ${artikel.minEinheit||''}` : ''}
                   </div>
                 </div>

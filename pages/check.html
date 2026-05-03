@@ -633,6 +633,21 @@
 
     const QUICK_VALUES = [1, 2, 3, 5, 10];
 
+    // ── Natürliche Sortierung für LP-Nummern ──
+    // S.1.2.1 < S.1.10.1 < S.1.2.2 etc.
+    function naturalSort(a, b) {
+      const segmentsA = a.split(/[\.\-]/).map(s => isNaN(s) ? s : parseInt(s, 10));
+      const segmentsB = b.split(/[\.\-]/).map(s => isNaN(s) ? s : parseInt(s, 10));
+      const len = Math.max(segmentsA.length, segmentsB.length);
+      for (let i = 0; i < len; i++) {
+        const sa = segmentsA[i] ?? '';
+        const sb = segmentsB[i] ?? '';
+        if (sa < sb) return -1;
+        if (sa > sb) return  1;
+      }
+      return 0;
+    }
+
     // ── PIN ──
     function handlePinKey(key) {
       document.getElementById('pin-error').textContent = '';
@@ -852,7 +867,9 @@
     function renderBereich(idx) {
       currentIdx = idx;
       const bereich = alleBereiche[idx];
-      const artikel = alleArtikel.filter(a => a.bereich === bereich.id);
+      const artikel = alleArtikel
+        .filter(a => a.bereich === bereich.id)
+        .sort((a, b) => naturalSort(a.lp || '', b.lp || ''));
       // Fortschritt nur über meine Bereiche berechnen
       const meineIdx = meineBereiche.length > 0
         ? meineBereiche.indexOf(alleBereiche[idx]?.id) + 1
