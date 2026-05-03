@@ -393,6 +393,14 @@
 
     .hidden { display: none !important; }
 
+    /* QuaGGA Canvas verstecken – nur eigenes Video-Element zeigen */
+    #interactive.viewport canvas,
+    #interactive.viewport video,
+    canvas.drawingBuffer {
+      display: none !important;
+    }
+    .drawingBuffer { display: none !important; }
+
     /* Scrollbar */
     .artikel-suggestions::-webkit-scrollbar { width: 4px; }
     .artikel-suggestions::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
@@ -729,7 +737,6 @@
           if (mm >= 1 && mm <= 12 && yy >= 20 && yy <= 40) {
             const day = (dd >= 1 && dd <= 31) ? String(dd).padStart(2,'0') : '28';
             result.verfall = `20${String(yy).padStart(2,'0')}-${String(mm).padStart(2,'0')}-${day}`;
-          }-${d.substring(2,4)}-${d.substring(4,6)}`;
           }
           if (ai11) {
             const d = ai11[1];
@@ -940,8 +947,9 @@
             inputStream: {
               name: 'Live',
               type: 'LiveStream',
-              target: videoEl,         // vorhandenes Video-Element nutzen
+              target: videoEl,
               constraints: { facingMode },
+              area: { top: '0%', right: '0%', left: '0%', bottom: '0%' },
             },
             decoder: {
               readers: [
