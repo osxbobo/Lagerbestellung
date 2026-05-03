@@ -544,6 +544,18 @@
       <button class="bnav-btn weiter" id="btn-weiter" onclick="nextBereich()">Weiter →</button>
       <button class="bnav-btn finish hidden" id="btn-finish" onclick="showSignature()">✅ Abschließen</button>
     </div>
+
+    <!-- Stornieren -->
+    <div style="text-align:center;padding:8px 16px 16px;">
+      <button onclick="storniereBestellung()" style="
+        background:none;border:none;color:var(--muted);
+        font-size:0.75rem;cursor:pointer;
+        font-family:'DM Sans',sans-serif;
+        text-decoration:underline;
+        touch-action:manipulation;
+        padding:6px 12px;
+      ">🗑️ Lagerbestellung stornieren</button>
+    </div>
   </div>
 
   <!-- ── UNTERSCHRIFT ── -->
@@ -839,6 +851,46 @@
         const banner = document.getElementById('draft-banner');
         if (banner) banner.remove();
       } catch(e) {}
+    };
+
+    // ── Lagerbestellung stornieren ──
+    window.storniereBestellung = async function() {
+      const confirmed = confirm(
+        'Lagerbestellung wirklich stornieren?\n\nAlle bisherigen Eingaben gehen verloren.'
+      );
+      if (!confirmed) return;
+
+      try {
+        stopAutoSave();
+
+        // Session löschen
+        if (sessionId) {
+          await deleteDoc(doc(db, 'bestellungen_session', sessionId));
+          sessionId = null;
+        }
+
+        // Draft löschen
+        if (autoSaveId) {
+          await deleteDoc(doc(db, 'bestellungen_draft', autoSaveId));
+          autoSaveId = null;
+        }
+
+        // Alle Drafts dieses Nutzers löschen
+        try {
+          const drafts = await getDocs(query(collection(db, 'bestellungen_draft'), orderBy('datum', 'desc')));
+          for (const d of drafts.docs) {
+            if (d.data().mitarbeiter === userName) {
+              await deleteDoc(doc(db, 'bestellungen_draft', d.id));
+            }
+          }
+        } catch(e) {}
+
+      } catch(e) {
+        console.log('Storno:', e.message);
+      }
+
+      // Zurück zur Startseite
+      window.location.href = '../index.html';
     };
 
     function showToast(msg, type = 'success') {
