@@ -270,7 +270,20 @@
 
   </div><!-- /content -->
 
-  <script src="../js/theme.js"></script>
+  <script>
+    // Theme inline – kein externes Modul nötig
+    (function() {
+      const saved = localStorage.getItem('theme') || 'light';
+      document.documentElement.setAttribute('data-theme', saved);
+    })();
+    function toggleTheme() {
+      const current = document.documentElement.getAttribute('data-theme');
+      const next    = current === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      localStorage.setItem('theme', next);
+      document.querySelector('.theme-btn').textContent = next === 'dark' ? '🌙' : '☀️';
+    }
+  </script>
   <script type="module">
     import { initializeApp }                                          from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getAuth, onAuthStateChanged }                            from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
@@ -375,7 +388,13 @@
 
       } catch(e) {
         console.error('Scanner:', e);
-        showToast('Kamera Fehler: ' + e.message, 'error');
+        if (e.name === 'NotAllowedError') {
+          showToast('Kamera-Zugriff verweigert – bitte in Browsereinstellungen erlauben', 'error');
+        } else if (e.name === 'NotFoundError') {
+          showToast('Keine Kamera gefunden', 'error');
+        } else {
+          showToast('Kamera Fehler: ' + e.message, 'error');
+        }
       }
     }
 
