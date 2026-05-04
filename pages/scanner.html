@@ -243,16 +243,7 @@
       </div>
     </div>
 
-    <!-- FOTO / OCR -->
-    <div class="card">
-      <div class="card-title">📸 Kein Barcode? Etikett fotografieren</div>
-      <div class="card-sub">Texterkennung liest LOT & Verfallsdatum automatisch aus</div>
-      <input type="file" id="ocr-input" accept="image/*" capture="environment" style="display:none" onchange="analyzeWithTesseract(this)">
-      <button class="btn btn-primary" onclick="document.getElementById('ocr-input').click()" style="width:100%;height:44px;font-size:0.85rem;">
-        📸 Foto vom Etikett machen
-      </button>
-      <div class="ocr-status" id="ocr-status"></div>
-    </div>
+
 
     <!-- MANUELL -->
     <div class="card">
@@ -754,80 +745,9 @@
       return result;
     }
 
-    // ── Vision Text Parser ──
-    function parseVisionText(text) {
-      const result = { lot: null, verfall: null };
-      const lotPatterns = [
-        /LOT[:\s#]?\s*([A-Z0-9]{4,20})/i,
-        /CHARGE[:\s]?\s*([A-Z0-9]{4,20})/i,
-        /\bL[:\s]([A-Z0-9]{6,15})\b/i,
-      ];
-      for (const p of lotPatterns) { const m = text.match(p); if (m) { result.lot = m[1].trim(); break; } }
 
-      const verfPatterns = [
-        /(?:EXP|VERFALL|USE BY|BB|MHD)[:\s]*(\d{4}[-\/]\d{2}(?:[-\/]\d{2})?)/i,
-        /\b(20\d{2})[-\/](0[1-9]|1[0-2])\b/,
-        /\b(0[1-9]|1[0-2])[-\/](20\d{2})\b/,
-      ];
-      for (const p of verfPatterns) {
-        const m = text.match(p);
-        if (m) {
-          if (m[2] && m[2].startsWith('20')) result.verfall = `${m[2]}-${m[1]}`;
-          else result.verfall = `${m[1]}-${m[2]}`;
-          break;
-        }
-      }
-      return result;
-    }
 
-    // ── Tesseract OCR ──
-    let tesseractReady = false;
 
-    window.analyzeWithTesseract = async function(input) {
-      const file    = input.files[0];
-      const statusEl= document.getElementById('ocr-status');
-      if (!file) return;
-
-      statusEl.style.color = 'var(--accent2)';
-      statusEl.textContent  = '⏳ Texterkennung wird geladen...';
-
-      try {
-        if (!tesseractReady) {
-          await new Promise((res, rej) => {
-            const s = document.createElement('script');
-            s.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
-            s.onload = () => { tesseractReady = true; res(); };
-            s.onerror = rej;
-            document.head.appendChild(s);
-          });
-        }
-
-        statusEl.textContent = '🔍 Text wird erkannt...';
-        const { data: { text } } = await Tesseract.recognize(file, 'deu+eng', {
-          logger: m => { if (m.status === 'recognizing text') statusEl.textContent = `🔍 ${Math.round(m.progress*100)}% ...`; }
-        });
-
-        if (!text?.trim()) { statusEl.textContent = '❌ Kein Text erkannt'; statusEl.style.color='var(--red)'; input.value=''; return; }
-
-        const parsed = parseVisionText(text);
-        if (!parsed.lot && !parsed.verfall) {
-          statusEl.textContent = '⚠️ LOT/Datum nicht gefunden – manuell eingeben';
-          statusEl.style.color = 'var(--yellow)';
-          input.value = '';
-          return;
-        }
-
-        statusEl.textContent = `✅ LOT: ${parsed.lot||'?'} · Verfall: ${parsed.verfall||'?'}`;
-        statusEl.style.color = 'var(--green)';
-        scanning = false;
-        onScanResult(text, parsed);
-
-      } catch(e) {
-        statusEl.textContent = '❌ Fehler: ' + e.message;
-        statusEl.style.color = 'var(--red)';
-      }
-      input.value = '';
-    };
 
     // ── Bluetooth Scanner ──
     let btBuffer  = '';
