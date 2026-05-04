@@ -7,7 +7,7 @@
 // Diese Nummer bei jedem GitHub Upload um 1 erhöhen
 // z.B. v2, v3, v4 ...
 // → Browser erkennt automatisch die neue Version und lädt alles neu
-const CACHE_VERSION = 'v23';
+const CACHE_VERSION = 'v24';
 const CACHE_NAME    = `lagerapp-${CACHE_VERSION}`;
 const BASE_PATH     = '/Lagerbestellung';
 
