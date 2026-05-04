@@ -465,6 +465,11 @@
     function onScanResult(raw, preParsed = null) {
       if (navigator.vibrate) navigator.vibrate(100);
       document.getElementById('status-idle').classList.add('hidden');
+      // BT-Input nach Scan sofort wieder fokussieren
+      setTimeout(() => {
+        const input = document.getElementById('bt-input');
+        if (input && btActive) try { input.focus(); } catch(e) {}
+      }, 300);
 
       let parsed;
       if (preParsed) {
@@ -688,6 +693,11 @@
       document.getElementById('artikel-search').value = '';
       document.getElementById('artikel-suggestions').innerHTML = '';
       document.getElementById('missing-wrap').classList.add('hidden');
+      // BT-Input wieder fokussieren
+      setTimeout(() => {
+        const input = document.getElementById('bt-input');
+        if (input && btActive) try { input.focus(); } catch(e) {}
+      }, 200);
     };
 
     // ── GTIN → Artikel ──
@@ -856,7 +866,25 @@
 
     document.addEventListener('click', e => {
       const skip = ['INPUT','BUTTON','SELECT','TEXTAREA','A'];
-      if (!skip.includes(e.target.tagName)) focusBtInput();
+      // Wenn BT aktiv → nach jedem Klick Fokus zurück
+      if (btActive && !skip.includes(e.target.tagName)) {
+        setTimeout(() => {
+          const input = document.getElementById('bt-input');
+          if (input) try { input.focus(); } catch(e) {}
+        }, 100);
+      }
+    });
+
+    // Fokus überwachen – wenn BT aktiv und Fokus verloren → zurücksetzen
+    document.addEventListener('focusout', e => {
+      if (!btActive) return;
+      if (e.target.id !== 'bt-input') return;
+      setTimeout(() => {
+        if (document.activeElement?.id !== 'bt-input') {
+          const input = document.getElementById('bt-input');
+          if (input) try { input.focus(); } catch(e) {}
+        }
+      }, 150);
     });
 
     // Fokus setzen ohne grün zu werden – Scanner muss selbst Input senden
