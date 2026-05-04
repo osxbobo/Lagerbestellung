@@ -150,9 +150,10 @@
 </head>
 <body>
 
-  <!-- BT Hidden Input -->
+  <!-- BT Hidden Input - inputmode=none verhindert Tastatur auf Mobile -->
   <input type="text" id="bt-input" tabindex="-1" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
-    style="position:fixed;opacity:0;width:1px;height:1px;top:-200px;left:-200px;border:none;outline:none;">
+    inputmode="none"
+    style="position:fixed;opacity:0;width:1px;height:1px;top:-200px;left:-200px;border:none;outline:none;font-size:16px;">
 
   <!-- NAV -->
   <nav class="nav">
@@ -423,8 +424,26 @@
       currentCamera = side;
       document.getElementById('btn-back').classList.toggle('active', side === 'back');
       document.getElementById('btn-front').classList.toggle('active', side === 'front');
+
+      // QuaGGA stoppen
       stopQuaGGA();
-      if (codeReader) codeReader.reset();
+
+      // ZXing stoppen und Video-Stream komplett freigeben
+      if (codeReader) {
+        try { codeReader.reset(); } catch(e) {}
+        codeReader = null;
+      }
+
+      // Laufenden Video-Stream explizit stoppen
+      const videoEl = document.getElementById('video');
+      if (videoEl.srcObject) {
+        videoEl.srcObject.getTracks().forEach(t => t.stop());
+        videoEl.srcObject = null;
+      }
+
+      // Kurze Pause damit Kamera freigegeben wird
+      await new Promise(r => setTimeout(r, 400));
+
       scanning = true;
       await startScanner();
     };
@@ -758,7 +777,7 @@
       const input = document.getElementById('bt-input');
       if (!input) return;
       try { input.focus(); } catch(e) {}
-      setBtActive(true);
+      // Nicht setBtActive(true) – grün erst wenn echter Scanner-Input kommt
     };
 
     function setBtActive(active) {
@@ -782,10 +801,17 @@
 
     const btInput = document.getElementById('bt-input');
     btInput.addEventListener('focus', () => setBtActive(true));
-    btInput.addEventListener('blur',  () => setTimeout(() => { if (document.activeElement !== btInput) setBtActive(false); }, 300));
+    btInput.addEventListener('blur', () => {
+      // Nur grau wenn kein aktiver Scanner (d.h. noch nie Input erhalten)
+      setTimeout(() => {
+        if (document.activeElement !== btInput && !btActive) setBtActive(false);
+      }, 300);
+    });
     btInput.addEventListener('input', () => {
       btBuffer += btInput.value;
       btInput.value = '';
+      // Erst jetzt grün – echter Input vom Scanner
+      setBtActive(true);
       clearTimeout(btTimer);
       btTimer = setTimeout(() => {
         if (btBuffer.trim().length > 2) { onScanResult(btBuffer.trim()); btBuffer = ''; }
@@ -805,7 +831,11 @@
       if (!skip.includes(e.target.tagName)) focusBtInput();
     });
 
-    setTimeout(focusBtInput, 1000);
+    // Fokus setzen ohne grün zu werden – Scanner muss selbst Input senden
+    setTimeout(() => {
+      const input = document.getElementById('bt-input');
+      if (input) try { input.focus(); } catch(e) {}
+    }, 1000);
 
     // ── Toast ──
     window.showToast = function(msg, type='success') {
