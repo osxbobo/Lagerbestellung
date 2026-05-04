@@ -1,623 +1,289 @@
 <!DOCTYPE html>
-<html lang="de" data-theme="dark">
+<html lang="de" data-theme="light">
 <head>
   <meta charset="UTF-8">
-  <link rel="manifest" href="../manifest.json">
-  <meta name="theme-color" content="#f97316">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="LAGER//APP">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <title>Verfallsscan – LAGER//APP</title>
-  <link rel="stylesheet" href="../css/main.css">
+  <link rel="manifest" href="../manifest.json">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
   <!-- ZXing für DataMatrix & QR -->
   <script src="https://unpkg.com/@zxing/library@0.19.1/umd/index.min.js"></script>
-  <!-- QuaGGA2 für Code128/GS1-128 lineare Barcodes -->
+  <!-- QuaGGA2 für Code128/GS1-128 -->
   <script src="https://cdn.jsdelivr.net/npm/@ericblade/quagga2@1.2.6/dist/quagga.min.js"></script>
+
   <style>
-    .scanner-page { min-height: 100vh; display: flex; flex-direction: column; background: var(--bg); }
-
-    /* ── KAMERA ── */
-    .camera-wrap {
-      position: relative;
-      width: 100%;
-      background: #000;
-      overflow: hidden;
+    :root {
+      --bg:       #f9fafb;
+      --surface:  #ffffff;
+      --surface2: #f3f4f6;
+      --border:   #e5e7eb;
+      --text:     #111827;
+      --text2:    #374151;
+      --muted:    #9ca3af;
+      --accent:   #f97316;
+      --accent2:  #0ea5e9;
+      --green:    #22c55e;
+      --red:      #ef4444;
+      --yellow:   #eab308;
     }
-
-    #video {
-      width: 100%;
-      display: block;
-      max-height: 60vh;
-      object-fit: cover;
+    [data-theme="dark"] {
+      --bg:       #0a0f1a;
+      --surface:  #111827;
+      --surface2: #1f2937;
+      --border:   #374151;
+      --text:     #f9fafb;
+      --text2:    #e5e7eb;
+      --muted:    #6b7280;
     }
-
-    /* Scan-Rahmen Overlay */
-    .scan-overlay {
-      position: absolute;
-      inset: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      pointer-events: none;
-    }
-
-    .scan-frame {
-      width: 280px;
-      height: 280px;
-      position: relative;
-    }
-
-    .scan-frame::before,
-    .scan-frame::after,
-    .scan-frame .corner-br,
-    .scan-frame .corner-bl {
-      content: '';
-      position: absolute;
-      width: 28px;
-      height: 28px;
-      border-color: var(--accent);
-      border-style: solid;
-    }
-
-    .scan-frame::before  { top: 0;    left: 0;  border-width: 3px 0 0 3px; }
-    .scan-frame::after   { top: 0;    right: 0; border-width: 3px 3px 0 0; }
-    .scan-frame .corner-br { bottom: 0; right: 0; border-width: 0 3px 3px 0; }
-    .scan-frame .corner-bl { bottom: 0; left: 0;  border-width: 0 0 3px 3px; }
-
-    /* Scan-Linie Animation */
-    .scan-line {
-      position: absolute;
-      left: 4px;
-      right: 4px;
-      height: 2px;
-      background: linear-gradient(90deg, transparent, var(--accent), transparent);
-      animation: scanMove 2s ease-in-out infinite;
-      top: 50%;
-    }
-
-    @keyframes scanMove {
-      0%   { top: 10%; opacity: 0; }
-      10%  { opacity: 1; }
-      90%  { opacity: 1; }
-      100% { top: 90%; opacity: 0; }
-    }
-
-    .scan-hint {
-      position: absolute;
-      bottom: 16px;
-      left: 0; right: 0;
-      text-align: center;
-      font-size: 0.78rem;
-      color: rgba(255,255,255,0.8);
-      font-family: 'IBM Plex Mono', monospace;
-      text-shadow: 0 1px 3px rgba(0,0,0,0.8);
-    }
-
-    /* ── CONTENT ── */
-    .scanner-content {
-      flex: 1;
-      padding: 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      max-width: 600px;
-      margin: 0 auto;
-      width: 100%;
-    }
-
-    /* ── STATUS CARD ── */
-    .status-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .status-idle {
-      text-align: center;
-      padding: 12px 0;
-      color: var(--muted);
-      font-size: 0.85rem;
-    }
-
-    .status-icon { font-size: 2rem; margin-bottom: 6px; }
-
-    /* ── RESULT CARD ── */
-    .result-card {
-      background: var(--surface);
-      border: 2px solid var(--green);
-      border-radius: 14px;
-      padding: 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      animation: slideUp 0.3s ease;
-    }
-
-    @keyframes slideUp {
-      from { opacity: 0; transform: translateY(12px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-
-    .result-header {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .result-badge {
-      font-size: 0.65rem;
-      padding: 3px 8px;
-      border-radius: 4px;
-      font-family: 'IBM Plex Mono', monospace;
-      font-weight: 600;
-    }
-
-    .badge-new     { background: rgba(249,115,22,0.15); color: var(--accent);  border: 1px solid rgba(249,115,22,0.3); }
-    .badge-known   { background: rgba(34,197,94,0.15);  color: var(--green);   border: 1px solid rgba(34,197,94,0.3); }
-
-    .result-title { font-size: 1rem; font-weight: 700; }
-    .result-sub   { font-size: 0.72rem; color: var(--muted); font-family: 'IBM Plex Mono', monospace; }
-
-    /* Scan Info Grid */
-    .scan-info {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-    }
-
-    .scan-info-item {
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 10px 12px;
-    }
-
-    .scan-info-label {
-      font-size: 0.6rem;
-      color: var(--muted);
-      font-family: 'IBM Plex Mono', monospace;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      margin-bottom: 3px;
-    }
-
-    .scan-info-value {
-      font-size: 0.88rem;
-      font-weight: 700;
-      font-family: 'IBM Plex Mono', monospace;
-    }
-
-    .scan-info-value.warn { color: var(--red); }
-    .scan-info-value.ok   { color: var(--green); }
-
-    /* Artikel Auswahl (bei unbekanntem Produkt) */
-    .artikel-select-wrap {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    .artikel-select-label {
-      font-size: 0.82rem;
-      font-weight: 600;
-      color: var(--text2);
-    }
-
-    .artikel-search-input {
-      background: var(--surface2);
-      border: 1.5px solid var(--border);
-      border-radius: 10px;
-      padding: 12px 14px;
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
       font-family: 'DM Sans', sans-serif;
-      font-size: 0.9rem;
+      background: var(--bg);
       color: var(--text);
-      outline: none;
-      width: 100%;
-      transition: border-color 0.2s;
+      min-height: 100vh;
+      overflow-x: hidden;
     }
 
-    .artikel-search-input:focus { border-color: var(--accent2); }
-    .artikel-search-input::placeholder { color: var(--muted); }
+    /* NAV */
+    .nav { position: sticky; top: 0; z-index: 100; background: var(--surface); border-bottom: 1px solid var(--border); padding: 12px 16px; display: flex; align-items: center; gap: 12px; }
+    .nav-back { background: none; border: 1px solid var(--border); border-radius: 8px; padding: 6px 12px; cursor: pointer; color: var(--text2); font-family: 'DM Sans', sans-serif; font-size: 0.85rem; }
+    .nav-logo { font-family: 'IBM Plex Mono', monospace; font-weight: 600; font-size: 1rem; color: var(--accent); letter-spacing: -0.5px; }
+    .nav-logo span { color: var(--text2); }
+    .nav-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+    .theme-btn { background: none; border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px; cursor: pointer; font-size: 1rem; }
 
-    .artikel-suggestions {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      max-height: 200px;
-      overflow-y: auto;
+    /* CAMERA */
+    .camera-wrap { position: relative; width: 100%; background: #000; aspect-ratio: 4/3; max-height: 55vh; overflow: hidden; }
+    #video { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .scan-frame { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 260px; height: 260px; pointer-events: none; }
+    .scan-frame::before, .scan-frame::after,
+    .scan-frame > span::before, .scan-frame > span::after {
+      content: ''; position: absolute; width: 32px; height: 32px; border-color: var(--accent); border-style: solid;
     }
+    .scan-frame::before { top: 0; left: 0; border-width: 3px 0 0 3px; border-radius: 4px 0 0 0; }
+    .scan-frame::after  { top: 0; right: 0; border-width: 3px 3px 0 0; border-radius: 0 4px 0 0; }
+    .scan-frame > span::before { bottom: 0; left: 0; border-width: 0 0 3px 3px; border-radius: 0 0 0 4px; }
+    .scan-frame > span::after  { bottom: 0; right: 0; border-width: 0 3px 3px 0; border-radius: 0 0 4px 0; }
+    .scan-line { position: absolute; left: 10%; right: 10%; height: 2px; background: linear-gradient(90deg, transparent, var(--accent), transparent); animation: scan 2s ease-in-out infinite; top: 20%; }
+    @keyframes scan { 0%,100% { top: 20%; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 50% { top: 80%; } }
 
-    .artikel-suggestion {
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 10px 14px;
-      cursor: pointer;
-      touch-action: manipulation;
-      -webkit-tap-highlight-color: transparent;
-      transition: all 0.15s;
-    }
+    /* CAM CONTROLS */
+    .cam-controls { display: flex; gap: 8px; padding: 10px 12px; background: var(--surface); border-bottom: 1px solid var(--border); overflow-x: auto; }
+    .cam-btn { display: flex; align-items: center; gap: 5px; padding: 7px 14px; border-radius: 20px; border: 1.5px solid var(--border); background: var(--surface2); color: var(--text2); font-family: 'DM Sans', sans-serif; font-size: 0.8rem; font-weight: 600; cursor: pointer; white-space: nowrap; touch-action: manipulation; }
+    .cam-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
 
-    .artikel-suggestion:active { background: var(--surface3); border-color: var(--accent2); }
-    .artikel-suggestion.selected { background: rgba(14,165,233,0.1); border-color: var(--accent2); }
+    /* STATUS */
+    .status-idle { text-align: center; padding: 14px 16px; font-size: 0.82rem; color: var(--muted); background: var(--surface); border-bottom: 1px solid var(--border); }
 
-    .suggestion-name   { font-size: 0.82rem; font-weight: 600; }
-    .suggestion-loc    { font-size: 0.65rem; color: var(--muted); font-family: 'IBM Plex Mono', monospace; margin-top: 2px; }
-    .suggestion-chargen { font-size: 0.62rem; color: var(--accent2); font-family: 'IBM Plex Mono', monospace; margin-top: 3px; }
+    /* CONTENT */
+    .content { padding: 12px 16px; display: flex; flex-direction: column; gap: 12px; }
 
-    /* ── CHARGEN LISTE ── */
-    .chargen-section {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      overflow: hidden;
-    }
+    /* BT STATUS */
+    .bt-bar { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; cursor: pointer; touch-action: manipulation; }
+    .bt-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); flex-shrink: 0; transition: all 0.3s; }
+    .bt-dot.active { background: var(--green); box-shadow: 0 0 6px var(--green); }
 
-    .chargen-header {
-      padding: 12px 16px;
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
+    /* CARDS */
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 16px; }
+    .card-title { font-size: 0.82rem; font-weight: 700; color: var(--text2); margin-bottom: 10px; }
+    .card-sub   { font-size: 0.68rem; color: var(--muted); margin-bottom: 10px; }
 
-    .chargen-title { font-size: 0.82rem; font-weight: 700; }
-    .chargen-count { font-size: 0.65rem; color: var(--muted); font-family: 'IBM Plex Mono', monospace; }
+    /* RESULT CARD */
+    .result-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
+    .result-header { padding: 12px 16px; background: var(--surface2); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
+    .result-badge { font-size: 0.65rem; font-weight: 700; padding: 3px 8px; border-radius: 6px; font-family: 'IBM Plex Mono', monospace; }
+    .badge-known   { background: rgba(34,197,94,0.15);  color: var(--green); border: 1px solid rgba(34,197,94,0.3); }
+    .badge-unknown { background: rgba(249,115,22,0.15); color: var(--accent); border: 1px solid rgba(249,115,22,0.3); }
+    .result-name { font-size: 0.95rem; font-weight: 700; }
+    .result-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0; }
+    .result-cell { padding: 10px 16px; border-bottom: 1px solid var(--border); }
+    .result-cell:nth-child(odd) { border-right: 1px solid var(--border); }
+    .result-label { font-size: 0.6rem; font-weight: 700; color: var(--muted); font-family: 'IBM Plex Mono', monospace; text-transform: uppercase; margin-bottom: 3px; }
+    .result-value { font-size: 0.88rem; font-weight: 700; font-family: 'IBM Plex Mono', monospace; }
+    .result-value.ok   { color: var(--green); }
+    .result-value.warn { color: var(--red); }
 
-    .chargen-list { display: flex; flex-direction: column; }
+    /* MISSING DATA */
+    .missing-wrap { margin: 12px 16px; background: rgba(249,115,22,0.06); border: 1px solid rgba(249,115,22,0.25); border-radius: 10px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
+    .missing-title { font-size: 0.75rem; font-weight: 600; color: var(--accent); }
 
-    .charge-item {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 12px 16px;
-      border-bottom: 1px solid var(--border);
-    }
+    /* ARTIKEL SEARCH */
+    .artikel-wrap { padding: 12px 16px; border-top: 1px solid var(--border); }
+    .search-input { width: 100%; padding: 11px 14px; border-radius: 10px; border: 1.5px solid var(--border); background: var(--surface2); color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 0.9rem; outline: none; }
+    .search-input:focus { border-color: var(--accent2); }
+    .suggestions { margin-top: 6px; display: flex; flex-direction: column; gap: 4px; max-height: 160px; overflow-y: auto; }
+    .suggestion { padding: 8px 12px; background: var(--surface2); border-radius: 8px; cursor: pointer; font-size: 0.82rem; border: 1px solid var(--border); touch-action: manipulation; }
+    .suggestion:active { background: var(--accent); color: #fff; }
 
-    .charge-item:last-child { border-bottom: none; }
+    /* CHARGEN */
+    .chargen-wrap { padding: 12px 16px; border-top: 1px solid var(--border); }
+    .charge-item { display: flex; align-items: center; gap: 10px; padding: 8px 10px; background: var(--surface2); border-radius: 8px; margin-bottom: 6px; font-size: 0.75rem; font-family: 'IBM Plex Mono', monospace; }
+    .charge-del { margin-left: auto; background: none; border: none; color: var(--muted); cursor: pointer; font-size: 1rem; padding: 2px 6px; }
 
-    .charge-dot {
-      width: 10px;
-      height: 10px;
-      border-radius: 50%;
-      flex-shrink: 0;
-    }
+    /* ACTION BUTTONS */
+    .action-row { display: flex; gap: 8px; padding: 12px 16px; }
+    .btn { flex: 1; height: 48px; border-radius: 12px; border: none; font-family: 'DM Sans', sans-serif; font-size: 0.9rem; font-weight: 700; cursor: pointer; touch-action: manipulation; display: flex; align-items: center; justify-content: center; }
+    .btn-primary { background: var(--accent);  color: #fff; }
+    .btn-green   { background: var(--green);   color: #fff; }
+    .btn-ghost   { background: var(--surface2); color: var(--text2); border: 1.5px solid var(--border); }
 
-    .charge-info { flex: 1; min-width: 0; }
-    .charge-lot  { font-size: 0.78rem; font-weight: 600; font-family: 'IBM Plex Mono', monospace; }
-    .charge-date { font-size: 0.65rem; color: var(--muted); margin-top: 1px; }
-    .charge-days { font-size: 0.72rem; font-weight: 700; font-family: 'IBM Plex Mono', monospace; }
+    /* MANUAL */
+    .field-label { font-size: 0.62rem; font-weight: 700; color: var(--muted); font-family: 'IBM Plex Mono', monospace; text-transform: uppercase; margin-bottom: 4px; margin-top: 10px; }
+    select.search-input { appearance: auto; }
 
-    .charge-delete {
-      width: 30px;
-      height: 30px;
-      border-radius: 8px;
-      border: 1px solid var(--border);
-      background: none;
-      color: var(--muted);
-      font-size: 0.8rem;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      touch-action: manipulation;
-      -webkit-tap-highlight-color: transparent;
-      flex-shrink: 0;
-    }
+    /* OCR STATUS */
+    .ocr-status { font-size: 0.72rem; color: var(--muted); text-align: center; margin-top: 8px; min-height: 16px; font-family: 'IBM Plex Mono', monospace; }
 
-    .charge-delete:active { color: var(--red); border-color: var(--red); }
-
-    /* ── BUTTONS ── */
-    .action-row {
-      display: flex;
-      gap: 10px;
-    }
-
-    .big-btn {
-      flex: 1;
-      height: 54px;
-      border-radius: 12px;
-      border: none;
-      font-family: 'DM Sans', sans-serif;
-      font-size: 0.95rem;
-      font-weight: 700;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      touch-action: manipulation;
-      -webkit-tap-highlight-color: transparent;
-      transition: all 0.15s;
-      user-select: none;
-    }
-
-    .big-btn:active { transform: scale(0.96); }
-    .big-btn.primary { background: var(--accent);  color: white; }
-    .big-btn.green   { background: var(--green);   color: white; }
-    .big-btn.ghost   { background: var(--surface2); color: var(--text); border: 1.5px solid var(--border); }
-
-    /* ── KAMERA CONTROLS ── */
-    .camera-controls {
-      display: flex;
-      gap: 8px;
-      padding: 10px 16px;
-      background: #000;
-      justify-content: center;
-    }
-
-    .cam-btn {
-      padding: 8px 16px;
-      border-radius: 20px;
-      border: 1px solid rgba(255,255,255,0.2);
-      background: rgba(255,255,255,0.1);
-      color: white;
-      font-size: 0.78rem;
-      cursor: pointer;
-      touch-action: manipulation;
-      -webkit-tap-highlight-color: transparent;
-      font-family: 'IBM Plex Mono', monospace;
-    }
-
-    .cam-btn.active { background: var(--accent); border-color: var(--accent); }
-
-    /* ── TOAST ── */
-    .toast {
-      position: fixed;
-      bottom: 24px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 12px 20px;
-      font-size: 0.85rem;
-      box-shadow: var(--shadow-lg);
-      z-index: 2000;
-      white-space: nowrap;
-      animation: toastIn 0.3s ease;
-    }
-
-    @keyframes toastIn {
-      from { opacity: 0; transform: translateX(-50%) translateY(10px); }
-      to   { opacity: 1; transform: translateX(-50%) translateY(0); }
-    }
-
-    .toast.success { border-color: var(--green); color: var(--green); }
-    .toast.error   { border-color: var(--red);   color: var(--red); }
-
+    /* HIDDEN / TOAST */
     .hidden { display: none !important; }
+    .toast { position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%); background: #1f2937; color: #fff; padding: 10px 20px; border-radius: 12px; font-size: 0.82rem; font-weight: 600; z-index: 999; white-space: nowrap; animation: fadeup 0.3s ease; }
+    @keyframes fadeup { from { opacity: 0; transform: translateX(-50%) translateY(10px); } }
 
-    /* QuaGGA Canvas verstecken – nur eigenes Video-Element zeigen */
-    #interactive.viewport canvas,
-    #interactive.viewport video,
-    canvas.drawingBuffer {
-      display: none !important;
-    }
-    .drawingBuffer { display: none !important; }
-
-    /* Scrollbar */
-    .artikel-suggestions::-webkit-scrollbar { width: 4px; }
-    .artikel-suggestions::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+    /* QuaGGA canvas verstecken */
+    #interactive canvas, canvas.drawingBuffer { display: none !important; }
   </style>
 </head>
-<body class="scanner-page">
+<body>
 
-  <!-- NAVBAR -->
-  <nav class="navbar">
-    <div class="navbar-inner">
-      <div style="display:flex;align-items:center;gap:10px;">
-        <button onclick="window.location.href='../index.html'" style="
-          width:36px;height:36px;border-radius:8px;
-          border:1px solid var(--border);background:var(--surface2);
-          color:var(--text);font-size:1.1rem;cursor:pointer;
-          display:flex;align-items:center;justify-content:center;
-          touch-action:manipulation;-webkit-tap-highlight-color:transparent;
-          transition:all 0.15s;flex-shrink:0;
-        " title="Zurück">←</button>
-        <a href="../index.html" class="nav-logo">LAGER<span>//</span>APP</a>
-      </div>
-      <div class="nav-right">
-        <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()">☀️</button>
-      </div>
+  <!-- BT Hidden Input -->
+  <input type="text" id="bt-input" tabindex="-1" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+    style="position:fixed;opacity:0;width:1px;height:1px;top:-200px;left:-200px;border:none;outline:none;">
+
+  <!-- NAV -->
+  <nav class="nav">
+    <button class="nav-back" onclick="window.location.href='../index.html'">← Zurück</button>
+    <div class="nav-logo">LAGER<span>//</span>APP</div>
+    <div class="nav-right">
+      <span id="nav-user" style="font-size:0.78rem;color:var(--muted);"></span>
+      <button class="theme-btn" onclick="toggleTheme()">☀️</button>
     </div>
   </nav>
 
-  <!-- KAMERA -->
+  <!-- CAMERA -->
   <div class="camera-wrap">
-    <video id="video" autoplay muted playsinline></video>
-    <div class="scan-overlay">
-      <div class="scan-frame">
-        <div class="corner-br"></div>
-        <div class="corner-bl"></div>
-        <div class="scan-line"></div>
-      </div>
-    </div>
-    <div class="scan-hint">Code halten – wird automatisch erkannt</div>
+    <video id="video" playsinline autoplay muted></video>
+    <div class="scan-frame"><span></span></div>
+    <div class="scan-line"></div>
   </div>
 
-  <!-- Kamera Controls -->
-  <div class="camera-controls">
-    <button class="cam-btn active" id="btn-cam-back" onclick="switchCamera('back')">📷 Rückseite</button>
-    <button class="cam-btn" id="btn-cam-front" onclick="switchCamera('front')">🤳 Vorderseite</button>
-    <button class="cam-btn" id="btn-torch" onclick="toggleTorch()">🔦 Licht</button>
+  <!-- CAM CONTROLS -->
+  <div class="cam-controls">
+    <button class="cam-btn active" id="btn-back"  onclick="switchCamera('back')">📷 Rückseite</button>
+    <button class="cam-btn"        id="btn-front" onclick="switchCamera('front')">🤳 Vorderseite</button>
+    <button class="cam-btn"        id="btn-light" onclick="toggleLight()">🔦 Licht</button>
   </div>
 
-  <!-- BLUETOOTH SCANNER INPUT (unsichtbar, immer aktiv) -->
-  <input
-    type="text"
-    id="bt-input"
-    autocomplete="off"
-    autocorrect="off"
-    autocapitalize="off"
-    spellcheck="false"
-    tabindex="-1"
-    style="position:fixed;opacity:0;width:1px;height:1px;top:-100px;left:-100px;pointer-events:none;border:none;outline:none;"
-  >
+  <div class="status-idle" id="status-idle">
+    Code halten – wird automatisch erkannt · DataMatrix · QR · Barcode · Bluetooth
+  </div>
 
   <!-- CONTENT -->
-  <div class="scanner-content">
+  <div class="content">
 
-    <!-- Status / Ergebnis -->
-    <div id="status-idle" class="status-card">
-      <div class="status-idle">
-        <div class="status-icon">📷</div>
-        <div>Kamera auf GS1-Code halten</div>
-        <div style="font-size:0.72rem;color:var(--muted);margin-top:4px;font-family:'IBM Plex Mono',monospace;">DataMatrix · QR · Barcode</div>
+    <!-- BT STATUS -->
+    <div class="bt-bar" onclick="focusBtInput()">
+      <div class="bt-dot" id="bt-dot"></div>
+      <div style="flex:1;">
+        <div style="font-size:0.8rem;font-weight:600;" id="bt-label">📡 Bluetooth-Scanner</div>
+        <div style="font-size:0.65rem;color:var(--muted);font-family:'IBM Plex Mono',monospace;" id="bt-sub">Tippen zum Aktivieren</div>
       </div>
+      <span style="font-size:0.75rem;color:var(--muted);">⌨️</span>
     </div>
 
-    <!-- Foto / OCR -->
-    <div class="table-wrap" style="padding:16px;">
-      <div style="font-size:0.78rem;font-weight:600;margin-bottom:10px;color:var(--text2);">
-        📸 Kein Barcode? Etikett fotografieren
-      </div>
-      <div style="font-size:0.68rem;color:var(--muted);margin-bottom:10px;">
-        Texterkennung liest LOT & Verfallsdatum automatisch aus
-      </div>
-      <input type="file" id="vision-foto-input" accept="image/*" capture="environment"
-        style="display:none" onchange="analyzeWithTesseract(this)">
-      <button class="big-btn primary" onclick="document.getElementById('vision-foto-input').click()"
-        style="height:46px;font-size:0.88rem;">
-        📸 Foto vom Etikett machen
-      </button>
-      <div id="vision-status" style="font-size:0.72rem;color:var(--muted);text-align:center;margin-top:8px;min-height:16px;font-family:'IBM Plex Mono',monospace;"></div>
-    </div>
-
-    <!-- Manuell eingeben -->
-    <div class="table-wrap" id="manual-card" style="padding:16px;">
-      <div style="font-size:0.78rem;font-weight:600;margin-bottom:12px;color:var(--text2);">
-        ✏️ Kein Code vorhanden? Manuell eingeben
-      </div>
-      <div style="display:flex;flex-direction:column;gap:10px;">
-        <div>
-          <div style="font-size:0.65rem;color:var(--muted);font-family:'IBM Plex Mono',monospace;margin-bottom:4px;">ARTIKEL</div>
-          <select id="manual-artikel" class="artikel-search-input" style="width:100%;">
-            <option value="">– Artikel wählen –</option>
-          </select>
-        </div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
-          <div>
-            <div style="font-size:0.65rem;color:var(--muted);font-family:'IBM Plex Mono',monospace;margin-bottom:4px;">CHARGE / LOT</div>
-            <input type="text" id="manual-lot" class="artikel-search-input" placeholder="z.B. 44310832" autocomplete="off">
-          </div>
-          <div>
-            <div style="font-size:0.65rem;color:var(--muted);font-family:'IBM Plex Mono',monospace;margin-bottom:4px;">VERFALLSDATUM</div>
-            <input type="date" id="manual-verfall" class="artikel-search-input">
-          </div>
-        </div>
-        <button class="big-btn green" onclick="saveManual()">✅ Manuell speichern</button>
-      </div>
-    </div>
-
-    <!-- Scan Ergebnis -->
-    <div id="result-card" class="result-card hidden">
+    <!-- RESULT CARD -->
+    <div class="result-card hidden" id="result-card">
       <div class="result-header">
-        <span class="result-badge" id="result-badge">NEU</span>
+        <span class="result-badge" id="result-badge">?</span>
         <div>
-          <div class="result-title" id="result-artikel-name">Unbekanntes Produkt</div>
-          <div class="result-sub" id="result-gtin"></div>
+          <div class="result-name" id="result-name">–</div>
+          <div style="font-size:0.68rem;color:var(--muted);font-family:'IBM Plex Mono',monospace;" id="result-gtin"></div>
+        </div>
+      </div>
+      <div class="result-grid">
+        <div class="result-cell"><div class="result-label">Charge / LOT</div><div class="result-value" id="result-lot">–</div></div>
+        <div class="result-cell"><div class="result-label">Verfallsdatum</div><div class="result-value" id="result-verfall">–</div></div>
+        <div class="result-cell"><div class="result-label">Verbleibend</div><div class="result-value" id="result-days">–</div></div>
+        <div class="result-cell"><div class="result-label">Status</div><div class="result-value" id="result-status">–</div></div>
+      </div>
+
+      <!-- Fehlende Daten -->
+      <div class="missing-wrap hidden" id="missing-wrap">
+        <div class="missing-title">⚠️ Fehlende Daten – bitte ergänzen</div>
+        <div id="missing-lot-wrap">
+          <div class="field-label">Charge / LOT</div>
+          <input type="text" class="search-input" id="missing-lot" placeholder="z.B. 44310832" oninput="updateMissing('lot',this.value)">
+        </div>
+        <div id="missing-verfall-wrap">
+          <div class="field-label">Verfallsdatum</div>
+          <input type="date" class="search-input" id="missing-verfall" oninput="updateMissing('verfall',this.value)">
         </div>
       </div>
 
-      <div class="scan-info">
-        <div class="scan-info-item">
-          <div class="scan-info-label">Charge / LOT</div>
-          <div class="scan-info-value" id="result-lot">–</div>
-        </div>
-        <div class="scan-info-item">
-          <div class="scan-info-label">Verfallsdatum</div>
-          <div class="scan-info-value" id="result-verfall">–</div>
-        </div>
-        <div class="scan-info-item">
-          <div class="scan-info-label">Noch</div>
-          <div class="scan-info-value" id="result-days">–</div>
-        </div>
-        <div class="scan-info-item">
-          <div class="scan-info-label">Status</div>
-          <div class="scan-info-value" id="result-status">–</div>
-        </div>
+      <!-- Artikel suchen (bei unbekanntem Produkt) -->
+      <div class="artikel-wrap" id="artikel-search-wrap">
+        <div class="field-label">Artikel zuordnen</div>
+        <input type="text" class="search-input" id="artikel-search" placeholder="Artikel suchen..." oninput="searchArtikel(this.value)" autocomplete="off">
+        <div class="suggestions" id="artikel-suggestions"></div>
       </div>
 
-      <!-- Artikel Auswahl (nur bei unbekanntem Produkt) -->
-      <div id="artikel-select-section" class="artikel-select-wrap hidden">
-        <div class="artikel-select-label">⚠️ Unbekanntes Produkt – welcher Artikel ist das?</div>
-        <input
-          type="text"
-          id="artikel-search"
-          class="artikel-search-input"
-          placeholder="Artikel suchen..."
-          oninput="searchArtikel(this.value)"
-          onfocus="showSuggestions(this.value)"
-          autocomplete="off"
-        >
-        <div class="artikel-suggestions" id="artikel-suggestions"></div>
-      </div>
-
-      <!-- Fehlende Daten manuell ergänzen -->
-      <div id="missing-data-section" class="hidden" style="background:rgba(249,115,22,0.06);
-        border:1px solid rgba(249,115,22,0.25);border-radius:10px;padding:12px;
-        display:flex;flex-direction:column;gap:10px;">
-        <div style="font-size:0.75rem;font-weight:600;color:var(--accent);">
-          ⚠️ Fehlende Daten – bitte ergänzen
-        </div>
-        <div id="missing-lot-wrap" style="display:flex;flex-direction:column;gap:4px;">
-          <div style="font-size:0.62rem;color:var(--muted);font-family:'IBM Plex Mono',monospace;">CHARGE / LOT</div>
-          <input type="text" id="missing-lot" class="artikel-search-input"
-            placeholder="z.B. 44310832" autocomplete="off"
-            oninput="updateScanResult('lot', this.value)">
-        </div>
-        <div id="missing-verfall-wrap" style="display:flex;flex-direction:column;gap:4px;">
-          <div style="font-size:0.62rem;color:var(--muted);font-family:'IBM Plex Mono',monospace;">VERFALLSDATUM</div>
-          <input type="date" id="missing-verfall" class="artikel-search-input"
-            oninput="updateScanResult('verfall', this.value)">
-        </div>
+      <!-- Chargen des bekannten Artikels -->
+      <div class="chargen-wrap hidden" id="chargen-section">
+        <div class="field-label">Gespeicherte Chargen</div>
+        <div id="chargen-list"></div>
       </div>
 
       <div class="action-row">
-        <button class="big-btn ghost" onclick="resetScanner()">↺ Neu scannen</button>
-        <button class="big-btn green" id="btn-speichern" onclick="speichern()">✅ Speichern</button>
+        <button class="btn btn-ghost"  onclick="resetScanner()">↺ Neu</button>
+        <button class="btn btn-green"  id="btn-save" onclick="speichern()">✅ Speichern</button>
       </div>
     </div>
 
-    <!-- Chargen des aktuellen Artikels -->
-    <div id="chargen-section" class="chargen-section hidden">
-      <div class="chargen-header">
-        <span class="chargen-title" id="chargen-artikel-name">Chargen</span>
-        <span class="chargen-count" id="chargen-count">0 Chargen</span>
-      </div>
-      <div class="chargen-list" id="chargen-list"></div>
+    <!-- FOTO / OCR -->
+    <div class="card">
+      <div class="card-title">📸 Kein Barcode? Etikett fotografieren</div>
+      <div class="card-sub">Texterkennung liest LOT & Verfallsdatum automatisch aus</div>
+      <input type="file" id="ocr-input" accept="image/*" capture="environment" style="display:none" onchange="analyzeWithTesseract(this)">
+      <button class="btn btn-primary" onclick="document.getElementById('ocr-input').click()" style="width:100%;height:44px;font-size:0.85rem;">
+        📸 Foto vom Etikett machen
+      </button>
+      <div class="ocr-status" id="ocr-status"></div>
     </div>
 
-  </div>
+    <!-- MANUELL -->
+    <div class="card">
+      <div class="card-title">✏️ Manuell eingeben</div>
+      <div class="field-label">Artikel</div>
+      <select class="search-input" id="manual-artikel" style="margin-bottom:8px;">
+        <option value="">– Artikel wählen –</option>
+      </select>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+        <div>
+          <div class="field-label">Charge / LOT</div>
+          <input type="text" class="search-input" id="manual-lot" placeholder="z.B. 44310832" autocomplete="off">
+        </div>
+        <div>
+          <div class="field-label">Verfallsdatum</div>
+          <input type="date" class="search-input" id="manual-verfall">
+        </div>
+      </div>
+      <button class="btn btn-green" onclick="saveManual()" style="width:100%;margin-top:10px;height:44px;">
+        ✅ Manuell speichern
+      </button>
+    </div>
 
+  </div><!-- /content -->
+
+  <script src="../js/theme.js"></script>
   <script type="module">
-    import { initializeApp }  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getAuth, onAuthStateChanged }
-                              from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-    import { getFirestore, collection, getDocs, doc, getDoc, updateDoc }
-                              from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { initializeApp }                                          from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged }                            from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    import { getFirestore, collection, getDocs, doc, getDoc, updateDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-    // Theme
-    const savedTheme  = localStorage.getItem('lager-theme');
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const theme       = savedTheme || (prefersDark ? 'dark' : 'light');
-    document.documentElement.setAttribute('data-theme', theme);
-    document.getElementById('theme-toggle').textContent = theme === 'dark' ? '☀️' : '🌙';
-    window.toggleTheme = function() {
-      const cur  = document.documentElement.getAttribute('data-theme');
-      const next = cur === 'dark' ? 'light' : 'dark';
-      document.documentElement.setAttribute('data-theme', next);
-      localStorage.setItem('lager-theme', next);
-      document.getElementById('theme-toggle').textContent = next === 'dark' ? '☀️' : '🌙';
-    };
-
-    // Firebase
     const firebaseConfig = {
       apiKey:            "AIzaSyD1YY-cFQxyykfYQYPORwulzuF8t6Wgid4",
       authDomain:        "lagerbestellung-19970.firebaseapp.com",
@@ -631,26 +297,24 @@
     const auth = getAuth(app);
     const db   = getFirestore(app);
 
-    // Tesseract.js – kostenlose OCR im Browser
-
+    // ── State ──
     let alleArtikel    = [];
     let currentUser    = null;
     let userRole       = null;
-    let scanResult     = null; // { gtin, lot, verfall }
-    let selectedArtikel = null;
-    let codeReader     = null;
-    let currentCamera  = 'back';
-    let torchOn        = false;
+    let scanResult     = null;
+    let selectedArtikel= null;
     let scanning       = true;
+    let currentCamera  = 'back';
+    let codeReader     = null;
+    let quaggaRunning  = false;
+    let lightTrack     = null;
 
-    // ── Auth Check ──
-    // Scanner ist durch PIN geschützt (sessionStorage) ODER durch Login
+    // ── Auth ──
     onAuthStateChanged(auth, async user => {
-      const pinAuth     = sessionStorage.getItem('lager-pin-auth');
-      const savedPin    = localStorage.getItem('lager-saved-pin');
-      const savedName   = localStorage.getItem('lager-saved-name');
+      const pinAuth   = sessionStorage.getItem('lager-pin-auth');
+      const savedName = localStorage.getItem('lager-saved-name');
+      const savedPin  = localStorage.getItem('lager-saved-pin');
 
-      // Auth: Login ODER sessionStorage ODER localStorage (gespeicherter User)
       if (!user && !pinAuth && !savedPin) {
         window.location.href = '../index.html';
         return;
@@ -658,241 +322,43 @@
 
       if (user) {
         const snap = await getDoc(doc(db, 'users', user.uid));
-        userRole    = snap.exists() ? snap.data().role : null;
+        userRole    = snap.exists() ? snap.data().role : 'mitarbeiter';
         currentUser = user;
+        document.getElementById('nav-user').textContent = user.displayName || user.email;
       } else {
-        // PIN-authentifizierter Nutzer (session oder gespeichert)
-        userRole    = 'scanner';
-        const name  = sessionStorage.getItem('lager-pin-name') || savedName || 'Mitarbeiter';
+        userRole    = 'wachenleiter'; // PIN-Nutzer darf speichern
+        const name  = sessionStorage.getItem('lager-pin-name') || savedName || '';
         currentUser = { displayName: name };
-        // Session aktualisieren falls nur localStorage vorhanden
+        document.getElementById('nav-user').textContent = name;
         sessionStorage.setItem('lager-pin-auth', 'true');
-        sessionStorage.setItem('lager-pin-name', name);
+        if (name) sessionStorage.setItem('lager-pin-name', name);
       }
 
       await loadArtikel();
       startScanner();
+      focusBtInput();
     });
 
-    // ── Artikel laden ──
+    // ── Load Artikel ──
     async function loadArtikel() {
-      const snap  = await getDocs(collection(db, 'artikel'));
+      const snap = await getDocs(collection(db, 'artikel'));
       alleArtikel = snap.docs.map(d => ({ id: d.id, ...d.data() }));
 
-      // Manuell Select befüllen
-      const manSel = document.getElementById('manual-artikel');
-      if (manSel) {
-        manSel.innerHTML = '<option value="">– Artikel wählen –</option>' +
-          alleArtikel
-            .sort((a,b) => a.name.localeCompare(b.name))
-            .map(a => `<option value="${a.id}">${a.name}</option>`)
-            .join('');
-      }
+      // Manuell-Dropdown füllen
+      const sel = document.getElementById('manual-artikel');
+      sel.innerHTML = '<option value="">– Artikel wählen –</option>';
+      [...alleArtikel].sort((a,b) => (a.name||'').localeCompare(b.name||'')).forEach(a => {
+        const o = document.createElement('option');
+        o.value = a.id;
+        o.textContent = `${a.name}${a.lp ? ` · ${a.lp}` : ''}`;
+        sel.appendChild(o);
+      });
     }
 
-    // ── GTIN → Artikel suchen ──
-    function findArtikelByGtin(gtin) {
-      if (!gtin) return null;
-      const clean = gtin.trim();
-      return alleArtikel.find(a => {
-        // Direkte GTIN Übereinstimmung
-        if (a.gtin  === clean) return true;
-        if (a.ean   === clean) return true;
-        // GTINs Array prüfen
-        if (Array.isArray(a.gtins) && a.gtins.includes(clean)) return true;
-        // Chargen GTINs prüfen (falls GTIN nur in Charge gespeichert)
-        if (Array.isArray(a.chargen) &&
-            a.chargen.some(c => c.gtin === clean)) return true;
-        return false;
-      }) || null;
-    }
-
-    // ── GS1 DataMatrix parsen ──
-    // GS1 AI Längen (feste Länge = kein Separator nötig)
-    const GS1_FIXED = {
-      '01': 14, '02': 14,
-      '11': 6,  '12': 6, '13': 6, '15': 6, '17': 6,
-      '20': 2,
-      '31': 6,  '32': 6, '33': 6, '34': 6, '35': 6, '36': 6,
-    };
-
-    function parseGS1(raw) {
-      const result = { gtin: null, lot: null, verfall: null, herstellung: null, raw };
-
-      try {
-        // ── Format 1: Mit Klammern z.B. (01)04042809...(17)290508(10)44310832 ──
-        if (raw.includes('(')) {
-          const ai01 = raw.match(/\(01\)(\d{14})/);
-          const ai17 = raw.match(/\(17\)(\d{6})/);
-          const ai10 = raw.match(/\(10\)([^()]{1,30})/);
-          const ai11 = raw.match(/\(11\)(\d{6})/);
-
-          if (ai01) result.gtin = ai01[1];
-          if (ai10) result.lot  = ai10[1].trim();
-          if (ai17) {
-            const d  = ai17[1];
-          const yy = parseInt(d.substring(0,2));
-          const mm = parseInt(d.substring(2,4));
-          const dd = parseInt(d.substring(4,6));
-          if (mm >= 1 && mm <= 12 && yy >= 20 && yy <= 40) {
-            const day = (dd >= 1 && dd <= 31) ? String(dd).padStart(2,'0') : '28';
-            result.verfall = `20${String(yy).padStart(2,'0')}-${String(mm).padStart(2,'0')}-${day}`;
-          }
-          if (ai11) {
-            const d = ai11[1];
-            result.herstellung = `20${d.substring(0,2)}-${d.substring(2,4)}-${d.substring(4,6)}`;
-          }
-          console.log('GS1 mit Klammern:', result);
-          return result;
-        }
-
-        // ── Format 2: Rohes GS1 ohne Klammern ──
-        // GS Separator ersetzen
-        const GS   = '';
-        const RS   = '';
-        const EOT  = '';
-        const str  = raw.replace(/[]/g, GS);
-        const parts = str.split(GS).filter(Boolean);
-
-        for (const part of parts) {
-          if (!part) continue;
-          let pos = 0;
-
-          while (pos < part.length) {
-            // AI mit 2 Stellen versuchen
-            const ai2 = part.substring(pos, pos + 2);
-            // AI mit 3 Stellen versuchen
-            const ai3 = part.substring(pos, pos + 3);
-            // AI mit 4 Stellen versuchen
-            const ai4 = part.substring(pos, pos + 4);
-
-            if (ai2 === '01' && GS1_FIXED['01']) {
-              result.gtin = part.substring(pos+2, pos+2+14);
-              pos += 2 + 14;
-            } else if (ai2 === '17' && GS1_FIXED['17']) {
-              const d = part.substring(pos+2, pos+2+6);
-              result.verfall = `20${d.substring(0,2)}-${d.substring(2,4)}-${d.substring(4,6)}`;
-              pos += 2 + 6;
-            } else if (ai2 === '11' && GS1_FIXED['11']) {
-              const d = part.substring(pos+2, pos+2+6);
-              result.herstellung = `20${d.substring(0,2)}-${d.substring(2,4)}-${d.substring(4,6)}`;
-              pos += 2 + 6;
-            } else if (ai2 === '10') {
-              // LOT: variable Länge bis GS oder Ende
-              const rest = part.substring(pos+2);
-              result.lot = rest.substring(0, 20).trim(); // max 20 Zeichen
-              pos = part.length;
-            } else if (ai2 === '21') {
-              // Seriennummer überspringen
-              const rest = part.substring(pos+2);
-              pos = part.length;
-            } else {
-              pos++; // weiter
-            }
-          }
-        }
-
-        // ── Fallback: Direkte Regex auf Rohstring ──
-        if (!result.gtin) {
-          const m = raw.match(/^01(\d{14})/);
-          if (m) result.gtin = m[1];
-        }
-
-        if (!result.verfall) {
-          const m = raw.match(/17(\d{6})/);
-          if (m) {
-            const d = m[1];
-            result.verfall = `20${d.substring(0,2)}-${d.substring(2,4)}-${d.substring(4,6)}`;
-          }
-        }
-
-        if (!result.lot) {
-          // LOT nach Verfall suchen (typische Reihenfolge: 01...17...10...)
-          const m = raw.match(/10([A-Z0-9]{4,20})/i);
-          if (m) result.lot = m[1];
-        }
-
-        // ── QR/Text Fallback ──
-        if (!result.lot) {
-          const m = raw.match(/LOT[:\s]?([A-Z0-9]+)/i);
-          if (m) result.lot = m[1];
-        }
-        if (!result.verfall) {
-          const m = raw.match(/(\d{4}-\d{2}-\d{2})/);
-          if (m) result.verfall = m[1];
-        }
-
-      } catch (e) { console.error('GS1 Parse Fehler:', e); }
-
-      console.log('GS1 Ergebnis:', result);
-      return result;
-    }
-
-    // ── HIBC Parser (ANSI/HIBC 2.6) ──
-    function parseHIBC(raw) {
-      const result = { gtin: null, lot: null, verfall: null, raw, hibc: true };
-      try {
-        if (!raw.startsWith('+')) return null;
-
-        // Primärteil: +[LIC 4 Zeichen][PCN][UM][Check]
-        const slash = raw.indexOf('/');
-        const primaryPart = slash >= 0 ? raw.substring(1, slash) : raw.substring(1);
-
-        // LIC = erste 4 Zeichen (Buchstabe + 3 alphanumerisch)
-        if (primaryPart.length >= 4) {
-          result.gtin = primaryPart.slice(0, -1); // ohne letztes Check-Zeichen
-        }
-
-        // Sekundärteil: nach /
-        if (slash >= 0) {
-          const secondary = raw.substring(slash + 1);
-
-          if (secondary.startsWith('$$')) {
-            const secData = secondary.substring(2); // ohne $$
-
-            // Format YYMM = erste 4 Ziffern
-            const yy = secData.substring(0, 2);
-            const mm = secData.substring(2, 4);
-
-            // HIBC Datum Format: MMYY (nicht YYMM!)
-          // $$1028 = MM=10 (Oktober), YY=28 (2028)
-          const mm_str = secData.substring(0, 2); // Monat
-          const yy_str = secData.substring(2, 4); // Jahr
-
-          if (/^[0-9]{2}$/.test(mm_str) && /^[0-9]{2}$/.test(yy_str)) {
-            const monat = parseInt(mm_str);
-            const jahr  = 2000 + parseInt(yy_str);
-            if (monat >= 1 && monat <= 12 && jahr >= 2020 && jahr <= 2040) {
-              const letzter = new Date(jahr, monat, 0).getDate();
-              result.verfall = `${jahr}-${String(monat).padStart(2,'0')}-${String(letzter).padStart(2,'0')}`;
-              const lotRaw = secData.substring(4);
-              result.lot = lotRaw.length > 1 ? lotRaw.slice(0, -1).trim() : lotRaw.trim();
-          }
-          }
-        }
-
-        // Fallback: Supplemental /14D = Verfallsdatum YYYYMMDD
-        const m14d = raw.match(/\/14D([0-9]{4})([0-9]{2})([0-9]{2})/);
-        if (m14d) result.verfall = `${m14d[1]}-${m14d[2]}-${m14d[3]}`;
-
-      } catch(e) { console.error('HIBC Fehler:', e); }
-
-      console.log('HIBC:', result);
-      return result;
-    }
-    // ── Tage bis Verfall berechnen ──
-    function daysUntil(dateStr) {
-      if (!dateStr) return null;
-      const diff = (new Date(dateStr) - new Date()) / (1000 * 60 * 60 * 24);
-      return Math.round(diff);
-    }
-
-    // ── Scanner starten (Dual: ZXing + QuaGGA2) ──
-    let quaggaRunning = false;
-
+    // ── Scanner ──
     async function startScanner() {
       try {
-        // ── ZXing für DataMatrix & QR ──
+        const facingMode = currentCamera === 'back' ? 'environment' : 'user';
         const hints = new Map();
         hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, [
           ZXing.BarcodeFormat.DATA_MATRIX,
@@ -901,693 +367,473 @@
         hints.set(ZXing.DecodeHintType.TRY_HARDER, true);
 
         codeReader = new ZXing.BrowserMultiFormatReader(hints);
-
-        const facingMode = currentCamera === 'back' ? 'environment' : 'user';
-
-        const constraints = {
-          video: {
-            facingMode,
-            width:  { ideal: 1280 },
-            height: { ideal: 720 },
+        await codeReader.decodeFromConstraints(
+          { video: { facingMode, width: { ideal: 1280 }, height: { ideal: 720 } } },
+          'video',
+          (result, err) => {
+            if (result && scanning) {
+              scanning = false;
+              onScanResult(result.getText());
+            }
           }
-        };
+        );
 
-        await codeReader.decodeFromConstraints(constraints, 'video', (result, err) => {
-          if (result && scanning) {
-            scanning = false;
-            stopQuaGGA();
-            onScanResult(result.getText());
-          }
-        });
+        // QuaGGA für 1D Codes – nach kurzem Delay wenn Video läuft
+        setTimeout(() => startQuaGGA(facingMode), 1500);
 
-        // ── QuaGGA2 für Code128 / GS1-128 / EAN-13 ──
-        startQuaGGA(facingMode);
-
-      } catch (e) {
-        console.error('Scanner error:', e);
-        showToast('Kamera konnte nicht gestartet werden: ' + e.message, 'error');
+      } catch(e) {
+        console.error('Scanner:', e);
+        showToast('Kamera Fehler: ' + e.message, 'error');
       }
     }
 
     function startQuaGGA(facingMode) {
-      if (typeof Quagga === 'undefined') return;
-      if (quaggaRunning) Quagga.stop();
-
-      // QuaGGA nutzt den vorhandenen Video-Stream von ZXing
-      // Keine neue Kamera öffnen – direkt auf dem Video-Element arbeiten
-      const videoEl = document.getElementById('video');
-
-      // Warten bis ZXing Stream läuft
-      const checkStream = setInterval(() => {
-        if (!videoEl.srcObject) return;
-        clearInterval(checkStream);
-
-        try {
-          Quagga.init({
-            inputStream: {
-              name: 'Live',
-              type: 'LiveStream',
-              target: videoEl,
-              constraints: { facingMode },
-              area: { top: '0%', right: '0%', left: '0%', bottom: '0%' },
-            },
-            decoder: {
-              readers: [
-                'code_128_reader',
-                'ean_reader',
-                'ean_8_reader',
-                'code_39_reader',
-              ],
-              multiple: false,
-            },
-            locate:       true,
-            numOfWorkers: 0,           // Kein Worker – nutzt bestehenden Stream
-            frequency:    8,
-          }, err => {
-            if (err) {
-              console.warn('QuaGGA init:', err);
-              // Fallback: QuaGGA als separate Instanz ohne Video-Anzeige
-              startQuaGGAFallback(facingMode);
-              return;
-            }
-            quaggaRunning = true;
-            Quagga.start();
-          });
-
-          Quagga.onDetected(result => {
-            if (!scanning) return;
-            const code = result?.codeResult?.code;
-            if (!code || code.length < 4) return;
-
-            const errs = result.codeResult.decodedCodes
-              .filter(x => x.error !== undefined)
-              .map(x => x.error);
-            const avgErr = errs.length > 0
-              ? errs.reduce((s, e) => s + e, 0) / errs.length
-              : 0;
-            if (avgErr > 0.3) return;
-
-            scanning = false;
-            stopQuaGGA();
-            onScanResult(code);
-          });
-
-        } catch(e) {
-          console.warn('QuaGGA Fehler:', e);
-        }
-      }, 500);
-    }
-
-    // Fallback: QuaGGA analysiert Kamera-Frames ohne eigenes Video-Element
-    function startQuaGGAFallback(facingMode) {
+      if (typeof Quagga === 'undefined' || quaggaRunning) return;
       const videoEl = document.getElementById('video');
       if (!videoEl.srcObject) return;
 
-      const canvas  = document.createElement('canvas');
-      const ctx     = canvas.getContext('2d');
-      let   running = true;
+      Quagga.init({
+        inputStream: {
+          type: 'LiveStream',
+          target: videoEl,
+          constraints: { facingMode },
+        },
+        decoder: { readers: ['code_128_reader', 'ean_reader', 'ean_8_reader'] },
+        locate: true,
+        numOfWorkers: 0,
+        frequency: 8,
+      }, err => {
+        if (err) { console.warn('QuaGGA:', err); return; }
+        quaggaRunning = true;
+        Quagga.start();
+      });
 
-      quaggaRunning = true;
-
-      function processFrame() {
-        if (!running || !scanning) return;
-        if (videoEl.readyState !== videoEl.HAVE_ENOUGH_DATA) {
-          requestAnimationFrame(processFrame);
-          return;
-        }
-
-        canvas.width  = videoEl.videoWidth;
-        canvas.height = videoEl.videoHeight;
-        ctx.drawImage(videoEl, 0, 0);
-
-        Quagga.decodeSingle({
-          src: canvas.toDataURL('image/jpeg', 0.8),
-          numOfWorkers: 0,
-          decoder: { readers: ['code_128_reader', 'ean_reader', 'ean_8_reader'] },
-          locate: true,
-        }, result => {
-          if (result?.codeResult?.code && scanning) {
-            scanning = false;
-            running  = false;
-            onScanResult(result.codeResult.code);
-          }
-        });
-
-        setTimeout(() => requestAnimationFrame(processFrame), 150);
-      }
-
-      requestAnimationFrame(processFrame);
-
-      // stopQuaGGA setzt running = false
-      window._quaggaFallbackStop = () => { running = false; };
+      Quagga.onDetected(res => {
+        if (!scanning) return;
+        const code = res?.codeResult?.code;
+        if (!code || code.length < 4) return;
+        const errs   = (res.codeResult.decodedCodes || []).filter(x => x.error !== undefined).map(x => x.error);
+        const avgErr = errs.length ? errs.reduce((s,e) => s+e, 0) / errs.length : 0;
+        if (avgErr > 0.25) return;
+        scanning = false;
+        stopQuaGGA();
+        onScanResult(code);
+      });
     }
 
     function stopQuaGGA() {
       if (typeof Quagga !== 'undefined' && quaggaRunning) {
-        try { Quagga.stop(); } catch {}
+        try { Quagga.stop(); } catch(e) {}
         quaggaRunning = false;
       }
-      if (window._quaggaFallbackStop) {
-        window._quaggaFallbackStop();
-        window._quaggaFallbackStop = null;
-      }
     }
 
-    // ── Scan Ergebnis verarbeiten ──
-    function onScanResult(raw, preParsed = null) {
-      // Vibration als Feedback
-      if (navigator.vibrate) navigator.vibrate(100);
-
-      // Vision: bereits geparste Daten verwenden
-      let parsed;
-      if (preParsed) {
-        parsed = { ...preParsed, raw, vision: true };
-      } else if (raw.startsWith('+') || raw.startsWith('/')) {
-        parsed = parseHIBC(raw);
-        if (!parsed || (!parsed.lot && !parsed.verfall)) {
-          parsed = parseGS1(raw);
-        }
-      } else {
-        parsed = parseGS1(raw);
-      }
-
-      scanResult = parsed;
-
-      // Artikel anhand GTIN finden
-      const gefunden = parsed.gtin ? findArtikelByGtin(parsed.gtin) : null;
-      selectedArtikel = gefunden;
-
-      // UI updaten
-      document.getElementById('status-idle').classList.add('hidden');
-      const card = document.getElementById('result-card');
-      card.classList.remove('hidden');
-
-      // GTIN anzeigen
-      // GTIN bereinigen (führende Nullen und Sonderzeichen entfernen)
-      const cleanGtin = parsed.gtin?.replace(/^\D+/, '') || '';
-      document.getElementById('result-gtin').textContent =
-        cleanGtin ? `GTIN: ${cleanGtin}` : parsed.raw?.substring(0, 40) || '';
-      if (cleanGtin) parsed.gtin = cleanGtin;
-
-      // LOT
-      document.getElementById('result-lot').textContent = parsed.lot || '–';
-
-      // Wenn Lot oder Verfall fehlt → manuelle Eingabe einblenden
-      const hasLot    = !!parsed.lot;
-      const hasVerfall= !!parsed.verfall;
-      const missingEl = document.getElementById('missing-data-section');
-      if (!hasLot || !hasVerfall) {
-        missingEl.classList.remove('hidden');
-        if (!hasLot)    document.getElementById('missing-lot').value     = '';
-        if (!hasVerfall)document.getElementById('missing-verfall').value = '';
-        document.getElementById('missing-lot-wrap').style.display    = hasLot    ? 'none' : 'flex';
-        document.getElementById('missing-verfall-wrap').style.display = hasVerfall ? 'none' : 'flex';
-      } else {
-        missingEl.classList.add('hidden');
-      }
-
-      // Verfallsdatum
-      const days = daysUntil(parsed.verfall);
-      document.getElementById('result-verfall').textContent =
-        parsed.verfall ? new Date(parsed.verfall).toLocaleDateString('de-DE') : '–';
-
-      if (days !== null) {
-        const dEl = document.getElementById('result-days');
-        dEl.textContent = days <= 0 ? 'ABGELAUFEN' : `${days} Tage`;
-        dEl.className   = `scan-info-value ${days <= 30 ? 'warn' : 'ok'}`;
-
-        const sEl = document.getElementById('result-status');
-        if (days <= 0)  { sEl.textContent = '🔴 Abgelaufen'; sEl.className = 'scan-info-value warn'; }
-        else if (days <= 7)  { sEl.textContent = '🔴 Kritisch'; sEl.className = 'scan-info-value warn'; }
-        else if (days <= 30) { sEl.textContent = '🟡 Bald'; sEl.className = 'scan-info-value warn'; }
-        else                 { sEl.textContent = '🟢 OK'; sEl.className = 'scan-info-value ok'; }
-      }
-
-      if (gefunden) {
-        // Bekanntes Produkt
-        document.getElementById('result-badge').textContent = '✅ BEKANNT';
-        document.getElementById('result-badge').className   = 'result-badge badge-known';
-        document.getElementById('result-artikel-name').textContent = gefunden.name;
-        document.getElementById('artikel-select-section').classList.add('hidden');
-        showChargen(gefunden);
-      } else {
-        // Unbekanntes Produkt
-        document.getElementById('result-badge').textContent = '❓ UNBEKANNT';
-        document.getElementById('result-badge').className   = 'result-badge badge-new';
-        document.getElementById('result-artikel-name').textContent = 'Produkt nicht erkannt';
-        document.getElementById('artikel-select-section').classList.remove('hidden');
-        document.getElementById('chargen-section').classList.add('hidden');
-      }
-    }
-
-    // ── Chargen anzeigen ──
-    function showChargen(artikel) {
-      const chargen  = artikel.chargen || [];
-      const section  = document.getElementById('chargen-section');
-      const list     = document.getElementById('chargen-list');
-      section.classList.remove('hidden');
-      document.getElementById('chargen-artikel-name').textContent = artikel.name;
-      document.getElementById('chargen-count').textContent = `${chargen.length} Charge${chargen.length !== 1 ? 'n' : ''}`;
-
-      if (chargen.length === 0) {
-        list.innerHTML = '<div style="padding:16px;text-align:center;color:var(--muted);font-size:0.82rem;">Noch keine Chargen erfasst</div>';
-        return;
-      }
-
-      // Sortiert nach Verfallsdatum (früheste zuerst)
-      const sorted = [...chargen].sort((a, b) => new Date(a.verfall) - new Date(b.verfall));
-
-      list.innerHTML = sorted.map((c, i) => {
-        const days  = daysUntil(c.verfall);
-        const color = days <= 0 ? 'var(--red)' : days <= 7 ? 'var(--red)' : days <= 30 ? 'var(--yellow)' : 'var(--green)';
-        const label = days <= 0 ? 'ABGELAUFEN' : days <= 30 ? `${days} Tage` : `${Math.round(days/30)} Monate`;
-        return `
-          <div class="charge-item">
-            <div class="charge-dot" style="background:${color}"></div>
-            <div class="charge-info">
-              <div class="charge-lot">LOT: ${c.lot || '–'}</div>
-              <div class="charge-date">Verfall: ${c.verfall ? new Date(c.verfall).toLocaleDateString('de-DE') : '–'}</div>
-            </div>
-            <div class="charge-days" style="color:${color}">${label}</div>
-            ${userRole === 'admin' || userRole === 'wachenleiter'
-              ? `<button class="charge-delete" onclick="deleteCharge('${artikel.id}', ${i})" title="Löschen">✕</button>`
-              : ''}
-          </div>`;
-      }).join('');
-    }
-
-    // ── Artikel Suche ──
-    function renderSuggestions(list, results, emptyMsg) {
-      if (results.length === 0) {
-        list.innerHTML = `<div style="padding:12px 14px;color:var(--muted);font-size:0.82rem;">${emptyMsg}</div>`;
-        return;
-      }
-      list.innerHTML = results.map(a => `
-        <div class="artikel-suggestion" onclick="selectArtikel('${a.id}')">
-          <div class="suggestion-name">${a.name}</div>
-          <div class="suggestion-loc mono">${a.lp || ''} · ${a.location || ''}</div>
-          ${(a.chargen||[]).length > 0
-            ? `<div class="suggestion-chargen">${(a.chargen||[]).length} Charge(n) erfasst</div>`
-            : '<div class="suggestion-chargen" style="color:var(--muted)">Noch keine Chargen</div>'}
-        </div>`).join('');
-    }
-
-    // Beim Fokus – zeige Vorschläge sofort
-    window.showSuggestions = function(query) {
-      const list = document.getElementById('artikel-suggestions');
-      if (query.trim()) { searchArtikel(query); return; }
-
-      // Ohne Eingabe: zuletzt gescannte Artikel zuerst, dann alphabetisch
-      const mitChargen   = alleArtikel.filter(a => (a.chargen||[]).length > 0);
-      const ohneChargen  = alleArtikel.filter(a => (a.chargen||[]).length === 0);
-
-      // Sortiert: mit Chargen nach frühestem Verfall, dann der Rest
-      const sorted = [
-        ...mitChargen.sort((a, b) => {
-          const aMin = Math.min(...(a.chargen||[]).map(c => new Date(c.verfall||'9999')));
-          const bMin = Math.min(...(b.chargen||[]).map(c => new Date(c.verfall||'9999')));
-          return aMin - bMin;
-        }),
-        ...ohneChargen.sort((a, b) => a.name.localeCompare(b.name)),
-      ].slice(0, 10);
-
-      // Label anzeigen
-      list.innerHTML = `<div style="padding:6px 14px 4px;font-size:0.62rem;color:var(--muted);font-family:'IBM Plex Mono',monospace;text-transform:uppercase;letter-spacing:0.12em;">Vorschläge</div>`;
-      list.innerHTML += sorted.map(a => `
-        <div class="artikel-suggestion" onclick="selectArtikel('${a.id}')">
-          <div class="suggestion-name">${a.name}</div>
-          <div class="suggestion-loc mono">${a.lp || ''} · ${a.location || ''}</div>
-          ${(a.chargen||[]).length > 0
-            ? `<div class="suggestion-chargen">${(a.chargen||[]).length} Charge(n) erfasst</div>`
-            : '<div class="suggestion-chargen" style="color:var(--muted)">Noch keine Chargen</div>'}
-        </div>`).join('');
-    };
-
-    window.searchArtikel = function(query) {
-      const q    = query.toLowerCase().trim();
-      const list = document.getElementById('artikel-suggestions');
-
-      if (!q) { showSuggestions(''); return; }
-
-      const results = alleArtikel
-        .filter(a =>
-          a.name?.toLowerCase().includes(q) ||
-          a.aliases?.some(al => al.toLowerCase().includes(q)) ||
-          a.lp?.toLowerCase().includes(q)
-        )
-        .slice(0, 10);
-
-      renderSuggestions(list, results, 'Kein Artikel gefunden');
-    };
-
-    window.selectArtikel = function(id) {
-      selectedArtikel = alleArtikel.find(a => a.id === id);
-      document.getElementById('result-artikel-name').textContent = selectedArtikel.name;
-      document.getElementById('artikel-search').value = selectedArtikel.name;
-      document.getElementById('artikel-suggestions').innerHTML = '';
-      document.getElementById('result-badge').textContent = '✅ AUSGEWÄHLT';
-      document.getElementById('result-badge').className   = 'result-badge badge-known';
-      showChargen(selectedArtikel);
-    };
-
-    // ── Fehlende Daten ergänzen ──
-    window.updateScanResult = function(field, value) {
-      if (!scanResult) return;
-      if (field === 'lot')    {
-        scanResult.lot = value;
-        document.getElementById('result-lot').textContent = value || '–';
-      }
-      if (field === 'verfall') {
-        scanResult.verfall = value;
-        document.getElementById('result-verfall').textContent =
-          value ? new Date(value + 'T12:00:00').toLocaleDateString('de-DE') : '–';
-        // Tage neu berechnen
-        const days = value ? Math.round((new Date(value) - new Date()) / (1000*60*60*24)) : null;
-        if (days !== null) {
-          const dEl = document.getElementById('result-days');
-          const sEl = document.getElementById('result-status');
-          dEl.textContent = days <= 0 ? 'ABGELAUFEN' : `${days} Tage`;
-          dEl.className   = `scan-info-value ${days <= 30 ? 'warn' : 'ok'}`;
-          if (days <= 0)       { sEl.textContent = '🔴 Abgelaufen'; sEl.className = 'scan-info-value warn'; }
-          else if (days <= 7)  { sEl.textContent = '🔴 Kritisch';   sEl.className = 'scan-info-value warn'; }
-          else if (days <= 30) { sEl.textContent = '🟡 Bald';       sEl.className = 'scan-info-value warn'; }
-          else                 { sEl.textContent = '🟢 OK';         sEl.className = 'scan-info-value ok';   }
-        }
-      }
-    };
-
-    // ── Speichern ──
-    window.speichern = async function() {
-      if (!selectedArtikel) {
-        showToast('Bitte zuerst einen Artikel auswählen', 'error');
-        return;
-      }
-
-      if (userRole === 'mitarbeiter') {
-        showToast('Nur Wachenleiter & Admin können speichern', 'error');
-        return;
-      }
-
-      const artikelRef = doc(db, 'artikel', selectedArtikel.id);
-
-      // Immer frische Daten aus Firestore holen
-      const freshSnap = await getDoc(artikelRef);
-      const freshData = freshSnap.exists() ? freshSnap.data() : {};
-      const chargen   = [...(freshData.chargen || [])];
-
-      // Prüfen ob diese Charge schon existiert
-      const existsIdx = chargen.findIndex(c => c.lot && c.lot === scanResult.lot);
-
-      if (existsIdx >= 0) {
-        chargen[existsIdx].verfall = scanResult.verfall || chargen[existsIdx].verfall;
-        chargen[existsIdx].gtin    = scanResult.gtin    || chargen[existsIdx].gtin;
-        showToast(`Charge ${scanResult.lot} aktualisiert ✅`);
-      } else {
-        chargen.push({
-          lot:     scanResult.lot     || 'Unbekannt',
-          verfall: scanResult.verfall || null,
-          gtin:    scanResult.gtin    || null,
-          erfasst: new Date().toISOString(),
-        });
-        showToast(`Neue Charge gespeichert ✅`);
-      }
-
-      // ── GTIN sauber speichern ──
-      // Alle bekannten GTINs dieses Artikels sammeln
-      const updateData = { chargen };
-
-      if (scanResult.gtin) {
-        // Bestehende GTINs aus Firestore holen
-        const existingGtins = Array.isArray(freshData.gtins)
-          ? [...freshData.gtins]
-          : freshData.gtin ? [freshData.gtin] : [];
-
-        // Neue GTIN hinzufügen falls noch nicht vorhanden
-        if (!existingGtins.includes(scanResult.gtin)) {
-          existingGtins.push(scanResult.gtin);
-        }
-
-        updateData.gtin  = scanResult.gtin;      // Primäre GTIN
-        updateData.gtins = existingGtins;         // Alle GTINs → für Wiedererkennung
-      }
-
-      try {
-        // In Firestore speichern
-        await updateDoc(artikelRef, updateData);
-
-        // Lokal sofort updaten – wichtig für sofortige Wiedererkennung
-        const idx = alleArtikel.findIndex(a => a.id === selectedArtikel.id);
-        if (idx >= 0) {
-          alleArtikel[idx] = { ...alleArtikel[idx], ...updateData };
-          selectedArtikel  = alleArtikel[idx];
-        }
-
-        showChargen(selectedArtikel);
-        setTimeout(() => resetScanner(), 1500);
-
-      } catch (e) {
-        showToast('Fehler beim Speichern: ' + e.message, 'error');
-      }
-    };
-
-    // ── Charge löschen ──
-    window.deleteCharge = async function(artikelId, index) {
-      if (!confirm('Charge wirklich löschen?')) return;
-      const a       = alleArtikel.find(x => x.id === artikelId);
-      const chargen = [...(a.chargen || [])];
-      chargen.splice(index, 1);
-      await updateDoc(doc(db, 'artikel', artikelId), { chargen });
-      const idx = alleArtikel.findIndex(x => x.id === artikelId);
-      if (idx >= 0) alleArtikel[idx].chargen = chargen;
-      if (selectedArtikel?.id === artikelId) {
-        selectedArtikel.chargen = chargen;
-        showChargen(selectedArtikel);
-      }
-      showToast('Charge gelöscht');
-    };
-
-    // ── Manuell Speichern ──
-    window.saveManual = async function() {
-      const artikelId = document.getElementById('manual-artikel').value;
-      const lot       = document.getElementById('manual-lot').value.trim();
-      const verfallRaw= document.getElementById('manual-verfall').value; // YYYY-MM
-
-      if (!artikelId) { showToast('Bitte Artikel auswählen', 'error'); return; }
-      if (!lot)       { showToast('Bitte Charge/LOT eingeben', 'error'); return; }
-
-      if (userRole === 'mitarbeiter') {
-        showToast('Nur Wachenleiter & Admin können speichern', 'error'); return;
-      }
-
-      // Verfall: YYYY-MM-DD direkt verwenden
-      let verfall = null;
-      if (verfallRaw) {
-        verfall = verfallRaw; // Direkt als YYYY-MM-DD
-      }
-
-      const artikelRef  = doc(db, 'artikel', artikelId);
-      const freshSnap   = await getDoc(artikelRef);
-      const freshData   = freshSnap.exists() ? freshSnap.data() : {};
-      const chargen     = [...(freshData.chargen || [])];
-
-      const existsIdx = chargen.findIndex(c => c.lot === lot);
-      if (existsIdx >= 0) {
-        if (verfall) chargen[existsIdx].verfall = verfall;
-        showToast('Charge aktualisiert ✅');
-      } else {
-        chargen.push({ lot, verfall, gtin: null, erfasst: new Date().toISOString() });
-        showToast('Charge manuell gespeichert ✅');
-      }
-
-      await updateDoc(artikelRef, { chargen });
-      const idx = alleArtikel.findIndex(a => a.id === artikelId);
-      if (idx >= 0) alleArtikel[idx].chargen = chargen;
-
-      // Felder leeren
-      document.getElementById('manual-lot').value     = '';
-      document.getElementById('manual-verfall').value = '';
-      document.getElementById('manual-artikel').value = '';
-
-      // Chargen anzeigen
-      selectedArtikel = alleArtikel.find(a => a.id === artikelId);
-      showChargen(selectedArtikel);
-    };
-
-    // ── Reset ──
-    window.resetScanner = async function() {
-      scanResult      = null;
-      selectedArtikel = null;
-      scanning        = true;
-      stopQuaGGA();
-      document.getElementById('result-card').classList.add('hidden');
-      document.getElementById('chargen-section').classList.add('hidden');
-      document.getElementById('status-idle').classList.remove('hidden');
-      document.getElementById('artikel-search').value = '';
-      document.getElementById('artikel-suggestions').innerHTML = '';
-      // Artikel IMMER frisch aus Firestore laden
-      // → GTIN-Zuordnungen sind sofort beim nächsten Scan wirksam
-      await loadArtikel();
-      scanning = true; // Sicherstellen dass Scanner wieder aktiv ist
-    };
-
-    // ── Kamera wechseln ──
     window.switchCamera = async function(side) {
       currentCamera = side;
-      document.getElementById('btn-cam-back').classList.toggle('active', side === 'back');
-      document.getElementById('btn-cam-front').classList.toggle('active', side === 'front');
+      document.getElementById('btn-back').classList.toggle('active', side === 'back');
+      document.getElementById('btn-front').classList.toggle('active', side === 'front');
       stopQuaGGA();
       if (codeReader) codeReader.reset();
       scanning = true;
       await startScanner();
     };
 
-    // ── Taschenlampe ──
-    window.toggleTorch = async function() {
-      torchOn = !torchOn;
-      const btn = document.getElementById('btn-torch');
-      btn.classList.toggle('active', torchOn);
+    window.toggleLight = async function() {
+      const videoEl = document.getElementById('video');
+      const stream  = videoEl.srcObject;
+      if (!stream) return;
+      const track = stream.getVideoTracks()[0];
+      if (!track) return;
       try {
-        const stream = document.getElementById('video').srcObject;
-        const track  = stream?.getVideoTracks()[0];
-        if (track?.getCapabilities?.()?.torch) {
-          await track.applyConstraints({ advanced: [{ torch: torchOn }] });
-        }
-      } catch {}
+        const settings = track.getSettings();
+        await track.applyConstraints({ advanced: [{ torch: !settings.torch }] });
+        document.getElementById('btn-light').classList.toggle('active', !settings.torch);
+      } catch(e) { showToast('Licht nicht verfügbar'); }
     };
 
-    // ── Toast ──
-    function showToast(msg, type = 'success') {
-      const existing = document.querySelector('.toast');
-      if (existing) existing.remove();
-      const t = document.createElement('div');
-      t.className = `toast ${type}`;
-      t.textContent = msg;
-      document.body.appendChild(t);
-      setTimeout(() => t.remove(), 2500);
-    }
-    // ── TESSERACT.js OCR (kostenlos, im Browser) ──
-    let tesseractLoaded = false;
+    // ── Scan Result ──
+    function onScanResult(raw, preParsed = null) {
+      if (navigator.vibrate) navigator.vibrate(100);
+      document.getElementById('status-idle').classList.add('hidden');
 
-    async function loadTesseract() {
-      if (tesseractLoaded) return;
-      await new Promise((res, rej) => {
-        const s = document.createElement('script');
-        s.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
-        s.onload = res;
-        s.onerror = rej;
-        document.head.appendChild(s);
-      });
-      tesseractLoaded = true;
+      let parsed;
+      if (preParsed) {
+        parsed = { ...preParsed, raw };
+      } else if (raw.startsWith('+') || raw.startsWith('/')) {
+        parsed = parseHIBC(raw);
+        if (!parsed.lot && !parsed.verfall) parsed = parseGS1(raw);
+      } else {
+        parsed = parseGS1(raw);
+      }
+
+      scanResult = parsed;
+
+      // Bekannten Artikel suchen
+      const artikel = findArtikelByGtin(parsed.gtin);
+      selectedArtikel = artikel;
+
+      // Karte befüllen
+      const badge   = document.getElementById('result-badge');
+      const nameEl  = document.getElementById('result-name');
+      const gtinEl  = document.getElementById('result-gtin');
+      const lotEl   = document.getElementById('result-lot');
+      const verfEl  = document.getElementById('result-verfall');
+      const daysEl  = document.getElementById('result-days');
+      const statEl  = document.getElementById('result-status');
+
+      if (artikel) {
+        badge.textContent = 'BEKANNT';
+        badge.className   = 'result-badge badge-known';
+        nameEl.textContent = artikel.name;
+        gtinEl.textContent = parsed.gtin || '';
+        document.getElementById('artikel-search-wrap').classList.add('hidden');
+        showChargen(artikel);
+      } else {
+        badge.textContent = 'UNBEKANNT';
+        badge.className   = 'result-badge badge-unknown';
+        nameEl.textContent = 'Produkt nicht erkannt';
+        gtinEl.textContent = parsed.gtin || raw.substring(0,20);
+        document.getElementById('artikel-search-wrap').classList.remove('hidden');
+        document.getElementById('chargen-section').classList.add('hidden');
+      }
+
+      lotEl.textContent  = parsed.lot    || '–';
+      if (parsed.verfall) {
+        const d    = new Date(parsed.verfall + (parsed.verfall.length === 7 ? '-01' : ''));
+        const days = Math.round((d - new Date()) / 86400000);
+        verfEl.textContent = d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+        daysEl.textContent = days <= 0 ? 'ABGELAUFEN' : `${days} Tage`;
+        daysEl.className   = 'result-value ' + (days <= 30 ? 'warn' : 'ok');
+        if (days <= 0)       { statEl.textContent = '🔴 Abgelaufen'; statEl.className = 'result-value warn'; }
+        else if (days <= 7)  { statEl.textContent = '🔴 Kritisch';   statEl.className = 'result-value warn'; }
+        else if (days <= 30) { statEl.textContent = '🟡 Bald';       statEl.className = 'result-value warn'; }
+        else                 { statEl.textContent = '🟢 OK';         statEl.className = 'result-value ok';   }
+      } else {
+        verfEl.textContent = '–';
+        daysEl.textContent = '–';
+        statEl.textContent = '–';
+        daysEl.className = statEl.className = 'result-value';
+      }
+
+      // Fehlende Daten anzeigen
+      const missingWrap = document.getElementById('missing-wrap');
+      const noLot    = !parsed.lot;
+      const noVerfall= !parsed.verfall;
+      if (noLot || noVerfall) {
+        missingWrap.classList.remove('hidden');
+        document.getElementById('missing-lot-wrap').style.display    = noLot    ? 'block' : 'none';
+        document.getElementById('missing-verfall-wrap').style.display = noVerfall? 'block' : 'none';
+      } else {
+        missingWrap.classList.add('hidden');
+      }
+
+      document.getElementById('result-card').classList.remove('hidden');
     }
+
+    window.updateMissing = function(field, val) {
+      if (!scanResult) return;
+      if (field === 'lot')     scanResult.lot     = val;
+      if (field === 'verfall') scanResult.verfall = val;
+      // Anzeige aktualisieren
+      if (field === 'lot')    document.getElementById('result-lot').textContent = val || '–';
+      if (field === 'verfall' && val) {
+        const d    = new Date(val + 'T12:00:00');
+        const days = Math.round((d - new Date()) / 86400000);
+        document.getElementById('result-verfall').textContent = d.toLocaleDateString('de-DE');
+        document.getElementById('result-days').textContent    = days <= 0 ? 'ABGELAUFEN' : `${days} Tage`;
+      }
+    };
+
+    // ── Artikel suchen ──
+    window.searchArtikel = function(q) {
+      const list = document.getElementById('artikel-suggestions');
+      if (!q || q.length < 2) { list.innerHTML = ''; return; }
+      const lower = q.toLowerCase();
+      const hits  = alleArtikel.filter(a =>
+        a.name?.toLowerCase().includes(lower) ||
+        a.lp?.toLowerCase().includes(lower) ||
+        (a.aliases || []).some(al => al.toLowerCase().includes(lower))
+      ).slice(0, 6);
+      list.innerHTML = hits.map(a => `
+        <div class="suggestion" onclick="selectArtikel('${a.id}')">
+          <strong>${a.name}</strong>
+          <span style="color:var(--muted);font-size:0.7rem;margin-left:6px;">${a.lp || ''}</span>
+        </div>`).join('');
+    };
+
+    window.selectArtikel = function(id) {
+      selectedArtikel = alleArtikel.find(a => a.id === id);
+      if (!selectedArtikel) return;
+      document.getElementById('artikel-search').value = selectedArtikel.name;
+      document.getElementById('artikel-suggestions').innerHTML = '';
+      document.getElementById('artikel-search-wrap').classList.add('hidden');
+      showChargen(selectedArtikel);
+    };
+
+    function showChargen(artikel) {
+      if (!artikel) return;
+      const section = document.getElementById('chargen-section');
+      const list    = document.getElementById('chargen-list');
+      const chargen = (artikel.chargen || []).sort((a,b) => (a.verfall||'').localeCompare(b.verfall||''));
+      list.innerHTML = chargen.length === 0
+        ? '<div style="font-size:0.75rem;color:var(--muted);padding:4px 0;">Noch keine Chargen</div>'
+        : chargen.map((c, i) => {
+            const days = c.verfall ? Math.round((new Date(c.verfall) - new Date()) / 86400000) : null;
+            const color = days === null ? 'var(--muted)' : days <= 7 ? 'var(--red)' : days <= 30 ? 'var(--yellow)' : 'var(--green)';
+            return `<div class="charge-item">
+              <span style="color:var(--text2);font-weight:600;">${c.lot || '–'}</span>
+              <span style="color:${color};">${c.verfall ? new Date(c.verfall + (c.verfall.length===7?'-01':'')).toLocaleDateString('de-DE',{month:'2-digit',year:'numeric'}) : '–'}</span>
+              <button class="charge-del" onclick="deleteCharge('${artikel.id}',${i})">🗑️</button>
+            </div>`;
+          }).join('');
+      section.classList.remove('hidden');
+    }
+
+    window.deleteCharge = async function(artikelId, idx) {
+      if (!confirm('Charge löschen?')) return;
+      const a = alleArtikel.find(x => x.id === artikelId);
+      if (!a) return;
+      const chargen = [...(a.chargen || [])];
+      chargen.splice(idx, 1);
+      await updateDoc(doc(db, 'artikel', artikelId), { chargen });
+      const i = alleArtikel.findIndex(x => x.id === artikelId);
+      if (i >= 0) { alleArtikel[i].chargen = chargen; }
+      if (selectedArtikel?.id === artikelId) { selectedArtikel.chargen = chargen; showChargen(selectedArtikel); }
+    };
+
+    // ── Speichern ──
+    window.speichern = async function() {
+      if (!selectedArtikel) { showToast('Artikel auswählen!', 'error'); return; }
+      if (userRole === 'mitarbeiter') { showToast('Nur Wachenleiter können speichern', 'error'); return; }
+
+      const ref       = doc(db, 'artikel', selectedArtikel.id);
+      const fresh     = await getDoc(ref);
+      const freshData = fresh.exists() ? fresh.data() : {};
+      const chargen   = [...(freshData.chargen || [])];
+
+      const existsIdx = chargen.findIndex(c => c.lot && c.lot === scanResult.lot);
+      if (existsIdx >= 0) {
+        chargen[existsIdx].verfall = scanResult.verfall || chargen[existsIdx].verfall;
+        chargen[existsIdx].gtin    = scanResult.gtin    || chargen[existsIdx].gtin;
+        showToast(`Charge ${scanResult.lot} aktualisiert ✅`);
+      } else {
+        chargen.push({ lot: scanResult.lot || 'Unbekannt', verfall: scanResult.verfall || null, gtin: scanResult.gtin || null, erfasst: new Date().toISOString() });
+        showToast('Neue Charge gespeichert ✅');
+      }
+
+      const updateData = { chargen };
+      if (scanResult.gtin) {
+        const existing = Array.isArray(freshData.gtins) ? [...freshData.gtins] : (freshData.gtin ? [freshData.gtin] : []);
+        if (!existing.includes(scanResult.gtin)) existing.push(scanResult.gtin);
+        updateData.gtin  = scanResult.gtin;
+        updateData.gtins = existing;
+      }
+
+      await updateDoc(ref, updateData);
+      const i = alleArtikel.findIndex(a => a.id === selectedArtikel.id);
+      if (i >= 0) { alleArtikel[i] = { ...alleArtikel[i], ...updateData }; selectedArtikel = alleArtikel[i]; }
+      showChargen(selectedArtikel);
+      setTimeout(() => resetScanner(), 1500);
+    };
+
+    // ── Manuell speichern ──
+    window.saveManual = async function() {
+      const artikelId = document.getElementById('manual-artikel').value;
+      const lot       = document.getElementById('manual-lot').value.trim();
+      const verfall   = document.getElementById('manual-verfall').value;
+      if (!artikelId) { showToast('Artikel auswählen!', 'error'); return; }
+      if (!lot && !verfall) { showToast('Charge oder Datum eingeben', 'error'); return; }
+      if (userRole === 'mitarbeiter') { showToast('Nur Wachenleiter können speichern', 'error'); return; }
+
+      const ref       = doc(db, 'artikel', artikelId);
+      const fresh     = await getDoc(ref);
+      const freshData = fresh.exists() ? fresh.data() : {};
+      const chargen   = [...(freshData.chargen || [])];
+      const existsIdx = chargen.findIndex(c => c.lot && c.lot === lot);
+
+      if (existsIdx >= 0) {
+        chargen[existsIdx].verfall = verfall || chargen[existsIdx].verfall;
+        showToast('Charge aktualisiert ✅');
+      } else {
+        chargen.push({ lot: lot || 'Unbekannt', verfall: verfall || null, erfasst: new Date().toISOString() });
+        showToast('Charge gespeichert ✅');
+      }
+
+      await updateDoc(ref, { chargen });
+      const i = alleArtikel.findIndex(a => a.id === artikelId);
+      if (i >= 0) alleArtikel[i].chargen = chargen;
+
+      document.getElementById('manual-lot').value    = '';
+      document.getElementById('manual-verfall').value = '';
+      document.getElementById('manual-artikel').value = '';
+    };
+
+    // ── Reset ──
+    window.resetScanner = function() {
+      scanResult      = null;
+      selectedArtikel = null;
+      scanning        = true;
+      document.getElementById('result-card').classList.add('hidden');
+      document.getElementById('status-idle').classList.remove('hidden');
+      document.getElementById('artikel-search').value = '';
+      document.getElementById('artikel-suggestions').innerHTML = '';
+      document.getElementById('missing-wrap').classList.add('hidden');
+    };
+
+    // ── GTIN → Artikel ──
+    function findArtikelByGtin(gtin) {
+      if (!gtin) return null;
+      const g = gtin.trim();
+      return alleArtikel.find(a =>
+        a.gtin === g ||
+        (Array.isArray(a.gtins) && a.gtins.includes(g)) ||
+        (Array.isArray(a.chargen) && a.chargen.some(c => c.gtin === g))
+      ) || null;
+    }
+
+    // ── GS1 Parser ──
+    function parseGS1(raw) {
+      const result = { gtin: null, lot: null, verfall: null, raw };
+      const clean  = raw.replace(/[^\x20-\x7E]/g, '').trim();
+
+      // Mit Klammern: (01)...(17)...(10)...
+      if (clean.includes('(01)') || clean.includes('(17)') || clean.includes('(10)')) {
+        const ai01 = clean.match(/\(01\)(\d{14})/);
+        const ai17 = clean.match(/\(17\)(\d{6})/);
+        const ai10 = clean.match(/\(10\)([A-Z0-9\-\/]+?)(?:\(|$)/i);
+        if (ai01) result.gtin   = ai01[1];
+        if (ai10) result.lot    = ai10[1].trim();
+        if (ai17) {
+          const d  = ai17[1];
+          const yy = parseInt(d.substring(0,2));
+          const mm = parseInt(d.substring(2,4));
+          const dd = parseInt(d.substring(4,6));
+          if (mm >= 1 && mm <= 12 && yy >= 20 && yy <= 40) {
+            const day = (dd >= 1 && dd <= 31) ? String(dd).padStart(2,'0') : '28';
+            result.verfall = `20${String(yy).padStart(2,'0')}-${String(mm).padStart(2,'0')}-${day}`;
+          }
+        }
+        return result;
+      }
+
+      // Ohne Klammern: Rohe AIs
+      if (clean.startsWith('01') && clean.length >= 16) {
+        result.gtin = clean.substring(2, 16);
+        let rest = clean.substring(16);
+        const m17 = rest.match(/17(\d{6})/);
+        const m10 = rest.match(/10([A-Z0-9\-]+)/i);
+        if (m17) {
+          const yy = parseInt(m17[1].substring(0,2));
+          const mm = parseInt(m17[1].substring(2,4));
+          const dd = parseInt(m17[1].substring(4,6));
+          if (mm >= 1 && mm <= 12 && yy >= 20 && yy <= 40) {
+            result.verfall = `20${String(yy).padStart(2,'0')}-${String(mm).padStart(2,'0')}-${String(dd).padStart(2,'0')}`;
+          }
+        }
+        if (m10) result.lot = m10[1].trim();
+      }
+      return result;
+    }
+
+    // ── HIBC Parser ──
+    function parseHIBC(raw) {
+      const result = { gtin: null, lot: null, verfall: null, raw };
+      const parts  = raw.split('/$$');
+      if (parts.length < 2) return result;
+      const secData = parts[1];
+      const mm_str  = secData.substring(0,2);
+      const yy_str  = secData.substring(2,4);
+      const monat   = parseInt(mm_str);
+      const jahr    = 2000 + parseInt(yy_str);
+      if (monat >= 1 && monat <= 12 && jahr >= 2020 && jahr <= 2040) {
+        const letzter  = new Date(jahr, monat, 0).getDate();
+        result.verfall = `${jahr}-${String(monat).padStart(2,'0')}-${String(letzter).padStart(2,'0')}`;
+        const lotRaw   = secData.substring(4);
+        result.lot     = lotRaw.length > 1 ? lotRaw.slice(0,-1).trim() : lotRaw.trim();
+      }
+      return result;
+    }
+
+    // ── Vision Text Parser ──
+    function parseVisionText(text) {
+      const result = { lot: null, verfall: null };
+      const lotPatterns = [
+        /LOT[:\s#]?\s*([A-Z0-9]{4,20})/i,
+        /CHARGE[:\s]?\s*([A-Z0-9]{4,20})/i,
+        /\bL[:\s]([A-Z0-9]{6,15})\b/i,
+      ];
+      for (const p of lotPatterns) { const m = text.match(p); if (m) { result.lot = m[1].trim(); break; } }
+
+      const verfPatterns = [
+        /(?:EXP|VERFALL|USE BY|BB|MHD)[:\s]*(\d{4}[-\/]\d{2}(?:[-\/]\d{2})?)/i,
+        /\b(20\d{2})[-\/](0[1-9]|1[0-2])\b/,
+        /\b(0[1-9]|1[0-2])[-\/](20\d{2})\b/,
+      ];
+      for (const p of verfPatterns) {
+        const m = text.match(p);
+        if (m) {
+          if (m[2] && m[2].startsWith('20')) result.verfall = `${m[2]}-${m[1]}`;
+          else result.verfall = `${m[1]}-${m[2]}`;
+          break;
+        }
+      }
+      return result;
+    }
+
+    // ── Tesseract OCR ──
+    let tesseractReady = false;
 
     window.analyzeWithTesseract = async function(input) {
-      const file = input.files[0];
+      const file    = input.files[0];
+      const statusEl= document.getElementById('ocr-status');
       if (!file) return;
 
-      const statusEl = document.getElementById('vision-status');
       statusEl.style.color = 'var(--accent2)';
-      statusEl.textContent = '⏳ Texterkennung wird geladen...';
+      statusEl.textContent  = '⏳ Texterkennung wird geladen...';
 
       try {
-        await loadTesseract();
-
-        statusEl.textContent = '🔍 Text wird erkannt...';
-
-        const { data: { text } } = await Tesseract.recognize(file, 'deu+eng', {
-          logger: m => {
-            if (m.status === 'recognizing text') {
-              statusEl.textContent = `🔍 ${Math.round(m.progress * 100)}% erkannt...`;
-            }
-          }
-        });
-
-        if (!text || text.trim().length < 3) {
-          statusEl.textContent = '❌ Kein Text erkannt – besseres Foto versuchen';
-          statusEl.style.color = 'var(--red)';
-          input.value = '';
-          return;
+        if (!tesseractReady) {
+          await new Promise((res, rej) => {
+            const s = document.createElement('script');
+            s.src = 'https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js';
+            s.onload = () => { tesseractReady = true; res(); };
+            s.onerror = rej;
+            document.head.appendChild(s);
+          });
         }
 
-        console.log('OCR Text:', text);
+        statusEl.textContent = '🔍 Text wird erkannt...';
+        const { data: { text } } = await Tesseract.recognize(file, 'deu+eng', {
+          logger: m => { if (m.status === 'recognizing text') statusEl.textContent = `🔍 ${Math.round(m.progress*100)}% ...`; }
+        });
+
+        if (!text?.trim()) { statusEl.textContent = '❌ Kein Text erkannt'; statusEl.style.color='var(--red)'; input.value=''; return; }
 
         const parsed = parseVisionText(text);
-
         if (!parsed.lot && !parsed.verfall) {
-          statusEl.textContent = '⚠️ LOT/Verfallsdatum nicht gefunden – manuell eingeben';
+          statusEl.textContent = '⚠️ LOT/Datum nicht gefunden – manuell eingeben';
           statusEl.style.color = 'var(--yellow)';
           input.value = '';
           return;
         }
 
-        statusEl.textContent = `✅ LOT: ${parsed.lot || '?'} · Verfall: ${parsed.verfall || '?'}`;
+        statusEl.textContent = `✅ LOT: ${parsed.lot||'?'} · Verfall: ${parsed.verfall||'?'}`;
         statusEl.style.color = 'var(--green)';
-
         scanning = false;
         onScanResult(text, parsed);
 
       } catch(e) {
-        console.error('OCR Fehler:', e);
         statusEl.textContent = '❌ Fehler: ' + e.message;
         statusEl.style.color = 'var(--red)';
       }
-
       input.value = '';
     };
 
-    // Vision Text parsen – sucht nach LOT und Verfallsdatum
-    function parseVisionText(text) {
-      const result = { lot: null, verfall: null };
-      const lines  = text.split(/\n/).map(l => l.trim()).filter(Boolean);
+    // ── Bluetooth Scanner ──
+    let btBuffer  = '';
+    let btTimer   = null;
+    let btActive  = false;
 
-      // LOT Muster
-      const lotPatterns = [
-        /LOT[:\s#]?\s*([A-Z0-9]{4,20})/i,
-        /CHARGE[:\s]?\s*([A-Z0-9]{4,20})/i,
-        /L[:\s]?\s*([A-Z0-9]{6,15})/i,
-        /([A-Z]{0,3}\d{6,10})/,
-      ];
-
-      for (const pat of lotPatterns) {
-        const m = text.match(pat);
-        if (m) { result.lot = m[1].trim(); break; }
-      }
-
-      // Verfallsdatum Muster
-      const verfallPatterns = [
-        // 2029-07 oder 2029-07-31
-        /(?:EXP|VERFALL|USE BY|BB|MHD)[:\s]*(\d{4}[-\/]\d{2}(?:[-\/]\d{2})?)/i,
-        // YYYY-MM
-        /(20\d{2})[-\/](0[1-9]|1[0-2])/,
-        // MM/YYYY oder MM-YYYY
-        /(0[1-9]|1[0-2])[-\/](20\d{2})/,
-        // YYYY-MM-DD
-        /(20\d{2})-(0[1-9]|1[0-2])-(\d{2})/,
-      ];
-
-      for (const pat of verfallPatterns) {
-        const m = text.match(pat);
-        if (m) {
-          if (pat.source.includes('(0[1-9]|1[0-2])[-\/](20')) {
-            // MM/YYYY → YYYY-MM
-            result.verfall = `${m[2]}-${m[1]}`;
-          } else if (m[3]) {
-            result.verfall = `${m[1]}-${m[2]}-${m[3]}`;
-          } else {
-            result.verfall = `${m[1]}-${m[2]}`;
-          }
-          break;
-        }
-      }
-
-      return result;
-    }
-
-    // ── BLUETOOTH SCANNER ──
-    let btBuffer   = '';
-    let btTimer    = null;
-    let btActive   = false;
-
-    // BT Input fokussieren
     window.focusBtInput = function() {
       const input = document.getElementById('bt-input');
       if (!input) return;
@@ -1600,103 +846,58 @@
       const dot   = document.getElementById('bt-dot');
       const label = document.getElementById('bt-label');
       const sub   = document.getElementById('bt-sub');
-      if (!dot || !label || !sub) return; // Elemente noch nicht geladen
-
+      if (!dot || !label || !sub) return;
       if (active) {
-        dot.style.background   = 'var(--green)';
-        dot.style.boxShadow    = '0 0 6px var(--green)';
-        label.textContent      = '📡 Bluetooth-Scanner aktiv';
-        sub.textContent        = 'Bereit zum Scannen';
-        label.style.color      = 'var(--green)';
+        dot.classList.add('active');
+        label.textContent = '📡 Bluetooth-Scanner aktiv';
+        label.style.color = 'var(--green)';
+        sub.textContent   = 'Bereit zum Scannen';
       } else {
-        dot.style.background   = 'var(--muted)';
-        dot.style.boxShadow    = 'none';
-        label.textContent      = '📡 Bluetooth-Scanner';
-        sub.textContent        = 'Tippen zum Aktivieren';
-        label.style.color      = 'var(--text2)';
+        dot.classList.remove('active');
+        label.textContent = '📡 Bluetooth-Scanner';
+        label.style.color = '';
+        sub.textContent   = 'Tippen zum Aktivieren';
       }
     }
 
-    // BT Input Event – sammelt Zeichen und verarbeitet nach Pause
     const btInput = document.getElementById('bt-input');
-
     btInput.addEventListener('focus', () => setBtActive(true));
-    btInput.addEventListener('blur',  () => {
-      // Kurze Verzögerung – vielleicht klickt Nutzer auf etwas anderes
-      setTimeout(() => {
-        if (document.activeElement !== btInput) setBtActive(false);
-      }, 200);
-    });
-
+    btInput.addEventListener('blur',  () => setTimeout(() => { if (document.activeElement !== btInput) setBtActive(false); }, 300));
     btInput.addEventListener('input', () => {
       btBuffer += btInput.value;
       btInput.value = '';
-
-      // Timer zurücksetzen – wenn nach 100ms kein neues Zeichen kommt → verarbeiten
-      if (btTimer) clearTimeout(btTimer);
+      clearTimeout(btTimer);
       btTimer = setTimeout(() => {
-        if (btBuffer.trim().length > 2) {
-          processBtCode(btBuffer.trim());
-          btBuffer = '';
-        }
-      }, 100);
+        if (btBuffer.trim().length > 2) { onScanResult(btBuffer.trim()); btBuffer = ''; }
+      }, 120);
     });
-
-    // Enter/CR als Abschluss des Scans
-    btInput.addEventListener('keydown', (e) => {
+    btInput.addEventListener('keydown', e => {
       if (e.key === 'Enter' && btBuffer.trim().length > 2) {
-        if (btTimer) clearTimeout(btTimer);
-        processBtCode(btBuffer.trim());
+        clearTimeout(btTimer);
+        onScanResult(btBuffer.trim());
         btBuffer = '';
         btInput.value = '';
       }
     });
 
-    // BT Code verarbeiten – gleiche Logik wie Kamera-Scan
-    function processBtCode(raw) {
-      if (!raw || raw.length < 3) return;
-
-      // Vibration als Feedback
-      if (navigator.vibrate) navigator.vibrate([50, 30, 50]);
-
-      // Kurzes visuelles Feedback
-      const dot = document.getElementById('bt-dot');
-      dot.style.background = 'var(--accent)';
-      setTimeout(() => dot.style.background = 'var(--green)', 300);
-
-      // Gleiche Parse-Logik wie Kamera
-      let parsed;
-      if (raw.startsWith('+') || raw.startsWith('/')) {
-        parsed = parseHIBC(raw);
-        if (!parsed || (!parsed.lot && !parsed.verfall)) parsed = parseGS1(raw);
-      } else {
-        parsed = parseGS1(raw);
-      }
-
-      // Kamera-Scan Ergebnis-Verarbeitung nutzen
-      scanning = false;
-      onScanResult(raw);
-    }
-
-    // Seite angeklickt → BT Input fokussieren wenn kein anderes Element aktiv
-    document.addEventListener('click', (e) => {
-      const interactable = ['INPUT','BUTTON','SELECT','TEXTAREA','A'];
-      if (!interactable.includes(e.target.tagName)) {
-        focusBtInput();
-      }
+    document.addEventListener('click', e => {
+      const skip = ['INPUT','BUTTON','SELECT','TEXTAREA','A'];
+      if (!skip.includes(e.target.tagName)) focusBtInput();
     });
 
-    // Beim Laden automatisch fokussieren (nach DOM ready)
-    document.addEventListener('DOMContentLoaded', () => {
-      setTimeout(() => focusBtInput(), 800);
-    });
-    // Fallback falls DOMContentLoaded schon gefeuert
-    if (document.readyState === 'complete') {
-      setTimeout(() => focusBtInput(), 800);
-    }
+    setTimeout(focusBtInput, 1000);
+
+    // ── Toast ──
+    window.showToast = function(msg, type='success') {
+      const t = document.createElement('div');
+      t.className   = 'toast';
+      t.textContent = msg;
+      t.style.background = type === 'error' ? '#ef4444' : '#1f2937';
+      document.body.appendChild(t);
+      setTimeout(() => t.remove(), 2800);
+    };
 
   </script>
-
   <script src="../js/pwa.js"></script>
 </body>
 </html>
