@@ -807,14 +807,42 @@
         if (document.activeElement !== btInput && !btActive) setBtActive(false);
       }, 300);
     });
+    let btLastInput  = 0;
+    let btCharCount  = 0;
+    const BT_MIN_CHARS = 6;    // Echter Scanner sendet mindestens 6 Zeichen
+    const BT_MAX_MS    = 80;   // ...in unter 80ms
+
     btInput.addEventListener('input', () => {
-      btBuffer += btInput.value;
+      const now = Date.now();
+      const val = btInput.value;
       btInput.value = '';
-      // Erst jetzt grün – echter Input vom Scanner
-      setBtActive(true);
+
+      if (!val) return;
+
+      // Zeitdelta seit letztem Zeichen
+      const delta = now - btLastInput;
+      btLastInput  = now;
+
+      // Wenn delta zu groß → neuer Buffer
+      if (delta > 200) {
+        btBuffer   = '';
+        btCharCount = 0;
+      }
+
+      btBuffer   += val;
+      btCharCount += val.length;
+
       clearTimeout(btTimer);
       btTimer = setTimeout(() => {
-        if (btBuffer.trim().length > 2) { onScanResult(btBuffer.trim()); btBuffer = ''; }
+        const code = btBuffer.trim();
+        btBuffer    = '';
+
+        // Nur verarbeiten wenn genug Zeichen in kurzer Zeit → echter Scanner
+        if (code.length >= BT_MIN_CHARS) {
+          setBtActive(true); // Jetzt erst grün
+          onScanResult(code);
+        }
+        btCharCount = 0;
       }, 120);
     });
     btInput.addEventListener('keydown', e => {
