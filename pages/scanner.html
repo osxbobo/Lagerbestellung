@@ -158,7 +158,7 @@
   <!-- NAV -->
   <nav class="nav">
     <button class="nav-back" onclick="window.location.href='../index.html'">← Zurück</button>
-    <div class="nav-logo">LAGER<span>//</span>APP</div>
+    <div class="nav-logo" style="padding:0;"><img src="../LAGER_APP.png" alt="LAGER//APP" style="height:32px;width:auto;display:block;object-fit:contain;"></div>
     <div class="nav-right">
       <span id="nav-user" style="font-size:0.78rem;color:var(--muted);"></span>
       <button class="theme-btn" onclick="toggleTheme()">☀️</button>
@@ -588,11 +588,14 @@
         a.lp?.toLowerCase().includes(lower) ||
         (a.aliases || []).some(al => al.toLowerCase().includes(lower))
       ).slice(0, 6);
-      list.innerHTML = hits.map(a => `
-        <div class="suggestion" onclick="selectArtikel('${a.id}')">
-          <strong>${a.name}</strong>
-          <span style="color:var(--muted);font-size:0.7rem;margin-left:6px;">${a.lp || ''}</span>
-        </div>`).join('');
+      list.innerHTML = '';
+      hits.forEach(a => {
+        const div = document.createElement('div');
+        div.className = 'suggestion';
+        div.innerHTML = `<strong>${a.name}</strong><span style="color:var(--muted);font-size:0.7rem;margin-left:6px;">${a.lp || ''}</span>`;
+        div.addEventListener('click', () => selectArtikel(a.id));
+        list.appendChild(div);
+      });
     };
 
     window.selectArtikel = function(id) {
@@ -755,21 +758,40 @@
         return result;
       }
 
-      // Ohne Klammern: Rohe AIs
-      if (clean.startsWith('01') && clean.length >= 16) {
-        result.gtin = clean.substring(2, 16);
-        let rest = clean.substring(16);
-        const m17 = rest.match(/17(\d{6})/);
-        const m10 = rest.match(/10([A-Z0-9\-]+)/i);
-        if (m17) {
-          const yy = parseInt(m17[1].substring(0,2));
-          const mm = parseInt(m17[1].substring(2,4));
-          const dd = parseInt(m17[1].substring(4,6));
-          if (mm >= 1 && mm <= 12 && yy >= 20 && yy <= 40) {
-            result.verfall = `20${String(yy).padStart(2,'0')}-${String(mm).padStart(2,'0')}-${String(dd).padStart(2,'0')}`;
+      // Ohne Klammern: Rohe AIs – GS1-128 Scanner-Output
+      // Format: 01[14-GTIN]17[6-Datum]10[LOT] oder 01[14-GTIN]10[LOT]17[6-Datum]
+      if (clean.length >= 16) {
+        // Versuche AI 01 (GTIN-14)
+        let pos = 0;
+        while (pos < clean.length - 2) {
+          const ai = clean.substring(pos, pos + 2);
+          if (ai === '01' && clean.length >= pos + 16) {
+            result.gtin = clean.substring(pos + 2, pos + 16);
+            pos += 16;
+          } else if (ai === '17' && clean.length >= pos + 8) {
+            const d  = clean.substring(pos + 2, pos + 8);
+            const yy = parseInt(d.substring(0,2));
+            const mm = parseInt(d.substring(2,4));
+            const dd = parseInt(d.substring(4,6));
+            if (mm >= 1 && mm <= 12 && yy >= 20 && yy <= 40) {
+              const day = dd >= 1 && dd <= 31 ? String(dd).padStart(2,'0') : '28';
+              result.verfall = `20${String(yy).padStart(2,'0')}-${String(mm).padStart(2,'0')}-${day}`;
+            }
+            pos += 8;
+          } else if (ai === '10') {
+            // LOT: variabel, bis nächste bekannte AI oder Ende
+            const rest = clean.substring(pos + 2);
+            const nextAI = rest.search(/17\d{6}|11\d{6}|21/);
+            result.lot = nextAI > 0 ? rest.substring(0, nextAI).trim() : rest.trim();
+            break;
+          } else if (ai === '11' && clean.length >= pos + 8) {
+            pos += 8; // Herstellungsdatum überspringen
+          } else if (ai === '21') {
+            pos += 2; // Seriennummer überspringen
+          } else {
+            pos++; // Unbekannte AI – weiter
           }
         }
-        if (m10) result.lot = m10[1].trim();
       }
       return result;
     }
