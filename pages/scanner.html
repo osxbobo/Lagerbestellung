@@ -190,6 +190,11 @@
 
   </div><!-- /content -->
 
+  <!-- BT Input: inputmode=none verhindert Bildschirmtastatur, HID Scanner funktioniert -->
+  <input id="bt-input" type="text" inputmode="none"
+    style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0;font-size:16px;"
+    autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+
   <script>
     // ── Theme ──
     (function() {
@@ -599,8 +604,9 @@
       } catch(e) { showToast('Licht nicht verfügbar'); }
     };
 
-    // ── Bluetooth ──
-    // Nutzt keydown auf document – funktioniert auf iPad, PC und Mac
+    // ── Bluetooth HID ──
+    const btInputEl = document.getElementById('bt-input');
+
     window.toggleBluetooth = function() {
       btOn = !btOn;
       const btn    = document.getElementById('btn-bt');
@@ -608,29 +614,75 @@
       btn.classList.toggle('bt-active', btOn);
       btn.textContent = btOn ? '📡 BT Aktiv' : '📡 Bluetooth';
       status.classList.toggle('hidden', !btOn);
+
+      if (btOn) {
+        focusBtInput();
+      } else {
+        btInputEl.blur();
+      }
     };
 
-    // Keydown auf document – HID Scanner sendet Tastatureingaben
-    let lastKey = 0;
-    document.addEventListener('keydown', e => {
+    function focusBtInput() {
       if (!btOn) return;
-      // Nur wenn kein Inputfeld fokussiert ist
-      const tag = document.activeElement?.tagName;
-      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+      try { btInputEl.focus(); } catch(e) {}
+    }
+
+    // Fokus halten – wenn BT aktiv und Fokus verloren → zurück
+    btInputEl.addEventListener('blur', () => {
+      if (btOn) setTimeout(focusBtInput, 150);
+    });
+
+    // Input Event – HID Scanner schreibt trotz readonly via input event
+    btInputEl.addEventListener('input', () => {
+      const val = btInputEl.value;
+      btInputEl.value = '';
+      if (!val || !btOn) return;
 
       const now = Date.now();
-      if (now - lastKey > 300) btBuffer = ''; // Reset nach Pause
-      lastKey = now;
+      if (now - (window._btLast || 0) > 300) btBuffer = '';
+      window._btLast = now;
+      btBuffer += val;
 
+      clearTimeout(btTimer);
+      btTimer = setTimeout(() => {
+        const code = btBuffer.trim();
+        btBuffer = '';
+        if (code.length >= 4) onScanResult(code);
+      }, 100);
+    });
+
+    // Keydown fallback – für PC/Mac wo keydown zuverlässiger ist
+    btInputEl.addEventListener('keydown', e => {
+      if (!btOn) return;
       if (e.key === 'Enter') {
-        if (btBuffer.length >= 4) {
-          onScanResult(btBuffer);
-          btBuffer = '';
-        }
+        clearTimeout(btTimer);
+        const code = btBuffer.trim();
+        btBuffer = '';
+        btInputEl.value = '';
+        if (code.length >= 4) onScanResult(code);
         return;
       }
+      if (e.key.length === 1) {
+        const now = Date.now();
+        if (now - (window._btLast || 0) > 300) btBuffer = '';
+        window._btLast = now;
+        btBuffer += e.key;
+        clearTimeout(btTimer);
+        btTimer = setTimeout(() => {
+          const code = btBuffer.trim();
+          btBuffer = '';
+          btInputEl.value = '';
+          if (code.length >= 4) onScanResult(code);
+        }, 200);
+      }
+    });
 
-      if (e.key.length === 1) btBuffer += e.key;
+    // Klick irgendwo → Fokus zurück wenn BT aktiv
+    document.addEventListener('click', e => {
+      const skip = ['INPUT','SELECT','TEXTAREA','BUTTON','A'];
+      if (btOn && !skip.includes(e.target.tagName)) {
+        setTimeout(focusBtInput, 100);
+      }
     });
 
     // ── Toast ──
