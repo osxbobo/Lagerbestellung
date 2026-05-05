@@ -190,6 +190,12 @@
 
   </div><!-- /content -->
 
+  <!-- BT Hidden Input - kein readonly, kein inputmode - plain input -->
+  <input id="bt-input" type="text"
+    style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0;font-size:16px;border:none;outline:none;"
+    autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+    tabindex="-1">
+
   <script>
     // ── Theme ──
     (function() {
@@ -600,6 +606,9 @@
     };
 
     // ── Bluetooth HID ──
+    // ── Bluetooth HID ──
+    const _btEl = document.getElementById('bt-input');
+
     window.toggleBluetooth = function() {
       btOn = !btOn;
       const btn    = document.getElementById('btn-bt');
@@ -607,40 +616,55 @@
       btn.classList.toggle('bt-active', btOn);
       btn.textContent = btOn ? '📡 BT Aktiv' : '📡 Bluetooth';
       status.classList.toggle('hidden', !btOn);
+      if (btOn) _btFocus();
     };
 
-    // ── Globaler Keyboard Interceptor für HID Scanner ──
-    // capture:true → wird VOR allen anderen Handlern ausgeführt
-    // Verhindert dass Scanner-Input in normale Felder landet
-    document.addEventListener('keydown', e => {
+    function _btFocus() {
+      if (!btOn || !_btEl) return;
+      _btEl.value = '';
+      try { _btEl.focus(); } catch(e) {}
+    }
+
+    // Fokus halten solange BT aktiv
+    _btEl.addEventListener('blur', () => {
+      if (btOn) setTimeout(_btFocus, 100);
+    });
+
+    // Input sammeln
+    _btEl.addEventListener('input', () => {
       if (!btOn) return;
-
-      // Alle Tastatureingaben abfangen – auch wenn Inputfeld fokussiert
-      e.preventDefault();
-      e.stopImmediatePropagation();
-
+      const val = _btEl.value;
+      _btEl.value = '';
+      if (!val) return;
       const now = Date.now();
-      if (now - (window._btLast || 0) > 500) btBuffer = '';
+      if (now - (window._btLast||0) > 500) btBuffer = '';
       window._btLast = now;
+      btBuffer += val;
+      clearTimeout(btTimer);
+      btTimer = setTimeout(() => {
+        const c = btBuffer.trim(); btBuffer = '';
+        if (c.length >= 4) onScanResult(c);
+      }, 150);
+    });
 
+    // Enter als Abschluss
+    _btEl.addEventListener('keydown', e => {
+      if (!btOn) return;
       if (e.key === 'Enter') {
+        e.preventDefault();
         clearTimeout(btTimer);
-        const code = btBuffer.trim();
-        btBuffer = '';
-        if (code.length >= 4) onScanResult(code);
-        return;
+        const c = btBuffer.trim(); btBuffer = ''; _btEl.value = '';
+        if (c.length >= 4) onScanResult(c);
       }
+    });
 
-      if (e.key.length === 1) {
-        btBuffer += e.key;
-        clearTimeout(btTimer);
-        btTimer = setTimeout(() => {
-          const code = btBuffer.trim();
-          btBuffer = '';
-          if (code.length >= 4) onScanResult(code);
-        }, 200);
-      }
-    }, true); // capture phase
+    // Klick außerhalb → Fokus zurück
+    document.addEventListener('pointerdown', e => {
+      if (!btOn) return;
+      const tag = e.target?.tagName;
+      // Kurze Verzögerung damit das geklickte Element erst seinen Job macht
+      setTimeout(() => { if (btOn) _btFocus(); }, 200);
+    });
 
         // ── Toast ──
     window.showToast = function(msg, type = 'success') {
