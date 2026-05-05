@@ -190,6 +190,16 @@
 
   </div><!-- /content -->
 
+  <!-- BT Textarea: sichtbar aber versteckt, immer fokussiert wenn BT aktiv -->
+  <textarea id="bt-area"
+    autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+    style="display:none;position:fixed;bottom:0;right:0;width:1px;height:1px;
+           opacity:0.01;border:none;outline:none;resize:none;font-size:16px;
+           background:transparent;color:transparent;z-index:9999;padding:0;"
+    tabindex="0"
+    aria-label="Bluetooth Scanner Input"
+    aria-hidden="false"></textarea>
+
   <script>
     // ── Theme ──
     (function() {
@@ -600,8 +610,10 @@
     };
 
     // ── Bluetooth HID ──
-    // Strategie: MutationObserver + Intervall erkennen ob Scanner schnell tippt
-    // Kein Fokus-Trick nötig – wir messen Tipp-Geschwindigkeit
+    // Textarea als dedizierter Scanner-Input
+    // Sichtbar aber winzig → kein Fokus-Problem, kein Tastatur-Problem
+
+    const _btArea = document.getElementById('bt-area');
 
     window.toggleBluetooth = function() {
       btOn = !btOn;
@@ -610,73 +622,37 @@
       btn.classList.toggle('bt-active', btOn);
       btn.textContent = btOn ? '📡 BT Aktiv' : '📡 Bluetooth';
       status.classList.toggle('hidden', !btOn);
+      if (btOn) { _btArea.style.display = 'block'; _btArea.focus(); }
+      else       { _btArea.style.display = 'none';  _btArea.blur(); }
     };
 
-    // Alle Inputs beobachten – wenn BT aktiv und Input zu schnell für Mensch → abfangen
-    const BT_SPEED_MS  = 50;   // Scanner tippt schneller als 50ms pro Zeichen
-    const BT_MIN_LEN   = 6;    // Mindestlänge für echten Barcode
+    _btArea.addEventListener('blur', () => {
+      if (btOn) setTimeout(() => { _btArea.focus(); }, 50);
+    });
 
-    let _btLastTime  = 0;
-    let _btLastField = null;
-    let _btFieldBuf  = '';
-    let _btFieldTimer= null;
+    _btArea.addEventListener('input', () => {
+      const val = _btArea.value;
+      _btArea.value = '';
+      if (!val || !btOn) return;
+      btBuffer += val;
+      clearTimeout(btTimer);
+      btTimer = setTimeout(() => {
+        const code = btBuffer.replace(/
+/g,'').trim();
+        btBuffer = '';
+        if (code.length >= 4) onScanResult(code);
+      }, 150);
+    });
 
-    // Jeden keydown überwachen
-    document.addEventListener('keydown', function(e) {
-      if (!btOn) return;
-
-      const now   = Date.now();
-      const delta = now - _btLastTime;
-      _btLastTime = now;
-      const field = document.activeElement;
-
+    _btArea.addEventListener('keydown', e => {
       if (e.key === 'Enter') {
-        // Enter → prüfen ob Buffer ein Barcode ist
-        clearTimeout(_btFieldTimer);
-        if (_btFieldBuf.length >= BT_MIN_LEN) {
-          const code = _btFieldBuf.trim();
-          _btFieldBuf = '';
-          // Feld zurücksetzen wenn Scanner reingepipst hat
-          if (_btLastField && (_btLastField.id === 'f-artikel-search' || _btLastField.id === 'f-lot')) {
-            _btLastField.value = '';
-          }
-          onScanResult(code);
-          e.preventDefault();
-        }
-        _btFieldBuf  = '';
-        _btLastField = null;
-        return;
-      }
-
-      if (e.key.length !== 1) return;
-
-      // Geschwindigkeit messen
-      if (delta < BT_SPEED_MS || _btFieldBuf.length === 0) {
-        // Schnell → wahrscheinlich Scanner
-        _btFieldBuf += e.key;
-        _btLastField = field;
-
-        clearTimeout(_btFieldTimer);
-        _btFieldTimer = setTimeout(() => {
-          // Timeout – kein Enter gekommen
-          if (_btFieldBuf.length >= BT_MIN_LEN) {
-            const code = _btFieldBuf.trim();
-            _btFieldBuf = '';
-            if (_btLastField && (_btLastField.id === 'f-artikel-search' || _btLastField.id === 'f-lot')) {
-              _btLastField.value = '';
-            }
-            onScanResult(code);
-          } else {
-            _btFieldBuf = '';
-          }
-          _btLastField = null;
-        }, 200);
-
-      } else {
-        // Langsam → echter Mensch tippt → Buffer leeren
-        _btFieldBuf = e.key;
-        _btLastField = field;
-        clearTimeout(_btFieldTimer);
+        e.preventDefault();
+        clearTimeout(btTimer);
+        const code = btBuffer.replace(/
+/g,'').trim();
+        btBuffer = '';
+        _btArea.value = '';
+        if (code.length >= 4) onScanResult(code);
       }
     });
 
