@@ -7,202 +7,187 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <title>Verfallsscan – LAGER//APP</title>
   <link rel="manifest" href="../manifest.json">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://unpkg.com/@zxing/library@0.19.1/umd/index.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@ericblade/quagga2@1.2.6/dist/quagga.min.js"></script>
 
   <style>
     :root {
-      --bg:      #f9fafb; --surface: #ffffff; --surface2: #f3f4f6;
-      --border:  #e5e7eb; --text:    #111827; --text2:    #374151;
-      --muted:   #9ca3af; --accent:  #f97316; --accent2:  #0ea5e9;
-      --green:   #22c55e; --red:     #ef4444; --yellow:   #eab308;
+      --bg:#f9fafb; --surface:#fff; --surface2:#f3f4f6;
+      --border:#e5e7eb; --text:#111827; --text2:#374151;
+      --muted:#9ca3af; --accent:#f97316; --green:#22c55e;
+      --red:#ef4444; --yellow:#eab308; --blue:#0ea5e9;
     }
     [data-theme="dark"] {
       --bg:#0a0f1a; --surface:#111827; --surface2:#1f2937;
       --border:#374151; --text:#f9fafb; --text2:#e5e7eb; --muted:#6b7280;
     }
-    * { box-sizing:border-box; margin:0; padding:0; }
+    * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
     body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
 
-    /* NAV */
-    .nav { position:sticky; top:0; z-index:100; background:var(--surface); border-bottom:1px solid var(--border); padding:10px 16px; display:flex; align-items:center; gap:10px; }
+    nav { position:sticky; top:0; z-index:100; background:var(--surface); border-bottom:1px solid var(--border); padding:10px 16px; display:flex; align-items:center; gap:10px; }
     .nav-back { background:none; border:1px solid var(--border); border-radius:8px; padding:6px 12px; cursor:pointer; color:var(--text2); font-family:'DM Sans',sans-serif; font-size:0.82rem; }
-    .nav-logo { font-family:'IBM Plex Mono',monospace; font-weight:600; font-size:0.95rem; color:var(--accent); }
-    .nav-logo span { color:var(--text2); }
+    .nav-logo img { height:28px; width:auto; display:block; }
+    .nav-logo-text { font-family:'IBM Plex Mono',monospace; font-weight:600; font-size:0.95rem; color:var(--accent); }
+    .nav-logo-text span { color:var(--text2); }
     .nav-right { margin-left:auto; display:flex; align-items:center; gap:8px; }
     .theme-btn { background:none; border:1px solid var(--border); border-radius:8px; padding:5px 9px; cursor:pointer; font-size:0.9rem; }
 
-    /* CONTENT */
-    .content { padding:16px; display:flex; flex-direction:column; gap:14px; max-width:520px; margin:0 auto; }
+    .page { padding:16px; display:flex; flex-direction:column; gap:12px; max-width:500px; margin:0 auto; }
 
-    /* CARD */
     .card { background:var(--surface); border:1px solid var(--border); border-radius:14px; overflow:hidden; }
-    .card-header { padding:12px 16px; background:var(--surface2); border-bottom:1px solid var(--border); display:flex; align-items:center; gap:8px; font-size:0.82rem; font-weight:700; color:var(--text2); }
-    .card-body { padding:16px; }
+    .card-head { padding:11px 16px; background:var(--surface2); border-bottom:1px solid var(--border); font-size:0.8rem; font-weight:700; color:var(--text2); }
+    .card-body { padding:16px; display:flex; flex-direction:column; gap:10px; }
 
-    /* SCANNER TOOLS */
-    .scanner-tools { display:flex; gap:8px; }
-    .tool-btn { flex:1; height:44px; border-radius:10px; border:1.5px solid var(--border); background:var(--surface2); color:var(--text2); font-family:'DM Sans',sans-serif; font-size:0.82rem; font-weight:600; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; touch-action:manipulation; transition:all 0.15s; }
-    .tool-btn.active { background:var(--accent); border-color:var(--accent); color:#fff; }
-    .tool-btn.bt-active { background:rgba(34,197,94,0.1); border-color:var(--green); color:var(--green); }
+    .btn-row { display:flex; gap:8px; }
+    .btn { flex:1; height:44px; border-radius:10px; border:1.5px solid var(--border); background:var(--surface2); color:var(--text2); font-family:'DM Sans',sans-serif; font-size:0.85rem; font-weight:600; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; touch-action:manipulation; }
+    .btn.on { background:var(--accent); border-color:var(--accent); color:#fff; }
+    .btn.bt-on { background:rgba(34,197,94,0.12); border-color:var(--green); color:var(--green); }
 
-    /* CAMERA */
-    .camera-wrap { position:relative; background:#000; border-radius:10px; overflow:hidden; margin-top:12px; display:none; }
-    .camera-wrap.visible { display:block; }
-    #video { width:100%; display:block; max-height:50vh; object-fit:cover; }
-    .scan-overlay { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; pointer-events:none; }
-    .scan-frame { width:220px; height:220px; position:relative; }
-    .scan-frame::before,.scan-frame::after,.scan-frame span::before,.scan-frame span::after {
-      content:''; position:absolute; width:28px; height:28px; border-color:var(--accent); border-style:solid;
+    /* Camera */
+    .cam-wrap { border-radius:10px; overflow:hidden; background:#000; position:relative; display:none; }
+    .cam-wrap.show { display:block; }
+    #video { width:100%; max-height:45vh; object-fit:cover; display:block; }
+    .cam-frame { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; pointer-events:none; }
+    .cam-frame div { width:200px; height:200px; border:2px solid var(--accent); border-radius:8px; }
+    .cam-btns { display:flex; gap:6px; }
+    .cam-btn { flex:1; height:34px; border-radius:8px; border:1px solid var(--border); background:var(--surface2); color:var(--text2); font-family:'DM Sans',sans-serif; font-size:0.72rem; font-weight:600; cursor:pointer; touch-action:manipulation; }
+    .cam-btn.on { background:var(--accent); border-color:var(--accent); color:#fff; }
+
+    /* BT status */
+    .bt-hint { padding:10px 12px; background:rgba(34,197,94,0.08); border:1px solid rgba(34,197,94,0.3); border-radius:10px; font-size:0.78rem; color:var(--green); font-weight:600; display:none; }
+    .bt-hint.show { display:block; }
+
+    /* Fields */
+    .field { display:flex; flex-direction:column; gap:4px; }
+    .label { font-size:0.6rem; font-weight:700; color:var(--muted); font-family:'IBM Plex Mono',monospace; text-transform:uppercase; letter-spacing:0.05em; }
+    input.inp, select.inp {
+      width:100%; padding:12px 14px; border-radius:10px;
+      border:1.5px solid var(--border); background:var(--surface2);
+      color:var(--text); font-family:'DM Sans',sans-serif; font-size:0.95rem;
+      outline:none; -webkit-appearance:none; appearance:none;
+      transition:border-color 0.15s;
     }
-    .scan-frame::before { top:0; left:0; border-width:3px 0 0 3px; border-radius:3px 0 0 0; }
-    .scan-frame::after  { top:0; right:0; border-width:3px 3px 0 0; border-radius:0 3px 0 0; }
-    .scan-frame span::before { bottom:0; left:0; border-width:0 0 3px 3px; border-radius:0 0 0 3px; }
-    .scan-frame span::after  { bottom:0; right:0; border-width:0 3px 3px 0; border-radius:0 0 3px 0; }
-    .cam-btns { display:flex; gap:6px; margin-top:8px; }
-    .cam-btn { flex:1; height:36px; border-radius:8px; border:1px solid var(--border); background:var(--surface2); color:var(--text2); font-family:'DM Sans',sans-serif; font-size:0.75rem; font-weight:600; cursor:pointer; touch-action:manipulation; }
-    .cam-btn.active { background:var(--accent); border-color:var(--accent); color:#fff; }
-    #interactive canvas { display:none !important; }
+    input.inp:focus, select.inp:focus { border-color:var(--blue); }
+    input.inp.filled { border-color:var(--green); background:rgba(34,197,94,0.05); }
+    select.inp { appearance:auto; -webkit-appearance:auto; }
 
-    /* FORM */
-    .field { display:flex; flex-direction:column; gap:5px; }
-    .field + .field { margin-top:12px; }
-    .field-label { font-size:0.62rem; font-weight:700; color:var(--muted); font-family:'IBM Plex Mono',monospace; text-transform:uppercase; letter-spacing:0.05em; }
-    .field-input { width:100%; padding:13px 14px; border-radius:10px; border:1.5px solid var(--border); background:var(--surface2); color:var(--text); font-family:'DM Sans',sans-serif; font-size:0.95rem; outline:none; transition:border-color 0.15s; -webkit-appearance:none; }
-    .field-input:focus { border-color:var(--accent2); }
-    .field-input.filled { border-color:var(--green); background:rgba(34,197,94,0.05); }
-    select.field-input { appearance:auto; }
+    .suggestions { display:flex; flex-direction:column; gap:4px; margin-top:4px; max-height:200px; overflow-y:auto; }
+    .sug { padding:10px 12px; background:var(--surface2); border:1px solid var(--border); border-radius:8px; cursor:pointer; touch-action:manipulation; }
+    .sug:active { background:var(--accent); color:#fff; }
+    .sug-name { font-size:0.85rem; font-weight:600; }
+    .sug-lp   { font-size:0.7rem; color:var(--muted); font-family:'IBM Plex Mono',monospace; }
 
-    /* SUGGESTIONS */
-    .suggestions { display:flex; flex-direction:column; gap:4px; margin-top:6px; max-height:180px; overflow-y:auto; }
-    .suggestion { padding:9px 12px; background:var(--surface2); border-radius:8px; border:1px solid var(--border); cursor:pointer; font-size:0.82rem; touch-action:manipulation; }
-    .suggestion:active { background:var(--accent); color:#fff; }
-    .suggestion-name { font-weight:600; }
-    .suggestion-sub  { font-size:0.68rem; color:var(--muted); font-family:'IBM Plex Mono',monospace; margin-top:1px; }
+    .artikel-sel { padding:9px 12px; background:rgba(34,197,94,0.08); border:1px solid rgba(34,197,94,0.3); border-radius:10px; display:flex; align-items:center; justify-content:space-between; }
+    .artikel-sel span { font-size:0.85rem; font-weight:600; color:var(--green); }
+    .artikel-sel button { background:none; border:none; color:var(--muted); cursor:pointer; font-size:1rem; padding:2px 6px; }
 
-    /* SAVE BTN */
-    .save-btn { width:100%; height:52px; border-radius:12px; border:none; background:var(--green); color:#fff; font-family:'DM Sans',sans-serif; font-size:1rem; font-weight:700; cursor:pointer; margin-top:16px; touch-action:manipulation; transition:opacity 0.15s; }
+    .verfall-info { font-size:0.72rem; font-family:'IBM Plex Mono',monospace; margin-top:2px; }
+
+    .save-btn { width:100%; height:50px; border-radius:12px; border:none; background:var(--green); color:#fff; font-family:'DM Sans',sans-serif; font-size:1rem; font-weight:700; cursor:pointer; touch-action:manipulation; }
     .save-btn:active { opacity:0.85; }
-    .save-btn:disabled { background:var(--border); color:var(--muted); cursor:default; }
 
-    /* STATUS PILL */
-    .status-pill { display:inline-flex; align-items:center; gap:5px; padding:3px 10px; border-radius:20px; font-size:0.7rem; font-weight:700; font-family:'IBM Plex Mono',monospace; }
-    .pill-ok   { background:rgba(34,197,94,0.12); color:var(--green); }
-    .pill-warn { background:rgba(239,68,68,0.12);  color:var(--red); }
-    .pill-mid  { background:rgba(234,179,8,0.12);  color:var(--yellow); }
+    /* Chargen */
+    .charge { display:flex; align-items:center; gap:8px; padding:8px 10px; background:var(--surface2); border-radius:8px; font-size:0.75rem; font-family:'IBM Plex Mono',monospace; }
+    .charge-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+    .charge-del { margin-left:auto; background:none; border:none; color:var(--muted); cursor:pointer; font-size:0.9rem; flex-shrink:0; }
 
-    /* CHARGEN LIST */
-    .chargen-list { display:flex; flex-direction:column; gap:6px; }
-    .charge-item { display:flex; align-items:center; gap:10px; padding:8px 12px; background:var(--surface2); border-radius:8px; font-size:0.75rem; font-family:'IBM Plex Mono',monospace; }
-    .charge-dot  { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
-    .charge-del  { margin-left:auto; background:none; border:none; color:var(--muted); cursor:pointer; font-size:0.9rem; padding:2px 4px; flex-shrink:0; }
-
-    /* TOAST */
-    .toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); padding:10px 20px; border-radius:12px; font-size:0.82rem; font-weight:600; color:#fff; z-index:999; white-space:nowrap; pointer-events:none; animation:fadeup 0.25s ease; }
-    @keyframes fadeup { from { opacity:0; transform:translateX(-50%) translateY(8px); } }
-
+    .toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); padding:10px 20px; border-radius:12px; font-size:0.82rem; font-weight:600; color:#fff; z-index:9999; white-space:nowrap; animation:up 0.2s ease; }
+    @keyframes up { from { opacity:0; transform:translateX(-50%) translateY(6px); } }
     .hidden { display:none !important; }
   </style>
 </head>
 <body>
 
-  <nav class="nav">
-    <button class="nav-back" onclick="window.location.href='../index.html'">← Zurück</button>
-    <div class="nav-logo">LAGER<span>//</span>APP</div>
+  <nav>
+    <button class="nav-back" onclick="history.back()">← Zurück</button>
+    <div class="nav-logo">
+      <img src="../LAGER_APP.png" alt="LAGER//APP"
+        onerror="this.style.display='none';document.getElementById('nav-text').style.display='block'">
+      <div id="nav-text" class="nav-logo-text" style="display:none;">LAGER<span>//</span>APP</div>
+    </div>
     <div class="nav-right">
       <span id="nav-user" style="font-size:0.75rem;color:var(--muted);"></span>
       <button class="theme-btn" onclick="toggleTheme()">☀️</button>
     </div>
   </nav>
 
-  <div class="content">
+  <div class="page">
 
-    <!-- SCANNER TOOLS -->
+    <!-- BARCODE ERFASSEN -->
     <div class="card">
-      <div class="card-header">🔍 Barcode erfassen</div>
+      <div class="card-head">🔍 Barcode erfassen</div>
       <div class="card-body">
-        <div class="scanner-tools">
-          <button class="tool-btn" id="btn-camera" onclick="toggleCamera()">📷 Kamera</button>
-          <button class="tool-btn" id="btn-bt"     onclick="toggleBluetooth()">📡 Bluetooth</button>
+        <div class="btn-row">
+          <button class="btn" id="btn-cam" onclick="toggleCam()">📷 Kamera</button>
+          <button class="btn" id="btn-bt"  onclick="toggleBT()">📡 Bluetooth</button>
         </div>
 
-        <!-- Kamera -->
-        <div class="camera-wrap" id="camera-wrap">
+        <div class="cam-wrap" id="cam-wrap">
           <video id="video" playsinline autoplay muted></video>
-          <div class="scan-overlay"><div class="scan-frame"><span></span></div></div>
-          <div class="cam-btns">
-            <button class="cam-btn active" id="cam-back"  onclick="switchCam('back')">📷 Rück</button>
-            <button class="cam-btn"        id="cam-front" onclick="switchCam('front')">🤳 Vorder</button>
-            <button class="cam-btn"        id="cam-light" onclick="toggleLight()">🔦 Licht</button>
-          </div>
+          <div class="cam-frame"><div></div></div>
+        </div>
+        <div class="cam-btns hidden" id="cam-btns">
+          <button class="cam-btn on" id="cb-back"  onclick="switchCam('back')">📷 Rückseite</button>
+          <button class="cam-btn"    id="cb-front" onclick="switchCam('front')">🤳 Vorderseite</button>
+          <button class="cam-btn"    id="cb-light" onclick="toggleLight()">🔦 Licht</button>
         </div>
 
-        <!-- BT Status -->
-        <div id="bt-status" class="hidden" style="margin-top:10px;padding:10px 12px;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.25);border-radius:10px;font-size:0.78rem;color:var(--green);font-weight:600;">
-          📡 Bluetooth-Scanner aktiv – Code scannen um Felder auszufüllen
+        <div class="bt-hint" id="bt-hint">
+          📡 Bluetooth aktiv – Code scannen um Felder automatisch auszufüllen
         </div>
       </div>
     </div>
 
-    <!-- EINGABE FORMULAR -->
+    <!-- CHARGE ERFASSEN -->
     <div class="card">
-      <div class="card-header">📋 Charge erfassen</div>
+      <div class="card-head">📋 Charge erfassen</div>
       <div class="card-body">
 
         <!-- Artikel -->
         <div class="field">
-          <div class="field-label">Artikel</div>
-          <input type="text" id="f-artikel-search" class="field-input" placeholder="Artikel suchen..."
-            autocomplete="off" oninput="onArtikelSearch(this.value)">
-          <div class="suggestions hidden" id="f-suggestions"></div>
-          <input type="hidden" id="f-artikel-id">
-          <div id="f-artikel-name" class="hidden" style="margin-top:6px;padding:8px 12px;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.25);border-radius:8px;font-size:0.82rem;font-weight:600;color:var(--green);display:flex;align-items:center;justify-content:space-between;">
-            <span id="f-artikel-name-text"></span>
-            <button onclick="clearArtikel()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:0.9rem;padding:0 2px;">✕</button>
+          <div class="label">Artikel</div>
+          <div id="artikel-sel-wrap" class="hidden">
+            <div class="artikel-sel">
+              <span id="artikel-sel-name"></span>
+              <button onclick="clearArtikel()">✕</button>
+            </div>
+          </div>
+          <div id="artikel-search-wrap">
+            <input type="text" id="inp-search" class="inp" placeholder="Artikel suchen..."
+              autocomplete="off" oninput="doSearch(this.value)">
+            <div class="suggestions" id="suggestions"></div>
           </div>
         </div>
 
         <!-- LOT -->
         <div class="field">
-          <div class="field-label">Charge / LOT</div>
-          <input type="text" id="f-lot" class="field-input" placeholder="z.B. 44310832" autocomplete="off">
+          <div class="label">Charge / LOT</div>
+          <input type="text" id="inp-lot" class="inp" placeholder="z.B. 140211" autocomplete="off">
         </div>
 
         <!-- Verfall -->
         <div class="field">
-          <div class="field-label">Verfallsdatum</div>
-          <input type="date" id="f-verfall" class="field-input" oninput="onVerfallChange()">
-          <div id="f-verfall-info" class="hidden" style="margin-top:4px;font-size:0.72rem;font-family:'IBM Plex Mono',monospace;"></div>
+          <div class="label">Verfallsdatum</div>
+          <input type="date" id="inp-verfall" class="inp" oninput="showVerfallInfo()">
+          <div class="verfall-info" id="verfall-info"></div>
         </div>
 
-        <button class="save-btn" id="btn-save" onclick="saveCharge()">✅ Charge speichern</button>
+        <button class="save-btn" onclick="saveCharge()">✅ Charge speichern</button>
 
-        <!-- Gespeicherte Chargen -->
-        <div id="chargen-wrap" class="hidden" style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border);">
-          <div style="font-size:0.7rem;font-weight:700;color:var(--muted);font-family:'IBM Plex Mono',monospace;text-transform:uppercase;margin-bottom:8px;">Gespeicherte Chargen</div>
-          <div class="chargen-list" id="chargen-list"></div>
+        <!-- Chargen Liste -->
+        <div id="chargen-wrap" class="hidden">
+          <div class="label" style="margin-bottom:6px;">Gespeicherte Chargen</div>
+          <div id="chargen-list" style="display:flex;flex-direction:column;gap:5px;"></div>
         </div>
 
       </div>
     </div>
 
-  </div><!-- /content -->
-
-  <!-- BT Textarea: sichtbar aber versteckt, immer fokussiert wenn BT aktiv -->
-  <textarea id="bt-area"
-    autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
-    style="display:none;position:fixed;bottom:0;right:0;width:1px;height:1px;
-           opacity:0.01;border:none;outline:none;resize:none;font-size:16px;
-           background:transparent;color:transparent;z-index:9999;padding:0;"
-    tabindex="0"
-    aria-label="Bluetooth Scanner Input"
-    aria-hidden="false"></textarea>
+  </div>
 
   <script>
-    // ── Theme ──
-    (function() {
+    // Theme
+    (function(){
       const t = localStorage.getItem('theme') || 'light';
       document.documentElement.setAttribute('data-theme', t);
     })();
@@ -215,292 +200,98 @@
   </script>
 
   <script type="module">
-    import { initializeApp }     from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { initializeApp }           from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-    import { getFirestore, collection, getDocs, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { getFirestore, collection, getDocs, doc, getDoc, updateDoc }
+      from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
     const app  = initializeApp({
-      apiKey:            "AIzaSyD1YY-cFQxyykfYQYPORwulzuF8t6Wgid4",
-      authDomain:        "lagerbestellung-19970.firebaseapp.com",
-      projectId:         "lagerbestellung-19970",
-      storageBucket:     "lagerbestellung-19970.firebasestorage.app",
-      messagingSenderId: "939056339904",
-      appId:             "1:939056339904:web:6f33ca2f5a4cebd2780625",
+      apiKey:"AIzaSyD1YY-cFQxyykfYQYPORwulzuF8t6Wgid4",
+      authDomain:"lagerbestellung-19970.firebaseapp.com",
+      projectId:"lagerbestellung-19970",
+      storageBucket:"lagerbestellung-19970.firebasestorage.app",
+      messagingSenderId:"939056339904",
+      appId:"1:939056339904:web:6f33ca2f5a4cebd2780625"
     });
-    const auth = getAuth(app);
     const db   = getFirestore(app);
+    const auth = getAuth(app);
 
     // ── State ──
-    let alleArtikel     = [];
-    let selectedArtikel = null;
-    let cameraOn        = false;
-    let btOn            = false;
-    let codeReader      = null;
-    let quaggaRunning   = false;
-    let currentCam      = 'back';
-    let btBuffer        = '';
-    let btTimer         = null;
+    let artikel  = [];
+    let selected = null;
+    let camOn    = false;
+    let btOn     = false;
+    let reader   = null;
+    let camSide  = 'back';
+    let buf      = '';
+    let bufTimer = null;
+    let bufLast  = 0;
 
     // ── Auth ──
     onAuthStateChanged(auth, async user => {
-      const savedName = localStorage.getItem('lager-saved-name');
-      const savedPin  = localStorage.getItem('lager-saved-pin');
-      const pinAuth   = sessionStorage.getItem('lager-pin-auth');
-
-      if (!user && !pinAuth && !savedPin) {
-        window.location.href = '../index.html'; return;
-      }
-
-      const name = user?.displayName || user?.email || sessionStorage.getItem('lager-pin-name') || savedName || '';
+      const pinOk = sessionStorage.getItem('lager-pin-auth') || localStorage.getItem('lager-saved-pin');
+      if (!user && !pinOk) { window.location.href = '../index.html'; return; }
+      const name = user?.displayName || user?.email
+        || sessionStorage.getItem('lager-pin-name')
+        || localStorage.getItem('lager-saved-name') || '';
       document.getElementById('nav-user').textContent = name;
-
-      await loadArtikel();
+      await load();
     });
 
-    // ── Artikel laden ──
-    async function loadArtikel() {
+    async function load() {
       const snap = await getDocs(collection(db, 'artikel'));
-      alleArtikel = snap.docs.map(d => ({ id: d.id, ...d.data() }))
-        .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
-    }
-
-    // ── Artikel suchen ──
-    window.onArtikelSearch = function(q) {
-      const sugg = document.getElementById('f-suggestions');
-      if (!q || q.length < 2) { sugg.classList.add('hidden'); return; }
-
-      const hits = alleArtikel.filter(a =>
-        a.name?.toLowerCase().includes(q.toLowerCase()) ||
-        a.lp?.toLowerCase().includes(q.toLowerCase()) ||
-        (a.aliases || []).some(al => al.toLowerCase().includes(q.toLowerCase()))
-      ).slice(0, 8);
-
-      sugg.innerHTML = '';
-      sugg.classList.toggle('hidden', hits.length === 0);
-
-      hits.forEach(a => {
-        const div = document.createElement('div');
-        div.className = 'suggestion';
-        div.innerHTML = `<div class="suggestion-name">${a.name}</div>
-          <div class="suggestion-sub">${a.lp || ''}</div>`;
-        div.addEventListener('click', () => selectArtikel(a));
-        sugg.appendChild(div);
-      });
-    };
-
-    function selectArtikel(a) {
-      selectedArtikel = a;
-      document.getElementById('f-artikel-search').value = '';
-      document.getElementById('f-suggestions').classList.add('hidden');
-      document.getElementById('f-artikel-id').value = a.id;
-
-      const nameEl = document.getElementById('f-artikel-name');
-      document.getElementById('f-artikel-name-text').textContent = a.name;
-      nameEl.classList.remove('hidden');
-      nameEl.style.display = 'flex';
-
-      showChargen(a);
-    }
-
-    window.clearArtikel = function() {
-      selectedArtikel = null;
-      document.getElementById('f-artikel-id').value    = '';
-      document.getElementById('f-artikel-search').value = '';
-      document.getElementById('f-artikel-name').classList.add('hidden');
-      document.getElementById('chargen-wrap').classList.add('hidden');
-    };
-
-    function findArtikelByGtin(gtin) {
-      if (!gtin) return null;
-      return alleArtikel.find(a =>
-        a.gtin === gtin ||
-        (Array.isArray(a.gtins) && a.gtins.includes(gtin)) ||
-        (a.chargen || []).some(c => c.gtin === gtin)
-      ) || null;
-    }
-
-    // ── Verfall Info ──
-    window.onVerfallChange = function() {
-      const val  = document.getElementById('f-verfall').value;
-      const info = document.getElementById('f-verfall-info');
-      if (!val) { info.classList.add('hidden'); return; }
-
-      // Mitternacht heute – kein Zeitzonenproblem
-      const heute  = new Date(); heute.setHours(0,0,0,0);
-      const parts  = val.split('-');
-      const d      = new Date(parseInt(parts[0]), parseInt(parts[1])-1, parseInt(parts[2]));
-      const days   = Math.round((d - heute) / 86400000);
-
-      let cls = 'pill-ok', label = `🟢 OK · ${Math.round(days/30)} Monate`;
-      if (days <= 0)       { cls = 'pill-warn'; label = '🔴 ABGELAUFEN'; }
-      else if (days <= 7)  { cls = 'pill-warn'; label = `🔴 Kritisch · ${days} Tage`; }
-      else if (days <= 30) { cls = 'pill-mid';  label = `🟡 Bald · ${days} Tage`; }
-
-      info.innerHTML = `<span class="status-pill ${cls}">${label}</span>`;
-      info.classList.remove('hidden');
-    };
-
-    // ── Chargen anzeigen ──
-    function showChargen(a) {
-      const wrap = document.getElementById('chargen-wrap');
-      const list = document.getElementById('chargen-list');
-      const chargen = (a.chargen || []).sort((x, y) => (x.verfall || '').localeCompare(y.verfall || ''));
-
-      if (chargen.length === 0) { wrap.classList.add('hidden'); return; }
-
-      list.innerHTML = chargen.map((c, i) => {
-        let days = null;
-        if (c.verfall) {
-          const heute = new Date(); heute.setHours(0,0,0,0);
-          const p = c.verfall.split('-');
-          const cd = new Date(parseInt(p[0]), parseInt(p[1])-1, parseInt(p[2]));
-          days = Math.round((cd - heute) / 86400000);
-        }
-        const color = days === null ? 'var(--muted)' : days <= 7 ? 'var(--red)' : days <= 30 ? 'var(--yellow)' : 'var(--green)';
-        const label = days === null ? '–' : days <= 0 ? 'Abgelaufen' : days <= 30 ? `${days}d` : `${Math.round(days/30)}M`;
-        const verfDate = c.verfall ? new Date(c.verfall + 'T12:00:00').toLocaleDateString('de-DE', { month:'2-digit', year:'numeric' }) : '–';
-        return `<div class="charge-item">
-          <div class="charge-dot" style="background:${color}"></div>
-          <span style="flex:1;">${c.lot || '–'} · ${verfDate}</span>
-          <span style="color:${color};font-weight:600;">${label}</span>
-          <button class="charge-del" onclick="deleteCharge('${a.id}',${i})">✕</button>
-        </div>`;
-      }).join('');
-
-      wrap.classList.remove('hidden');
-    }
-
-    window.deleteCharge = async function(artikelId, idx) {
-      if (!confirm('Charge löschen?')) return;
-      const a = alleArtikel.find(x => x.id === artikelId);
-      if (!a) return;
-      const chargen = [...(a.chargen || [])];
-      chargen.splice(idx, 1);
-      await updateDoc(doc(db, 'artikel', artikelId), { chargen });
-      a.chargen = chargen;
-      if (selectedArtikel?.id === artikelId) { selectedArtikel.chargen = chargen; showChargen(selectedArtikel); }
-    };
-
-    // ── Speichern ──
-    window.saveCharge = async function() {
-      if (!selectedArtikel) { showToast('Bitte Artikel wählen', 'error'); return; }
-
-      const lot    = document.getElementById('f-lot').value.trim();
-      const verfall= document.getElementById('f-verfall').value;
-
-      if (!lot && !verfall) { showToast('Charge oder Datum eingeben', 'error'); return; }
-
-      const ref       = doc(db, 'artikel', selectedArtikel.id);
-      const snap      = await getDoc(ref);
-      const chargen   = [...(snap.data()?.chargen || [])];
-      const existsIdx = chargen.findIndex(c => c.lot && c.lot === lot);
-
-      if (existsIdx >= 0) {
-        chargen[existsIdx] = { ...chargen[existsIdx], verfall: verfall || chargen[existsIdx].verfall };
-        showToast(`Charge ${lot} aktualisiert ✅`);
-      } else {
-        chargen.push({ lot: lot || 'Unbekannt', verfall: verfall || null, erfasst: new Date().toISOString() });
-        showToast('Charge gespeichert ✅');
-      }
-
-      await updateDoc(ref, { chargen });
-      selectedArtikel.chargen = chargen;
-      const i = alleArtikel.findIndex(a => a.id === selectedArtikel.id);
-      if (i >= 0) alleArtikel[i].chargen = chargen;
-
-      // Felder leeren
-      document.getElementById('f-lot').value    = '';
-      document.getElementById('f-verfall').value = '';
-      document.getElementById('f-lot').classList.remove('filled');
-      document.getElementById('f-verfall').classList.remove('filled');
-      document.getElementById('f-verfall-info').classList.add('hidden');
-
-      showChargen(selectedArtikel);
-    };
-
-    // ── Scan Ergebnis verarbeiten ──
-    function onScanResult(raw) {
-      if (!raw || raw.trim().length < 4) return;
-      if (navigator.vibrate) navigator.vibrate(80);
-
-      const parsed = raw.startsWith('+') || raw.startsWith('/')
-        ? parseHIBC(raw) : parseGS1(raw);
-
-      // Artikel automatisch zuordnen
-      if (parsed.gtin) {
-        const a = findArtikelByGtin(parsed.gtin);
-        if (a && !selectedArtikel) selectArtikel(a);
-      }
-
-      // Felder füllen
-      if (parsed.lot) {
-        const el = document.getElementById('f-lot');
-        el.value = parsed.lot;
-        el.classList.add('filled');
-      }
-      if (parsed.verfall) {
-        const el = document.getElementById('f-verfall');
-        let d = parsed.verfall;
-        // YYYY-MM → letzter Tag des Monats
-        if (d.length === 7) {
-          const p   = d.split('-');
-          const last = new Date(parseInt(p[0]), parseInt(p[1]), 0).getDate();
-          d = `${p[0]}-${p[1]}-${String(last).padStart(2,'0')}`;
-        }
-        el.value = d;
-        el.classList.add('filled');
-        onVerfallChange();
-      }
-
-      showToast('Code erkannt ✅');
+      artikel = snap.docs.map(d => ({id:d.id,...d.data()}))
+        .sort((a,b) => (a.name||'').localeCompare(b.name||''));
     }
 
     // ── GS1 Parser ──
     function parseGS1(raw) {
-      const r = { gtin: null, lot: null, verfall: null };
-      const s = raw.replace(/[^\x20-\x7E]/g, '').trim();
+      const r = {gtin:null, lot:null, verfall:null};
+      const s = raw.replace(/[\x00-\x1F\x7F]/g,'').trim();
 
       // Mit Klammern
-      if (s.includes('(01)') || s.includes('(17)') || s.includes('(10)')) {
+      if (s.includes('(')) {
         const g = s.match(/\(01\)(\d{14})/);
-        const v = s.match(/\(17\)(\d{6})/);
         const l = s.match(/\(10\)([A-Z0-9\-\/]+?)(?:\(|$)/i);
+        const v = s.match(/\(17\)(\d{6})/);
         if (g) r.gtin = g[1];
         if (l) r.lot  = l[1].trim();
-        if (v) {
-          const yy = parseInt(v[1].substring(0,2)), mm = parseInt(v[1].substring(2,4)), dd = parseInt(v[1].substring(4,6));
-          if (mm >= 1 && mm <= 12 && yy >= 20 && yy <= 40)
-            r.verfall = `20${String(yy).padStart(2,'0')}-${String(mm).padStart(2,'0')}-${dd >= 1 && dd <= 31 ? String(dd).padStart(2,'0') : '28'}`;
-        }
+        if (v) r.verfall = parseDate6(v[1]);
         return r;
       }
 
-      // Ohne Klammern – AI sequentiell lesen
-      let pos = 0;
-      while (pos < s.length - 2) {
-        const ai = s.substring(pos, pos + 2);
-        if (ai === '01' && s.length >= pos + 16) {
-          r.gtin = s.substring(pos + 2, pos + 16); pos += 16;
-        } else if (ai === '17' && s.length >= pos + 8) {
-          const d = s.substring(pos + 2, pos + 8);
-          const yy = parseInt(d.substring(0,2)), mm = parseInt(d.substring(2,4)), dd = parseInt(d.substring(4,6));
-          if (mm >= 1 && mm <= 12 && yy >= 20 && yy <= 40)
-            r.verfall = `20${String(yy).padStart(2,'0')}-${String(mm).padStart(2,'0')}-${dd >= 1 && dd <= 31 ? String(dd).padStart(2,'0') : '28'}`;
-          pos += 8;
-        } else if (ai === '10') {
-          const rest = s.substring(pos + 2);
-          const next = rest.search(/17\d{6}|11\d{6}/);
-          r.lot = (next > 0 ? rest.substring(0, next) : rest).trim();
+      // Ohne Klammern – sequentiell
+      let p = 0;
+      while (p < s.length) {
+        if (p + 2 > s.length) break;
+        const ai = s.substring(p, p+2);
+        if      (ai === '01' && s.length >= p+16) { r.gtin = s.substring(p+2,p+16); p+=16; }
+        else if (ai === '17' && s.length >= p+8)  { r.verfall = parseDate6(s.substring(p+2,p+8)); p+=8; }
+        else if (ai === '10') {
+          const rest = s.substring(p+2);
+          const nx   = rest.search(/17\d{6}|11\d{6}|30\d/);
+          r.lot = (nx>0 ? rest.substring(0,nx) : rest).trim();
           break;
-        } else if (ai === '11' && s.length >= pos + 8) { pos += 8;
-        } else { pos++; }
+        }
+        else if (ai === '11' && s.length >= p+8) { p+=8; }
+        else { p++; }
       }
       return r;
     }
 
+    function parseDate6(d) {
+      if (!d || d.length !== 6) return null;
+      const yy = parseInt(d.substring(0,2));
+      const mm = parseInt(d.substring(2,4));
+      const dd = parseInt(d.substring(4,6));
+      if (mm < 1 || mm > 12 || yy < 20 || yy > 40) return null;
+      const day = (dd >= 1 && dd <= 31) ? dd : new Date(2000+yy, mm, 0).getDate();
+      return `20${String(yy).padStart(2,'0')}-${String(mm).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+    }
+
     // ── HIBC Parser ──
     function parseHIBC(raw) {
-      const r     = { gtin: null, lot: null, verfall: null };
+      const r = {gtin:null, lot:null, verfall:null};
       const parts = raw.split('/$$');
       if (parts.length < 2) return r;
       const sec = parts[1];
@@ -515,156 +306,274 @@
       return r;
     }
 
-    // ── Kamera ──
-    window.toggleCamera = async function() {
-      if (cameraOn) {
-        stopCamera();
-      } else {
-        await startCamera();
+    // ── Scan Result ──
+    function onScan(raw) {
+      if (!raw || raw.trim().length < 4) return;
+      if (navigator.vibrate) navigator.vibrate(80);
+
+      const parsed = raw.startsWith('+') || raw.startsWith('/') ? parseHIBC(raw) : parseGS1(raw);
+      console.log('Scan:', raw, '→', parsed);
+
+      // Artikel zuordnen
+      if (parsed.gtin && !selected) {
+        const a = artikel.find(x =>
+          x.gtin === parsed.gtin ||
+          (Array.isArray(x.gtins) && x.gtins.includes(parsed.gtin)) ||
+          (x.chargen||[]).some(c => c.gtin === parsed.gtin)
+        );
+        if (a) selectArtikel(a);
       }
+
+      // Felder füllen
+      if (parsed.lot) {
+        const el = document.getElementById('inp-lot');
+        el.value = parsed.lot;
+        el.classList.add('filled');
+      }
+      if (parsed.verfall) {
+        const el = document.getElementById('inp-verfall');
+        el.value = parsed.verfall;
+        el.classList.add('filled');
+        showVerfallInfo();
+      }
+
+      toast('✅ Code erkannt');
+    }
+
+    // ── Artikel Suche ──
+    window.doSearch = function(q) {
+      const el = document.getElementById('suggestions');
+      if (!q || q.length < 2) { el.innerHTML=''; return; }
+      const hits = artikel.filter(a =>
+        a.name?.toLowerCase().includes(q.toLowerCase()) ||
+        a.lp?.toLowerCase().includes(q.toLowerCase()) ||
+        (a.aliases||[]).some(al => al.toLowerCase().includes(q.toLowerCase()))
+      ).slice(0,8);
+      el.innerHTML = '';
+      hits.forEach(a => {
+        const d = document.createElement('div');
+        d.className = 'sug';
+        d.innerHTML = `<div class="sug-name">${a.name}</div><div class="sug-lp">${a.lp||''}</div>`;
+        d.addEventListener('click', () => selectArtikel(a));
+        el.appendChild(d);
+      });
     };
 
-    async function startCamera() {
-      const wrap = document.getElementById('camera-wrap');
-      wrap.classList.add('visible');
-      document.getElementById('btn-camera').classList.add('active');
-      cameraOn = true;
+    function selectArtikel(a) {
+      selected = a;
+      document.getElementById('inp-search').value = '';
+      document.getElementById('suggestions').innerHTML = '';
+      document.getElementById('artikel-search-wrap').classList.add('hidden');
+      document.getElementById('artikel-sel-wrap').classList.remove('hidden');
+      document.getElementById('artikel-sel-name').textContent = a.name;
+      showChargen(a);
+    }
 
+    window.clearArtikel = function() {
+      selected = null;
+      document.getElementById('artikel-search-wrap').classList.remove('hidden');
+      document.getElementById('artikel-sel-wrap').classList.add('hidden');
+      document.getElementById('chargen-wrap').classList.add('hidden');
+    };
+
+    // ── Verfall Info ──
+    window.showVerfallInfo = function() {
+      const val  = document.getElementById('inp-verfall').value;
+      const info = document.getElementById('verfall-info');
+      if (!val) { info.textContent = ''; return; }
+      const p    = val.split('-');
+      const d    = new Date(+p[0], +p[1]-1, +p[2]);
+      const heute= new Date(); heute.setHours(0,0,0,0);
+      const days = Math.round((d - heute) / 86400000);
+      if      (days <= 0)  info.innerHTML = '<span style="color:var(--red)">🔴 ABGELAUFEN</span>';
+      else if (days <= 7)  info.innerHTML = `<span style="color:var(--red)">🔴 Kritisch – ${days} Tage</span>`;
+      else if (days <= 30) info.innerHTML = `<span style="color:var(--yellow)">🟡 ${days} Tage verbleibend</span>`;
+      else                 info.innerHTML = `<span style="color:var(--green)">🟢 OK – ${Math.round(days/30)} Monate</span>`;
+    };
+
+    // ── Chargen ──
+    function showChargen(a) {
+      const wrap = document.getElementById('chargen-wrap');
+      const list = document.getElementById('chargen-list');
+      const ch   = (a.chargen||[]).sort((x,y) => (x.verfall||'').localeCompare(y.verfall||''));
+      if (!ch.length) { wrap.classList.add('hidden'); return; }
+      list.innerHTML = ch.map((c,i) => {
+        const heute= new Date(); heute.setHours(0,0,0,0);
+        const days = c.verfall ? Math.round((new Date(c.verfall+'T00:00:00') - heute)/86400000) : null;
+        const col  = days===null?'var(--muted)':days<=7?'var(--red)':days<=30?'var(--yellow)':'var(--green)';
+        const lbl  = days===null?'–':days<=0?'Abgelaufen':days<=30?days+'d':Math.round(days/30)+'M';
+        const dt   = c.verfall ? new Date(c.verfall+'T00:00:00').toLocaleDateString('de-DE',{month:'2-digit',year:'numeric'}) : '–';
+        return `<div class="charge">
+          <div class="charge-dot" style="background:${col}"></div>
+          <span style="flex:1;">${c.lot||'–'} · ${dt}</span>
+          <span style="color:${col};font-weight:600;">${lbl}</span>
+          <button class="charge-del" onclick="delCharge('${a.id}',${i})">✕</button>
+        </div>`;
+      }).join('');
+      wrap.classList.remove('hidden');
+    }
+
+    window.delCharge = async function(aid, idx) {
+      if (!confirm('Charge löschen?')) return;
+      const a = artikel.find(x => x.id === aid);
+      if (!a) return;
+      const ch = [...(a.chargen||[])];
+      ch.splice(idx, 1);
+      await updateDoc(doc(db,'artikel',aid), {chargen:ch});
+      a.chargen = ch;
+      if (selected?.id === aid) { selected.chargen = ch; showChargen(selected); }
+    };
+
+    // ── Speichern ──
+    window.saveCharge = async function() {
+      if (!selected) { toast('Bitte Artikel wählen','err'); return; }
+      const lot    = document.getElementById('inp-lot').value.trim();
+      const verfall= document.getElementById('inp-verfall').value;
+      if (!lot && !verfall) { toast('Charge oder Datum eingeben','err'); return; }
+
+      const ref  = doc(db,'artikel',selected.id);
+      const snap = await getDoc(ref);
+      const ch   = [...(snap.data()?.chargen||[])];
+      const idx  = ch.findIndex(c => c.lot && c.lot === lot);
+
+      if (idx >= 0) { ch[idx] = {...ch[idx], verfall:verfall||ch[idx].verfall}; toast('Charge aktualisiert ✅'); }
+      else { ch.push({lot:lot||'?', verfall:verfall||null, erfasst:new Date().toISOString()}); toast('Charge gespeichert ✅'); }
+
+      await updateDoc(ref, {chargen:ch});
+      selected.chargen = ch;
+      artikel.find(a => a.id===selected.id).chargen = ch;
+
+      document.getElementById('inp-lot').value = '';
+      document.getElementById('inp-verfall').value = '';
+      document.getElementById('inp-lot').classList.remove('filled');
+      document.getElementById('inp-verfall').classList.remove('filled');
+      document.getElementById('verfall-info').textContent = '';
+      showChargen(selected);
+    };
+
+    // ── Kamera ──
+    window.toggleCam = async function() {
+      camOn ? stopCam() : await startCam();
+    };
+
+    async function startCam() {
+      camOn = true;
+      document.getElementById('btn-cam').classList.add('on');
+      document.getElementById('cam-wrap').classList.add('show');
+      document.getElementById('cam-btns').classList.remove('hidden');
       try {
         const hints = new Map();
-        hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, [ZXing.BarcodeFormat.DATA_MATRIX, ZXing.BarcodeFormat.QR_CODE]);
+        hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, [
+          ZXing.BarcodeFormat.DATA_MATRIX,
+          ZXing.BarcodeFormat.QR_CODE,
+          ZXing.BarcodeFormat.CODE_128,
+          ZXing.BarcodeFormat.EAN_13,
+        ]);
         hints.set(ZXing.DecodeHintType.TRY_HARDER, true);
-        codeReader = new ZXing.BrowserMultiFormatReader(hints);
-
-        await codeReader.decodeFromConstraints(
-          { video: { facingMode: currentCam === 'back' ? 'environment' : 'user', width:{ideal:1280}, height:{ideal:720} } },
+        reader = new ZXing.BrowserMultiFormatReader(hints);
+        await reader.decodeFromConstraints(
+          {video:{facingMode:camSide==='back'?'environment':'user', width:{ideal:1280}, height:{ideal:720}}},
           'video',
-          (result) => { if (result && cameraOn) { onScanResult(result.getText()); } }
+          (result) => { if (result) onScan(result.getText()); }
         );
-
-        setTimeout(() => startQuaGGA(), 1500);
       } catch(e) {
-        showToast('Kamera: ' + (e.name === 'NotAllowedError' ? 'Zugriff verweigert' : e.message), 'error');
-        stopCamera();
+        toast(e.name==='NotAllowedError' ? 'Kamera-Zugriff verweigert' : 'Kamera: '+e.message, 'err');
+        stopCam();
       }
     }
 
-    function stopCamera() {
-      cameraOn = false;
-      const wrap = document.getElementById('camera-wrap');
-      wrap.classList.remove('visible');
-      document.getElementById('btn-camera').classList.remove('active');
-      stopQuaGGA();
-      if (codeReader) { try { codeReader.reset(); } catch(e) {} codeReader = null; }
-      const vid = document.getElementById('video');
-      if (vid.srcObject) { vid.srcObject.getTracks().forEach(t => t.stop()); vid.srcObject = null; }
-    }
-
-    function startQuaGGA() {
-      if (typeof Quagga === 'undefined' || quaggaRunning) return;
-      const vid = document.getElementById('video');
-      if (!vid.srcObject) return;
-      Quagga.init({
-        inputStream: { type:'LiveStream', target:vid, constraints:{facingMode: currentCam === 'back' ? 'environment' : 'user'} },
-        decoder: { readers:['code_128_reader','ean_reader','ean_8_reader'] },
-        locate:true, numOfWorkers:0, frequency:8,
-      }, err => {
-        if (err) { console.warn('QuaGGA:', err); return; }
-        quaggaRunning = true;
-        Quagga.start();
-      });
-      Quagga.onDetected(res => {
-        if (!cameraOn) return;
-        const code = res?.codeResult?.code;
-        if (!code || code.length < 4) return;
-        const errs   = (res.codeResult.decodedCodes||[]).filter(x=>x.error!==undefined).map(x=>x.error);
-        const avgErr = errs.length ? errs.reduce((s,e)=>s+e,0)/errs.length : 0;
-        if (avgErr > 0.25) return;
-        onScanResult(code);
-      });
-    }
-
-    function stopQuaGGA() {
-      if (typeof Quagga !== 'undefined' && quaggaRunning) { try { Quagga.stop(); } catch(e) {} quaggaRunning = false; }
+    function stopCam() {
+      camOn = false;
+      document.getElementById('btn-cam').classList.remove('on');
+      document.getElementById('cam-wrap').classList.remove('show');
+      document.getElementById('cam-btns').classList.add('hidden');
+      if (reader) { try { reader.reset(); } catch(e){} reader = null; }
+      const v = document.getElementById('video');
+      if (v.srcObject) { v.srcObject.getTracks().forEach(t=>t.stop()); v.srcObject = null; }
     }
 
     window.switchCam = async function(side) {
-      currentCam = side;
-      document.getElementById('cam-back').classList.toggle('active', side==='back');
-      document.getElementById('cam-front').classList.toggle('active', side==='front');
-      stopCamera();
-      await new Promise(r => setTimeout(r, 300));
-      await startCamera();
+      camSide = side;
+      document.getElementById('cb-back').classList.toggle('on', side==='back');
+      document.getElementById('cb-front').classList.toggle('on', side==='front');
+      stopCam();
+      await new Promise(r=>setTimeout(r,300));
+      await startCam();
     };
 
     window.toggleLight = async function() {
-      const vid = document.getElementById('video');
-      if (!vid.srcObject) return;
-      const track = vid.srcObject.getVideoTracks()[0];
-      if (!track) return;
+      const v = document.getElementById('video');
+      if (!v.srcObject) return;
+      const t = v.srcObject.getVideoTracks()[0];
+      if (!t) return;
       try {
-        const torch = !track.getSettings().torch;
-        await track.applyConstraints({ advanced: [{ torch }] });
-        document.getElementById('cam-light').classList.toggle('active', torch);
-      } catch(e) { showToast('Licht nicht verfügbar'); }
+        const torch = !t.getSettings().torch;
+        await t.applyConstraints({advanced:[{torch}]});
+        document.getElementById('cb-light').classList.toggle('on', torch);
+      } catch(e) { toast('Licht nicht verfügbar'); }
     };
 
-    // ── Bluetooth HID ──
-    // Textarea als dedizierter Scanner-Input
-    // Sichtbar aber winzig → kein Fokus-Problem, kein Tastatur-Problem
+    // ── Bluetooth ──
+    // Methode: keydown auf window mit Geschwindigkeitserkennung
+    // Scanner sendet kompletten Code in < 30ms pro Zeichen
+    // Mensch tippt langsamer als 150ms pro Zeichen
 
-    const _btArea = document.getElementById('bt-area');
-
-    window.toggleBluetooth = function() {
+    window.toggleBT = function() {
       btOn = !btOn;
-      const btn    = document.getElementById('btn-bt');
-      const status = document.getElementById('bt-status');
-      btn.classList.toggle('bt-active', btOn);
-      btn.textContent = btOn ? '📡 BT Aktiv' : '📡 Bluetooth';
-      status.classList.toggle('hidden', !btOn);
-      if (btOn) { _btArea.style.display = 'block'; _btArea.focus(); }
-      else       { _btArea.style.display = 'none';  _btArea.blur(); }
+      document.getElementById('btn-bt').classList.toggle('bt-on', btOn);
+      document.getElementById('btn-bt').textContent = btOn ? '📡 BT Aktiv' : '📡 Bluetooth';
+      document.getElementById('bt-hint').classList.toggle('show', btOn);
     };
 
-    _btArea.addEventListener('blur', () => {
-      if (btOn) setTimeout(() => { _btArea.focus(); }, 50);
-    });
+    window.addEventListener('keydown', function(e) {
+      if (!btOn) return;
+      if (e.key === 'Process' || e.key === 'Unidentified') return;
 
-    _btArea.addEventListener('input', () => {
-      const val = _btArea.value;
-      _btArea.value = '';
-      if (!val || !btOn) return;
-      btBuffer += val;
-      clearTimeout(btTimer);
-      btTimer = setTimeout(() => {
-        const code = btBuffer.replace(/
-/g,'').trim();
-        btBuffer = '';
-        if (code.length >= 4) onScanResult(code);
-      }, 150);
-    });
+      const now   = Date.now();
+      const delta = now - bufLast;
+      bufLast     = now;
 
-    _btArea.addEventListener('keydown', e => {
-      if (e.key === 'Enter') {
+      // Reset Buffer wenn > 500ms Pause
+      if (delta > 500) buf = '';
+
+      if (e.key === 'Enter' || e.key === 'Tab') {
         e.preventDefault();
-        clearTimeout(btTimer);
-        const code = btBuffer.replace(/
-/g,'').trim();
-        btBuffer = '';
-        _btArea.value = '';
-        if (code.length >= 4) onScanResult(code);
+        const code = buf.trim();
+        buf = '';
+        clearTimeout(bufTimer);
+        if (code.length >= 4) onScan(code);
+        return;
+      }
+
+      if (e.key.length === 1) {
+        // Scanner tippt SEHR schnell (< 30ms) – Mensch tippt > 150ms
+        // Wenn das erste Zeichen kommt oder es schnell ist → Scanner
+        if (buf.length === 0 || delta < 100) {
+          buf += e.key;
+          // Wenn aktives Element ein Inputfeld ist → Zeichen nicht reinlassen
+          const tag = document.activeElement?.tagName;
+          if (tag === 'INPUT' && delta < 100 && buf.length > 3) {
+            e.preventDefault();
+          }
+          clearTimeout(bufTimer);
+          bufTimer = setTimeout(() => {
+            const code = buf.trim();
+            buf = '';
+            if (code.length >= 4) onScan(code);
+          }, 150);
+        }
       }
     });
 
-        // ── Toast ──
-    window.showToast = function(msg, type = 'success') {
+    // ── Toast ──
+    function toast(msg, type='ok') {
       const t = document.createElement('div');
-      t.className = 'toast';
-      t.textContent = msg;
-      t.style.background = type === 'error' ? '#ef4444' : type === 'warn' ? '#eab308' : '#22c55e';
+      t.className   = 'toast';
+      t.textContent  = msg;
+      t.style.background = type==='err' ? '#ef4444' : '#22c55e';
       document.body.appendChild(t);
       setTimeout(() => t.remove(), 2500);
-    };
+    }
 
   </script>
   <script src="../js/pwa.js"></script>
