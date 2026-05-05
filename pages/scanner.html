@@ -5,625 +5,351 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <title>Verfallsscan – LAGER//APP</title>
   <link rel="manifest" href="../manifest.json">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-
-  <!-- ZXing für DataMatrix & QR -->
   <script src="https://unpkg.com/@zxing/library@0.19.1/umd/index.min.js"></script>
-  <!-- QuaGGA2 für Code128/GS1-128 -->
   <script src="https://cdn.jsdelivr.net/npm/@ericblade/quagga2@1.2.6/dist/quagga.min.js"></script>
 
   <style>
     :root {
-      --bg:       #f9fafb;
-      --surface:  #ffffff;
-      --surface2: #f3f4f6;
-      --border:   #e5e7eb;
-      --text:     #111827;
-      --text2:    #374151;
-      --muted:    #9ca3af;
-      --accent:   #f97316;
-      --accent2:  #0ea5e9;
-      --green:    #22c55e;
-      --red:      #ef4444;
-      --yellow:   #eab308;
+      --bg:      #f9fafb; --surface: #ffffff; --surface2: #f3f4f6;
+      --border:  #e5e7eb; --text:    #111827; --text2:    #374151;
+      --muted:   #9ca3af; --accent:  #f97316; --accent2:  #0ea5e9;
+      --green:   #22c55e; --red:     #ef4444; --yellow:   #eab308;
     }
     [data-theme="dark"] {
-      --bg:       #0a0f1a;
-      --surface:  #111827;
-      --surface2: #1f2937;
-      --border:   #374151;
-      --text:     #f9fafb;
-      --text2:    #e5e7eb;
-      --muted:    #6b7280;
+      --bg:#0a0f1a; --surface:#111827; --surface2:#1f2937;
+      --border:#374151; --text:#f9fafb; --text2:#e5e7eb; --muted:#6b7280;
     }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: 'DM Sans', sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-      overflow-x: hidden;
-    }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
 
     /* NAV */
-    .nav { position: sticky; top: 0; z-index: 100; background: var(--surface); border-bottom: 1px solid var(--border); padding: 12px 16px; display: flex; align-items: center; gap: 12px; }
-    .nav-back { background: none; border: 1px solid var(--border); border-radius: 8px; padding: 6px 12px; cursor: pointer; color: var(--text2); font-family: 'DM Sans', sans-serif; font-size: 0.85rem; }
-    .nav-logo { font-family: 'IBM Plex Mono', monospace; font-weight: 600; font-size: 1rem; color: var(--accent); letter-spacing: -0.5px; }
-    .nav-logo span { color: var(--text2); }
-    .nav-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
-    .theme-btn { background: none; border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px; cursor: pointer; font-size: 1rem; }
-
-    /* CAMERA */
-    .camera-wrap { position: relative; width: 100%; background: #000; aspect-ratio: 4/3; max-height: 55vh; overflow: hidden; }
-    #video { width: 100%; height: 100%; object-fit: cover; display: block; }
-    .scan-frame { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 260px; height: 260px; pointer-events: none; }
-    .scan-frame::before, .scan-frame::after,
-    .scan-frame > span::before, .scan-frame > span::after {
-      content: ''; position: absolute; width: 32px; height: 32px; border-color: var(--accent); border-style: solid;
-    }
-    .scan-frame::before { top: 0; left: 0; border-width: 3px 0 0 3px; border-radius: 4px 0 0 0; }
-    .scan-frame::after  { top: 0; right: 0; border-width: 3px 3px 0 0; border-radius: 0 4px 0 0; }
-    .scan-frame > span::before { bottom: 0; left: 0; border-width: 0 0 3px 3px; border-radius: 0 0 0 4px; }
-    .scan-frame > span::after  { bottom: 0; right: 0; border-width: 0 3px 3px 0; border-radius: 0 0 4px 0; }
-    .scan-line { position: absolute; left: 10%; right: 10%; height: 2px; background: linear-gradient(90deg, transparent, var(--accent), transparent); animation: scan 2s ease-in-out infinite; top: 20%; }
-    @keyframes scan { 0%,100% { top: 20%; opacity: 0; } 10% { opacity: 1; } 90% { opacity: 1; } 50% { top: 80%; } }
-
-    /* CAM CONTROLS */
-    .cam-controls { display: flex; gap: 8px; padding: 10px 12px; background: var(--surface); border-bottom: 1px solid var(--border); overflow-x: auto; }
-    .cam-btn { display: flex; align-items: center; gap: 5px; padding: 7px 14px; border-radius: 20px; border: 1.5px solid var(--border); background: var(--surface2); color: var(--text2); font-family: 'DM Sans', sans-serif; font-size: 0.8rem; font-weight: 600; cursor: pointer; white-space: nowrap; touch-action: manipulation; }
-    .cam-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
-
-    /* STATUS */
-    .status-idle { text-align: center; padding: 14px 16px; font-size: 0.82rem; color: var(--muted); background: var(--surface); border-bottom: 1px solid var(--border); }
+    .nav { position:sticky; top:0; z-index:100; background:var(--surface); border-bottom:1px solid var(--border); padding:10px 16px; display:flex; align-items:center; gap:10px; }
+    .nav-back { background:none; border:1px solid var(--border); border-radius:8px; padding:6px 12px; cursor:pointer; color:var(--text2); font-family:'DM Sans',sans-serif; font-size:0.82rem; }
+    .nav-logo { font-family:'IBM Plex Mono',monospace; font-weight:600; font-size:0.95rem; color:var(--accent); }
+    .nav-logo span { color:var(--text2); }
+    .nav-right { margin-left:auto; display:flex; align-items:center; gap:8px; }
+    .theme-btn { background:none; border:1px solid var(--border); border-radius:8px; padding:5px 9px; cursor:pointer; font-size:0.9rem; }
 
     /* CONTENT */
-    .content { padding: 12px 16px; display: flex; flex-direction: column; gap: 12px; }
+    .content { padding:16px; display:flex; flex-direction:column; gap:14px; max-width:520px; margin:0 auto; }
 
-    /* BT STATUS */
-    .bt-bar { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; cursor: pointer; touch-action: manipulation; }
-    .bt-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); flex-shrink: 0; transition: all 0.3s; }
-    .bt-dot.active { background: var(--green); box-shadow: 0 0 6px var(--green); }
+    /* CARD */
+    .card { background:var(--surface); border:1px solid var(--border); border-radius:14px; overflow:hidden; }
+    .card-header { padding:12px 16px; background:var(--surface2); border-bottom:1px solid var(--border); display:flex; align-items:center; gap:8px; font-size:0.82rem; font-weight:700; color:var(--text2); }
+    .card-body { padding:16px; }
 
-    /* CARDS */
-    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 16px; }
-    .card-title { font-size: 0.82rem; font-weight: 700; color: var(--text2); margin-bottom: 10px; }
-    .card-sub   { font-size: 0.68rem; color: var(--muted); margin-bottom: 10px; }
+    /* SCANNER TOOLS */
+    .scanner-tools { display:flex; gap:8px; }
+    .tool-btn { flex:1; height:44px; border-radius:10px; border:1.5px solid var(--border); background:var(--surface2); color:var(--text2); font-family:'DM Sans',sans-serif; font-size:0.82rem; font-weight:600; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; touch-action:manipulation; transition:all 0.15s; }
+    .tool-btn.active { background:var(--accent); border-color:var(--accent); color:#fff; }
+    .tool-btn.bt-active { background:rgba(34,197,94,0.1); border-color:var(--green); color:var(--green); }
 
-    /* RESULT CARD */
-    .result-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; overflow: hidden; }
-    .result-header { padding: 12px 16px; background: var(--surface2); border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 10px; }
-    .result-badge { font-size: 0.65rem; font-weight: 700; padding: 3px 8px; border-radius: 6px; font-family: 'IBM Plex Mono', monospace; }
-    .badge-known   { background: rgba(34,197,94,0.15);  color: var(--green); border: 1px solid rgba(34,197,94,0.3); }
-    .badge-unknown { background: rgba(249,115,22,0.15); color: var(--accent); border: 1px solid rgba(249,115,22,0.3); }
-    .result-name { font-size: 0.95rem; font-weight: 700; }
-    .result-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0; }
-    .result-cell { padding: 10px 16px; border-bottom: 1px solid var(--border); }
-    .result-cell:nth-child(odd) { border-right: 1px solid var(--border); }
-    .result-label { font-size: 0.6rem; font-weight: 700; color: var(--muted); font-family: 'IBM Plex Mono', monospace; text-transform: uppercase; margin-bottom: 3px; }
-    .result-value { font-size: 0.88rem; font-weight: 700; font-family: 'IBM Plex Mono', monospace; }
-    .result-value.ok   { color: var(--green); }
-    .result-value.warn { color: var(--red); }
+    /* CAMERA */
+    .camera-wrap { position:relative; background:#000; border-radius:10px; overflow:hidden; margin-top:12px; display:none; }
+    .camera-wrap.visible { display:block; }
+    #video { width:100%; display:block; max-height:50vh; object-fit:cover; }
+    .scan-overlay { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; pointer-events:none; }
+    .scan-frame { width:220px; height:220px; position:relative; }
+    .scan-frame::before,.scan-frame::after,.scan-frame span::before,.scan-frame span::after {
+      content:''; position:absolute; width:28px; height:28px; border-color:var(--accent); border-style:solid;
+    }
+    .scan-frame::before { top:0; left:0; border-width:3px 0 0 3px; border-radius:3px 0 0 0; }
+    .scan-frame::after  { top:0; right:0; border-width:3px 3px 0 0; border-radius:0 3px 0 0; }
+    .scan-frame span::before { bottom:0; left:0; border-width:0 0 3px 3px; border-radius:0 0 0 3px; }
+    .scan-frame span::after  { bottom:0; right:0; border-width:0 3px 3px 0; border-radius:0 0 3px 0; }
+    .cam-btns { display:flex; gap:6px; margin-top:8px; }
+    .cam-btn { flex:1; height:36px; border-radius:8px; border:1px solid var(--border); background:var(--surface2); color:var(--text2); font-family:'DM Sans',sans-serif; font-size:0.75rem; font-weight:600; cursor:pointer; touch-action:manipulation; }
+    .cam-btn.active { background:var(--accent); border-color:var(--accent); color:#fff; }
+    #interactive canvas { display:none !important; }
 
-    /* MISSING DATA */
-    .missing-wrap { margin: 12px 16px; background: rgba(249,115,22,0.06); border: 1px solid rgba(249,115,22,0.25); border-radius: 10px; padding: 12px; display: flex; flex-direction: column; gap: 10px; }
-    .missing-title { font-size: 0.75rem; font-weight: 600; color: var(--accent); }
+    /* FORM */
+    .field { display:flex; flex-direction:column; gap:5px; }
+    .field + .field { margin-top:12px; }
+    .field-label { font-size:0.62rem; font-weight:700; color:var(--muted); font-family:'IBM Plex Mono',monospace; text-transform:uppercase; letter-spacing:0.05em; }
+    .field-input { width:100%; padding:13px 14px; border-radius:10px; border:1.5px solid var(--border); background:var(--surface2); color:var(--text); font-family:'DM Sans',sans-serif; font-size:0.95rem; outline:none; transition:border-color 0.15s; -webkit-appearance:none; }
+    .field-input:focus { border-color:var(--accent2); }
+    .field-input.filled { border-color:var(--green); background:rgba(34,197,94,0.05); }
+    select.field-input { appearance:auto; }
 
-    /* ARTIKEL SEARCH */
-    .artikel-wrap { padding: 12px 16px; border-top: 1px solid var(--border); }
-    .search-input { width: 100%; padding: 11px 14px; border-radius: 10px; border: 1.5px solid var(--border); background: var(--surface2); color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 0.9rem; outline: none; }
-    .search-input:focus { border-color: var(--accent2); }
-    .suggestions { margin-top: 6px; display: flex; flex-direction: column; gap: 4px; max-height: 160px; overflow-y: auto; }
-    .suggestion { padding: 8px 12px; background: var(--surface2); border-radius: 8px; cursor: pointer; font-size: 0.82rem; border: 1px solid var(--border); touch-action: manipulation; }
-    .suggestion:active { background: var(--accent); color: #fff; }
+    /* SUGGESTIONS */
+    .suggestions { display:flex; flex-direction:column; gap:4px; margin-top:6px; max-height:180px; overflow-y:auto; }
+    .suggestion { padding:9px 12px; background:var(--surface2); border-radius:8px; border:1px solid var(--border); cursor:pointer; font-size:0.82rem; touch-action:manipulation; }
+    .suggestion:active { background:var(--accent); color:#fff; }
+    .suggestion-name { font-weight:600; }
+    .suggestion-sub  { font-size:0.68rem; color:var(--muted); font-family:'IBM Plex Mono',monospace; margin-top:1px; }
 
-    /* CHARGEN */
-    .chargen-wrap { padding: 12px 16px; border-top: 1px solid var(--border); }
-    .charge-item { display: flex; align-items: center; gap: 10px; padding: 8px 10px; background: var(--surface2); border-radius: 8px; margin-bottom: 6px; font-size: 0.75rem; font-family: 'IBM Plex Mono', monospace; }
-    .charge-del { margin-left: auto; background: none; border: none; color: var(--muted); cursor: pointer; font-size: 1rem; padding: 2px 6px; }
+    /* SAVE BTN */
+    .save-btn { width:100%; height:52px; border-radius:12px; border:none; background:var(--green); color:#fff; font-family:'DM Sans',sans-serif; font-size:1rem; font-weight:700; cursor:pointer; margin-top:16px; touch-action:manipulation; transition:opacity 0.15s; }
+    .save-btn:active { opacity:0.85; }
+    .save-btn:disabled { background:var(--border); color:var(--muted); cursor:default; }
 
-    /* ACTION BUTTONS */
-    .action-row { display: flex; gap: 8px; padding: 12px 16px; }
-    .btn { flex: 1; height: 48px; border-radius: 12px; border: none; font-family: 'DM Sans', sans-serif; font-size: 0.9rem; font-weight: 700; cursor: pointer; touch-action: manipulation; display: flex; align-items: center; justify-content: center; }
-    .btn-primary { background: var(--accent);  color: #fff; }
-    .btn-green   { background: var(--green);   color: #fff; }
-    .btn-ghost   { background: var(--surface2); color: var(--text2); border: 1.5px solid var(--border); }
+    /* STATUS PILL */
+    .status-pill { display:inline-flex; align-items:center; gap:5px; padding:3px 10px; border-radius:20px; font-size:0.7rem; font-weight:700; font-family:'IBM Plex Mono',monospace; }
+    .pill-ok   { background:rgba(34,197,94,0.12); color:var(--green); }
+    .pill-warn { background:rgba(239,68,68,0.12);  color:var(--red); }
+    .pill-mid  { background:rgba(234,179,8,0.12);  color:var(--yellow); }
 
-    /* MANUAL */
-    .field-label { font-size: 0.62rem; font-weight: 700; color: var(--muted); font-family: 'IBM Plex Mono', monospace; text-transform: uppercase; margin-bottom: 4px; margin-top: 10px; }
-    select.search-input { appearance: auto; }
+    /* CHARGEN LIST */
+    .chargen-list { display:flex; flex-direction:column; gap:6px; }
+    .charge-item { display:flex; align-items:center; gap:10px; padding:8px 12px; background:var(--surface2); border-radius:8px; font-size:0.75rem; font-family:'IBM Plex Mono',monospace; }
+    .charge-dot  { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+    .charge-del  { margin-left:auto; background:none; border:none; color:var(--muted); cursor:pointer; font-size:0.9rem; padding:2px 4px; flex-shrink:0; }
 
-    /* OCR STATUS */
-    .ocr-status { font-size: 0.72rem; color: var(--muted); text-align: center; margin-top: 8px; min-height: 16px; font-family: 'IBM Plex Mono', monospace; }
+    /* TOAST */
+    .toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); padding:10px 20px; border-radius:12px; font-size:0.82rem; font-weight:600; color:#fff; z-index:999; white-space:nowrap; pointer-events:none; animation:fadeup 0.25s ease; }
+    @keyframes fadeup { from { opacity:0; transform:translateX(-50%) translateY(8px); } }
 
-    /* HIDDEN / TOAST */
-    .hidden { display: none !important; }
-    .toast { position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%); background: #1f2937; color: #fff; padding: 10px 20px; border-radius: 12px; font-size: 0.82rem; font-weight: 600; z-index: 999; white-space: nowrap; animation: fadeup 0.3s ease; }
-    @keyframes fadeup { from { opacity: 0; transform: translateX(-50%) translateY(10px); } }
-
-    /* QuaGGA canvas verstecken */
-    #interactive canvas, canvas.drawingBuffer { display: none !important; }
+    .hidden { display:none !important; }
   </style>
 </head>
 <body>
 
-  <!-- BT Hidden Input - inputmode=none verhindert Tastatur auf Mobile -->
-  <input type="text" id="bt-input" tabindex="-1" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
-    inputmode="none"
-    style="position:fixed;opacity:0;width:1px;height:1px;top:-200px;left:-200px;border:none;outline:none;font-size:16px;">
-
-  <!-- NAV -->
   <nav class="nav">
     <button class="nav-back" onclick="window.location.href='../index.html'">← Zurück</button>
-    <div class="nav-logo" style="padding:0;"><img src="../LAGER_APP.png" alt="LAGER//APP" style="height:32px;width:auto;display:block;object-fit:contain;"></div>
+    <div class="nav-logo">LAGER<span>//</span>APP</div>
     <div class="nav-right">
-      <span id="nav-user" style="font-size:0.78rem;color:var(--muted);"></span>
+      <span id="nav-user" style="font-size:0.75rem;color:var(--muted);"></span>
       <button class="theme-btn" onclick="toggleTheme()">☀️</button>
     </div>
   </nav>
 
-  <!-- CAMERA -->
-  <div class="camera-wrap">
-    <video id="video" playsinline autoplay muted></video>
-    <div class="scan-frame"><span></span></div>
-    <div class="scan-line"></div>
-  </div>
-
-  <!-- CAM CONTROLS -->
-  <div class="cam-controls">
-    <button class="cam-btn active" id="btn-back"  onclick="switchCamera('back')">📷 Rückseite</button>
-    <button class="cam-btn"        id="btn-front" onclick="switchCamera('front')">🤳 Vorderseite</button>
-    <button class="cam-btn"        id="btn-light" onclick="toggleLight()">🔦 Licht</button>
-  </div>
-
-  <div class="status-idle" id="status-idle">
-    Code halten – wird automatisch erkannt · DataMatrix · QR · Barcode · Bluetooth
-  </div>
-
-  <!-- CONTENT -->
   <div class="content">
 
-    <!-- BT STATUS -->
-    <div class="bt-bar" onclick="focusBtInput()">
-      <div class="bt-dot" id="bt-dot"></div>
-      <div style="flex:1;">
-        <div style="font-size:0.8rem;font-weight:600;" id="bt-label">📡 Bluetooth-Scanner</div>
-        <div style="font-size:0.65rem;color:var(--muted);font-family:'IBM Plex Mono',monospace;" id="bt-sub">Tippen zum Aktivieren</div>
-      </div>
-      <span style="font-size:0.75rem;color:var(--muted);">⌨️</span>
-    </div>
-
-    <!-- RESULT CARD -->
-    <div class="result-card hidden" id="result-card">
-      <div class="result-header">
-        <span class="result-badge" id="result-badge">?</span>
-        <div>
-          <div class="result-name" id="result-name">–</div>
-          <div style="font-size:0.68rem;color:var(--muted);font-family:'IBM Plex Mono',monospace;" id="result-gtin"></div>
-        </div>
-      </div>
-      <div class="result-grid">
-        <div class="result-cell"><div class="result-label">Charge / LOT</div><div class="result-value" id="result-lot">–</div></div>
-        <div class="result-cell"><div class="result-label">Verfallsdatum</div><div class="result-value" id="result-verfall">–</div></div>
-        <div class="result-cell"><div class="result-label">Verbleibend</div><div class="result-value" id="result-days">–</div></div>
-        <div class="result-cell"><div class="result-label">Status</div><div class="result-value" id="result-status">–</div></div>
-      </div>
-
-      <!-- Fehlende Daten -->
-      <div class="missing-wrap hidden" id="missing-wrap">
-        <div class="missing-title">⚠️ Fehlende Daten – bitte ergänzen</div>
-        <div id="missing-lot-wrap">
-          <div class="field-label">Charge / LOT</div>
-          <input type="text" class="search-input" id="missing-lot" placeholder="z.B. 44310832" oninput="updateMissing('lot',this.value)">
-        </div>
-        <div id="missing-verfall-wrap">
-          <div class="field-label">Verfallsdatum</div>
-          <input type="date" class="search-input" id="missing-verfall" oninput="updateMissing('verfall',this.value)">
-        </div>
-      </div>
-
-      <!-- Artikel suchen (bei unbekanntem Produkt) -->
-      <div class="artikel-wrap" id="artikel-search-wrap">
-        <div class="field-label">Artikel zuordnen</div>
-        <input type="text" class="search-input" id="artikel-search" placeholder="Artikel suchen..." oninput="searchArtikel(this.value)" autocomplete="off">
-        <div class="suggestions" id="artikel-suggestions"></div>
-      </div>
-
-      <!-- Chargen des bekannten Artikels -->
-      <div class="chargen-wrap hidden" id="chargen-section">
-        <div class="field-label">Gespeicherte Chargen</div>
-        <div id="chargen-list"></div>
-      </div>
-
-      <div class="action-row">
-        <button class="btn btn-ghost"  onclick="resetScanner()">↺ Neu</button>
-        <button class="btn btn-green"  id="btn-save" onclick="speichern()">✅ Speichern</button>
-      </div>
-    </div>
-
-
-
-    <!-- MANUELL -->
+    <!-- SCANNER TOOLS -->
     <div class="card">
-      <div class="card-title">✏️ Manuell eingeben</div>
-      <div class="field-label">Artikel</div>
-      <select class="search-input" id="manual-artikel" style="margin-bottom:8px;">
-        <option value="">– Artikel wählen –</option>
-      </select>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-        <div>
-          <div class="field-label">Charge / LOT</div>
-          <input type="text" class="search-input" id="manual-lot" placeholder="z.B. 44310832" autocomplete="off">
+      <div class="card-header">🔍 Barcode erfassen</div>
+      <div class="card-body">
+        <div class="scanner-tools">
+          <button class="tool-btn" id="btn-camera" onclick="toggleCamera()">📷 Kamera</button>
+          <button class="tool-btn" id="btn-bt"     onclick="toggleBluetooth()">📡 Bluetooth</button>
         </div>
-        <div>
-          <div class="field-label">Verfallsdatum</div>
-          <input type="date" class="search-input" id="manual-verfall">
+
+        <!-- Kamera -->
+        <div class="camera-wrap" id="camera-wrap">
+          <video id="video" playsinline autoplay muted></video>
+          <div class="scan-overlay"><div class="scan-frame"><span></span></div></div>
+          <div class="cam-btns">
+            <button class="cam-btn active" id="cam-back"  onclick="switchCam('back')">📷 Rück</button>
+            <button class="cam-btn"        id="cam-front" onclick="switchCam('front')">🤳 Vorder</button>
+            <button class="cam-btn"        id="cam-light" onclick="toggleLight()">🔦 Licht</button>
+          </div>
+        </div>
+
+        <!-- BT Status -->
+        <div id="bt-status" class="hidden" style="margin-top:10px;padding:10px 12px;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.25);border-radius:10px;font-size:0.78rem;color:var(--green);font-weight:600;">
+          📡 Bluetooth-Scanner aktiv – Code scannen um Felder auszufüllen
         </div>
       </div>
-      <button class="btn btn-green" onclick="saveManual()" style="width:100%;margin-top:10px;height:44px;">
-        ✅ Manuell speichern
-      </button>
+    </div>
+
+    <!-- EINGABE FORMULAR -->
+    <div class="card">
+      <div class="card-header">📋 Charge erfassen</div>
+      <div class="card-body">
+
+        <!-- Artikel -->
+        <div class="field">
+          <div class="field-label">Artikel</div>
+          <input type="text" id="f-artikel-search" class="field-input" placeholder="Artikel suchen..."
+            autocomplete="off" oninput="onArtikelSearch(this.value)">
+          <div class="suggestions hidden" id="f-suggestions"></div>
+          <input type="hidden" id="f-artikel-id">
+          <div id="f-artikel-name" class="hidden" style="margin-top:6px;padding:8px 12px;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.25);border-radius:8px;font-size:0.82rem;font-weight:600;color:var(--green);display:flex;align-items:center;justify-content:space-between;">
+            <span id="f-artikel-name-text"></span>
+            <button onclick="clearArtikel()" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:0.9rem;padding:0 2px;">✕</button>
+          </div>
+        </div>
+
+        <!-- LOT -->
+        <div class="field">
+          <div class="field-label">Charge / LOT</div>
+          <input type="text" id="f-lot" class="field-input" placeholder="z.B. 44310832" autocomplete="off">
+        </div>
+
+        <!-- Verfall -->
+        <div class="field">
+          <div class="field-label">Verfallsdatum</div>
+          <input type="date" id="f-verfall" class="field-input" oninput="onVerfallChange()">
+          <div id="f-verfall-info" class="hidden" style="margin-top:4px;font-size:0.72rem;font-family:'IBM Plex Mono',monospace;"></div>
+        </div>
+
+        <button class="save-btn" id="btn-save" onclick="saveCharge()">✅ Charge speichern</button>
+
+        <!-- Gespeicherte Chargen -->
+        <div id="chargen-wrap" class="hidden" style="margin-top:16px;padding-top:14px;border-top:1px solid var(--border);">
+          <div style="font-size:0.7rem;font-weight:700;color:var(--muted);font-family:'IBM Plex Mono',monospace;text-transform:uppercase;margin-bottom:8px;">Gespeicherte Chargen</div>
+          <div class="chargen-list" id="chargen-list"></div>
+        </div>
+
+      </div>
     </div>
 
   </div><!-- /content -->
 
   <script>
-    // Theme inline – kein externes Modul nötig
+    // ── Theme ──
     (function() {
-      const saved = localStorage.getItem('theme') || 'light';
-      document.documentElement.setAttribute('data-theme', saved);
+      const t = localStorage.getItem('theme') || 'light';
+      document.documentElement.setAttribute('data-theme', t);
     })();
     function toggleTheme() {
-      const current = document.documentElement.getAttribute('data-theme');
-      const next    = current === 'dark' ? 'light' : 'dark';
-      document.documentElement.setAttribute('data-theme', next);
-      localStorage.setItem('theme', next);
-      document.querySelector('.theme-btn').textContent = next === 'dark' ? '🌙' : '☀️';
+      const t = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', t);
+      localStorage.setItem('theme', t);
+      document.querySelector('.theme-btn').textContent = t === 'dark' ? '🌙' : '☀️';
     }
   </script>
-  <script type="module">
-    import { initializeApp }                                          from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getAuth, onAuthStateChanged }                            from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-    import { getFirestore, collection, getDocs, doc, getDoc, updateDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
-    const firebaseConfig = {
+  <script type="module">
+    import { initializeApp }     from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    import { getFirestore, collection, getDocs, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+    const app  = initializeApp({
       apiKey:            "AIzaSyD1YY-cFQxyykfYQYPORwulzuF8t6Wgid4",
       authDomain:        "lagerbestellung-19970.firebaseapp.com",
       projectId:         "lagerbestellung-19970",
       storageBucket:     "lagerbestellung-19970.firebasestorage.app",
       messagingSenderId: "939056339904",
       appId:             "1:939056339904:web:6f33ca2f5a4cebd2780625",
-    };
-
-    const app  = initializeApp(firebaseConfig);
+    });
     const auth = getAuth(app);
     const db   = getFirestore(app);
 
     // ── State ──
-    let alleArtikel    = [];
-    let currentUser    = null;
-    let userRole       = null;
-    let scanResult     = null;
-    let selectedArtikel= null;
-    let scanning       = true;
-    let currentCamera  = 'back';
-    let codeReader     = null;
-    let quaggaRunning  = false;
-    let lightTrack     = null;
+    let alleArtikel     = [];
+    let selectedArtikel = null;
+    let cameraOn        = false;
+    let btOn            = false;
+    let codeReader      = null;
+    let quaggaRunning   = false;
+    let currentCam      = 'back';
+    let btBuffer        = '';
+    let btTimer         = null;
 
     // ── Auth ──
     onAuthStateChanged(auth, async user => {
-      const pinAuth   = sessionStorage.getItem('lager-pin-auth');
       const savedName = localStorage.getItem('lager-saved-name');
       const savedPin  = localStorage.getItem('lager-saved-pin');
+      const pinAuth   = sessionStorage.getItem('lager-pin-auth');
 
       if (!user && !pinAuth && !savedPin) {
-        window.location.href = '../index.html';
-        return;
+        window.location.href = '../index.html'; return;
       }
 
-      if (user) {
-        const snap = await getDoc(doc(db, 'users', user.uid));
-        userRole    = snap.exists() ? snap.data().role : 'mitarbeiter';
-        currentUser = user;
-        document.getElementById('nav-user').textContent = user.displayName || user.email;
-      } else {
-        userRole    = 'wachenleiter'; // PIN-Nutzer darf speichern
-        const name  = sessionStorage.getItem('lager-pin-name') || savedName || '';
-        currentUser = { displayName: name };
-        document.getElementById('nav-user').textContent = name;
-        sessionStorage.setItem('lager-pin-auth', 'true');
-        if (name) sessionStorage.setItem('lager-pin-name', name);
-      }
+      const name = user?.displayName || user?.email || sessionStorage.getItem('lager-pin-name') || savedName || '';
+      document.getElementById('nav-user').textContent = name;
 
       await loadArtikel();
-      startScanner();
-      focusBtInput();
     });
 
-    // ── Load Artikel ──
+    // ── Artikel laden ──
     async function loadArtikel() {
       const snap = await getDocs(collection(db, 'artikel'));
-      alleArtikel = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-
-      // Manuell-Dropdown füllen
-      const sel = document.getElementById('manual-artikel');
-      sel.innerHTML = '<option value="">– Artikel wählen –</option>';
-      [...alleArtikel].sort((a,b) => (a.name||'').localeCompare(b.name||'')).forEach(a => {
-        const o = document.createElement('option');
-        o.value = a.id;
-        o.textContent = `${a.name}${a.lp ? ` · ${a.lp}` : ''}`;
-        sel.appendChild(o);
-      });
+      alleArtikel = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+        .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
     }
-
-    // ── Scanner ──
-    async function startScanner() {
-      try {
-        const facingMode = currentCamera === 'back' ? 'environment' : 'user';
-        const hints = new Map();
-        hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, [
-          ZXing.BarcodeFormat.DATA_MATRIX,
-          ZXing.BarcodeFormat.QR_CODE,
-        ]);
-        hints.set(ZXing.DecodeHintType.TRY_HARDER, true);
-
-        codeReader = new ZXing.BrowserMultiFormatReader(hints);
-        await codeReader.decodeFromConstraints(
-          { video: { facingMode, width: { ideal: 1280 }, height: { ideal: 720 } } },
-          'video',
-          (result, err) => {
-            if (result && scanning) {
-              scanning = false;
-              onScanResult(result.getText());
-            }
-          }
-        );
-
-        // QuaGGA für 1D Codes – nach kurzem Delay wenn Video läuft
-        setTimeout(() => startQuaGGA(facingMode), 1500);
-
-      } catch(e) {
-        console.error('Scanner:', e);
-        if (e.name === 'NotAllowedError') {
-          showToast('Kamera-Zugriff verweigert – bitte in Browsereinstellungen erlauben', 'error');
-        } else if (e.name === 'NotFoundError') {
-          showToast('Keine Kamera gefunden', 'error');
-        } else {
-          showToast('Kamera Fehler: ' + e.message, 'error');
-        }
-      }
-    }
-
-    function startQuaGGA(facingMode) {
-      if (typeof Quagga === 'undefined' || quaggaRunning) return;
-      const videoEl = document.getElementById('video');
-      if (!videoEl.srcObject) return;
-
-      Quagga.init({
-        inputStream: {
-          type: 'LiveStream',
-          target: videoEl,
-          constraints: { facingMode },
-        },
-        decoder: { readers: ['code_128_reader', 'ean_reader', 'ean_8_reader'] },
-        locate: true,
-        numOfWorkers: 0,
-        frequency: 8,
-      }, err => {
-        if (err) { console.warn('QuaGGA:', err); return; }
-        quaggaRunning = true;
-        Quagga.start();
-      });
-
-      Quagga.onDetected(res => {
-        if (!scanning) return;
-        const code = res?.codeResult?.code;
-        if (!code || code.length < 4) return;
-        const errs   = (res.codeResult.decodedCodes || []).filter(x => x.error !== undefined).map(x => x.error);
-        const avgErr = errs.length ? errs.reduce((s,e) => s+e, 0) / errs.length : 0;
-        if (avgErr > 0.25) return;
-        scanning = false;
-        stopQuaGGA();
-        onScanResult(code);
-      });
-    }
-
-    function stopQuaGGA() {
-      if (typeof Quagga !== 'undefined' && quaggaRunning) {
-        try { Quagga.stop(); } catch(e) {}
-        quaggaRunning = false;
-      }
-    }
-
-    window.switchCamera = async function(side) {
-      currentCamera = side;
-      document.getElementById('btn-back').classList.toggle('active', side === 'back');
-      document.getElementById('btn-front').classList.toggle('active', side === 'front');
-
-      // QuaGGA stoppen
-      stopQuaGGA();
-
-      // ZXing stoppen und Video-Stream komplett freigeben
-      if (codeReader) {
-        try { codeReader.reset(); } catch(e) {}
-        codeReader = null;
-      }
-
-      // Laufenden Video-Stream explizit stoppen
-      const videoEl = document.getElementById('video');
-      if (videoEl.srcObject) {
-        videoEl.srcObject.getTracks().forEach(t => t.stop());
-        videoEl.srcObject = null;
-      }
-
-      // Kurze Pause damit Kamera freigegeben wird
-      await new Promise(r => setTimeout(r, 400));
-
-      scanning = true;
-      await startScanner();
-    };
-
-    window.toggleLight = async function() {
-      const videoEl = document.getElementById('video');
-      const stream  = videoEl.srcObject;
-      if (!stream) return;
-      const track = stream.getVideoTracks()[0];
-      if (!track) return;
-      try {
-        const settings = track.getSettings();
-        await track.applyConstraints({ advanced: [{ torch: !settings.torch }] });
-        document.getElementById('btn-light').classList.toggle('active', !settings.torch);
-      } catch(e) { showToast('Licht nicht verfügbar'); }
-    };
-
-    // ── Scan Result ──
-    function onScanResult(raw, preParsed = null) {
-      if (navigator.vibrate) navigator.vibrate(100);
-      document.getElementById('status-idle').classList.add('hidden');
-      // BT-Input nach Scan sofort wieder fokussieren
-      setTimeout(() => {
-        const input = document.getElementById('bt-input');
-        if (input && btActive) try { input.focus(); } catch(e) {}
-      }, 300);
-
-      let parsed;
-      if (preParsed) {
-        parsed = { ...preParsed, raw };
-      } else if (raw.startsWith('+') || raw.startsWith('/')) {
-        parsed = parseHIBC(raw);
-        if (!parsed.lot && !parsed.verfall) parsed = parseGS1(raw);
-      } else {
-        parsed = parseGS1(raw);
-      }
-
-      scanResult = parsed;
-
-      // Bekannten Artikel suchen
-      const artikel = findArtikelByGtin(parsed.gtin);
-      selectedArtikel = artikel;
-
-      // Karte befüllen
-      const badge   = document.getElementById('result-badge');
-      const nameEl  = document.getElementById('result-name');
-      const gtinEl  = document.getElementById('result-gtin');
-      const lotEl   = document.getElementById('result-lot');
-      const verfEl  = document.getElementById('result-verfall');
-      const daysEl  = document.getElementById('result-days');
-      const statEl  = document.getElementById('result-status');
-
-      if (artikel) {
-        badge.textContent = 'BEKANNT';
-        badge.className   = 'result-badge badge-known';
-        nameEl.textContent = artikel.name;
-        gtinEl.textContent = parsed.gtin || '';
-        document.getElementById('artikel-search-wrap').classList.add('hidden');
-        showChargen(artikel);
-      } else {
-        badge.textContent = 'UNBEKANNT';
-        badge.className   = 'result-badge badge-unknown';
-        nameEl.textContent = 'Produkt nicht erkannt';
-        gtinEl.textContent = parsed.gtin || raw.substring(0,20);
-        document.getElementById('artikel-search-wrap').classList.remove('hidden');
-        document.getElementById('chargen-section').classList.add('hidden');
-      }
-
-      lotEl.textContent  = parsed.lot    || '–';
-      if (parsed.verfall) {
-        const d    = new Date(parsed.verfall + (parsed.verfall.length === 7 ? '-01' : ''));
-        const days = Math.round((d - new Date()) / 86400000);
-        verfEl.textContent = d.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
-        daysEl.textContent = days <= 0 ? 'ABGELAUFEN' : `${days} Tage`;
-        daysEl.className   = 'result-value ' + (days <= 30 ? 'warn' : 'ok');
-        if (days <= 0)       { statEl.textContent = '🔴 Abgelaufen'; statEl.className = 'result-value warn'; }
-        else if (days <= 7)  { statEl.textContent = '🔴 Kritisch';   statEl.className = 'result-value warn'; }
-        else if (days <= 30) { statEl.textContent = '🟡 Bald';       statEl.className = 'result-value warn'; }
-        else                 { statEl.textContent = '🟢 OK';         statEl.className = 'result-value ok';   }
-      } else {
-        verfEl.textContent = '–';
-        daysEl.textContent = '–';
-        statEl.textContent = '–';
-        daysEl.className = statEl.className = 'result-value';
-      }
-
-      // Fehlende Daten anzeigen
-      const missingWrap = document.getElementById('missing-wrap');
-      const noLot    = !parsed.lot;
-      const noVerfall= !parsed.verfall;
-      if (noLot || noVerfall) {
-        missingWrap.classList.remove('hidden');
-        document.getElementById('missing-lot-wrap').style.display    = noLot    ? 'block' : 'none';
-        document.getElementById('missing-verfall-wrap').style.display = noVerfall? 'block' : 'none';
-      } else {
-        missingWrap.classList.add('hidden');
-      }
-
-      document.getElementById('result-card').classList.remove('hidden');
-    }
-
-    window.updateMissing = function(field, val) {
-      if (!scanResult) return;
-      if (field === 'lot')     scanResult.lot     = val;
-      if (field === 'verfall') scanResult.verfall = val;
-      // Anzeige aktualisieren
-      if (field === 'lot')    document.getElementById('result-lot').textContent = val || '–';
-      if (field === 'verfall' && val) {
-        const d    = new Date(val + 'T12:00:00');
-        const days = Math.round((d - new Date()) / 86400000);
-        document.getElementById('result-verfall').textContent = d.toLocaleDateString('de-DE');
-        document.getElementById('result-days').textContent    = days <= 0 ? 'ABGELAUFEN' : `${days} Tage`;
-      }
-    };
 
     // ── Artikel suchen ──
-    window.searchArtikel = function(q) {
-      const list = document.getElementById('artikel-suggestions');
-      if (!q || q.length < 2) { list.innerHTML = ''; return; }
-      const lower = q.toLowerCase();
-      const hits  = alleArtikel.filter(a =>
-        a.name?.toLowerCase().includes(lower) ||
-        a.lp?.toLowerCase().includes(lower) ||
-        (a.aliases || []).some(al => al.toLowerCase().includes(lower))
-      ).slice(0, 6);
-      list.innerHTML = '';
+    window.onArtikelSearch = function(q) {
+      const sugg = document.getElementById('f-suggestions');
+      if (!q || q.length < 2) { sugg.classList.add('hidden'); return; }
+
+      const hits = alleArtikel.filter(a =>
+        a.name?.toLowerCase().includes(q.toLowerCase()) ||
+        a.lp?.toLowerCase().includes(q.toLowerCase()) ||
+        (a.aliases || []).some(al => al.toLowerCase().includes(q.toLowerCase()))
+      ).slice(0, 8);
+
+      sugg.innerHTML = '';
+      sugg.classList.toggle('hidden', hits.length === 0);
+
       hits.forEach(a => {
         const div = document.createElement('div');
         div.className = 'suggestion';
-        div.innerHTML = `<strong>${a.name}</strong><span style="color:var(--muted);font-size:0.7rem;margin-left:6px;">${a.lp || ''}</span>`;
-        div.addEventListener('click', () => selectArtikel(a.id));
-        list.appendChild(div);
+        div.innerHTML = `<div class="suggestion-name">${a.name}</div>
+          <div class="suggestion-sub">${a.lp || ''}</div>`;
+        div.addEventListener('click', () => selectArtikel(a));
+        sugg.appendChild(div);
       });
     };
 
-    window.selectArtikel = function(id) {
-      selectedArtikel = alleArtikel.find(a => a.id === id);
-      if (!selectedArtikel) return;
-      document.getElementById('artikel-search').value = selectedArtikel.name;
-      document.getElementById('artikel-suggestions').innerHTML = '';
-      document.getElementById('artikel-search-wrap').classList.add('hidden');
-      showChargen(selectedArtikel);
+    function selectArtikel(a) {
+      selectedArtikel = a;
+      document.getElementById('f-artikel-search').value = '';
+      document.getElementById('f-suggestions').classList.add('hidden');
+      document.getElementById('f-artikel-id').value = a.id;
+
+      const nameEl = document.getElementById('f-artikel-name');
+      document.getElementById('f-artikel-name-text').textContent = a.name;
+      nameEl.classList.remove('hidden');
+      nameEl.style.display = 'flex';
+
+      showChargen(a);
+    }
+
+    window.clearArtikel = function() {
+      selectedArtikel = null;
+      document.getElementById('f-artikel-id').value    = '';
+      document.getElementById('f-artikel-search').value = '';
+      document.getElementById('f-artikel-name').classList.add('hidden');
+      document.getElementById('chargen-wrap').classList.add('hidden');
     };
 
-    function showChargen(artikel) {
-      if (!artikel) return;
-      const section = document.getElementById('chargen-section');
-      const list    = document.getElementById('chargen-list');
-      const chargen = (artikel.chargen || []).sort((a,b) => (a.verfall||'').localeCompare(b.verfall||''));
-      list.innerHTML = chargen.length === 0
-        ? '<div style="font-size:0.75rem;color:var(--muted);padding:4px 0;">Noch keine Chargen</div>'
-        : chargen.map((c, i) => {
-            const days = c.verfall ? Math.round((new Date(c.verfall) - new Date()) / 86400000) : null;
-            const color = days === null ? 'var(--muted)' : days <= 7 ? 'var(--red)' : days <= 30 ? 'var(--yellow)' : 'var(--green)';
-            return `<div class="charge-item">
-              <span style="color:var(--text2);font-weight:600;">${c.lot || '–'}</span>
-              <span style="color:${color};">${c.verfall ? new Date(c.verfall + (c.verfall.length===7?'-01':'')).toLocaleDateString('de-DE',{month:'2-digit',year:'numeric'}) : '–'}</span>
-              <button class="charge-del" onclick="deleteCharge('${artikel.id}',${i})">🗑️</button>
-            </div>`;
-          }).join('');
-      section.classList.remove('hidden');
+    function findArtikelByGtin(gtin) {
+      if (!gtin) return null;
+      return alleArtikel.find(a =>
+        a.gtin === gtin ||
+        (Array.isArray(a.gtins) && a.gtins.includes(gtin)) ||
+        (a.chargen || []).some(c => c.gtin === gtin)
+      ) || null;
+    }
+
+    // ── Verfall Info ──
+    window.onVerfallChange = function() {
+      const val  = document.getElementById('f-verfall').value;
+      const info = document.getElementById('f-verfall-info');
+      if (!val) { info.classList.add('hidden'); return; }
+
+      const d    = new Date(val + 'T12:00:00');
+      const days = Math.round((d - new Date()) / 86400000);
+      const fmt  = d.toLocaleDateString('de-DE', { day:'2-digit', month:'2-digit', year:'numeric' });
+
+      let cls = 'pill-ok', label = `🟢 OK · ${Math.round(days/30)} Monate`;
+      if (days <= 0)       { cls = 'pill-warn'; label = '🔴 ABGELAUFEN'; }
+      else if (days <= 7)  { cls = 'pill-warn'; label = `🔴 Kritisch · ${days} Tage`; }
+      else if (days <= 30) { cls = 'pill-mid';  label = `🟡 Bald · ${days} Tage`; }
+
+      info.innerHTML = `<span class="status-pill ${cls}">${label}</span>`;
+      info.classList.remove('hidden');
+    };
+
+    // ── Chargen anzeigen ──
+    function showChargen(a) {
+      const wrap = document.getElementById('chargen-wrap');
+      const list = document.getElementById('chargen-list');
+      const chargen = (a.chargen || []).sort((x, y) => (x.verfall || '').localeCompare(y.verfall || ''));
+
+      if (chargen.length === 0) { wrap.classList.add('hidden'); return; }
+
+      list.innerHTML = chargen.map((c, i) => {
+        const days  = c.verfall ? Math.round((new Date(c.verfall + 'T12:00:00') - new Date()) / 86400000) : null;
+        const color = days === null ? 'var(--muted)' : days <= 7 ? 'var(--red)' : days <= 30 ? 'var(--yellow)' : 'var(--green)';
+        const label = days === null ? '–' : days <= 0 ? 'Abgelaufen' : days <= 30 ? `${days}d` : `${Math.round(days/30)}M`;
+        const verfDate = c.verfall ? new Date(c.verfall + 'T12:00:00').toLocaleDateString('de-DE', { month:'2-digit', year:'numeric' }) : '–';
+        return `<div class="charge-item">
+          <div class="charge-dot" style="background:${color}"></div>
+          <span style="flex:1;">${c.lot || '–'} · ${verfDate}</span>
+          <span style="color:${color};font-weight:600;">${label}</span>
+          <button class="charge-del" onclick="deleteCharge('${a.id}',${i})">✕</button>
+        </div>`;
+      }).join('');
+
+      wrap.classList.remove('hidden');
     }
 
     window.deleteCharge = async function(artikelId, idx) {
@@ -633,315 +359,276 @@
       const chargen = [...(a.chargen || [])];
       chargen.splice(idx, 1);
       await updateDoc(doc(db, 'artikel', artikelId), { chargen });
-      const i = alleArtikel.findIndex(x => x.id === artikelId);
-      if (i >= 0) { alleArtikel[i].chargen = chargen; }
+      a.chargen = chargen;
       if (selectedArtikel?.id === artikelId) { selectedArtikel.chargen = chargen; showChargen(selectedArtikel); }
     };
 
     // ── Speichern ──
-    window.speichern = async function() {
-      if (!selectedArtikel) { showToast('Artikel auswählen!', 'error'); return; }
-      if (userRole === 'mitarbeiter') { showToast('Nur Wachenleiter können speichern', 'error'); return; }
+    window.saveCharge = async function() {
+      if (!selectedArtikel) { showToast('Bitte Artikel wählen', 'error'); return; }
+
+      const lot    = document.getElementById('f-lot').value.trim();
+      const verfall= document.getElementById('f-verfall').value;
+
+      if (!lot && !verfall) { showToast('Charge oder Datum eingeben', 'error'); return; }
 
       const ref       = doc(db, 'artikel', selectedArtikel.id);
-      const fresh     = await getDoc(ref);
-      const freshData = fresh.exists() ? fresh.data() : {};
-      const chargen   = [...(freshData.chargen || [])];
-
-      const existsIdx = chargen.findIndex(c => c.lot && c.lot === scanResult.lot);
-      if (existsIdx >= 0) {
-        chargen[existsIdx].verfall = scanResult.verfall || chargen[existsIdx].verfall;
-        chargen[existsIdx].gtin    = scanResult.gtin    || chargen[existsIdx].gtin;
-        showToast(`Charge ${scanResult.lot} aktualisiert ✅`);
-      } else {
-        chargen.push({ lot: scanResult.lot || 'Unbekannt', verfall: scanResult.verfall || null, gtin: scanResult.gtin || null, erfasst: new Date().toISOString() });
-        showToast('Neue Charge gespeichert ✅');
-      }
-
-      const updateData = { chargen };
-      if (scanResult.gtin) {
-        const existing = Array.isArray(freshData.gtins) ? [...freshData.gtins] : (freshData.gtin ? [freshData.gtin] : []);
-        if (!existing.includes(scanResult.gtin)) existing.push(scanResult.gtin);
-        updateData.gtin  = scanResult.gtin;
-        updateData.gtins = existing;
-      }
-
-      await updateDoc(ref, updateData);
-      const i = alleArtikel.findIndex(a => a.id === selectedArtikel.id);
-      if (i >= 0) { alleArtikel[i] = { ...alleArtikel[i], ...updateData }; selectedArtikel = alleArtikel[i]; }
-      showChargen(selectedArtikel);
-      setTimeout(() => resetScanner(), 1500);
-    };
-
-    // ── Manuell speichern ──
-    window.saveManual = async function() {
-      const artikelId = document.getElementById('manual-artikel').value;
-      const lot       = document.getElementById('manual-lot').value.trim();
-      const verfall   = document.getElementById('manual-verfall').value;
-      if (!artikelId) { showToast('Artikel auswählen!', 'error'); return; }
-      if (!lot && !verfall) { showToast('Charge oder Datum eingeben', 'error'); return; }
-      if (userRole === 'mitarbeiter') { showToast('Nur Wachenleiter können speichern', 'error'); return; }
-
-      const ref       = doc(db, 'artikel', artikelId);
-      const fresh     = await getDoc(ref);
-      const freshData = fresh.exists() ? fresh.data() : {};
-      const chargen   = [...(freshData.chargen || [])];
+      const snap      = await getDoc(ref);
+      const chargen   = [...(snap.data()?.chargen || [])];
       const existsIdx = chargen.findIndex(c => c.lot && c.lot === lot);
 
       if (existsIdx >= 0) {
-        chargen[existsIdx].verfall = verfall || chargen[existsIdx].verfall;
-        showToast('Charge aktualisiert ✅');
+        chargen[existsIdx] = { ...chargen[existsIdx], verfall: verfall || chargen[existsIdx].verfall };
+        showToast(`Charge ${lot} aktualisiert ✅`);
       } else {
         chargen.push({ lot: lot || 'Unbekannt', verfall: verfall || null, erfasst: new Date().toISOString() });
         showToast('Charge gespeichert ✅');
       }
 
       await updateDoc(ref, { chargen });
-      const i = alleArtikel.findIndex(a => a.id === artikelId);
+      selectedArtikel.chargen = chargen;
+      const i = alleArtikel.findIndex(a => a.id === selectedArtikel.id);
       if (i >= 0) alleArtikel[i].chargen = chargen;
 
-      document.getElementById('manual-lot').value    = '';
-      document.getElementById('manual-verfall').value = '';
-      document.getElementById('manual-artikel').value = '';
+      // Felder leeren
+      document.getElementById('f-lot').value    = '';
+      document.getElementById('f-verfall').value = '';
+      document.getElementById('f-lot').classList.remove('filled');
+      document.getElementById('f-verfall').classList.remove('filled');
+      document.getElementById('f-verfall-info').classList.add('hidden');
+
+      showChargen(selectedArtikel);
     };
 
-    // ── Reset ──
-    window.resetScanner = function() {
-      scanResult      = null;
-      selectedArtikel = null;
-      scanning        = true;
-      document.getElementById('result-card').classList.add('hidden');
-      document.getElementById('status-idle').classList.remove('hidden');
-      document.getElementById('artikel-search').value = '';
-      document.getElementById('artikel-suggestions').innerHTML = '';
-      document.getElementById('missing-wrap').classList.add('hidden');
-      // BT-Input wieder fokussieren
-      setTimeout(() => {
-        const input = document.getElementById('bt-input');
-        if (input && btActive) try { input.focus(); } catch(e) {}
-      }, 200);
-    };
+    // ── Scan Ergebnis verarbeiten ──
+    function onScanResult(raw) {
+      if (!raw || raw.trim().length < 4) return;
+      if (navigator.vibrate) navigator.vibrate(80);
 
-    // ── GTIN → Artikel ──
-    function findArtikelByGtin(gtin) {
-      if (!gtin) return null;
-      const g = gtin.trim();
-      return alleArtikel.find(a =>
-        a.gtin === g ||
-        (Array.isArray(a.gtins) && a.gtins.includes(g)) ||
-        (Array.isArray(a.chargen) && a.chargen.some(c => c.gtin === g))
-      ) || null;
+      const parsed = raw.startsWith('+') || raw.startsWith('/')
+        ? parseHIBC(raw) : parseGS1(raw);
+
+      // Artikel automatisch zuordnen
+      if (parsed.gtin) {
+        const a = findArtikelByGtin(parsed.gtin);
+        if (a && !selectedArtikel) selectArtikel(a);
+      }
+
+      // Felder füllen
+      if (parsed.lot) {
+        const el = document.getElementById('f-lot');
+        el.value = parsed.lot;
+        el.classList.add('filled');
+      }
+      if (parsed.verfall) {
+        const el = document.getElementById('f-verfall');
+        // Datum normalisieren auf YYYY-MM-DD
+        let d = parsed.verfall;
+        if (d.length === 7) d = d + '-01'; // YYYY-MM → YYYY-MM-01
+        el.value = d;
+        el.classList.add('filled');
+        onVerfallChange();
+      }
+
+      showToast('Code erkannt ✅');
     }
 
     // ── GS1 Parser ──
     function parseGS1(raw) {
-      const result = { gtin: null, lot: null, verfall: null, raw };
-      const clean  = raw.replace(/[^\x20-\x7E]/g, '').trim();
+      const r = { gtin: null, lot: null, verfall: null };
+      const s = raw.replace(/[^\x20-\x7E]/g, '').trim();
 
-      // Mit Klammern: (01)...(17)...(10)...
-      if (clean.includes('(01)') || clean.includes('(17)') || clean.includes('(10)')) {
-        const ai01 = clean.match(/\(01\)(\d{14})/);
-        const ai17 = clean.match(/\(17\)(\d{6})/);
-        const ai10 = clean.match(/\(10\)([A-Z0-9\-\/]+?)(?:\(|$)/i);
-        if (ai01) result.gtin   = ai01[1];
-        if (ai10) result.lot    = ai10[1].trim();
-        if (ai17) {
-          const d  = ai17[1];
-          const yy = parseInt(d.substring(0,2));
-          const mm = parseInt(d.substring(2,4));
-          const dd = parseInt(d.substring(4,6));
-          if (mm >= 1 && mm <= 12 && yy >= 20 && yy <= 40) {
-            const day = (dd >= 1 && dd <= 31) ? String(dd).padStart(2,'0') : '28';
-            result.verfall = `20${String(yy).padStart(2,'0')}-${String(mm).padStart(2,'0')}-${day}`;
-          }
+      // Mit Klammern
+      if (s.includes('(01)') || s.includes('(17)') || s.includes('(10)')) {
+        const g = s.match(/\(01\)(\d{14})/);
+        const v = s.match(/\(17\)(\d{6})/);
+        const l = s.match(/\(10\)([A-Z0-9\-\/]+?)(?:\(|$)/i);
+        if (g) r.gtin = g[1];
+        if (l) r.lot  = l[1].trim();
+        if (v) {
+          const yy = parseInt(v[1].substring(0,2)), mm = parseInt(v[1].substring(2,4)), dd = parseInt(v[1].substring(4,6));
+          if (mm >= 1 && mm <= 12 && yy >= 20 && yy <= 40)
+            r.verfall = `20${String(yy).padStart(2,'0')}-${String(mm).padStart(2,'0')}-${dd >= 1 && dd <= 31 ? String(dd).padStart(2,'0') : '28'}`;
         }
-        return result;
+        return r;
       }
 
-      // Ohne Klammern: Rohe AIs – GS1-128 Scanner-Output
-      // Format: 01[14-GTIN]17[6-Datum]10[LOT] oder 01[14-GTIN]10[LOT]17[6-Datum]
-      if (clean.length >= 16) {
-        // Versuche AI 01 (GTIN-14)
-        let pos = 0;
-        while (pos < clean.length - 2) {
-          const ai = clean.substring(pos, pos + 2);
-          if (ai === '01' && clean.length >= pos + 16) {
-            result.gtin = clean.substring(pos + 2, pos + 16);
-            pos += 16;
-          } else if (ai === '17' && clean.length >= pos + 8) {
-            const d  = clean.substring(pos + 2, pos + 8);
-            const yy = parseInt(d.substring(0,2));
-            const mm = parseInt(d.substring(2,4));
-            const dd = parseInt(d.substring(4,6));
-            if (mm >= 1 && mm <= 12 && yy >= 20 && yy <= 40) {
-              const day = dd >= 1 && dd <= 31 ? String(dd).padStart(2,'0') : '28';
-              result.verfall = `20${String(yy).padStart(2,'0')}-${String(mm).padStart(2,'0')}-${day}`;
-            }
-            pos += 8;
-          } else if (ai === '10') {
-            // LOT: variabel, bis nächste bekannte AI oder Ende
-            const rest = clean.substring(pos + 2);
-            const nextAI = rest.search(/17\d{6}|11\d{6}|21/);
-            result.lot = nextAI > 0 ? rest.substring(0, nextAI).trim() : rest.trim();
-            break;
-          } else if (ai === '11' && clean.length >= pos + 8) {
-            pos += 8; // Herstellungsdatum überspringen
-          } else if (ai === '21') {
-            pos += 2; // Seriennummer überspringen
-          } else {
-            pos++; // Unbekannte AI – weiter
-          }
-        }
+      // Ohne Klammern – AI sequentiell lesen
+      let pos = 0;
+      while (pos < s.length - 2) {
+        const ai = s.substring(pos, pos + 2);
+        if (ai === '01' && s.length >= pos + 16) {
+          r.gtin = s.substring(pos + 2, pos + 16); pos += 16;
+        } else if (ai === '17' && s.length >= pos + 8) {
+          const d = s.substring(pos + 2, pos + 8);
+          const yy = parseInt(d.substring(0,2)), mm = parseInt(d.substring(2,4)), dd = parseInt(d.substring(4,6));
+          if (mm >= 1 && mm <= 12 && yy >= 20 && yy <= 40)
+            r.verfall = `20${String(yy).padStart(2,'0')}-${String(mm).padStart(2,'0')}-${dd >= 1 && dd <= 31 ? String(dd).padStart(2,'0') : '28'}`;
+          pos += 8;
+        } else if (ai === '10') {
+          const rest = s.substring(pos + 2);
+          const next = rest.search(/17\d{6}|11\d{6}/);
+          r.lot = (next > 0 ? rest.substring(0, next) : rest).trim();
+          break;
+        } else if (ai === '11' && s.length >= pos + 8) { pos += 8;
+        } else { pos++; }
       }
-      return result;
+      return r;
     }
 
     // ── HIBC Parser ──
     function parseHIBC(raw) {
-      const result = { gtin: null, lot: null, verfall: null, raw };
-      const parts  = raw.split('/$$');
-      if (parts.length < 2) return result;
-      const secData = parts[1];
-      const mm_str  = secData.substring(0,2);
-      const yy_str  = secData.substring(2,4);
-      const monat   = parseInt(mm_str);
-      const jahr    = 2000 + parseInt(yy_str);
-      if (monat >= 1 && monat <= 12 && jahr >= 2020 && jahr <= 2040) {
-        const letzter  = new Date(jahr, monat, 0).getDate();
-        result.verfall = `${jahr}-${String(monat).padStart(2,'0')}-${String(letzter).padStart(2,'0')}`;
-        const lotRaw   = secData.substring(4);
-        result.lot     = lotRaw.length > 1 ? lotRaw.slice(0,-1).trim() : lotRaw.trim();
+      const r     = { gtin: null, lot: null, verfall: null };
+      const parts = raw.split('/$$');
+      if (parts.length < 2) return r;
+      const sec = parts[1];
+      const mm  = parseInt(sec.substring(0,2));
+      const yy  = 2000 + parseInt(sec.substring(2,4));
+      if (mm >= 1 && mm <= 12 && yy >= 2020 && yy <= 2040) {
+        const last = new Date(yy, mm, 0).getDate();
+        r.verfall = `${yy}-${String(mm).padStart(2,'0')}-${String(last).padStart(2,'0')}`;
+        const lot = sec.substring(4);
+        r.lot = lot.length > 1 ? lot.slice(0,-1).trim() : lot.trim();
       }
-      return result;
+      return r;
     }
 
-
-
-
-
-    // ── Bluetooth Scanner ──
-    let btBuffer  = '';
-    let btTimer   = null;
-    let btActive  = false;
-
-    window.focusBtInput = function() {
-      const input = document.getElementById('bt-input');
-      if (!input) return;
-      try { input.focus(); } catch(e) {}
-      // Nicht setBtActive(true) – grün erst wenn echter Scanner-Input kommt
+    // ── Kamera ──
+    window.toggleCamera = async function() {
+      if (cameraOn) {
+        stopCamera();
+      } else {
+        await startCamera();
+      }
     };
 
-    function setBtActive(active) {
-      btActive = active;
-      const dot   = document.getElementById('bt-dot');
-      const label = document.getElementById('bt-label');
-      const sub   = document.getElementById('bt-sub');
-      if (!dot || !label || !sub) return;
-      if (active) {
-        dot.classList.add('active');
-        label.textContent = '📡 Bluetooth-Scanner aktiv';
-        label.style.color = 'var(--green)';
-        sub.textContent   = 'Bereit zum Scannen';
-      } else {
-        dot.classList.remove('active');
-        label.textContent = '📡 Bluetooth-Scanner';
-        label.style.color = '';
-        sub.textContent   = 'Tippen zum Aktivieren';
+    async function startCamera() {
+      const wrap = document.getElementById('camera-wrap');
+      wrap.classList.add('visible');
+      document.getElementById('btn-camera').classList.add('active');
+      cameraOn = true;
+
+      try {
+        const hints = new Map();
+        hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, [ZXing.BarcodeFormat.DATA_MATRIX, ZXing.BarcodeFormat.QR_CODE]);
+        hints.set(ZXing.DecodeHintType.TRY_HARDER, true);
+        codeReader = new ZXing.BrowserMultiFormatReader(hints);
+
+        await codeReader.decodeFromConstraints(
+          { video: { facingMode: currentCam === 'back' ? 'environment' : 'user', width:{ideal:1280}, height:{ideal:720} } },
+          'video',
+          (result) => { if (result && cameraOn) { onScanResult(result.getText()); } }
+        );
+
+        setTimeout(() => startQuaGGA(), 1500);
+      } catch(e) {
+        showToast('Kamera: ' + (e.name === 'NotAllowedError' ? 'Zugriff verweigert' : e.message), 'error');
+        stopCamera();
       }
     }
 
-    const btInput = document.getElementById('bt-input');
-    btInput.addEventListener('focus', () => setBtActive(true));
-    btInput.addEventListener('blur', () => {
-      // Nur grau wenn kein aktiver Scanner (d.h. noch nie Input erhalten)
-      setTimeout(() => {
-        if (document.activeElement !== btInput && !btActive) setBtActive(false);
-      }, 300);
-    });
-    let btLastInput  = 0;
-    let btCharCount  = 0;
-    const BT_MIN_CHARS = 6;    // Echter Scanner sendet mindestens 6 Zeichen
-    const BT_MAX_MS    = 80;   // ...in unter 80ms
+    function stopCamera() {
+      cameraOn = false;
+      const wrap = document.getElementById('camera-wrap');
+      wrap.classList.remove('visible');
+      document.getElementById('btn-camera').classList.remove('active');
+      stopQuaGGA();
+      if (codeReader) { try { codeReader.reset(); } catch(e) {} codeReader = null; }
+      const vid = document.getElementById('video');
+      if (vid.srcObject) { vid.srcObject.getTracks().forEach(t => t.stop()); vid.srcObject = null; }
+    }
 
-    btInput.addEventListener('input', () => {
+    function startQuaGGA() {
+      if (typeof Quagga === 'undefined' || quaggaRunning) return;
+      const vid = document.getElementById('video');
+      if (!vid.srcObject) return;
+      Quagga.init({
+        inputStream: { type:'LiveStream', target:vid, constraints:{facingMode: currentCam === 'back' ? 'environment' : 'user'} },
+        decoder: { readers:['code_128_reader','ean_reader','ean_8_reader'] },
+        locate:true, numOfWorkers:0, frequency:8,
+      }, err => {
+        if (err) { console.warn('QuaGGA:', err); return; }
+        quaggaRunning = true;
+        Quagga.start();
+      });
+      Quagga.onDetected(res => {
+        if (!cameraOn) return;
+        const code = res?.codeResult?.code;
+        if (!code || code.length < 4) return;
+        const errs   = (res.codeResult.decodedCodes||[]).filter(x=>x.error!==undefined).map(x=>x.error);
+        const avgErr = errs.length ? errs.reduce((s,e)=>s+e,0)/errs.length : 0;
+        if (avgErr > 0.25) return;
+        onScanResult(code);
+      });
+    }
+
+    function stopQuaGGA() {
+      if (typeof Quagga !== 'undefined' && quaggaRunning) { try { Quagga.stop(); } catch(e) {} quaggaRunning = false; }
+    }
+
+    window.switchCam = async function(side) {
+      currentCam = side;
+      document.getElementById('cam-back').classList.toggle('active', side==='back');
+      document.getElementById('cam-front').classList.toggle('active', side==='front');
+      stopCamera();
+      await new Promise(r => setTimeout(r, 300));
+      await startCamera();
+    };
+
+    window.toggleLight = async function() {
+      const vid = document.getElementById('video');
+      if (!vid.srcObject) return;
+      const track = vid.srcObject.getVideoTracks()[0];
+      if (!track) return;
+      try {
+        const torch = !track.getSettings().torch;
+        await track.applyConstraints({ advanced: [{ torch }] });
+        document.getElementById('cam-light').classList.toggle('active', torch);
+      } catch(e) { showToast('Licht nicht verfügbar'); }
+    };
+
+    // ── Bluetooth ──
+    // Nutzt keydown auf document – funktioniert auf iPad, PC und Mac
+    window.toggleBluetooth = function() {
+      btOn = !btOn;
+      const btn    = document.getElementById('btn-bt');
+      const status = document.getElementById('bt-status');
+      btn.classList.toggle('bt-active', btOn);
+      btn.textContent = btOn ? '📡 BT Aktiv' : '📡 Bluetooth';
+      status.classList.toggle('hidden', !btOn);
+    };
+
+    // Keydown auf document – HID Scanner sendet Tastatureingaben
+    let lastKey = 0;
+    document.addEventListener('keydown', e => {
+      if (!btOn) return;
+      // Nur wenn kein Inputfeld fokussiert ist
+      const tag = document.activeElement?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+
       const now = Date.now();
-      const val = btInput.value;
-      btInput.value = '';
+      if (now - lastKey > 300) btBuffer = ''; // Reset nach Pause
+      lastKey = now;
 
-      if (!val) return;
-
-      // Zeitdelta seit letztem Zeichen
-      const delta = now - btLastInput;
-      btLastInput  = now;
-
-      // Wenn delta zu groß → neuer Buffer
-      if (delta > 200) {
-        btBuffer   = '';
-        btCharCount = 0;
-      }
-
-      btBuffer   += val;
-      btCharCount += val.length;
-
-      clearTimeout(btTimer);
-      btTimer = setTimeout(() => {
-        const code = btBuffer.trim();
-        btBuffer    = '';
-
-        // Nur verarbeiten wenn genug Zeichen in kurzer Zeit → echter Scanner
-        if (code.length >= BT_MIN_CHARS) {
-          setBtActive(true); // Jetzt erst grün
-          onScanResult(code);
+      if (e.key === 'Enter') {
+        if (btBuffer.length >= 4) {
+          onScanResult(btBuffer);
+          btBuffer = '';
         }
-        btCharCount = 0;
-      }, 120);
-    });
-    btInput.addEventListener('keydown', e => {
-      if (e.key === 'Enter' && btBuffer.trim().length > 2) {
-        clearTimeout(btTimer);
-        onScanResult(btBuffer.trim());
-        btBuffer = '';
-        btInput.value = '';
+        return;
       }
-    });
 
-    document.addEventListener('click', e => {
-      const skip = ['INPUT','BUTTON','SELECT','TEXTAREA','A'];
-      // Wenn BT aktiv → nach jedem Klick Fokus zurück
-      if (btActive && !skip.includes(e.target.tagName)) {
-        setTimeout(() => {
-          const input = document.getElementById('bt-input');
-          if (input) try { input.focus(); } catch(e) {}
-        }, 100);
-      }
+      if (e.key.length === 1) btBuffer += e.key;
     });
-
-    // Fokus überwachen – wenn BT aktiv und Fokus verloren → zurücksetzen
-    document.addEventListener('focusout', e => {
-      if (!btActive) return;
-      if (e.target.id !== 'bt-input') return;
-      setTimeout(() => {
-        if (document.activeElement?.id !== 'bt-input') {
-          const input = document.getElementById('bt-input');
-          if (input) try { input.focus(); } catch(e) {}
-        }
-      }, 150);
-    });
-
-    // Fokus setzen ohne grün zu werden – Scanner muss selbst Input senden
-    setTimeout(() => {
-      const input = document.getElementById('bt-input');
-      if (input) try { input.focus(); } catch(e) {}
-    }, 1000);
 
     // ── Toast ──
-    window.showToast = function(msg, type='success') {
+    window.showToast = function(msg, type = 'success') {
       const t = document.createElement('div');
-      t.className   = 'toast';
+      t.className = 'toast';
       t.textContent = msg;
-      t.style.background = type === 'error' ? '#ef4444' : '#1f2937';
+      t.style.background = type === 'error' ? '#ef4444' : type === 'warn' ? '#eab308' : '#22c55e';
       document.body.appendChild(t);
-      setTimeout(() => t.remove(), 2800);
+      setTimeout(() => t.remove(), 2500);
     };
 
   </script>
