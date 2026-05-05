@@ -98,6 +98,11 @@
 </head>
 <body>
 
+  <!-- BT Input: inputmode=none = keine Bildschirmtastatur, HID Scanner funktioniert -->
+  <input id="bt-input" type="text" inputmode="none"
+    style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0;font-size:16px;border:none;outline:none;"
+    autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+
   <nav>
     <button class="nav-back" onclick="history.back()">← Zurück</button>
     <div class="nav-logo">
@@ -514,55 +519,52 @@
     };
 
     // ── Bluetooth ──
-    // Methode: keydown auf window mit Geschwindigkeitserkennung
-    // Scanner sendet kompletten Code in < 30ms pro Zeichen
-    // Mensch tippt langsamer als 150ms pro Zeichen
+    const btEl = document.getElementById('bt-input');
 
     window.toggleBT = function() {
       btOn = !btOn;
       document.getElementById('btn-bt').classList.toggle('bt-on', btOn);
       document.getElementById('btn-bt').textContent = btOn ? '📡 BT Aktiv' : '📡 Bluetooth';
       document.getElementById('bt-hint').classList.toggle('show', btOn);
+      if (btOn) btFocus();
     };
 
-    window.addEventListener('keydown', function(e) {
+    function btFocus() {
       if (!btOn) return;
-      if (e.key === 'Process' || e.key === 'Unidentified') return;
+      btEl.value = '';
+      try { btEl.focus(); } catch(e) {}
+    }
 
-      const now   = Date.now();
-      const delta = now - bufLast;
-      bufLast     = now;
+    // Fokus halten
+    btEl.addEventListener('blur', () => {
+      if (btOn) setTimeout(btFocus, 80);
+    });
 
-      // Reset Buffer wenn > 500ms Pause
-      if (delta > 500) buf = '';
-
-      if (e.key === 'Enter' || e.key === 'Tab') {
-        e.preventDefault();
-        const code = buf.trim();
-        buf = '';
-        clearTimeout(bufTimer);
+    // Input sammeln (Hauptweg)
+    btEl.addEventListener('input', () => {
+      if (!btOn) return;
+      buf += btEl.value;
+      btEl.value = '';
+      clearTimeout(bufTimer);
+      bufTimer = setTimeout(() => {
+        const code = buf.trim(); buf = '';
         if (code.length >= 4) onScan(code);
-        return;
-      }
+      }, 150);
+    });
 
-      if (e.key.length === 1) {
-        // Scanner tippt SEHR schnell (< 30ms) – Mensch tippt > 150ms
-        // Wenn das erste Zeichen kommt oder es schnell ist → Scanner
-        if (buf.length === 0 || delta < 100) {
-          buf += e.key;
-          // Wenn aktives Element ein Inputfeld ist → Zeichen nicht reinlassen
-          const tag = document.activeElement?.tagName;
-          if (tag === 'INPUT' && delta < 100 && buf.length > 3) {
-            e.preventDefault();
-          }
-          clearTimeout(bufTimer);
-          bufTimer = setTimeout(() => {
-            const code = buf.trim();
-            buf = '';
-            if (code.length >= 4) onScan(code);
-          }, 150);
-        }
+    // Enter als Abschluss
+    btEl.addEventListener('keydown', e => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        clearTimeout(bufTimer);
+        const code = buf.trim(); buf = ''; btEl.value = '';
+        if (code.length >= 4) onScan(code);
       }
+    });
+
+    // Klick → Fokus zurück
+    document.addEventListener('pointerdown', () => {
+      if (btOn) setTimeout(btFocus, 150);
     });
 
     // ── Toast ──
