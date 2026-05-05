@@ -315,9 +315,11 @@
       const info = document.getElementById('f-verfall-info');
       if (!val) { info.classList.add('hidden'); return; }
 
-      const d    = new Date(val + 'T12:00:00');
-      const days = Math.round((d - new Date()) / 86400000);
-      const fmt  = d.toLocaleDateString('de-DE', { day:'2-digit', month:'2-digit', year:'numeric' });
+      // Mitternacht heute – kein Zeitzonenproblem
+      const heute  = new Date(); heute.setHours(0,0,0,0);
+      const parts  = val.split('-');
+      const d      = new Date(parseInt(parts[0]), parseInt(parts[1])-1, parseInt(parts[2]));
+      const days   = Math.round((d - heute) / 86400000);
 
       let cls = 'pill-ok', label = `🟢 OK · ${Math.round(days/30)} Monate`;
       if (days <= 0)       { cls = 'pill-warn'; label = '🔴 ABGELAUFEN'; }
@@ -337,7 +339,13 @@
       if (chargen.length === 0) { wrap.classList.add('hidden'); return; }
 
       list.innerHTML = chargen.map((c, i) => {
-        const days  = c.verfall ? Math.round((new Date(c.verfall + 'T12:00:00') - new Date()) / 86400000) : null;
+        let days = null;
+        if (c.verfall) {
+          const heute = new Date(); heute.setHours(0,0,0,0);
+          const p = c.verfall.split('-');
+          const cd = new Date(parseInt(p[0]), parseInt(p[1])-1, parseInt(p[2]));
+          days = Math.round((cd - heute) / 86400000);
+        }
         const color = days === null ? 'var(--muted)' : days <= 7 ? 'var(--red)' : days <= 30 ? 'var(--yellow)' : 'var(--green)';
         const label = days === null ? '–' : days <= 0 ? 'Abgelaufen' : days <= 30 ? `${days}d` : `${Math.round(days/30)}M`;
         const verfDate = c.verfall ? new Date(c.verfall + 'T12:00:00').toLocaleDateString('de-DE', { month:'2-digit', year:'numeric' }) : '–';
@@ -422,9 +430,13 @@
       }
       if (parsed.verfall) {
         const el = document.getElementById('f-verfall');
-        // Datum normalisieren auf YYYY-MM-DD
         let d = parsed.verfall;
-        if (d.length === 7) d = d + '-01'; // YYYY-MM → YYYY-MM-01
+        // YYYY-MM → letzter Tag des Monats
+        if (d.length === 7) {
+          const p   = d.split('-');
+          const last = new Date(parseInt(p[0]), parseInt(p[1]), 0).getDate();
+          d = `${p[0]}-${p[1]}-${String(last).padStart(2,'0')}`;
+        }
         el.value = d;
         el.classList.add('filled');
         onVerfallChange();
