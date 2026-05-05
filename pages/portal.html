@@ -717,6 +717,15 @@
       renderChargen();
     };
 
+    window.setChargenSort = function(s) {
+      chargenSort = s;
+      ['bereich','verfall','name'].forEach(x => {
+        const el = document.getElementById(`sort-${x}`);
+        if (el) el.classList.toggle('active', x === s);
+      });
+      renderChargen();
+    };
+
     function renderChargen() {
       const container = document.getElementById('chargen-content');
       const heute     = new Date();
