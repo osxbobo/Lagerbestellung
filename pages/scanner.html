@@ -190,12 +190,6 @@
 
   </div><!-- /content -->
 
-  <!-- BT Hidden Input - kein readonly, kein inputmode - plain input -->
-  <input id="bt-input" type="text"
-    style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0;font-size:16px;border:none;outline:none;"
-    autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
-    tabindex="-1">
-
   <script>
     // ── Theme ──
     (function() {
@@ -606,8 +600,8 @@
     };
 
     // ── Bluetooth HID ──
-    // ── Bluetooth HID ──
-    const _btEl = document.getElementById('bt-input');
+    // Strategie: MutationObserver + Intervall erkennen ob Scanner schnell tippt
+    // Kein Fokus-Trick nötig – wir messen Tipp-Geschwindigkeit
 
     window.toggleBluetooth = function() {
       btOn = !btOn;
@@ -616,54 +610,74 @@
       btn.classList.toggle('bt-active', btOn);
       btn.textContent = btOn ? '📡 BT Aktiv' : '📡 Bluetooth';
       status.classList.toggle('hidden', !btOn);
-      if (btOn) _btFocus();
     };
 
-    function _btFocus() {
-      if (!btOn || !_btEl) return;
-      _btEl.value = '';
-      try { _btEl.focus(); } catch(e) {}
-    }
+    // Alle Inputs beobachten – wenn BT aktiv und Input zu schnell für Mensch → abfangen
+    const BT_SPEED_MS  = 50;   // Scanner tippt schneller als 50ms pro Zeichen
+    const BT_MIN_LEN   = 6;    // Mindestlänge für echten Barcode
 
-    // Fokus halten solange BT aktiv
-    _btEl.addEventListener('blur', () => {
-      if (btOn) setTimeout(_btFocus, 100);
-    });
+    let _btLastTime  = 0;
+    let _btLastField = null;
+    let _btFieldBuf  = '';
+    let _btFieldTimer= null;
 
-    // Input sammeln
-    _btEl.addEventListener('input', () => {
+    // Jeden keydown überwachen
+    document.addEventListener('keydown', function(e) {
       if (!btOn) return;
-      const val = _btEl.value;
-      _btEl.value = '';
-      if (!val) return;
-      const now = Date.now();
-      if (now - (window._btLast||0) > 500) btBuffer = '';
-      window._btLast = now;
-      btBuffer += val;
-      clearTimeout(btTimer);
-      btTimer = setTimeout(() => {
-        const c = btBuffer.trim(); btBuffer = '';
-        if (c.length >= 4) onScanResult(c);
-      }, 150);
-    });
 
-    // Enter als Abschluss
-    _btEl.addEventListener('keydown', e => {
-      if (!btOn) return;
+      const now   = Date.now();
+      const delta = now - _btLastTime;
+      _btLastTime = now;
+      const field = document.activeElement;
+
       if (e.key === 'Enter') {
-        e.preventDefault();
-        clearTimeout(btTimer);
-        const c = btBuffer.trim(); btBuffer = ''; _btEl.value = '';
-        if (c.length >= 4) onScanResult(c);
+        // Enter → prüfen ob Buffer ein Barcode ist
+        clearTimeout(_btFieldTimer);
+        if (_btFieldBuf.length >= BT_MIN_LEN) {
+          const code = _btFieldBuf.trim();
+          _btFieldBuf = '';
+          // Feld zurücksetzen wenn Scanner reingepipst hat
+          if (_btLastField && (_btLastField.id === 'f-artikel-search' || _btLastField.id === 'f-lot')) {
+            _btLastField.value = '';
+          }
+          onScanResult(code);
+          e.preventDefault();
+        }
+        _btFieldBuf  = '';
+        _btLastField = null;
+        return;
       }
-    });
 
-    // Klick außerhalb → Fokus zurück
-    document.addEventListener('pointerdown', e => {
-      if (!btOn) return;
-      const tag = e.target?.tagName;
-      // Kurze Verzögerung damit das geklickte Element erst seinen Job macht
-      setTimeout(() => { if (btOn) _btFocus(); }, 200);
+      if (e.key.length !== 1) return;
+
+      // Geschwindigkeit messen
+      if (delta < BT_SPEED_MS || _btFieldBuf.length === 0) {
+        // Schnell → wahrscheinlich Scanner
+        _btFieldBuf += e.key;
+        _btLastField = field;
+
+        clearTimeout(_btFieldTimer);
+        _btFieldTimer = setTimeout(() => {
+          // Timeout – kein Enter gekommen
+          if (_btFieldBuf.length >= BT_MIN_LEN) {
+            const code = _btFieldBuf.trim();
+            _btFieldBuf = '';
+            if (_btLastField && (_btLastField.id === 'f-artikel-search' || _btLastField.id === 'f-lot')) {
+              _btLastField.value = '';
+            }
+            onScanResult(code);
+          } else {
+            _btFieldBuf = '';
+          }
+          _btLastField = null;
+        }, 200);
+
+      } else {
+        // Langsam → echter Mensch tippt → Buffer leeren
+        _btFieldBuf = e.key;
+        _btLastField = field;
+        clearTimeout(_btFieldTimer);
+      }
     });
 
         // ── Toast ──
