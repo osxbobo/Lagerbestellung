@@ -254,10 +254,10 @@
       const r = {gtin:null, lot:null, verfall:null};
       const s = raw.replace(/[\x00-\x1F\x7F]/g,'').trim();
 
-      // Mit Klammern
+      // Mit Klammern – zuverlässigste Methode
       if (s.includes('(')) {
         const g = s.match(/\(01\)(\d{14})/);
-        const l = s.match(/\(10\)([A-Z0-9\-\/]+?)(?:\(|$)/i);
+        const l = s.match(/\(10\)([^\(]+)/i);
         const v = s.match(/\(17\)(\d{6})/);
         if (g) r.gtin = g[1];
         if (l) r.lot  = l[1].trim();
@@ -265,22 +265,29 @@
         return r;
       }
 
-      // Ohne Klammern – sequentiell
-      let p = 0;
-      while (p < s.length) {
-        if (p + 2 > s.length) break;
-        const ai = s.substring(p, p+2);
-        if      (ai === '01' && s.length >= p+16) { r.gtin = s.substring(p+2,p+16); p+=16; }
-        else if (ai === '17' && s.length >= p+8)  { r.verfall = parseDate6(s.substring(p+2,p+8)); p+=8; }
-        else if (ai === '10') {
-          const rest = s.substring(p+2);
-          const nx   = rest.search(/17\d{6}|11\d{6}|30\d/);
-          r.lot = (nx>0 ? rest.substring(0,nx) : rest).trim();
-          break;
-        }
-        else if (ai === '11' && s.length >= p+8) { p+=8; }
-        else { p++; }
+      // Ohne Klammern – GS1-128 Rohformat
+      // Bekannte fixe AI-Längen: 01=14, 17=6, 11=6, 13=6, 15=6
+      // Variable Länge: 10 (LOT) – endet am nächsten fixen AI
+      // Trick: erst GTIN (01+14), dann Verfall (17+6) suchen,
+      // dann LOT (10) als was übrig bleibt zwischen bekannten AIs
+
+      // Suche GTIN
+      const m01 = s.match(/^01(\d{14})/);
+      if (m01) {
+        r.gtin = m01[1];
+        const rest = s.substring(16); // nach GTIN
+
+        // Suche (17)YYMMDD direkt
+        const m17 = rest.match(/17(\d{6})/);
+        if (m17) r.verfall = parseDate6(m17[1]);
+
+        // Suche (10) LOT – zwischen 01-block und 17/11/30
+        // LOT kann Ziffern und Buchstaben enthalten
+        // Strategie: alles zwischen AI10 und nächstem bekannten AI
+        const m10 = rest.match(/10([A-Z0-9]+?)(?:17\d{6}|11\d{6}|30\d|13\d{6}|$)/i);
+        if (m10) r.lot = m10[1].trim();
       }
+
       return r;
     }
 
