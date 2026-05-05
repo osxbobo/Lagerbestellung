@@ -193,7 +193,7 @@
   <!-- NAVBAR -->
   <nav class="navbar">
     <div class="navbar-inner">
-      <a href="../index.html" class="nav-logo">LAGER<span>//</span>APP</a>
+      <a href="../index.html" class="nav-logo" style="padding:0;"><img src="../LAGER_APP.png" alt="LAGER//APP" style="height:32px;width:auto;display:block;object-fit:contain;"></a>
       <div class="nav-right">
         <span id="nav-user" class="mono text-xs text-muted hide-mobile"></span>
         <span class="badge badge-blue hide-mobile">WACHENLEITER</span>
@@ -287,10 +287,18 @@
               <div class="page-title">Chargen & Verfall</div>
               <div class="page-sub">Sortiert nach Bereichen</div>
             </div>
-            <div class="filter-row">
-              <button class="filter-btn active" id="cf-alle"     onclick="setChargenFilter('alle')">Alle</button>
-              <button class="filter-btn"         id="cf-kritisch" onclick="setChargenFilter('kritisch')">🔴 ≤30 Tage</button>
-              <button class="filter-btn"         id="cf-ok"       onclick="setChargenFilter('ok')">🟢 OK</button>
+            <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end;">
+              <div class="filter-row">
+                <button class="filter-btn active" id="cf-alle"     onclick="setChargenFilter('alle')">Alle</button>
+                <button class="filter-btn"         id="cf-kritisch" onclick="setChargenFilter('kritisch')">🔴 ≤30 Tage</button>
+                <button class="filter-btn"         id="cf-ok"       onclick="setChargenFilter('ok')">🟢 OK</button>
+              </div>
+              <div class="filter-row">
+                <span style="font-size:0.7rem;color:var(--muted);margin-right:4px;">Sortierung:</span>
+                <button class="filter-btn active" id="sort-bereich"   onclick="setChargenSort('bereich')">🗄️ Bereich</button>
+                <button class="filter-btn"         id="sort-verfall"   onclick="setChargenSort('verfall')">📅 Verfall</button>
+                <button class="filter-btn"         id="sort-name"      onclick="setChargenSort('name')">🔤 Name</button>
+              </div>
             </div>
           </div>
         </div>
@@ -540,6 +548,7 @@
     let newPinValue   = '';
     let pinVisible    = false;
     let chargenFilter = 'alle';
+    let chargenSort   = 'bereich';
     let currentBest   = null;
     let currentFotoType = 'produkt';
 
@@ -711,59 +720,159 @@
     function renderChargen() {
       const container = document.getElementById('chargen-content');
       const heute     = new Date();
-      let html        = '';
       let totalChargen = 0;
 
-      for (const bereich of alleBereiche) {
-        const artikel = alleArtikel.filter(a => a.bereich === bereich.id);
-        const rows    = [];
+      // Alle Chargen sammeln
+      let allRows = [];
+      for (const a of alleArtikel) {
+        const bereich = alleBereiche.find(b => b.id === a.bereich);
+        for (const c of (a.chargen || [])) {
+          const days = Math.round((new Date(c.verfall||'9999') - heute) / (1000*60*60*24));
+          if (chargenFilter === 'kritisch' && days > 30)  continue;
+          if (chargenFilter === 'ok'       && days <= 30) continue;
+          allRows.push({ artikel: a, charge: c, days, bereich });
+        }
+      }
 
-        for (const a of artikel) {
-          const chargen = a.chargen || [];
-          for (const c of chargen) {
-            const days = Math.round((new Date(c.verfall||'9999') - heute) / (1000*60*60*24));
-            if (chargenFilter === 'kritisch' && days > 30) continue;
-            if (chargenFilter === 'ok'       && days <= 30) continue;
-            rows.push({ artikel: a, charge: c, days });
+      if (allRows.length === 0) {
+        container.innerHTML = '<div class="empty-state">🟢 Keine Chargen gefunden</div>';
+        return;
+      }
+
+      // Sortierung
+      if (chargenSort === 'verfall') {
+        allRows.sort((a, b) => a.days - b.days);
+      } else if (chargenSort === 'name') {
+        allRows.sort((a, b) => (a.artikel.name||'').localeCompare(b.artikel.name||''));
+      } else {
+        // Bereich-Sortierung (nach Reihenfolge in alleBereiche)
+        const bereichOrder = {};
+        alleBereiche.forEach((b, i) => bereichOrder[b.id] = i);
+        allRows.sort((a, b) => {
+          const bo = (bereichOrder[a.artikel.bereich]||99) - (bereichOrder[b.artikel.bereich]||99);
+          if (bo !== 0) return bo;
+          return naturalSort(a.artikel.lp||'', b.artikel.lp||'');
+        });
+      }
+
+      totalChargen = allRows.length;
+
+      // Gruppieren
+      let html    = '';
+      let lastKey = null;
+
+      for (const { artikel: a, charge: c, days, bereich } of allRows) {
+        const color = days <= 0 ? 'var(--red)' : days <= 7 ? 'var(--red)' : days <= 30 ? 'var(--yellow)' : 'var(--green)';
+        const label = days <= 0 ? 'ABGELAUFEN' : days <= 30 ? `${days} Tage` : `${Math.round(days/30)} Mon.`;
+
+        // Gruppenheader
+        let groupKey;
+        if (chargenSort === 'bereich') {
+          groupKey = a.bereich;
+          if (groupKey !== lastKey) {
+            if (lastKey !== null) html += '</div>';
+            const icon = getBereichIcon(bereich?.name||'');
+            html += `<div class="bereich-group">
+              <div class="bereich-group-header">
+                <span class="bereich-group-icon">${icon}</span>
+                ${bereich?.name||'Unbekannt'}
+              </div>`;
+            lastKey = groupKey;
+          }
+        } else if (chargenSort === 'verfall') {
+          groupKey = days <= 0 ? 'abgelaufen' : days <= 7 ? 'kritisch' : days <= 30 ? 'bald' : 'ok';
+          if (groupKey !== lastKey) {
+            if (lastKey !== null) html += '</div>';
+            const labels = { abgelaufen:'🔴 Abgelaufen', kritisch:'🔴 Kritisch (≤7 Tage)', bald:'🟡 Bald (≤30 Tage)', ok:'🟢 OK' };
+            html += `<div class="bereich-group">
+              <div class="bereich-group-header">${labels[groupKey]}</div>`;
+            lastKey = groupKey;
+          }
+        } else {
+          // Name – keine Gruppen
+          if (lastKey === null) {
+            html += '<div class="bereich-group">';
+            lastKey = 'all';
           }
         }
 
-        if (rows.length === 0) continue;
-
-        rows.sort((a, b) => a.days - b.days);
-        totalChargen += rows.length;
-
-        const icon = getBereichIcon(bereich.name);
+        // Charge-Zeile mit Bearbeiten-Button
+        const chargeIdx = (a.chargen||[]).findIndex(x => x.lot === c.lot && x.verfall === c.verfall);
         html += `
-          <div class="bereich-group">
-            <div class="bereich-group-header">
-              <span class="bereich-group-icon">${icon}</span>
-              ${bereich.name}
-              <span style="margin-left:auto;font-size:0.6rem;">${rows.length} Charge${rows.length!==1?'n':''}</span>
+          <div class="charge-row" id="crow-${a.id}-${chargeIdx}">
+            <div class="charge-dot" style="background:${color}"></div>
+            <div class="charge-info" style="flex:1;min-width:0;">
+              <div class="charge-name">${a.name}</div>
+              <div class="charge-lot">LOT: ${c.lot||'–'} · ${c.verfall ? new Date(c.verfall).toLocaleDateString('de-DE',{month:'2-digit',year:'numeric'}) : '–'} · ${a.lp||''}</div>
             </div>
-            ${rows.map(({ artikel: a, charge: c, days }) => {
-              const color = days <= 0 ? 'var(--red)' : days <= 7 ? 'var(--red)' : days <= 30 ? 'var(--yellow)' : 'var(--green)';
-              const label = days <= 0 ? 'ABGELAUFEN' : days <= 30 ? `${days} Tage` : `${Math.round(days/30)} Monate`;
-              return `
-                <div class="charge-row">
-                  <div class="charge-dot" style="background:${color}"></div>
-                  <div class="charge-info">
-                    <div class="charge-name">${a.name}</div>
-                    <div class="charge-lot">LOT: ${c.lot||'–'} · Verfall: ${c.verfall?new Date(c.verfall).toLocaleDateString('de-DE'):'–'} · ${a.lp||''}</div>
-                  </div>
-                  <div class="charge-days" style="color:${color}">${label}</div>
-                  <button class="charge-del" onclick="deleteCharge('${a.id}','${c.lot}','${c.verfall||''}')">✕</button>
-                </div>`;
-            }).join('')}
+            <div class="charge-days" style="color:${color};flex-shrink:0;">${label}</div>
+            <button class="charge-del" style="color:var(--accent2);font-size:0.75rem;padding:4px 6px;"
+              onclick="editCharge('${a.id}',${chargeIdx})">✏️</button>
+            <button class="charge-del"
+              onclick="deleteCharge('${a.id}','${c.lot}','${c.verfall||''}')">✕</button>
           </div>`;
       }
 
-      if (!html) {
-        container.innerHTML = '<div class="empty-state">🟢 Keine Chargen gefunden</div>';
-      } else {
-        container.innerHTML = html;
-      }
+      if (lastKey !== null) html += '</div>';
+      container.innerHTML = html;
     }
+
+    // ── Charge bearbeiten ──
+    window.editCharge = function(artikelId, idx) {
+      const a = alleArtikel.find(x => x.id === artikelId);
+      if (!a) return;
+      const c = (a.chargen||[])[idx];
+      if (!c) return;
+
+      // Inline-Edit einblenden
+      const rowEl = document.getElementById(`crow-${artikelId}-${idx}`);
+      if (!rowEl) return;
+
+      rowEl.innerHTML = `
+        <div style="display:flex;flex-direction:column;gap:6px;width:100%;padding:4px 0;">
+          <div style="font-size:0.8rem;font-weight:600;color:var(--text2);">${a.name}</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <div>
+              <div style="font-size:0.6rem;color:var(--muted);font-family:'IBM Plex Mono',monospace;margin-bottom:2px;">CHARGE / LOT</div>
+              <input type="text" id="edit-lot-${artikelId}-${idx}" value="${c.lot||''}"
+                style="padding:6px 10px;border-radius:8px;border:1.5px solid var(--border);background:var(--surface2);color:var(--text);font-family:'DM Sans',sans-serif;font-size:0.82rem;width:140px;">
+            </div>
+            <div>
+              <div style="font-size:0.6rem;color:var(--muted);font-family:'IBM Plex Mono',monospace;margin-bottom:2px;">VERFALLSDATUM</div>
+              <input type="date" id="edit-verfall-${artikelId}-${idx}" value="${c.verfall||''}"
+                style="padding:6px 10px;border-radius:8px;border:1.5px solid var(--border);background:var(--surface2);color:var(--text);font-family:'DM Sans',sans-serif;font-size:0.82rem;">
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button onclick="saveEditCharge('${artikelId}',${idx})"
+              style="padding:6px 14px;border-radius:8px;background:var(--green);color:#fff;border:none;font-family:'DM Sans',sans-serif;font-size:0.8rem;font-weight:600;cursor:pointer;">
+              ✅ Speichern
+            </button>
+            <button onclick="renderChargen()"
+              style="padding:6px 14px;border-radius:8px;background:var(--surface2);color:var(--text2);border:1px solid var(--border);font-family:'DM Sans',sans-serif;font-size:0.8rem;cursor:pointer;">
+              Abbrechen
+            </button>
+          </div>
+        </div>`;
+    };
+
+    window.saveEditCharge = async function(artikelId, idx) {
+      const newLot    = document.getElementById(`edit-lot-${artikelId}-${idx}`)?.value.trim();
+      const newVerfall= document.getElementById(`edit-verfall-${artikelId}-${idx}`)?.value;
+
+      const a = alleArtikel.find(x => x.id === artikelId);
+      if (!a) return;
+
+      const chargen = [...(a.chargen||[])];
+      chargen[idx]  = { ...chargen[idx], lot: newLot, verfall: newVerfall || null };
+
+      await updateDoc(doc(db, 'artikel', artikelId), { chargen });
+      const i = alleArtikel.findIndex(x => x.id === artikelId);
+      if (i >= 0) alleArtikel[i].chargen = chargen;
+
+      showToast('Charge gespeichert ✅');
+      renderChargen();
+    };
 
     // ── Natürliche Sortierung für LP-Nummern ──
     function naturalSort(a, b) {
