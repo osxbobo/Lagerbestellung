@@ -287,6 +287,9 @@
         return (loc || '–').replace(/\./g, ' · ');
       }
 
+      // LP-Nummer sortieren
+      results = [...results].sort((a,b) => naturalSort(a.lp||'', b.lp||''));
+
       const container = document.getElementById('search-results');
       container.innerHTML = results.map(a => {
         const b = alleBereiche.find(x => x.id === a.bereich);
