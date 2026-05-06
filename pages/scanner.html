@@ -328,10 +328,12 @@
     // ── Scan Result ──
     function onScan(raw) {
       if (!raw || raw.trim().length < 6) return;
-      if (!scanning) return; // Bereits gescannt – warte auf Reset
-      scanning = false; // Stoppe weitere Scans
-      // Nach 3 Sekunden automatisch wieder bereit für nächsten Scan
-      setTimeout(() => { scanning = true; }, 3000);
+      // Gleichen Code nicht doppelt verarbeiten (Kamera scannt kontinuierlich)
+      const rawTrimmed = raw.trim();
+      if (window._lastScannedCode === rawTrimmed) return;
+      window._lastScannedCode = rawTrimmed;
+      // Nach 2 Sekunden gleichen Code wieder erlauben
+      setTimeout(() => { if (window._lastScannedCode === rawTrimmed) window._lastScannedCode = null; }, 2000);
       if (navigator.vibrate) navigator.vibrate(80);
       const parsed = raw.startsWith('+') || raw.startsWith('/') ? parseHIBC(raw) : parseGS1(raw);
       console.log('Scan raw:', raw, '→', parsed);
@@ -507,7 +509,7 @@
     function resetForm() {
       selected   = null;
       lastParsed = null;
-      scanning   = true; // Scans wieder erlauben
+      window._lastScannedCode = null; // Gleichen Code wieder erlauben
       document.getElementById('inp-lot').value='';
       document.getElementById('inp-verfall').value='';
       document.getElementById('inp-lot').classList.remove('filled');
