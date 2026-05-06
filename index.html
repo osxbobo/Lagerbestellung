@@ -264,7 +264,18 @@
       renderResults(results, lower);
     }
 
-    function renderResults(results, q) {
+    function naturalSort(a, b) {
+      const sa = (a||'').split(/[.\-]/).map(x => isNaN(x) ? x : parseInt(x,10));
+      const sb = (b||'').split(/[.\-]/).map(x => isNaN(x) ? x : parseInt(x,10));
+      for (let i = 0; i < Math.max(sa.length, sb.length); i++) {
+        const va = sa[i] ?? '', vb = sb[i] ?? '';
+        if (va < vb) return -1;
+        if (va > vb) return  1;
+      }
+      return 0;
+    }
+
+        function renderResults(results, q) {
       document.getElementById('bereiche-section').classList.add('hidden');
       document.getElementById('empty-state').classList.add('hidden');
       document.getElementById('search-results').classList.add('hidden');
