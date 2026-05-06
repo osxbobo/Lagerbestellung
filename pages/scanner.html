@@ -312,24 +312,24 @@
       if (!raw || raw.trim().length < 4) return;
       if (navigator.vibrate) navigator.vibrate(80);
       const parsed = raw.startsWith('+') || raw.startsWith('/') ? parseHIBC(raw) : parseGS1(raw);
-      console.log('Scan raw:', raw);
-      console.log('Scan parsed:', parsed);
+      console.log('Scan raw:', raw, '→', parsed);
 
-      // Neuer Scan → nur Felder leeren, nicht Artikel
       lastParsed = parsed;
-      document.getElementById('inp-lot').value = '';
-      document.getElementById('inp-verfall').value = '';
+
+      // 1. Alles zurücksetzen
+      selected = null;
+      document.getElementById('inp-lot').value       = '';
+      document.getElementById('inp-verfall').value    = '';
       document.getElementById('inp-lot').classList.remove('filled');
       document.getElementById('inp-verfall').classList.remove('filled');
       document.getElementById('verfall-info').textContent = '';
-      // Artikel nur zurücksetzen wenn neuer Code
-      selected = null;
       document.getElementById('artikel-search-wrap').classList.remove('hidden');
       document.getElementById('artikel-sel-wrap').classList.add('hidden');
       document.getElementById('chargen-wrap').classList.add('hidden');
-      document.getElementById('inp-search').value = '';
+      document.getElementById('inp-search').value    = '';
       document.getElementById('suggestions').innerHTML = '';
 
+      // 2. Artikel automatisch finden
       if (parsed.gtin) {
         const a = artikel.find(x =>
           x.gtin === parsed.gtin ||
@@ -338,20 +338,24 @@
         );
         if (a) selectArtikel(a);
       }
+
+      // 3. LOT + Verfall NACH dem Reset einfüllen
       if (parsed.lot) {
         const el = document.getElementById('inp-lot');
-        el.value = parsed.lot; el.classList.add('filled');
+        el.value = parsed.lot;
+        el.classList.add('filled');
       }
       if (parsed.verfall) {
-        const el = document.getElementById('inp-verfall');
-        let d = parsed.verfall;
-        if (d.length === 7) {
-          const p = d.split('-');
-          d = `${p[0]}-${p[1]}-${String(new Date(+p[0],+p[1],0).getDate()).padStart(2,'0')}`;
-        }
-        el.value = d; el.classList.add('filled');
+        const el  = document.getElementById('inp-verfall');
+        const d   = parsed.verfall;
+        const val = d.length === 7
+          ? `${d}-${String(new Date(+d.split('-')[0], +d.split('-')[1], 0).getDate()).padStart(2,'0')}`
+          : d;
+        el.value = val;
+        el.classList.add('filled');
         showVerfallInfo();
       }
+
       toast('✅ Code erkannt');
     }
 
@@ -574,56 +578,59 @@
       return USER_INPUTS.includes(document.activeElement?.id);
     }
 
+    // BT Listeners
+    let userTyping = false;
+    let userTypingTimer = null;
+
+    // Nur refokussieren wenn Nutzer nicht tippt
     btEl.addEventListener('blur', () => {
-      if (btOn && !isUserInputFocused()) setTimeout(btFocus, 80);
+      if (btOn && !userTyping) setTimeout(btFocus, 80);
     });
 
     btEl.addEventListener('input', () => {
       if (!btOn) return;
-      buf += btEl.value; btEl.value='';
+      buf += btEl.value; btEl.value = '';
       clearTimeout(bufTimer);
       bufTimer = setTimeout(() => {
-        const code=buf.trim(); buf='';
-        if (code.length>=4) onScan(code);
+        const code = buf.trim(); buf = '';
+        if (code.length >= 4) onScan(code);
       }, 150);
     });
 
     btEl.addEventListener('keydown', e => {
-      if (e.key==='Enter') {
+      if (e.key === 'Enter') {
         e.preventDefault();
         clearTimeout(bufTimer);
-        const code=buf.trim(); buf=''; btEl.value='';
-        if (code.length>=4) onScan(code);
+        const code = buf.trim(); buf = ''; btEl.value = '';
+        if (code.length >= 4) onScan(code);
       }
     });
 
-    // Wenn Nutzer ein Inputfeld fokussiert → BT pausieren
-    document.addEventListener('focusin', e => {
-      if (btOn && USER_INPUTS.includes(e.target?.id)) {
-        btEl.blur();
-      }
+    // Nutzer tippt in Eingabefeld → BT pausieren
+    USER_INPUTS.forEach(id => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.addEventListener('focus', () => {
+        userTyping = true;
+        clearTimeout(userTypingTimer);
+      });
+      el.addEventListener('blur', () => {
+        userTypingTimer = setTimeout(() => {
+          userTyping = false;
+          if (btOn) btFocus();
+        }, 300);
+      });
     });
 
-    // Suggestion klick → BT nicht sofort zurückfokussieren
-    document.getElementById('suggestions')?.addEventListener('pointerdown', e => {
-      e.stopPropagation();
-    });
-
-    // Wenn Nutzer Inputfeld verlässt → BT wieder aktivieren
-    document.addEventListener('focusout', e => {
-      if (btOn && USER_INPUTS.includes(e.target?.id)) {
-        setTimeout(btFocus, 200);
-      }
-    });
-
-    // Klick außerhalb Inputfelder → BT Fokus zurück
+    // Klick außerhalb → BT refokussieren
     document.addEventListener('pointerdown', e => {
-      if (btOn && !USER_INPUTS.includes(e.target?.id)) {
-        setTimeout(btFocus, 150);
-      }
+      if (!btOn) return;
+      const isInput = USER_INPUTS.includes(e.target?.id);
+      const isSug   = !!e.target?.closest?.('#suggestions');
+      if (!isInput && !isSug) setTimeout(btFocus, 150);
     });
 
-    // ── Toast ──
+        // ── Toast ──
     function toast(msg,type='ok') {
       const t=document.createElement('div');
       t.className='toast'; t.textContent=msg;
