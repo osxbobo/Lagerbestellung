@@ -182,7 +182,12 @@
           <div class="verfall-info" id="verfall-info"></div>
         </div>
 
-        <button class="save-btn" onclick="saveCharge()">✅ Charge speichern</button>
+        <div style="display:flex;gap:8px;">
+          <button onclick="resetForm()" style="flex:0 0 auto;height:50px;padding:0 16px;border-radius:12px;border:1.5px solid var(--border);background:var(--surface2);color:var(--text2);font-family:'DM Sans',sans-serif;font-size:0.85rem;font-weight:600;cursor:pointer;">
+            ↺ Neu
+          </button>
+          <button class="save-btn" onclick="saveCharge()" style="flex:1;">✅ Charge speichern</button>
+        </div>
 
         <!-- Chargen Liste -->
         <div id="chargen-wrap" class="hidden">
@@ -224,15 +229,16 @@
     const auth = firebase.auth();
 
     // ── State ──
-    let artikel  = [];
-    let selected = null;
-    let camOn    = false;
-    let btOn     = false;
-    let reader   = null;
-    let camSide  = 'back';
-    let buf      = '';
-    let bufTimer = null;
-    let bufLast  = 0;
+    let artikel   = [];
+    let selected  = null;
+    let camOn     = false;
+    let btOn      = false;
+    let reader    = null;
+    let camSide   = 'back';
+    let buf       = '';
+    let bufTimer  = null;
+    let bufLast   = 0;
+    let scanning  = true; // false nach Scan → verhindert weitere Scans
 
     // ── Auth ──
     auth.onAuthStateChanged(async user => {
@@ -309,7 +315,9 @@
 
     // ── Scan Result ──
     function onScan(raw) {
-      if (!raw || raw.trim().length < 6) return; // Min 6 Zeichen – verhindert Enter/CR als Scan
+      if (!raw || raw.trim().length < 6) return;
+      if (!scanning) return; // Bereits gescannt – warte auf Reset
+      scanning = false; // Stoppe weitere Scans
       if (navigator.vibrate) navigator.vibrate(80);
       const parsed = raw.startsWith('+') || raw.startsWith('/') ? parseHIBC(raw) : parseGS1(raw);
       console.log('Scan raw:', raw, '→', parsed);
@@ -485,6 +493,7 @@
     function resetForm() {
       selected   = null;
       lastParsed = null;
+      scanning   = true; // Scans wieder erlauben
       document.getElementById('inp-lot').value='';
       document.getElementById('inp-verfall').value='';
       document.getElementById('inp-lot').classList.remove('filled');
