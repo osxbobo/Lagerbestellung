@@ -204,13 +204,23 @@
     }
   </script>
 
-  <script type="module">
-    import { initializeApp }           from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-    import { getFirestore, collection, getDocs, doc, getDoc, updateDoc }
-      from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  <script>
+    // Firebase wird dynamisch geladen
+    let db, auth, collection, getDocs, doc, getDoc, updateDoc, onAuthStateChanged;
 
-    const app  = initializeApp({
+    async function initApp() {
+      const { initializeApp } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js");
+      const authMod  = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js");
+      const storeMod = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+
+      onAuthStateChanged = authMod.onAuthStateChanged;
+      collection  = storeMod.collection;
+      getDocs     = storeMod.getDocs;
+      doc         = storeMod.doc;
+      getDoc      = storeMod.getDoc;
+      updateDoc   = storeMod.updateDoc;
+
+      const app  = initializeApp({
       apiKey:"AIzaSyD1YY-cFQxyykfYQYPORwulzuF8t6Wgid4",
       authDomain:"lagerbestellung-19970.firebaseapp.com",
       projectId:"lagerbestellung-19970",
@@ -218,8 +228,10 @@
       messagingSenderId:"939056339904",
       appId:"1:939056339904:web:6f33ca2f5a4cebd2780625"
     });
-    const db   = getFirestore(app);
-    const auth = getAuth(app);
+      const { getFirestore } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
+      const { getAuth }       = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js");
+      db   = getFirestore(app);
+      auth = getAuth(app);
 
     // ── State ──
     let artikel  = [];
