@@ -288,10 +288,10 @@
       }
 
       // LP-Nummer sortieren
-      results = [...results].sort((a,b) => naturalSort(a.lp||'', b.lp||''));
+      const sorted = [...results].sort((a,b) => naturalSort(a.lp||'', b.lp||''));
 
       const container = document.getElementById('search-results');
-      container.innerHTML = results.map(a => {
+      container.innerHTML = sorted.map(a => {
         const b = alleBereiche.find(x => x.id === a.bereich);
         return `
           <div class="result-card fade-in">
@@ -317,7 +317,9 @@
     window.filterByBereich = function(id, name) {
       document.getElementById('search-input').value = '';
       document.getElementById('search-clear').classList.remove('hidden');
-      renderResults(alleArtikel.filter(a => a.bereich === id), '');
+      const bereichArtikel = alleArtikel.filter(a => a.bereich === id)
+        .sort((a,b) => naturalSort(a.lp||'', b.lp||''));
+      renderResults(bereichArtikel, '');
       document.getElementById('status-text').textContent =
         `${alleArtikel.filter(a => a.bereich === id).length} Artikel in „${name}"`;
     };
