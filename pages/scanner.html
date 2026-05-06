@@ -279,18 +279,30 @@
         return r;
       }
 
-      // Ohne Klammern
+      // Ohne Klammern – sequentiell alle AIs lesen
       if (s.startsWith('01') && s.length >= 16) {
         r.gtin = s.substring(2,16);
         const rest = s.substring(16);
+
+        // Verfall suchen (17 + YYMMDD mit gültigem Datum)
         const m17 = rest.match(/17([2-3]\d)(0[1-9]|1[0-2])(\d{2})/);
         if (m17) {
           const yy=parseInt(m17[1]), mm=parseInt(m17[2]), dd=parseInt(m17[3]);
           r.verfall = `20${String(yy).padStart(2,'0')}-${String(mm).padStart(2,'0')}-${String(dd).padStart(2,'0')}`;
-          const before17 = rest.substring(0, m17.index);
-          if (before17.startsWith('10')) r.lot = before17.substring(2).trim();
-        } else if (rest.startsWith('10')) {
-          r.lot = rest.substring(2).trim();
+        }
+
+        // LOT suchen (10 + alphanumerisch) – egal wo im String
+        const m10 = rest.match(/10([A-Z0-9]+?)(?:17[0-9]{6}|11[0-9]{6}|30[0-9]|$)/i);
+        if (m10) {
+          r.lot = m10[1].trim();
+        } else {
+          // Fallback: alles nach AI 10 bis Ende oder nächster bekannter AI
+          const idx10 = rest.indexOf('10');
+          if (idx10 >= 0) {
+            const afterLot = rest.substring(idx10 + 2);
+            const m17pos  = afterLot.match(/17[2-3]\d(0[1-9]|1[0-2])\d{2}/);
+            r.lot = m17pos ? afterLot.substring(0, m17pos.index).trim() : afterLot.trim();
+          }
         }
       }
       return r;
@@ -318,6 +330,8 @@
       if (!raw || raw.trim().length < 6) return;
       if (!scanning) return; // Bereits gescannt – warte auf Reset
       scanning = false; // Stoppe weitere Scans
+      // Nach 3 Sekunden automatisch wieder bereit für nächsten Scan
+      setTimeout(() => { scanning = true; }, 3000);
       if (navigator.vibrate) navigator.vibrate(80);
       const parsed = raw.startsWith('+') || raw.startsWith('/') ? parseHIBC(raw) : parseGS1(raw);
       console.log('Scan raw:', raw, '→', parsed);
