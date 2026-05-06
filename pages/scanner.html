@@ -8,6 +8,11 @@
   <title>Verfallsscan – LAGER//APP</title>
   <link rel="manifest" href="../manifest.json">
   <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Firebase SDK (global, kein ES Module) -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <!-- ZXing -->
   <script src="https://unpkg.com/@zxing/library@0.19.1/umd/index.min.js"></script>
 
   <style>
@@ -205,33 +210,18 @@
   </script>
 
   <script>
-    // Firebase wird dynamisch geladen
-    let db, auth, collection, getDocs, doc, getDoc, updateDoc, onAuthStateChanged;
-
-    async function initApp() {
-      const { initializeApp } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js");
-      const authMod  = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js");
-      const storeMod = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
-
-      onAuthStateChanged = authMod.onAuthStateChanged;
-      collection  = storeMod.collection;
-      getDocs     = storeMod.getDocs;
-      doc         = storeMod.doc;
-      getDoc      = storeMod.getDoc;
-      updateDoc   = storeMod.updateDoc;
-
-      const app  = initializeApp({
-      apiKey:"AIzaSyD1YY-cFQxyykfYQYPORwulzuF8t6Wgid4",
-      authDomain:"lagerbestellung-19970.firebaseapp.com",
-      projectId:"lagerbestellung-19970",
-      storageBucket:"lagerbestellung-19970.firebasestorage.app",
-      messagingSenderId:"939056339904",
-      appId:"1:939056339904:web:6f33ca2f5a4cebd2780625"
-    });
-      const { getFirestore } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js");
-      const { getAuth }       = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js");
-      db   = getFirestore(app);
-      auth = getAuth(app);
+    // ── Firebase Init (compat SDK – global verfügbar) ──
+    const firebaseConfig = {
+      apiKey:            "AIzaSyD1YY-cFQxyykfYQYPORwulzuF8t6Wgid4",
+      authDomain:        "lagerbestellung-19970.firebaseapp.com",
+      projectId:         "lagerbestellung-19970",
+      storageBucket:     "lagerbestellung-19970.firebasestorage.app",
+      messagingSenderId: "939056339904",
+      appId:             "1:939056339904:web:6f33ca2f5a4cebd2780625"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db   = firebase.firestore();
+    const auth = firebase.auth();
 
     // ── State ──
     let artikel  = [];
@@ -245,7 +235,7 @@
     let bufLast  = 0;
 
     // ── Auth ──
-    onAuthStateChanged(auth, async user => {
+    auth.onAuthStateChanged(async user => {
       const pinOk = sessionStorage.getItem('lager-pin-auth') || localStorage.getItem('lager-saved-pin');
       if (!user && !pinOk) { window.location.href = '../index.html'; return; }
       const name = user?.displayName || user?.email
@@ -255,8 +245,9 @@
       await load();
     });
 
+    // ── Artikel laden ──
     async function load() {
-      const snap = await getDocs(collection(db, 'artikel'));
+      const snap = await db.collection('artikel').get();
       artikel = snap.docs.map(d => ({id:d.id,...d.data()}))
         .sort((a,b) => (a.name||'').localeCompare(b.name||''));
     }
@@ -266,51 +257,37 @@
       const r = {gtin:null, lot:null, verfall:null};
       const s = raw.replace(/[\x00-\x1F\x7F]/g,'').trim();
 
-      // Mit Klammern – zuverlässigste Methode
+      // Mit Klammern
       if (s.includes('(')) {
         const g = s.match(/\(01\)(\d{14})/);
         const l = s.match(/\(10\)([^\(]+)/i);
         const v = s.match(/\(17\)(\d{6})/);
         if (g) r.gtin = g[1];
         if (l) r.lot  = l[1].trim();
-        if (v) r.verfall = parseDate6(v[1]);
+        if (v) {
+          const d = v[1];
+          const yy=parseInt(d.substring(0,2)), mm=parseInt(d.substring(2,4)), dd=parseInt(d.substring(4,6));
+          if (mm>=1&&mm<=12&&yy>=20&&yy<=40)
+            r.verfall = `20${String(yy).padStart(2,'0')}-${String(mm).padStart(2,'0')}-${String(dd).padStart(2,'0')}`;
+        }
         return r;
       }
 
-      // Ohne Klammern – GS1-128 Rohformat
-      // Bekannte fixe AI-Längen: 01=14, 17=6, 11=6, 13=6, 15=6
-      // Variable Länge: 10 (LOT) – endet am nächsten fixen AI
-      // Trick: erst GTIN (01+14), dann Verfall (17+6) suchen,
-      // dann LOT (10) als was übrig bleibt zwischen bekannten AIs
-
-      // Suche GTIN
-      const m01 = s.match(/^01(\d{14})/);
-      if (m01) {
-        r.gtin = m01[1];
-        const rest = s.substring(16); // nach GTIN
-
-        // Suche (17)YYMMDD direkt
-        const m17 = rest.match(/17(\d{6})/);
-        if (m17) r.verfall = parseDate6(m17[1]);
-
-        // Suche (10) LOT – zwischen 01-block und 17/11/30
-        // LOT kann Ziffern und Buchstaben enthalten
-        // Strategie: alles zwischen AI10 und nächstem bekannten AI
-        const m10 = rest.match(/10([A-Z0-9]+?)(?:17\d{6}|11\d{6}|30\d|13\d{6}|$)/i);
-        if (m10) r.lot = m10[1].trim();
+      // Ohne Klammern
+      if (s.startsWith('01') && s.length >= 16) {
+        r.gtin = s.substring(2,16);
+        const rest = s.substring(16);
+        const m17 = rest.match(/17([2-3]\d)(0[1-9]|1[0-2])(\d{2})/);
+        if (m17) {
+          const yy=parseInt(m17[1]), mm=parseInt(m17[2]), dd=parseInt(m17[3]);
+          r.verfall = `20${String(yy).padStart(2,'0')}-${String(mm).padStart(2,'0')}-${String(dd).padStart(2,'0')}`;
+          const before17 = rest.substring(0, m17.index);
+          if (before17.startsWith('10')) r.lot = before17.substring(2).trim();
+        } else if (rest.startsWith('10')) {
+          r.lot = rest.substring(2).trim();
+        }
       }
-
       return r;
-    }
-
-    function parseDate6(d) {
-      if (!d || d.length !== 6) return null;
-      const yy = parseInt(d.substring(0,2));
-      const mm = parseInt(d.substring(2,4));
-      const dd = parseInt(d.substring(4,6));
-      if (mm < 1 || mm > 12 || yy < 20 || yy > 40) return null;
-      const day = (dd >= 1 && dd <= 31) ? dd : new Date(2000+yy, mm, 0).getDate();
-      return `20${String(yy).padStart(2,'0')}-${String(mm).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
     }
 
     // ── HIBC Parser ──
@@ -321,8 +298,8 @@
       const sec = parts[1];
       const mm  = parseInt(sec.substring(0,2));
       const yy  = 2000 + parseInt(sec.substring(2,4));
-      if (mm >= 1 && mm <= 12 && yy >= 2020 && yy <= 2040) {
-        const last = new Date(yy, mm, 0).getDate();
+      if (mm>=1&&mm<=12&&yy>=2020&&yy<=2040) {
+        const last = new Date(yy,mm,0).getDate();
         r.verfall = `${yy}-${String(mm).padStart(2,'0')}-${String(last).padStart(2,'0')}`;
         const lot = sec.substring(4);
         r.lot = lot.length > 1 ? lot.slice(0,-1).trim() : lot.trim();
@@ -334,11 +311,10 @@
     function onScan(raw) {
       if (!raw || raw.trim().length < 4) return;
       if (navigator.vibrate) navigator.vibrate(80);
-
       const parsed = raw.startsWith('+') || raw.startsWith('/') ? parseHIBC(raw) : parseGS1(raw);
-      console.log('Scan:', raw, '→', parsed);
+      console.log('Scan raw:', raw);
+      console.log('Scan parsed:', parsed);
 
-      // Artikel zuordnen
       if (parsed.gtin && !selected) {
         const a = artikel.find(x =>
           x.gtin === parsed.gtin ||
@@ -347,25 +323,25 @@
         );
         if (a) selectArtikel(a);
       }
-
-      // Felder füllen
       if (parsed.lot) {
         const el = document.getElementById('inp-lot');
-        el.value = parsed.lot;
-        el.classList.add('filled');
+        el.value = parsed.lot; el.classList.add('filled');
       }
       if (parsed.verfall) {
         const el = document.getElementById('inp-verfall');
-        el.value = parsed.verfall;
-        el.classList.add('filled');
+        let d = parsed.verfall;
+        if (d.length === 7) {
+          const p = d.split('-');
+          d = `${p[0]}-${p[1]}-${String(new Date(+p[0],+p[1],0).getDate()).padStart(2,'0')}`;
+        }
+        el.value = d; el.classList.add('filled');
         showVerfallInfo();
       }
-
       toast('✅ Code erkannt');
     }
 
     // ── Artikel Suche ──
-    window.doSearch = function(q) {
+    function doSearch(q) {
       const el = document.getElementById('suggestions');
       if (!q || q.length < 2) { el.innerHTML=''; return; }
       const hits = artikel.filter(a =>
@@ -381,7 +357,7 @@
         d.addEventListener('click', () => selectArtikel(a));
         el.appendChild(d);
       });
-    };
+    }
 
     function selectArtikel(a) {
       selected = a;
@@ -393,40 +369,41 @@
       showChargen(a);
     }
 
-    window.clearArtikel = function() {
+    function clearArtikel() {
       selected = null;
       document.getElementById('artikel-search-wrap').classList.remove('hidden');
       document.getElementById('artikel-sel-wrap').classList.add('hidden');
       document.getElementById('chargen-wrap').classList.add('hidden');
-    };
+    }
 
     // ── Verfall Info ──
-    window.showVerfallInfo = function() {
+    function showVerfallInfo() {
       const val  = document.getElementById('inp-verfall').value;
       const info = document.getElementById('verfall-info');
-      if (!val) { info.textContent = ''; return; }
+      if (!val) { info.textContent=''; return; }
       const p    = val.split('-');
-      const d    = new Date(+p[0], +p[1]-1, +p[2]);
+      const d    = new Date(+p[0],+p[1]-1,+p[2]);
       const heute= new Date(); heute.setHours(0,0,0,0);
-      const days = Math.round((d - heute) / 86400000);
-      if      (days <= 0)  info.innerHTML = '<span style="color:var(--red)">🔴 ABGELAUFEN</span>';
-      else if (days <= 7)  info.innerHTML = `<span style="color:var(--red)">🔴 Kritisch – ${days} Tage</span>`;
-      else if (days <= 30) info.innerHTML = `<span style="color:var(--yellow)">🟡 ${days} Tage verbleibend</span>`;
-      else                 info.innerHTML = `<span style="color:var(--green)">🟢 OK – ${Math.round(days/30)} Monate</span>`;
-    };
+      const days = Math.round((d-heute)/86400000);
+      if      (days<=0)  info.innerHTML='<span style="color:var(--red)">🔴 ABGELAUFEN</span>';
+      else if (days<=7)  info.innerHTML=`<span style="color:var(--red)">🔴 Kritisch – ${days} Tage</span>`;
+      else if (days<=30) info.innerHTML=`<span style="color:var(--yellow)">🟡 ${days} Tage verbleibend</span>`;
+      else               info.innerHTML=`<span style="color:var(--green)">🟢 OK – ${Math.round(days/30)} Monate</span>`;
+    }
 
     // ── Chargen ──
     function showChargen(a) {
       const wrap = document.getElementById('chargen-wrap');
       const list = document.getElementById('chargen-list');
-      const ch   = (a.chargen||[]).sort((x,y) => (x.verfall||'').localeCompare(y.verfall||''));
+      const ch   = (a.chargen||[]).sort((x,y)=>(x.verfall||'').localeCompare(y.verfall||''));
       if (!ch.length) { wrap.classList.add('hidden'); return; }
       list.innerHTML = ch.map((c,i) => {
         const heute= new Date(); heute.setHours(0,0,0,0);
-        const days = c.verfall ? Math.round((new Date(c.verfall+'T00:00:00') - heute)/86400000) : null;
+        const p    = c.verfall ? c.verfall.split('-') : null;
+        const days = p ? Math.round((new Date(+p[0],+p[1]-1,+p[2])-heute)/86400000) : null;
         const col  = days===null?'var(--muted)':days<=7?'var(--red)':days<=30?'var(--yellow)':'var(--green)';
         const lbl  = days===null?'–':days<=0?'Abgelaufen':days<=30?days+'d':Math.round(days/30)+'M';
-        const dt   = c.verfall ? new Date(c.verfall+'T00:00:00').toLocaleDateString('de-DE',{month:'2-digit',year:'numeric'}) : '–';
+        const dt   = p ? new Date(+p[0],+p[1]-1,+p[2]).toLocaleDateString('de-DE',{month:'2-digit',year:'numeric'}) : '–';
         return `<div class="charge">
           <div class="charge-dot" style="background:${col}"></div>
           <span style="flex:1;">${c.lot||'–'} · ${dt}</span>
@@ -437,48 +414,46 @@
       wrap.classList.remove('hidden');
     }
 
-    window.delCharge = async function(aid, idx) {
+    async function delCharge(aid, idx) {
       if (!confirm('Charge löschen?')) return;
       const a = artikel.find(x => x.id === aid);
       if (!a) return;
       const ch = [...(a.chargen||[])];
-      ch.splice(idx, 1);
-      await updateDoc(doc(db,'artikel',aid), {chargen:ch});
+      ch.splice(idx,1);
+      await db.collection('artikel').doc(aid).update({chargen:ch});
       a.chargen = ch;
       if (selected?.id === aid) { selected.chargen = ch; showChargen(selected); }
-    };
+    }
 
     // ── Speichern ──
-    window.saveCharge = async function() {
+    async function saveCharge() {
       if (!selected) { toast('Bitte Artikel wählen','err'); return; }
       const lot    = document.getElementById('inp-lot').value.trim();
       const verfall= document.getElementById('inp-verfall').value;
       if (!lot && !verfall) { toast('Charge oder Datum eingeben','err'); return; }
 
-      const ref  = doc(db,'artikel',selected.id);
-      const snap = await getDoc(ref);
+      const ref  = db.collection('artikel').doc(selected.id);
+      const snap = await ref.get();
       const ch   = [...(snap.data()?.chargen||[])];
       const idx  = ch.findIndex(c => c.lot && c.lot === lot);
 
-      if (idx >= 0) { ch[idx] = {...ch[idx], verfall:verfall||ch[idx].verfall}; toast('Charge aktualisiert ✅'); }
-      else { ch.push({lot:lot||'?', verfall:verfall||null, erfasst:new Date().toISOString()}); toast('Charge gespeichert ✅'); }
+      if (idx>=0) { ch[idx]={...ch[idx],verfall:verfall||ch[idx].verfall}; toast('Charge aktualisiert ✅'); }
+      else { ch.push({lot:lot||'?',verfall:verfall||null,erfasst:new Date().toISOString()}); toast('Charge gespeichert ✅'); }
 
-      await updateDoc(ref, {chargen:ch});
+      await ref.update({chargen:ch});
       selected.chargen = ch;
-      artikel.find(a => a.id===selected.id).chargen = ch;
+      artikel.find(a=>a.id===selected.id).chargen = ch;
 
-      document.getElementById('inp-lot').value = '';
-      document.getElementById('inp-verfall').value = '';
+      document.getElementById('inp-lot').value='';
+      document.getElementById('inp-verfall').value='';
       document.getElementById('inp-lot').classList.remove('filled');
       document.getElementById('inp-verfall').classList.remove('filled');
-      document.getElementById('verfall-info').textContent = '';
+      document.getElementById('verfall-info').textContent='';
       showChargen(selected);
-    };
+    }
 
     // ── Kamera ──
-    window.toggleCam = async function() {
-      camOn ? stopCam() : await startCam();
-    };
+    function toggleCam() { camOn ? stopCam() : startCam(); }
 
     async function startCam() {
       camOn = true;
@@ -488,114 +463,102 @@
       try {
         const hints = new Map();
         hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, [
-          ZXing.BarcodeFormat.DATA_MATRIX,
-          ZXing.BarcodeFormat.QR_CODE,
-          ZXing.BarcodeFormat.CODE_128,
-          ZXing.BarcodeFormat.EAN_13,
+          ZXing.BarcodeFormat.DATA_MATRIX, ZXing.BarcodeFormat.QR_CODE,
+          ZXing.BarcodeFormat.CODE_128,    ZXing.BarcodeFormat.EAN_13,
         ]);
         hints.set(ZXing.DecodeHintType.TRY_HARDER, true);
         reader = new ZXing.BrowserMultiFormatReader(hints);
         await reader.decodeFromConstraints(
-          {video:{facingMode:camSide==='back'?'environment':'user', width:{ideal:1280}, height:{ideal:720}}},
+          {video:{facingMode:camSide==='back'?'environment':'user',width:{ideal:1280},height:{ideal:720}}},
           'video',
-          (result) => { if (result) onScan(result.getText()); }
+          result => { if (result) onScan(result.getText()); }
         );
       } catch(e) {
-        toast(e.name==='NotAllowedError' ? 'Kamera-Zugriff verweigert' : 'Kamera: '+e.message, 'err');
+        toast(e.name==='NotAllowedError'?'Kamera-Zugriff verweigert':'Kamera: '+e.message,'err');
         stopCam();
       }
     }
 
     function stopCam() {
-      camOn = false;
+      camOn=false;
       document.getElementById('btn-cam').classList.remove('on');
       document.getElementById('cam-wrap').classList.remove('show');
       document.getElementById('cam-btns').classList.add('hidden');
-      if (reader) { try { reader.reset(); } catch(e){} reader = null; }
-      const v = document.getElementById('video');
-      if (v.srcObject) { v.srcObject.getTracks().forEach(t=>t.stop()); v.srcObject = null; }
+      if (reader) { try{reader.reset();}catch(e){} reader=null; }
+      const v=document.getElementById('video');
+      if (v.srcObject) { v.srcObject.getTracks().forEach(t=>t.stop()); v.srcObject=null; }
     }
 
-    window.switchCam = async function(side) {
-      camSide = side;
-      document.getElementById('cb-back').classList.toggle('on', side==='back');
-      document.getElementById('cb-front').classList.toggle('on', side==='front');
+    function switchCam(side) {
+      camSide=side;
+      document.getElementById('cb-back').classList.toggle('on',side==='back');
+      document.getElementById('cb-front').classList.toggle('on',side==='front');
       stopCam();
-      await new Promise(r=>setTimeout(r,300));
-      await startCam();
-    };
+      setTimeout(startCam, 300);
+    }
 
-    window.toggleLight = async function() {
-      const v = document.getElementById('video');
+    async function toggleLight() {
+      const v=document.getElementById('video');
       if (!v.srcObject) return;
-      const t = v.srcObject.getVideoTracks()[0];
+      const t=v.srcObject.getVideoTracks()[0];
       if (!t) return;
       try {
-        const torch = !t.getSettings().torch;
+        const torch=!t.getSettings().torch;
         await t.applyConstraints({advanced:[{torch}]});
-        document.getElementById('cb-light').classList.toggle('on', torch);
+        document.getElementById('cb-light').classList.toggle('on',torch);
       } catch(e) { toast('Licht nicht verfügbar'); }
-    };
-
-    // ── Bluetooth ──
-    const btEl = document.getElementById('bt-input');
-
-    window.toggleBT = function() {
-      btOn = !btOn;
-      document.getElementById('btn-bt').classList.toggle('bt-on', btOn);
-      document.getElementById('btn-bt').textContent = btOn ? '📡 BT Aktiv' : '📡 Bluetooth';
-      document.getElementById('bt-hint').classList.toggle('show', btOn);
-      if (btOn) btFocus();
-    };
-
-    function btFocus() {
-      if (!btOn) return;
-      btEl.value = '';
-      try { btEl.focus(); } catch(e) {}
     }
 
-    // Fokus halten
-    btEl.addEventListener('blur', () => {
-      if (btOn) setTimeout(btFocus, 80);
-    });
+    // ── Bluetooth ──
+    function toggleBT() {
+      btOn=!btOn;
+      document.getElementById('btn-bt').classList.toggle('bt-on',btOn);
+      document.getElementById('btn-bt').textContent=btOn?'📡 BT Aktiv':'📡 Bluetooth';
+      document.getElementById('bt-hint').classList.toggle('show',btOn);
+      if (btOn) btFocus();
+    }
 
-    // Input sammeln (Hauptweg)
+    const btEl = document.createElement('input');
+    btEl.type='text'; btEl.inputMode='none';
+    btEl.style.cssText='position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0;font-size:16px;border:none;outline:none;';
+    btEl.autocomplete='off';
+    document.body.appendChild(btEl);
+
+    function btFocus() { if (!btOn) return; btEl.value=''; try{btEl.focus();}catch(e){} }
+
+    btEl.addEventListener('blur', () => { if (btOn) setTimeout(btFocus,80); });
+
     btEl.addEventListener('input', () => {
       if (!btOn) return;
-      buf += btEl.value;
-      btEl.value = '';
+      buf += btEl.value; btEl.value='';
       clearTimeout(bufTimer);
       bufTimer = setTimeout(() => {
-        const code = buf.trim(); buf = '';
-        if (code.length >= 4) onScan(code);
+        const code=buf.trim(); buf='';
+        if (code.length>=4) onScan(code);
       }, 150);
     });
 
-    // Enter als Abschluss
     btEl.addEventListener('keydown', e => {
-      if (e.key === 'Enter') {
+      if (e.key==='Enter') {
         e.preventDefault();
         clearTimeout(bufTimer);
-        const code = buf.trim(); buf = ''; btEl.value = '';
-        if (code.length >= 4) onScan(code);
+        const code=buf.trim(); buf=''; btEl.value='';
+        if (code.length>=4) onScan(code);
       }
     });
 
-    // Klick → Fokus zurück
     document.addEventListener('pointerdown', () => {
-      if (btOn) setTimeout(btFocus, 150);
+      if (btOn) setTimeout(btFocus,150);
     });
 
     // ── Toast ──
-    function toast(msg, type='ok') {
-      const t = document.createElement('div');
-      t.className   = 'toast';
-      t.textContent  = msg;
-      t.style.background = type==='err' ? '#ef4444' : '#22c55e';
+    function toast(msg,type='ok') {
+      const t=document.createElement('div');
+      t.className='toast'; t.textContent=msg;
+      t.style.background=type==='err'?'#ef4444':'#22c55e';
       document.body.appendChild(t);
-      setTimeout(() => t.remove(), 2500);
+      setTimeout(()=>t.remove(),2500);
     }
-
   </script>
   <script src="../js/pwa.js"></script>
 </body>
