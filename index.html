@@ -127,6 +127,11 @@
         <div class="spinner"></div>
         <span class="text-muted text-sm">Verbinde mit Firebase...</span>
       </div>
+      <div id="back-to-bereiche" class="hidden" style="margin-bottom:10px;">
+        <button onclick="showBereiche()" style="display:flex;align-items:center;gap:6px;background:none;border:1.5px solid var(--border);border-radius:10px;padding:8px 14px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:0.82rem;font-weight:600;color:var(--text2);touch-action:manipulation;">
+          ← Alle Bereiche
+        </button>
+      </div>
       <div id="search-results" class="search-results hidden"></div>
       <div id="empty-state" class="empty-state hidden">
         <div class="empty-icon">🔍</div>
@@ -278,7 +283,7 @@
         function renderResults(results, q) {
       // Bereiche nur bei echter Suche ausblenden
       if (q) document.getElementById('bereiche-section').classList.add('hidden');
-      document.getElementById('back-to-bereiche').classList.add('hidden');
+      document.getElementById('back-to-bereiche')?.classList.add('hidden');
       document.getElementById('empty-state').classList.add('hidden');
       document.getElementById('search-results').classList.add('hidden');
 
@@ -333,7 +338,7 @@
       const bereichArtikel = alleArtikel.filter(a => a.bereich === id)
         .sort((a,b) => naturalSort(a.lp||'', b.lp||''));
       // Bereiche NICHT verstecken – nur Artikel darunter anzeigen
-      document.getElementById('back-to-bereiche').classList.remove('hidden');
+      document.getElementById('back-to-bereiche')?.classList.remove('hidden');
       document.getElementById('search-results').classList.remove('hidden');
       document.getElementById('empty-state').classList.add('hidden');
       document.getElementById('status-text').textContent =
@@ -360,7 +365,7 @@
 
     // Zurück zu Bereichen
     window.showBereiche = function() {
-      document.getElementById('back-to-bereiche').classList.add('hidden');
+      document.getElementById('back-to-bereiche')?.classList.add('hidden');
       document.getElementById('search-results').classList.add('hidden');
       document.getElementById('bereiche-section').classList.remove('hidden');
       document.getElementById('status-text').textContent =
