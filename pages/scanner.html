@@ -315,9 +315,20 @@
       console.log('Scan raw:', raw);
       console.log('Scan parsed:', parsed);
 
-      // Neuer Scan → Formular zurücksetzen
-      resetForm();
+      // Neuer Scan → nur Felder leeren, nicht Artikel
       lastParsed = parsed;
+      document.getElementById('inp-lot').value = '';
+      document.getElementById('inp-verfall').value = '';
+      document.getElementById('inp-lot').classList.remove('filled');
+      document.getElementById('inp-verfall').classList.remove('filled');
+      document.getElementById('verfall-info').textContent = '';
+      // Artikel nur zurücksetzen wenn neuer Code
+      selected = null;
+      document.getElementById('artikel-search-wrap').classList.remove('hidden');
+      document.getElementById('artikel-sel-wrap').classList.add('hidden');
+      document.getElementById('chargen-wrap').classList.add('hidden');
+      document.getElementById('inp-search').value = '';
+      document.getElementById('suggestions').innerHTML = '';
 
       if (parsed.gtin) {
         const a = artikel.find(x =>
@@ -589,8 +600,13 @@
     // Wenn Nutzer ein Inputfeld fokussiert → BT pausieren
     document.addEventListener('focusin', e => {
       if (btOn && USER_INPUTS.includes(e.target?.id)) {
-        btEl.blur(); // BT-Input verliert Fokus → Scanner tippt nicht mehr rein
+        btEl.blur();
       }
+    });
+
+    // Suggestion klick → BT nicht sofort zurückfokussieren
+    document.getElementById('suggestions')?.addEventListener('pointerdown', e => {
+      e.stopPropagation();
     });
 
     // Wenn Nutzer Inputfeld verlässt → BT wieder aktivieren
