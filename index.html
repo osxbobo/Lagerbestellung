@@ -276,7 +276,9 @@
     }
 
         function renderResults(results, q) {
-      document.getElementById('bereiche-section').classList.add('hidden');
+      // Bereiche nur bei echter Suche ausblenden
+      if (q) document.getElementById('bereiche-section').classList.add('hidden');
+      document.getElementById('back-to-bereiche').classList.add('hidden');
       document.getElementById('empty-state').classList.add('hidden');
       document.getElementById('search-results').classList.add('hidden');
 
@@ -330,9 +332,39 @@
       document.getElementById('search-clear').classList.remove('hidden');
       const bereichArtikel = alleArtikel.filter(a => a.bereich === id)
         .sort((a,b) => naturalSort(a.lp||'', b.lp||''));
-      renderResults(bereichArtikel, '');
+      // Bereiche NICHT verstecken – nur Artikel darunter anzeigen
+      document.getElementById('back-to-bereiche').classList.remove('hidden');
+      document.getElementById('search-results').classList.remove('hidden');
+      document.getElementById('empty-state').classList.add('hidden');
       document.getElementById('status-text').textContent =
-        `${alleArtikel.filter(a => a.bereich === id).length} Artikel in „${name}"`;
+        `${bereichArtikel.length} Artikel in „${name}"`;
+      const container = document.getElementById('search-results');
+      container.innerHTML = bereichArtikel.map(a => {
+        const b = alleBereiche.find(x => x.id === a.bereich);
+        const loc = a.location || a.lp || '';
+        return `
+          <div class="result-card fade-in">
+            <div class="result-photo" onclick="openPhoto('${a.fotoUrl||''}','${a.name}')">
+              ${a.fotoUrl ? `<img src="${a.fotoUrl}" alt="${a.name}" loading="lazy">` : '<div class="photo-placeholder">📦</div>'}
+            </div>
+            <div class="result-info">
+              <div class="result-name">${a.name}</div>
+              <div class="result-location">
+                <span class="result-bereich">${b?.name||''}</span>
+                ${loc ? `<span class="result-lp">📍 ${loc.replace(/\./g,' · ')}</span>` : ''}
+              </div>
+            </div>
+          </div>`;
+      }).join('');
+    };
+
+    // Zurück zu Bereichen
+    window.showBereiche = function() {
+      document.getElementById('back-to-bereiche').classList.add('hidden');
+      document.getElementById('search-results').classList.add('hidden');
+      document.getElementById('bereiche-section').classList.remove('hidden');
+      document.getElementById('status-text').textContent =
+        `${alleArtikel.length} Artikel · ${alleBereiche.length} Bereiche`;
     };
 
     window.clearSearch = function() {
