@@ -315,7 +315,11 @@
       console.log('Scan raw:', raw);
       console.log('Scan parsed:', parsed);
 
-      if (parsed.gtin && !selected) {
+      // Neuer Scan → Formular zurücksetzen
+      resetForm();
+      lastParsed = parsed;
+
+      if (parsed.gtin) {
         const a = artikel.find(x =>
           x.gtin === parsed.gtin ||
           (Array.isArray(x.gtins) && x.gtins.includes(parsed.gtin)) ||
@@ -426,6 +430,9 @@
     }
 
     // ── Speichern ──
+    // Letzten gescannten Parsed-Result merken für GTIN-Speicherung
+    let lastParsed = null;
+
     async function saveCharge() {
       if (!selected) { toast('Bitte Artikel wählen','err'); return; }
       const lot    = document.getElementById('inp-lot').value.trim();
@@ -434,22 +441,45 @@
 
       const ref  = db.collection('artikel').doc(selected.id);
       const snap = await ref.get();
-      const ch   = [...(snap.data()?.chargen||[])];
+      const data = snap.data() || {};
+      const ch   = [...(data.chargen||[])];
       const idx  = ch.findIndex(c => c.lot && c.lot === lot);
 
+      // GTIN speichern falls vorhanden
+      const updateData = {chargen: ch};
+      if (lastParsed?.gtin) {
+        const existingGtins = Array.isArray(data.gtins) ? [...data.gtins] : (data.gtin ? [data.gtin] : []);
+        if (!existingGtins.includes(lastParsed.gtin)) existingGtins.push(lastParsed.gtin);
+        updateData.gtin  = lastParsed.gtin;
+        updateData.gtins = existingGtins;
+      }
+
       if (idx>=0) { ch[idx]={...ch[idx],verfall:verfall||ch[idx].verfall}; toast('Charge aktualisiert ✅'); }
-      else { ch.push({lot:lot||'?',verfall:verfall||null,erfasst:new Date().toISOString()}); toast('Charge gespeichert ✅'); }
+      else { ch.push({lot:lot||'?',verfall:verfall||null,gtin:lastParsed?.gtin||null,erfasst:new Date().toISOString()}); toast('Charge gespeichert ✅'); }
 
-      await ref.update({chargen:ch});
-      selected.chargen = ch;
-      artikel.find(a=>a.id===selected.id).chargen = ch;
+      await ref.update(updateData);
 
+      // Lokale Daten updaten
+      const artIdx = artikel.findIndex(a=>a.id===selected.id);
+      if (artIdx>=0) { artikel[artIdx] = {...artikel[artIdx], ...updateData}; }
+
+      // Alles zurücksetzen für nächsten Scan
+      resetForm();
+    }
+
+    function resetForm() {
+      selected   = null;
+      lastParsed = null;
       document.getElementById('inp-lot').value='';
       document.getElementById('inp-verfall').value='';
       document.getElementById('inp-lot').classList.remove('filled');
       document.getElementById('inp-verfall').classList.remove('filled');
       document.getElementById('verfall-info').textContent='';
-      showChargen(selected);
+      document.getElementById('artikel-search-wrap').classList.remove('hidden');
+      document.getElementById('artikel-sel-wrap').classList.add('hidden');
+      document.getElementById('chargen-wrap').classList.add('hidden');
+      document.getElementById('inp-search').value='';
+      document.getElementById('suggestions').innerHTML='';
     }
 
     // ── Kamera ──
@@ -526,7 +556,16 @@
 
     function btFocus() { if (!btOn) return; btEl.value=''; try{btEl.focus();}catch(e){} }
 
-    btEl.addEventListener('blur', () => { if (btOn) setTimeout(btFocus,80); });
+    // Echte Inputfelder die der Nutzer selbst befüllt
+    const USER_INPUTS = ['inp-search', 'inp-lot', 'inp-verfall'];
+
+    function isUserInputFocused() {
+      return USER_INPUTS.includes(document.activeElement?.id);
+    }
+
+    btEl.addEventListener('blur', () => {
+      if (btOn && !isUserInputFocused()) setTimeout(btFocus, 80);
+    });
 
     btEl.addEventListener('input', () => {
       if (!btOn) return;
@@ -547,8 +586,25 @@
       }
     });
 
-    document.addEventListener('pointerdown', () => {
-      if (btOn) setTimeout(btFocus,150);
+    // Wenn Nutzer ein Inputfeld fokussiert → BT pausieren
+    document.addEventListener('focusin', e => {
+      if (btOn && USER_INPUTS.includes(e.target?.id)) {
+        btEl.blur(); // BT-Input verliert Fokus → Scanner tippt nicht mehr rein
+      }
+    });
+
+    // Wenn Nutzer Inputfeld verlässt → BT wieder aktivieren
+    document.addEventListener('focusout', e => {
+      if (btOn && USER_INPUTS.includes(e.target?.id)) {
+        setTimeout(btFocus, 200);
+      }
+    });
+
+    // Klick außerhalb Inputfelder → BT Fokus zurück
+    document.addEventListener('pointerdown', e => {
+      if (btOn && !USER_INPUTS.includes(e.target?.id)) {
+        setTimeout(btFocus, 150);
+      }
     });
 
     // ── Toast ──
