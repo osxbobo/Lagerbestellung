@@ -309,7 +309,7 @@
 
     // ── Scan Result ──
     function onScan(raw) {
-      if (!raw || raw.trim().length < 4) return;
+      if (!raw || raw.trim().length < 6) return; // Min 6 Zeichen – verhindert Enter/CR als Scan
       if (navigator.vibrate) navigator.vibrate(80);
       const parsed = raw.startsWith('+') || raw.startsWith('/') ? parseHIBC(raw) : parseGS1(raw);
       console.log('Scan raw:', raw, '→', parsed);
@@ -584,7 +584,7 @@
 
     // Nur refokussieren wenn Nutzer nicht tippt
     btEl.addEventListener('blur', () => {
-      if (btOn && !userTyping) setTimeout(btFocus, 80);
+      if (btOn && !userTyping) setTimeout(btFocus, 500);
     });
 
     btEl.addEventListener('input', () => {
@@ -622,12 +622,9 @@
       });
     });
 
-    // Klick außerhalb → BT refokussieren
-    document.addEventListener('pointerdown', e => {
-      if (!btOn) return;
-      const isInput = USER_INPUTS.includes(e.target?.id);
-      const isSug   = !!e.target?.closest?.('#suggestions');
-      if (!isInput && !isSug) setTimeout(btFocus, 150);
+    // Klick auf Scan/BT Bereich → refokussieren (nicht auf Formular)
+    document.getElementById('btn-bt')?.addEventListener('click', () => {
+      if (btOn) setTimeout(btFocus, 100);
     });
 
         // ── Toast ──
