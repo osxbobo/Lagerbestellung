@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="de" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Verfallsscan – LAGER//APP</title>
+  <link rel="manifest" href="../manifest.json">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <!-- Firebase SDK (global, kein ES Module) -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <!-- ZXing -->
+  <script src="https://unpkg.com/@zxing/library@0.19.1/umd/index.min.js"></script>
+
+  <style>
+    :root {
+      --bg:#f9fafb; --surface:#fff; --surface2:#f3f4f6;
+      --border:#e5e7eb; --text:#111827; --text2:#374151;
+      --muted:#9ca3af; --accent:#f97316; --green:#22c55e;
+      --red:#ef4444; --yellow:#eab308; --blue:#0ea5e9;
+    }
+    [data-theme="dark"] {
+      --bg:#0a0f1a; --surface:#111827; --surface2:#1f2937;
+      --border:#374151; --text:#f9fafb; --text2:#e5e7eb; --muted:#6b7280;
+    }
+    * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+    body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
+
+    nav { position:sticky; top:0; z-index:100; background:var(--surface); border-bottom:1px solid var(--border); padding:10px 16px; display:flex; align-items:center; gap:10px; }
+    .nav-back { background:none; border:1px solid var(--border); border-radius:8px; padding:6px 12px; cursor:pointer; color:var(--text2); font-family:'DM Sans',sans-serif; font-size:0.82rem; }
+    .nav-logo img { height:28px; width:auto; display:block; }
+    .nav-logo-text { font-family:'IBM Plex Mono',monospace; font-weight:600; font-size:0.95rem; color:var(--accent); }
+    .nav-logo-text span { color:var(--text2); }
+    .nav-right { margin-left:auto; display:flex; align-items:center; gap:8px; }
+    .theme-btn { background:none; border:1px solid var(--border); border-radius:8px; padding:5px 9px; cursor:pointer; font-size:0.9rem; }
+
+    .page { padding:16px; display:flex; flex-direction:column; gap:12px; max-width:500px; margin:0 auto; }
+
+    .card { background:var(--surface); border:1px solid var(--border); border-radius:14px; overflow:hidden; }
+    .card-head { padding:11px 16px; background:var(--surface2); border-bottom:1px solid var(--border); font-size:0.8rem; font-weight:700; color:var(--text2); }
+    .card-body { padding:16px; display:flex; flex-direction:column; gap:10px; }
+
+    .btn-row { display:flex; gap:8px; }
+    .btn { flex:1; height:44px; border-radius:10px; border:1.5px solid var(--border); background:var(--surface2); color:var(--text2); font-family:'DM Sans',sans-serif; font-size:0.85rem; font-weight:600; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; touch-action:manipulation; }
+    .btn.on { background:var(--accent); border-color:var(--accent); color:#fff; }
+    .btn.bt-on { background:rgba(34,197,94,0.12); border-color:var(--green); color:var(--green); }
+
+    /* Camera */
+    .cam-wrap { border-radius:10px; overflow:hidden; background:#000; position:relative; display:none; }
+    .cam-wrap.show { display:block; }
+    #video { width:100%; max-height:45vh; object-fit:cover; display:block; }
+    .cam-frame { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; pointer-events:none; }
+    .cam-frame div { width:200px; height:200px; border:2px solid var(--accent); border-radius:8px; }
+    .cam-btns { display:flex; gap:6px; }
+    .cam-btn { flex:1; height:34px; border-radius:8px; border:1px solid var(--border); background:var(--surface2); color:var(--text2); font-family:'DM Sans',sans-serif; font-size:0.72rem; font-weight:600; cursor:pointer; touch-action:manipulation; }
+    .cam-btn.on { background:var(--accent); border-color:var(--accent); color:#fff; }
+
+    /* BT status */
+    .bt-hint { padding:10px 12px; background:rgba(34,197,94,0.08); border:1px solid rgba(34,197,94,0.3); border-radius:10px; font-size:0.78rem; color:var(--green); font-weight:600; display:none; }
+    .bt-hint.show { display:block; }
+
+    /* Fields */
+    .field { display:flex; flex-direction:column; gap:4px; }
+    .label { font-size:0.6rem; font-weight:700; color:var(--muted); font-family:'IBM Plex Mono',monospace; text-transform:uppercase; letter-spacing:0.05em; }
+    input.inp, select.inp {
+      width:100%; padding:12px 14px; border-radius:10px;
+      border:1.5px solid var(--border); background:var(--surface2);
+      color:var(--text); font-family:'DM Sans',sans-serif; font-size:0.95rem;
+      outline:none; -webkit-appearance:none; appearance:none;
+      transition:border-color 0.15s;
+    }
+    input.inp:focus, select.inp:focus { border-color:var(--blue); }
+    input.inp.filled { border-color:var(--green); background:rgba(34,197,94,0.05); }
+    select.inp { appearance:auto; -webkit-appearance:auto; }
+
+    .suggestions { display:flex; flex-direction:column; gap:4px; margin-top:4px; max-height:200px; overflow-y:auto; }
+    .sug { padding:10px 12px; background:var(--surface2); border:1px solid var(--border); border-radius:8px; cursor:pointer; touch-action:manipulation; }
+    .sug:active { background:var(--accent); color:#fff; }
+    .sug-name { font-size:0.85rem; font-weight:600; }
+    .sug-lp   { font-size:0.7rem; color:var(--muted); font-family:'IBM Plex Mono',monospace; }
+
+    .artikel-sel { padding:9px 12px; background:rgba(34,197,94,0.08); border:1px solid rgba(34,197,94,0.3); border-radius:10px; display:flex; align-items:center; justify-content:space-between; }
+    .artikel-sel span { font-size:0.85rem; font-weight:600; color:var(--green); }
+    .artikel-sel button { background:none; border:none; color:var(--muted); cursor:pointer; font-size:1rem; padding:2px 6px; }
+
+    .verfall-info { font-size:0.72rem; font-family:'IBM Plex Mono',monospace; margin-top:2px; }
+
+    .save-btn { width:100%; height:50px; border-radius:12px; border:none; background:var(--green); color:#fff; font-family:'DM Sans',sans-serif; font-size:1rem; font-weight:700; cursor:pointer; touch-action:manipulation; }
+    .save-btn:active { opacity:0.85; }
+
+    /* Chargen */
+    .charge { display:flex; align-items:center; gap:8px; padding:8px 10px; background:var(--surface2); border-radius:8px; font-size:0.75rem; font-family:'IBM Plex Mono',monospace; }
+    .charge-dot { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+    .charge-del { margin-left:auto; background:none; border:none; color:var(--muted); cursor:pointer; font-size:0.9rem; flex-shrink:0; }
+
+    .toast { position:fixed; bottom:24px; left:50%; transform:translateX(-50%); padding:10px 20px; border-radius:12px; font-size:0.82rem; font-weight:600; color:#fff; z-index:9999; white-space:nowrap; animation:up 0.2s ease; }
+    @keyframes up { from { opacity:0; transform:translateX(-50%) translateY(6px); } }
+    .hidden { display:none !important; }
+  </style>
+</head>
+<body>
+
+  <!-- BT Input: inputmode=none = keine Bildschirmtastatur, HID Scanner funktioniert -->
+  <input id="bt-input" type="text" inputmode="none"
+    style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0;font-size:16px;border:none;outline:none;"
+    autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+
+  <nav>
+    <button class="nav-back" onclick="history.back()">← Zurück</button>
+    <div class="nav-logo">
+      <img src="../LAGER_APP.png" alt="LAGER//APP"
+        onerror="this.style.display='none';document.getElementById('nav-text').style.display='block'">
+      <div id="nav-text" class="nav-logo-text" style="display:none;">LAGER<span>//</span>APP</div>
+    </div>
+    <div class="nav-right">
+      <span id="nav-user" style="font-size:0.75rem;color:var(--muted);"></span>
+      <button class="theme-btn" onclick="toggleTheme()">☀️</button>
+    </div>
+  </nav>
+
+  <div class="page">
+
+    <!-- BARCODE ERFASSEN -->
+    <div class="card">
+      <div class="card-head">🔍 Barcode erfassen</div>
+      <div class="card-body">
+        <div class="btn-row">
+          <button class="btn" id="btn-cam" onclick="toggleCam()">📷 Kamera</button>
+          <button class="btn" id="btn-bt"  onclick="toggleBT()">📡 Bluetooth</button>
+        </div>
+
+        <div class="cam-wrap" id="cam-wrap">
+          <video id="video" playsinline autoplay muted></video>
+          <div class="cam-frame"><div></div></div>
+        </div>
+        <div class="cam-btns hidden" id="cam-btns">
+          <button class="cam-btn on" id="cb-back"  onclick="switchCam('back')">📷 Rückseite</button>
+          <button class="cam-btn"    id="cb-front" onclick="switchCam('front')">🤳 Vorderseite</button>
+          <button class="cam-btn"    id="cb-light" onclick="toggleLight()">🔦 Licht</button>
+        </div>
+
+        <div class="bt-hint" id="bt-hint">
+          📡 Bluetooth aktiv – Code scannen um Felder automatisch auszufüllen
+        </div>
+      </div>
+    </div>
+
+    <!-- CHARGE ERFASSEN -->
+    <div class="card">
+      <div class="card-head">📋 Charge erfassen</div>
+      <div class="card-body">
+
+        <!-- Artikel -->
+        <div class="field">
+          <div class="label">Artikel</div>
+          <div id="artikel-sel-wrap" class="hidden">
+            <div class="artikel-sel">
+              <span id="artikel-sel-name"></span>
+              <button onclick="clearArtikel()">✕</button>
+            </div>
+          </div>
+          <div id="artikel-search-wrap">
+            <input type="text" id="inp-search" class="inp" placeholder="Artikel suchen..."
+              autocomplete="off" oninput="doSearch(this.value)">
+            <div class="suggestions" id="suggestions"></div>
+          </div>
+        </div>
+
+        <!-- LOT -->
+        <div class="field">
+          <div class="label">Charge / LOT</div>
+          <input type="text" id="inp-lot" class="inp" placeholder="z.B. 140211" autocomplete="off">
+        </div>
+
+        <!-- Verfall -->
+        <div class="field">
+          <div class="label">Verfallsdatum</div>
+          <input type="date" id="inp-verfall" class="inp" oninput="showVerfallInfo()">
+          <div class="verfall-info" id="verfall-info"></div>
+        </div>
+
+        <button class="save-btn" onclick="saveCharge()">✅ Charge speichern</button>
+
+        <!-- Chargen Liste -->
+        <div id="chargen-wrap" class="hidden">
+          <div class="label" style="margin-bottom:6px;">Gespeicherte Chargen</div>
+          <div id="chargen-list" style="display:flex;flex-direction:column;gap:5px;"></div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // Theme
+    (function(){
+      const t = localStorage.getItem('theme') || 'light';
+      document.documentElement.setAttribute('data-theme', t);
+    })();
+    function toggleTheme() {
+      const t = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', t);
+      localStorage.setItem('theme', t);
+      document.querySelector('.theme-btn').textContent = t === 'dark' ? '🌙' : '☀️';
+    }
+  </script>
+
+  <script>
+    // ── Firebase Init (compat SDK – global verfügbar) ──
+    const firebaseConfig = {
+      apiKey:            "AIzaSyD1YY-cFQxyykfYQYPORwulzuF8t6Wgid4",
+      authDomain:        "lagerbestellung-19970.firebaseapp.com",
+      projectId:         "lagerbestellung-19970",
+      storageBucket:     "lagerbestellung-19970.firebasestorage.app",
+      messagingSenderId: "939056339904",
+      appId:             "1:939056339904:web:6f33ca2f5a4cebd2780625"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db   = firebase.firestore();
+    const auth = firebase.auth();
+
+    // ── State ──
+    let artikel  = [];
+    let selected = null;
+    let camOn    = false;
+    let btOn     = false;
+    let reader   = null;
+    let camSide  = 'back';
+    let buf      = '';
+    let bufTimer = null;
+    let bufLast  = 0;
+
+    // ── Auth ──
+    auth.onAuthStateChanged(async user => {
+      const pinOk = sessionStorage.getItem('lager-pin-auth') || localStorage.getItem('lager-saved-pin');
+      if (!user && !pinOk) { window.location.href = '../index.html'; return; }
+      const name = user?.displayName || user?.email
+        || sessionStorage.getItem('lager-pin-name')
+        || localStorage.getItem('lager-saved-name') || '';
+      document.getElementById('nav-user').textContent = name;
+      await load();
+    });
+
+    // ── Artikel laden ──
+    async function load() {
+      const snap = await db.collection('artikel').get();
+      artikel = snap.docs.map(d => ({id:d.id,...d.data()}))
+        .sort((a,b) => (a.name||'').localeCompare(b.name||''));
+    }
+
+    // ── GS1 Parser ──
+    function parseGS1(raw) {
+      const r = {gtin:null, lot:null, verfall:null};
+      const s = raw.replace(/[\x00-\x1F\x7F]/g,'').trim();
+
+      // Mit Klammern
+      if (s.includes('(')) {
+        const g = s.match(/\(01\)(\d{14})/);
+        const l = s.match(/\(10\)([^\(]+)/i);
+        const v = s.match(/\(17\)(\d{6})/);
+        if (g) r.gtin = g[1];
+        if (l) r.lot  = l[1].trim();
+        if (v) {
+          const d = v[1];
+          const yy=parseInt(d.substring(0,2)), mm=parseInt(d.substring(2,4)), dd=parseInt(d.substring(4,6));
+          if (mm>=1&&mm<=12&&yy>=20&&yy<=40)
+            r.verfall = `20${String(yy).padStart(2,'0')}-${String(mm).padStart(2,'0')}-${String(dd).padStart(2,'0')}`;
+        }
+        return r;
+      }
+
+      // Ohne Klammern
+      if (s.startsWith('01') && s.length >= 16) {
+        r.gtin = s.substring(2,16);
+        const rest = s.substring(16);
+        const m17 = rest.match(/17([2-3]\d)(0[1-9]|1[0-2])(\d{2})/);
+        if (m17) {
+          const yy=parseInt(m17[1]), mm=parseInt(m17[2]), dd=parseInt(m17[3]);
+          r.verfall = `20${String(yy).padStart(2,'0')}-${String(mm).padStart(2,'0')}-${String(dd).padStart(2,'0')}`;
+          const before17 = rest.substring(0, m17.index);
+          if (before17.startsWith('10')) r.lot = before17.substring(2).trim();
+        } else if (rest.startsWith('10')) {
+          r.lot = rest.substring(2).trim();
+        }
+      }
+      return r;
+    }
+
+    // ── HIBC Parser ──
+    function parseHIBC(raw) {
+      const r = {gtin:null, lot:null, verfall:null};
+      const parts = raw.split('/$$');
+      if (parts.length < 2) return r;
+      const sec = parts[1];
+      const mm  = parseInt(sec.substring(0,2));
+      const yy  = 2000 + parseInt(sec.substring(2,4));
+      if (mm>=1&&mm<=12&&yy>=2020&&yy<=2040) {
+        const last = new Date(yy,mm,0).getDate();
+        r.verfall = `${yy}-${String(mm).padStart(2,'0')}-${String(last).padStart(2,'0')}`;
+        const lot = sec.substring(4);
+        r.lot = lot.length > 1 ? lot.slice(0,-1).trim() : lot.trim();
+      }
+      return r;
+    }
+
+    // ── Scan Result ──
+    function onScan(raw) {
+      if (!raw || raw.trim().length < 4) return;
+      if (navigator.vibrate) navigator.vibrate(80);
+      const parsed = raw.startsWith('+') || raw.startsWith('/') ? parseHIBC(raw) : parseGS1(raw);
+      console.log('Scan raw:', raw);
+      console.log('Scan parsed:', parsed);
+
+      if (parsed.gtin && !selected) {
+        const a = artikel.find(x =>
+          x.gtin === parsed.gtin ||
+          (Array.isArray(x.gtins) && x.gtins.includes(parsed.gtin)) ||
+          (x.chargen||[]).some(c => c.gtin === parsed.gtin)
+        );
+        if (a) selectArtikel(a);
+      }
+      if (parsed.lot) {
+        const el = document.getElementById('inp-lot');
+        el.value = parsed.lot; el.classList.add('filled');
+      }
+      if (parsed.verfall) {
+        const el = document.getElementById('inp-verfall');
+        let d = parsed.verfall;
+        if (d.length === 7) {
+          const p = d.split('-');
+          d = `${p[0]}-${p[1]}-${String(new Date(+p[0],+p[1],0).getDate()).padStart(2,'0')}`;
+        }
+        el.value = d; el.classList.add('filled');
+        showVerfallInfo();
+      }
+      toast('✅ Code erkannt');
+    }
+
+    // ── Artikel Suche ──
+    function doSearch(q) {
+      const el = document.getElementById('suggestions');
+      if (!q || q.length < 2) { el.innerHTML=''; return; }
+      const hits = artikel.filter(a =>
+        a.name?.toLowerCase().includes(q.toLowerCase()) ||
+        a.lp?.toLowerCase().includes(q.toLowerCase()) ||
+        (a.aliases||[]).some(al => al.toLowerCase().includes(q.toLowerCase()))
+      ).slice(0,8);
+      el.innerHTML = '';
+      hits.forEach(a => {
+        const d = document.createElement('div');
+        d.className = 'sug';
+        d.innerHTML = `<div class="sug-name">${a.name}</div><div class="sug-lp">${a.lp||''}</div>`;
+        d.addEventListener('click', () => selectArtikel(a));
+        el.appendChild(d);
+      });
+    }
+
+    function selectArtikel(a) {
+      selected = a;
+      document.getElementById('inp-search').value = '';
+      document.getElementById('suggestions').innerHTML = '';
+      document.getElementById('artikel-search-wrap').classList.add('hidden');
+      document.getElementById('artikel-sel-wrap').classList.remove('hidden');
+      document.getElementById('artikel-sel-name').textContent = a.name;
+      showChargen(a);
+    }
+
+    function clearArtikel() {
+      selected = null;
+      document.getElementById('artikel-search-wrap').classList.remove('hidden');
+      document.getElementById('artikel-sel-wrap').classList.add('hidden');
+      document.getElementById('chargen-wrap').classList.add('hidden');
+    }
+
+    // ── Verfall Info ──
+    function showVerfallInfo() {
+      const val  = document.getElementById('inp-verfall').value;
+      const info = document.getElementById('verfall-info');
+      if (!val) { info.textContent=''; return; }
+      const p    = val.split('-');
+      const d    = new Date(+p[0],+p[1]-1,+p[2]);
+      const heute= new Date(); heute.setHours(0,0,0,0);
+      const days = Math.round((d-heute)/86400000);
+      if      (days<=0)  info.innerHTML='<span style="color:var(--red)">🔴 ABGELAUFEN</span>';
+      else if (days<=7)  info.innerHTML=`<span style="color:var(--red)">🔴 Kritisch – ${days} Tage</span>`;
+      else if (days<=30) info.innerHTML=`<span style="color:var(--yellow)">🟡 ${days} Tage verbleibend</span>`;
+      else               info.innerHTML=`<span style="color:var(--green)">🟢 OK – ${Math.round(days/30)} Monate</span>`;
+    }
+
+    // ── Chargen ──
+    function showChargen(a) {
+      const wrap = document.getElementById('chargen-wrap');
+      const list = document.getElementById('chargen-list');
+      const ch   = (a.chargen||[]).sort((x,y)=>(x.verfall||'').localeCompare(y.verfall||''));
+      if (!ch.length) { wrap.classList.add('hidden'); return; }
+      list.innerHTML = ch.map((c,i) => {
+        const heute= new Date(); heute.setHours(0,0,0,0);
+        const p    = c.verfall ? c.verfall.split('-') : null;
+        const days = p ? Math.round((new Date(+p[0],+p[1]-1,+p[2])-heute)/86400000) : null;
+        const col  = days===null?'var(--muted)':days<=7?'var(--red)':days<=30?'var(--yellow)':'var(--green)';
+        const lbl  = days===null?'–':days<=0?'Abgelaufen':days<=30?days+'d':Math.round(days/30)+'M';
+        const dt   = p ? new Date(+p[0],+p[1]-1,+p[2]).toLocaleDateString('de-DE',{month:'2-digit',year:'numeric'}) : '–';
+        return `<div class="charge">
+          <div class="charge-dot" style="background:${col}"></div>
+          <span style="flex:1;">${c.lot||'–'} · ${dt}</span>
+          <span style="color:${col};font-weight:600;">${lbl}</span>
+          <button class="charge-del" onclick="delCharge('${a.id}',${i})">✕</button>
+        </div>`;
+      }).join('');
+      wrap.classList.remove('hidden');
+    }
+
+    async function delCharge(aid, idx) {
+      if (!confirm('Charge löschen?')) return;
+      const a = artikel.find(x => x.id === aid);
+      if (!a) return;
+      const ch = [...(a.chargen||[])];
+      ch.splice(idx,1);
+      await db.collection('artikel').doc(aid).update({chargen:ch});
+      a.chargen = ch;
+      if (selected?.id === aid) { selected.chargen = ch; showChargen(selected); }
+    }
+
+    // ── Speichern ──
+    async function saveCharge() {
+      if (!selected) { toast('Bitte Artikel wählen','err'); return; }
+      const lot    = document.getElementById('inp-lot').value.trim();
+      const verfall= document.getElementById('inp-verfall').value;
+      if (!lot && !verfall) { toast('Charge oder Datum eingeben','err'); return; }
+
+      const ref  = db.collection('artikel').doc(selected.id);
+      const snap = await ref.get();
+      const ch   = [...(snap.data()?.chargen||[])];
+      const idx  = ch.findIndex(c => c.lot && c.lot === lot);
+
+      if (idx>=0) { ch[idx]={...ch[idx],verfall:verfall||ch[idx].verfall}; toast('Charge aktualisiert ✅'); }
+      else { ch.push({lot:lot||'?',verfall:verfall||null,erfasst:new Date().toISOString()}); toast('Charge gespeichert ✅'); }
+
+      await ref.update({chargen:ch});
+      selected.chargen = ch;
+      artikel.find(a=>a.id===selected.id).chargen = ch;
+
+      document.getElementById('inp-lot').value='';
+      document.getElementById('inp-verfall').value='';
+      document.getElementById('inp-lot').classList.remove('filled');
+      document.getElementById('inp-verfall').classList.remove('filled');
+      document.getElementById('verfall-info').textContent='';
+      showChargen(selected);
+    }
+
+    // ── Kamera ──
+    function toggleCam() { camOn ? stopCam() : startCam(); }
+
+    async function startCam() {
+      camOn = true;
+      document.getElementById('btn-cam').classList.add('on');
+      document.getElementById('cam-wrap').classList.add('show');
+      document.getElementById('cam-btns').classList.remove('hidden');
+      try {
+        const hints = new Map();
+        hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, [
+          ZXing.BarcodeFormat.DATA_MATRIX, ZXing.BarcodeFormat.QR_CODE,
+          ZXing.BarcodeFormat.CODE_128,    ZXing.BarcodeFormat.EAN_13,
+        ]);
+        hints.set(ZXing.DecodeHintType.TRY_HARDER, true);
+        reader = new ZXing.BrowserMultiFormatReader(hints);
+        await reader.decodeFromConstraints(
+          {video:{facingMode:camSide==='back'?'environment':'user',width:{ideal:1280},height:{ideal:720}}},
+          'video',
+          result => { if (result) onScan(result.getText()); }
+        );
+      } catch(e) {
+        toast(e.name==='NotAllowedError'?'Kamera-Zugriff verweigert':'Kamera: '+e.message,'err');
+        stopCam();
+      }
+    }
+
+    function stopCam() {
+      camOn=false;
+      document.getElementById('btn-cam').classList.remove('on');
+      document.getElementById('cam-wrap').classList.remove('show');
+      document.getElementById('cam-btns').classList.add('hidden');
+      if (reader) { try{reader.reset();}catch(e){} reader=null; }
+      const v=document.getElementById('video');
+      if (v.srcObject) { v.srcObject.getTracks().forEach(t=>t.stop()); v.srcObject=null; }
+    }
+
+    function switchCam(side) {
+      camSide=side;
+      document.getElementById('cb-back').classList.toggle('on',side==='back');
+      document.getElementById('cb-front').classList.toggle('on',side==='front');
+      stopCam();
+      setTimeout(startCam, 300);
+    }
+
+    async function toggleLight() {
+      const v=document.getElementById('video');
+      if (!v.srcObject) return;
+      const t=v.srcObject.getVideoTracks()[0];
+      if (!t) return;
+      try {
+        const torch=!t.getSettings().torch;
+        await t.applyConstraints({advanced:[{torch}]});
+        document.getElementById('cb-light').classList.toggle('on',torch);
+      } catch(e) { toast('Licht nicht verfügbar'); }
+    }
+
+    // ── Bluetooth ──
+    function toggleBT() {
+      btOn=!btOn;
+      document.getElementById('btn-bt').classList.toggle('bt-on',btOn);
+      document.getElementById('btn-bt').textContent=btOn?'📡 BT Aktiv':'📡 Bluetooth';
+      document.getElementById('bt-hint').classList.toggle('show',btOn);
+      if (btOn) btFocus();
+    }
+
+    const btEl = document.createElement('input');
+    btEl.type='text'; btEl.inputMode='none';
+    btEl.style.cssText='position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0;font-size:16px;border:none;outline:none;';
+    btEl.autocomplete='off';
+    document.body.appendChild(btEl);
+
+    function btFocus() { if (!btOn) return; btEl.value=''; try{btEl.focus();}catch(e){} }
+
+    btEl.addEventListener('blur', () => { if (btOn) setTimeout(btFocus,80); });
+
+    btEl.addEventListener('input', () => {
+      if (!btOn) return;
+      buf += btEl.value; btEl.value='';
+      clearTimeout(bufTimer);
+      bufTimer = setTimeout(() => {
+        const code=buf.trim(); buf='';
+        if (code.length>=4) onScan(code);
+      }, 150);
+    });
+
+    btEl.addEventListener('keydown', e => {
+      if (e.key==='Enter') {
+        e.preventDefault();
+        clearTimeout(bufTimer);
+        const code=buf.trim(); buf=''; btEl.value='';
+        if (code.length>=4) onScan(code);
+      }
+    });
+
+    document.addEventListener('pointerdown', () => {
+      if (btOn) setTimeout(btFocus,150);
+    });
+
+    // ── Toast ──
+    function toast(msg,type='ok') {
+      const t=document.createElement('div');
+      t.className='toast'; t.textContent=msg;
+      t.style.background=type==='err'?'#ef4444':'#22c55e';
+      document.body.appendChild(t);
+      setTimeout(()=>t.remove(),2500);
+    }
+  </script>
+  <script src="../js/pwa.js"></script>
+</body>
+</html>
