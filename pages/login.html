@@ -263,9 +263,9 @@
     const auth = getAuth(app);
     const db   = getFirestore(app);
 
-    // Already logged in?
+    // Already logged in? Anonyme Nutzer (PIN-Login) ignorieren
     auth.onAuthStateChanged(async user => {
-      if (user) {
+      if (user && !user.isAnonymous) {
         const role = await getRole(user.uid);
         redirectByRole(role);
       }

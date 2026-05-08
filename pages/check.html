@@ -604,15 +604,18 @@
     const db  = getFirestore(app);
 
     // ── Auth-Check ──
-    // PIN wird nicht mehr in localStorage gespeichert; Session-Auth via sessionStorage
+    // Wenn Nutzer von index.html kommt (sessionStorage gesetzt), PIN-Screen überspringen
     (async function checkAuth() {
-      const pinOk  = sessionStorage.getItem('lager-pin-auth');
-      const name   = sessionStorage.getItem('lager-pin-name');
-      if (!pinOk || !name) { window.location.href = '../index.html'; return; }
-      userName = name;
-      document.getElementById('nav-user').textContent = userName;
-      await loadCheckData();
-      await showJoinScreen();
+      const pinOk = sessionStorage.getItem('lager-pin-auth');
+      const name  = sessionStorage.getItem('lager-pin-name');
+      if (pinOk && name) {
+        document.getElementById('screen-pin').classList.add('hidden');
+        userName = name;
+        document.getElementById('nav-user').textContent = userName;
+        await loadCheckData();
+        await showJoinScreen();
+      }
+      // Kein sessionStorage → PIN-Screen bleibt sichtbar (Nutzer gibt PIN direkt hier ein)
     })();
 
     let correctPin   = '1234';
