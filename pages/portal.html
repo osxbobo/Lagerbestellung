@@ -1156,7 +1156,7 @@
       } catch(e) { toast(e.message, 'error'); }
     };
 
-    function renderFotos() {
+    window.renderFotos = function renderFotos() {
       const grid   = document.getElementById('foto-grid');
       const search = (document.getElementById('foto-search')?.value || '').toLowerCase();
       const filter = document.getElementById('foto-filter')?.value || 'ohne-produkt';

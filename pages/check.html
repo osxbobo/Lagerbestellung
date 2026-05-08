@@ -1513,6 +1513,10 @@
 
     async function startSession(joinExisting) {
       try {
+        // Sicherstellen dass Firebase-Auth aktiv ist (Fallback falls Session verloren)
+        const auth = getAuth(app);
+        if (!auth.currentUser) await signInAnonymously(auth);
+
         if (joinExisting && window._openSession) {
           // ── Bestehende Session beitreten ──
           sessionId = window._openSession.id;
