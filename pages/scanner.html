@@ -103,11 +103,6 @@
 </head>
 <body>
 
-  <!-- BT Input: inputmode=none = keine Bildschirmtastatur, HID Scanner funktioniert -->
-  <input id="bt-input" type="text" inputmode="none"
-    style="position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0;font-size:16px;border:none;outline:none;"
-    autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
-
   <nav>
     <button class="nav-back" onclick="history.back()">← Zurück</button>
     <div class="nav-logo">
@@ -205,6 +200,10 @@
     (function(){
       const t = localStorage.getItem('theme') || 'light';
       document.documentElement.setAttribute('data-theme', t);
+      document.addEventListener('DOMContentLoaded', () => {
+        const btn = document.querySelector('.theme-btn');
+        if (btn) btn.textContent = t === 'dark' ? '🌙' : '☀️';
+      });
     })();
     function toggleTheme() {
       const t = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
@@ -272,9 +271,12 @@
         if (l) r.lot  = l[1].trim();
         if (v) {
           const d = v[1];
-          const yy=parseInt(d.substring(0,2)), mm=parseInt(d.substring(2,4)), dd=parseInt(d.substring(4,6));
-          if (mm>=1&&mm<=12&&yy>=20&&yy<=40)
+          const yy=parseInt(d.substring(0,2)), mm=parseInt(d.substring(2,4));
+          let dd=parseInt(d.substring(4,6));
+          if (mm>=1&&mm<=12&&yy>=20&&yy<=40) {
+            if (dd===0) dd = new Date(2000+yy, mm, 0).getDate();
             r.verfall = `20${String(yy).padStart(2,'0')}-${String(mm).padStart(2,'0')}-${String(dd).padStart(2,'0')}`;
+          }
         }
         return r;
       }
@@ -287,12 +289,14 @@
         // Verfall suchen (17 + YYMMDD mit gültigem Datum)
         const m17 = rest.match(/17([2-3]\d)(0[1-9]|1[0-2])(\d{2})/);
         if (m17) {
-          const yy=parseInt(m17[1]), mm=parseInt(m17[2]), dd=parseInt(m17[3]);
+          const yy=parseInt(m17[1]), mm=parseInt(m17[2]);
+          let dd=parseInt(m17[3]);
+          if (dd===0) dd = new Date(2000+yy, mm, 0).getDate();
           r.verfall = `20${String(yy).padStart(2,'0')}-${String(mm).padStart(2,'0')}-${String(dd).padStart(2,'0')}`;
         }
 
         // LOT suchen (10 + alphanumerisch) – egal wo im String
-        const m10 = rest.match(/10([A-Z0-9]+?)(?:17[0-9]{6}|11[0-9]{6}|30[0-9]|$)/i);
+        const m10 = rest.match(/10([A-Z0-9]+?)(?:17[0-9]{6}|11[0-9]{6}|30[0-9]{1,8}|$)/i);
         if (m10) {
           r.lot = m10[1].trim();
         } else {
@@ -332,8 +336,8 @@
       const rawTrimmed = raw.trim();
       if (window._lastScannedCode === rawTrimmed) return;
       window._lastScannedCode = rawTrimmed;
-      // Nach 2 Sekunden gleichen Code wieder erlauben
-      setTimeout(() => { if (window._lastScannedCode === rawTrimmed) window._lastScannedCode = null; }, 2000);
+      // Nach 1 Sekunde gleichen Code wieder erlauben
+      setTimeout(() => { if (window._lastScannedCode === rawTrimmed) window._lastScannedCode = null; }, 1000);
       if (navigator.vibrate) navigator.vibrate(80);
       const parsed = raw.startsWith('+') || raw.startsWith('/') ? parseHIBC(raw) : parseGS1(raw);
       console.log('Scan raw:', raw, '→', parsed);
@@ -370,17 +374,15 @@
         el.classList.add('filled');
       }
       if (parsed.verfall) {
-        const el  = document.getElementById('inp-verfall');
-        const d   = parsed.verfall;
-        const val = d.length === 7
-          ? `${d}-${String(new Date(+d.split('-')[0], +d.split('-')[1], 0).getDate()).padStart(2,'0')}`
-          : d;
-        el.value = val;
+        const el = document.getElementById('inp-verfall');
+        el.value = parsed.verfall;
         el.classList.add('filled');
         showVerfallInfo();
       }
 
       toast('✅ Code erkannt');
+      // BT-Fokus direkt nach Scan wiederherstellen → nächster Scan sofort bereit
+      if (btOn) setTimeout(btFocus, 50);
     }
 
     // ── Artikel Suche ──
@@ -479,6 +481,9 @@
       const lot    = document.getElementById('inp-lot').value.trim();
       const verfall= document.getElementById('inp-verfall').value;
       if (!lot && !verfall) { toast('Charge oder Datum eingeben','err'); return; }
+      const saveBtn = document.querySelector('.save-btn');
+      if (saveBtn.disabled) return;
+      saveBtn.disabled = true;
 
       const ref  = db.collection('artikel').doc(selected.id);
       const snap = await ref.get();
@@ -504,6 +509,7 @@
       const artIdx = artikel.findIndex(a=>a.id===selected.id);
       if (artIdx>=0) { artikel[artIdx] = {...artikel[artIdx], ...updateData}; }
 
+      saveBtn.disabled = false;
       // Alles zurücksetzen für nächsten Scan
       resetForm();
     }
@@ -611,7 +617,7 @@
 
     // Nur refokussieren wenn Nutzer nicht tippt
     btEl.addEventListener('blur', () => {
-      if (btOn && !userTyping) setTimeout(btFocus, 500);
+      if (btOn) setTimeout(() => { if (!userTyping) btFocus(); }, 100);
     });
 
     btEl.addEventListener('input', () => {
