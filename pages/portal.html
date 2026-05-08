@@ -355,7 +355,20 @@
           <input type="file" id="foto-file-input" accept="image/*" style="display:none" onchange="uploadFoto()">
         </div>
         <div>
-          <div class="section-label mb-12">Artikel ohne Referenzfoto</div>
+          <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center;">
+            <input type="text" id="foto-search" class="form-input" placeholder="Name oder LP suchen…" oninput="renderFotos()" style="flex:1;min-width:140px;">
+            <select id="foto-filter" class="form-input" onchange="renderFotos()" style="width:auto;">
+              <option value="ohne-produkt">Ohne Produktfoto</option>
+              <option value="ohne-lager">Ohne Lagerortfoto</option>
+              <option value="ohne-beide">Ohne beide Fotos</option>
+              <option value="alle">Alle Artikel</option>
+            </select>
+            <select id="foto-sort" class="form-input" onchange="renderFotos()" style="width:auto;">
+              <option value="name">Sortierung: Name</option>
+              <option value="lp">Sortierung: Lagerort</option>
+            </select>
+          </div>
+          <div class="section-label mb-12" id="foto-grid-label">Artikel ohne Produktfoto</div>
           <div class="foto-grid" id="foto-grid"></div>
         </div>
       </section>
@@ -1083,8 +1096,9 @@
       sel.innerHTML = '';
       const def2 = document.createElement('option'); def2.value = ''; def2.textContent = '– Artikel wählen –';
       sel.appendChild(def2);
-      alleArtikel.forEach(a => {
-        const o = document.createElement('option'); o.value = a.id; o.textContent = a.name;
+      [...alleArtikel].sort((a,b) => (a.name||'').localeCompare(b.name||'')).forEach(a => {
+        const o = document.createElement('option'); o.value = a.id;
+        o.textContent = a.lp ? `${a.lp} – ${a.name}` : a.name;
         sel.appendChild(o);
       });
     }
@@ -1143,14 +1157,44 @@
     };
 
     function renderFotos() {
-      const grid  = document.getElementById('foto-grid');
-      const ohneF = alleArtikel.filter(a => !a.fotoUrl).slice(0, 24);
-      grid.innerHTML = ohneF.map(a => `
-        <div class="foto-card">
-          <div class="foto-placeholder">📦</div>
-          <div class="foto-name">${a.name.length>24?a.name.substring(0,21)+'...':a.name}</div>
-          <button class="foto-upload-btn" onclick="quickUploadFoto('${a.id}')">📸 Foto hochladen</button>
-        </div>`).join('');
+      const grid   = document.getElementById('foto-grid');
+      const search = (document.getElementById('foto-search')?.value || '').toLowerCase();
+      const filter = document.getElementById('foto-filter')?.value || 'ohne-produkt';
+      const sort   = document.getElementById('foto-sort')?.value   || 'name';
+
+      let items = alleArtikel.filter(a => {
+        const matchSearch = !search
+          || (a.name||'').toLowerCase().includes(search)
+          || (a.lp||'').toLowerCase().includes(search);
+        const matchFilter = filter === 'alle'         ? true
+          : filter === 'ohne-produkt' ? !a.fotoUrl
+          : filter === 'ohne-lager'   ? !a.lagerFotoUrl
+          :                             !a.fotoUrl && !a.lagerFotoUrl;
+        return matchSearch && matchFilter;
+      });
+
+      if (sort === 'lp') items.sort((a,b) => naturalSort(a.lp||'', b.lp||''));
+      else               items.sort((a,b) => (a.name||'').localeCompare(b.name||''));
+
+      document.getElementById('foto-grid-label').textContent = `${items.length} Artikel`;
+      items = items.slice(0, 48);
+
+      grid.innerHTML = items.map(a => {
+        const short = a.name.length > 22 ? a.name.substring(0,19)+'…' : a.name;
+        const lpBadge = a.lp ? `<div style="font-size:0.6rem;color:var(--accent2);margin-bottom:2px;">${a.lp}</div>` : '';
+        const slotP = a.fotoUrl
+          ? `<img src="${a.fotoUrl}" style="width:50%;height:90px;object-fit:cover;flex-shrink:0;">`
+          : `<div style="width:50%;height:90px;background:var(--surface2);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;flex-shrink:0;"><span style="font-size:1.2rem;">📦</span><span style="font-size:0.55rem;color:var(--text3);">Produkt</span></div>`;
+        const slotL = a.lagerFotoUrl
+          ? `<img src="${a.lagerFotoUrl}" style="width:50%;height:90px;object-fit:cover;flex-shrink:0;">`
+          : `<div style="width:50%;height:90px;background:var(--surface3);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;flex-shrink:0;"><span style="font-size:1.2rem;">🗄️</span><span style="font-size:0.55rem;color:var(--text3);">Lagerort</span></div>`;
+        return `
+          <div class="foto-card">
+            <div style="display:flex;">${slotP}${slotL}</div>
+            <div class="foto-name">${lpBadge}${short}</div>
+            <button class="foto-upload-btn" onclick="quickUploadFoto('${a.id}')">📸 Foto hochladen</button>
+          </div>`;
+      }).join('');
     }
 
     window.quickUploadFoto = function(id) {
