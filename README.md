@@ -3,7 +3,7 @@
 
 ---
 
-![Version](https://img.shields.io/badge/Version-2.0.0-f97316)
+![Version](https://img.shields.io/badge/Version-2.1.0-f97316)
 ![Status](https://img.shields.io/badge/Status-Live-22c55e)
 ![Platform](https://img.shields.io/badge/Platform-GitHub%20Pages-0ea5e9)
 ![Firebase](https://img.shields.io/badge/Backend-Firebase%20Blaze-f97316)
@@ -11,11 +11,11 @@
 
 ---
 
-## 📋 Inhaltsverzeichnis
+## Inhaltsverzeichnis
 
 - [Übersicht](#übersicht)
 - [Live-Demo](#live-demo)
-- [Drei Kernfunktionen](#drei-kernfunktionen)
+- [Kernfunktionen](#kernfunktionen)
 - [Alle Features im Detail](#alle-features-im-detail)
 - [Rollen & Berechtigungen](#rollen--berechtigungen)
 - [Tech Stack](#tech-stack)
@@ -51,7 +51,7 @@ https://osxbobo.github.io/Lagerbestellung
 
 ---
 
-## Drei Kernfunktionen
+## Kernfunktionen
 
 ```
 ┌─────────────────────────────────────┐
@@ -76,22 +76,25 @@ https://osxbobo.github.io/Lagerbestellung
 ---
 
 ### 📋 Lagerbestellung (PIN-geschützt)
-- Auto-Login: Name + PIN werden gespeichert, kein erneutes Einloggen nötig
-- PIN-Eingabe direkt auf der Startseite als Modal
-- Geführt durch alle 13 Bereiche mit Fortschrittsbalken
-- Pro Artikel: MIN/MAX, Produktfoto, Lagerort-Foto, Ja/Nein Auswahl
+- PIN-Eingabe als Modal auf der Startseite oder direkt in `check.html`
+- Name wird für den nächsten Besuch gespeichert (PIN nicht)
+- PIN-Sperre: nach 5 Fehlversuchen 60 Sekunden Wartezeit
+- Firebase Anonymous Authentication nach korrekter PIN-Eingabe
+- Geführt durch alle Bereiche mit Fortschrittsbalken
+- Pro Artikel: MIN/MAX, Produktfoto (PRODUKT) und Lagerort-Foto (LAGERORT) getrennt angezeigt
 - Bei Ja: Schnell-Chips `[1][2][3][5][10]` + Plus/Minus
 - Touch-Unterschrift am Ende
 - Push-Benachrichtigung an Wachenleiter nach Abschluss
 
-**⭐ Multi-User Lagerbestellung:**
+**Multi-User Lagerbestellung:**
 - Mehrere Kollegen können gleichzeitig verschiedene Bereiche bearbeiten
-- Bereiche auswählen und aufteilen (z.B. Schrank 1-3 / Schrank 4-6 / Büro)
+- Bereiche auswählen und aufteilen (z.B. Schrank 1–3 / Schrank 4–6 / Büro)
 - Laufende Session sichtbar für alle die einsteigen wollen
 - Alleine starten – andere können jederzeit mitmachen und Bereiche übernehmen
+- Schreibkonflikte werden mit Firestore-Transaktionen verhindert
 - PDF zeigt alle beteiligten Namen: `Benni · Timo · Florian`
 
-**⭐ Auto-Save / Pause-Funktion:**
+**Auto-Save / Pause-Funktion:**
 - Automatisch gespeichert bei jedem „Weiter →"
 - Alle 30 Sekunden im Hintergrund gespeichert
 - Bei Einsatzalarm: App einfach schließen – Fortschritt bleibt erhalten
@@ -110,15 +113,15 @@ https://osxbobo.github.io/Lagerbestellung
 - **Unbekannte Produkte** → einmalig Artikel zuordnen → danach automatisch erkannt
 - Sofort-Vorschläge beim Antippen des Suchfelds
 - Mehrere Chargen pro Artikel möglich
-- Fehlende Daten (LOT/Verfall) manuell ergänzbar
+- Fehlende Daten (LOT/Verfall) manuell ergänzbar (LOT max. 50 Zeichen)
 - Vibration als Scan-Feedback + Taschenlampe
 
-**⭐ Dual-Scanner (Kamera):**
+**Dual-Scanner (Kamera):**
 - ZXing.js → für DataMatrix & QR
 - QuaGGA2 → für Code-128 & GS1-128 (lineare Barcodes)
 - Beide laufen parallel – wer zuerst erkennt gewinnt
 
-**⭐ Bluetooth-Scanner Support:**
+**Bluetooth-Scanner Support:**
 - Handscanner (z.B. Netum NT-1228BL) per Bluetooth koppeln
 - Funktioniert als Tastatur-Eingabe (HID Mode)
 - Status-Anzeige: grau = inaktiv, grün = bereit
@@ -129,8 +132,6 @@ https://osxbobo.github.io/Lagerbestellung
 
 ### 🖥️ Wachenleiter-Portal (Login)
 
-Gleicher Sidebar-Style wie Admin. Vollzugang außer Benutzerverwaltung.
-
 | Tab | Inhalt |
 |---|---|
 | 📊 Dashboard | KPIs, letzte Lagerchecks, Verfallswarnungen |
@@ -138,8 +139,16 @@ Gleicher Sidebar-Style wie Admin. Vollzugang außer Benutzerverwaltung.
 | 🗄️ Chargen & Verfall | Fach für Fach sortiert, Ampelsystem, löschen |
 | 📦 Artikelverwaltung | Bearbeiten, neu anlegen, löschen, suchen |
 | 🏠 Bereiche | Verwalten, Reihenfolge, neu anlegen |
-| 📸 Fotos & Bilder | Produkt- + Lagerort-Fotos via Cloudinary |
+| 📸 Fotos & Bilder | Produkt- + Lagerort-Fotos verwalten |
 | 🔑 PIN ändern | 4-stelligen PIN per Tastenfeld ändern |
+
+**Fotos & Bilder:**
+- Suchfeld: Artikel nach Name oder LP-Nummer filtern
+- Sortierung: nach Name oder Lagerort (LP, natürliche Sortierung)
+- Filter: Ohne Produktfoto / Ohne Lagerortfoto / Ohne beide / Alle Artikel
+- Jede Karte zeigt beide Foto-Slots nebeneinander (📦 Produkt | 🗄️ Lagerort)
+- Artikel-Dropdown zeigt LP + Name zur leichteren Zuordnung
+- Quadratische Vorschau beim Auswählen eines Artikels
 
 **Verfall – 3 Ebenen:**
 - **Ebene 1:** Dashboard – nur kritische Artikel (≤30 Tage)
@@ -202,7 +211,7 @@ Identisch zum offiziellen DRK-Formular:
 | **Frontend** | HTML5 · CSS3 · Vanilla JavaScript |
 | **Hosting** | GitHub Pages |
 | **Datenbank** | Firebase Firestore (Blaze Plan) |
-| **Authentifizierung** | Firebase Authentication |
+| **Authentifizierung** | Firebase Auth (E-Mail + Anonymous) |
 | **Foto-Upload** | Cloudinary (Unsigned Preset) |
 | **PDF** | jsPDF (CDN) |
 | **Scanner 2D** | ZXing.js – DataMatrix, QR |
@@ -221,13 +230,14 @@ Lagerbestellung/
 ├── manifest.json           # PWA Manifest
 ├── sw.js                   # Service Worker (Cache + Push)
 ├── README.md
+├── CHANGELOG.md
 │
 ├── css/
 │   ├── main.css            # Globale Styles + Theme System
 │   └── index.css           # Startseiten-Styles
 │
 ├── js/
-│   ├── firebase-config.js  # Firebase Konfiguration
+│   ├── firebase-config.js  # Firebase Konfiguration (zentral)
 │   ├── theme.js            # Dark/Light Mode
 │   └── pwa.js              # PWA + Push Manager
 │
@@ -247,6 +257,17 @@ Lagerbestellung/
 
 ## Firebase Konfiguration
 
+### Authentication
+
+Folgende Sign-in-Methoden müssen aktiviert sein:
+
+| Methode | Verwendet für |
+|---|---|
+| **E-Mail/Passwort** | Wachenleiter, Admin |
+| **Anonymous** | PIN-Nutzer (Lagerbestellung, Verfallsscan) |
+
+> Firebase Console → Authentication → Sign-in method → beides aktivieren
+
 ### Firestore Security Rules
 
 ```javascript
@@ -254,38 +275,55 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // Nicht-anonymer eingeloggter Nutzer (Admin / Wachenleiter)
+    function isStaff() {
+      return request.auth != null &&
+             request.auth.token.firebase.sign_in_provider != 'anonymous';
+    }
+
+    // Jeder eingeloggte Nutzer (PIN-Nutzer anonym + Staff)
+    function isAuth() {
+      return request.auth != null;
+    }
+
+    // Artikel – alle dürfen lesen; PIN-Nutzer dürfen Scan-Felder updaten; nur Staff darf anlegen/löschen
     match /artikel/{id} {
       allow read: if true;
-      allow create, delete: if request.auth != null;
-      allow update: if true;
+      allow create, delete: if isStaff();
+      allow update: if isAuth();
     }
 
+    // Bereiche – alle dürfen lesen, nur Staff darf schreiben
     match /bereiche/{id} {
       allow read: if true;
-      allow write: if request.auth != null;
+      allow write: if isStaff();
     }
 
+    // Config (PIN) – alle dürfen lesen, nur Staff schreibt
     match /config/{id} {
       allow read: if true;
-      allow write: if request.auth != null;
+      allow write: if isStaff();
     }
 
-    match /bestellungen/{id} {
-      allow read:           if request.auth != null;
-      allow create:         if true;
-      allow update, delete: if request.auth != null;
-    }
-
+    // Drafts – nur eingeloggte Nutzer (auch anonymous/PIN)
     match /bestellungen_draft/{id} {
-      allow read, write: if true;
+      allow read, write: if isAuth();
     }
 
+    // Multi-User Sessions – nur eingeloggte Nutzer
     match /bestellungen_session/{id} {
-      allow read, write: if true;
+      allow read, write: if isAuth();
     }
 
+    // Abgeschlossene Bestellungen – PIN-Nutzer darf anlegen, nur Staff liest/ändert/löscht
+    match /bestellungen/{id} {
+      allow create: if isAuth();
+      allow read, update, delete: if isStaff();
+    }
+
+    // Benutzer-Rollen – nur Staff
     match /users/{id} {
-      allow read, write: if request.auth != null;
+      allow read, write: if isStaff();
     }
   }
 }
@@ -384,7 +422,10 @@ Alle Geräte laden beim nächsten Öffnen automatisch die neue Version.
 git clone https://github.com/osxbobo/Lagerbestellung.git
 ```
 
-2. **Firebase Projekt anlegen** – Firestore + Auth aktivieren, `firebaseConfig` eintragen
+2. **Firebase Projekt anlegen**
+   - Firestore + Authentication aktivieren
+   - Sign-in Methoden: **E-Mail/Passwort** und **Anonymous** aktivieren
+   - `firebaseConfig` ist bereits in `js/firebase-config.js` zentralisiert
 
 3. **Daten importieren** – `firebase-import-tool-v2.html` lokal öffnen
 
@@ -394,7 +435,7 @@ git clone https://github.com/osxbobo/Lagerbestellung.git
 
 6. **Domain autorisieren** – Firebase Console → Auth → Autorisierte Domains → `[username].github.io`
 
-7. **Firestore Rules** einfügen und veröffentlichen
+7. **Firestore Rules** (siehe oben) einfügen und veröffentlichen
 
 ---
 
@@ -403,10 +444,13 @@ git clone https://github.com/osxbobo/Lagerbestellung.git
 | Bereich | Schutz |
 |---|---|
 | Lagersuche | Öffentlich (nur Lesen) |
-| Lagerbestellung | 4-stelliger PIN (localStorage) |
-| Verfallsscan | PIN (localStorage) |
-| Portal / Admin | Firebase Auth |
-| Rollen | Firestore `users` Collection |
+| Lagerbestellung | 4-stelliger PIN + Firebase Anonymous Auth |
+| Verfallsscan | 4-stelliger PIN + Firebase Anonymous Auth |
+| Portal / Admin | Firebase Auth (E-Mail/Passwort) |
+| Rollen | Firestore `users` Collection + `isStaff()` Rule |
+| PIN-Schutz | Sperre nach 5 Fehlversuchen (60 Sekunden) |
+| XSS | Alle Firestore-Daten werden über `textContent` / `createElement` ausgegeben |
+| Multi-User Sync | Schreibkonflikte verhindert durch Firestore-Transaktionen |
 
 **Empfehlungen:**
 - PIN nach Go-Live vom Standard `1234` ändern
@@ -420,7 +464,7 @@ git clone https://github.com/osxbobo/Lagerbestellung.git
 - 🔲 KI-Texterkennung für Chargen (Anthropic Vision API)
 - 🔲 Verbrauchsstatistik – meistbestellte Artikel
 - 🔲 Automatische wöchentliche Verfallserinnerung
-- 🔲 Bilder löschen / ersetzen
+- 🔲 Bilder löschen / ersetzen in Fotos & Bilder
 - 🔲 Excel-Export der Bestellhistorie
 - 🔲 Mehrwachen-Unterstützung
 
@@ -441,4 +485,4 @@ git clone https://github.com/osxbobo/Lagerbestellung.git
 
 **Erstellt von:** Benjamin Trost
 
-*Stand: Mai 2026 · LAGER//APP v2.0.0*
+*Stand: Mai 2026 · LAGER//APP v2.1.0*
