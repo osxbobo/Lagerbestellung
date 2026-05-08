@@ -172,7 +172,7 @@
         <!-- LOT -->
         <div class="field">
           <div class="label">Charge / LOT</div>
-          <input type="text" id="inp-lot" class="inp" placeholder="z.B. 140211" autocomplete="off">
+          <input type="text" id="inp-lot" class="inp" placeholder="z.B. 140211" autocomplete="off" maxlength="50">
         </div>
 
         <!-- Verfall -->
@@ -242,7 +242,7 @@
 
     // ── Auth ──
     auth.onAuthStateChanged(async user => {
-      const pinOk = sessionStorage.getItem('lager-pin-auth') || localStorage.getItem('lager-saved-pin');
+      const pinOk = sessionStorage.getItem('lager-pin-auth');
       if (!user && !pinOk) { window.location.href = '../index.html'; return; }
       const name = user?.displayName || user?.email
         || sessionStorage.getItem('lager-pin-name')
@@ -396,7 +396,9 @@
       hits.forEach(a => {
         const d = document.createElement('div');
         d.className = 'sug';
-        d.innerHTML = `<div class="sug-name">${a.name}</div><div class="sug-lp">${a.lp||''}</div>`;
+        const nm = document.createElement('div'); nm.className = 'sug-name'; nm.textContent = a.name;
+        const lp = document.createElement('div'); lp.className = 'sug-lp';  lp.textContent = a.lp || '';
+        d.appendChild(nm); d.appendChild(lp);
         d.addEventListener('click', () => selectArtikel(a));
         el.appendChild(d);
       });

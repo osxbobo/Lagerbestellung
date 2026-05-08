@@ -579,8 +579,10 @@
 
   <script type="module">
     import { initializeApp }  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getFirestore, collection, getDocs, doc, getDoc, addDoc, updateDoc, deleteDoc, query, orderBy, limit, serverTimestamp }
+    import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    import { getFirestore, collection, getDocs, doc, getDoc, addDoc, updateDoc, deleteDoc, query, orderBy, limit, serverTimestamp, runTransaction }
                               from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { firebaseConfig } from "../js/firebase-config.js";
 
     // Theme
     const savedTheme  = localStorage.getItem('lager-theme');
@@ -597,37 +599,20 @@
     };
 
     // Firebase
-    const firebaseConfig = {
-      apiKey:            "AIzaSyD1YY-cFQxyykfYQYPORwulzuF8t6Wgid4",
-      authDomain:        "lagerbestellung-19970.firebaseapp.com",
-      projectId:         "lagerbestellung-19970",
-      storageBucket:     "lagerbestellung-19970.firebasestorage.app",
-      messagingSenderId: "939056339904",
-      appId:             "1:939056339904:web:6f33ca2f5a4cebd2780625",
-    };
 
     const app = initializeApp(firebaseConfig);
     const db  = getFirestore(app);
 
-    // ── Auto-Login ──
-    (async function checkAutoLogin() {
-      const savedName = localStorage.getItem('lager-saved-name');
-      const savedPin  = localStorage.getItem('lager-saved-pin');
-      if (!savedName || !savedPin) return;
-      try {
-        const cfg        = await getDoc(doc(db, 'config', 'app'));
-        const correctPin = cfg.exists() ? cfg.data().pin : '1234';
-        if (savedPin !== correctPin) {
-          localStorage.removeItem('lager-saved-pin');
-          return;
-        }
-        userName = savedName;
-        document.getElementById('nav-user').textContent = userName;
-        sessionStorage.setItem('lager-pin-auth', 'true');
-        sessionStorage.setItem('lager-pin-name', userName);
-        await loadCheckData();
-        await showJoinScreen();
-      } catch(e) { console.log('Auto-Login:', e.message); }
+    // ── Auth-Check ──
+    // PIN wird nicht mehr in localStorage gespeichert; Session-Auth via sessionStorage
+    (async function checkAuth() {
+      const pinOk  = sessionStorage.getItem('lager-pin-auth');
+      const name   = sessionStorage.getItem('lager-pin-name');
+      if (!pinOk || !name) { window.location.href = '../index.html'; return; }
+      userName = name;
+      document.getElementById('nav-user').textContent = userName;
+      await loadCheckData();
+      await showJoinScreen();
     })();
 
     let correctPin   = '1234';
@@ -637,6 +622,8 @@
     let currentIdx      = 0;
     let userName        = '';
     let pinValue        = '';
+    let pinAttempts     = 0;
+    let pinLockedUntil  = 0;
     let autoSaveId      = null;   // Firestore ID der laufenden Bestellung
     let autoSaveTimer   = null;
     let sessionId       = null;   // Gemeinsame Session ID (multi-user)
@@ -696,14 +683,34 @@
       const err = document.getElementById('pin-error');
       if (!userName) { err.textContent = 'Bitte deinen Namen eingeben.'; return; }
       if (pinValue.length < 4) { err.textContent = 'Bitte 4-stelligen PIN eingeben.'; return; }
+
+      if (Date.now() < pinLockedUntil) {
+        const secs = Math.ceil((pinLockedUntil - Date.now()) / 1000);
+        err.textContent = `Zu viele Versuche – bitte ${secs}s warten`;
+        pinValue = ''; updateDots(); return;
+      }
+
       try {
         const snap = await getDoc(doc(db, 'config', 'app'));
         if (snap.exists()) correctPin = snap.data().pin || '1234';
       } catch {}
       if (pinValue !== correctPin) {
-        err.textContent = 'Falscher PIN. Bitte nochmal versuchen.';
+        pinAttempts++;
+        if (pinAttempts >= 5) {
+          pinLockedUntil = Date.now() + 60000;
+          pinAttempts = 0;
+          err.textContent = 'Zu viele Versuche – bitte 60s warten';
+        } else {
+          err.textContent = `Falscher PIN – noch ${5 - pinAttempts} Versuch(e)`;
+        }
         pinValue = ''; updateDots(); return;
       }
+      pinAttempts = 0;
+
+      // Anonym in Firebase einloggen – ermöglicht sichere Firestore-Rules
+      const auth = getAuth(app);
+      if (!auth.currentUser) await signInAnonymously(auth);
+
       document.getElementById('nav-user').textContent = userName;
       // PIN-Auth in sessionStorage speichern (für Scanner-Zugang)
       sessionStorage.setItem('lager-pin-auth', 'true');
@@ -720,12 +727,16 @@
       if (!userName) return;
       try {
         if (sessionId) {
-          // Multi-user: In Session speichern
-          const allBestellungen = { ...(sessionDraft?.bestellungen || {}), ...bestellungen };
-          await updateDoc(doc(db, 'bestellungen_session', sessionId), {
-            bestellungen: allBestellungen,
-            [`fortschritt_${userName}`]: Math.round((currentIdx / Math.max(alleBereiche.length, 1)) * 100),
-            zuletzt: new Date().toISOString(),
+          // Multi-user: Transaktion verhindert Race Condition bei gleichzeitigen Schreibvorgängen
+          const sessionRef = doc(db, 'bestellungen_session', sessionId);
+          await runTransaction(db, async (transaction) => {
+            const snap = await transaction.get(sessionRef);
+            const current = snap.exists() ? (snap.data().bestellungen || {}) : {};
+            transaction.update(sessionRef, {
+              bestellungen: { ...current, ...bestellungen },
+              [`fortschritt_${userName}`]: Math.round((currentIdx / Math.max(alleBereiche.length, 1)) * 100),
+              zuletzt: new Date().toISOString(),
+            });
           });
         } else if (Object.keys(bestellungen).length > 0) {
           // Single-user: Draft speichern

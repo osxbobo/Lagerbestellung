@@ -240,6 +240,7 @@
                                      from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
     import { getFirestore, doc, getDoc }
                                      from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { firebaseConfig }        from "../js/firebase-config.js";
 
     // Theme
     const savedTheme  = localStorage.getItem('lager-theme');
@@ -257,14 +258,6 @@
     };
 
     // Firebase
-    const firebaseConfig = {
-      apiKey:            "AIzaSyD1YY-cFQxyykfYQYPORwulzuF8t6Wgid4",
-      authDomain:        "lagerbestellung-19970.firebaseapp.com",
-      projectId:         "lagerbestellung-19970",
-      storageBucket:     "lagerbestellung-19970.firebasestorage.app",
-      messagingSenderId: "939056339904",
-      appId:             "1:939056339904:web:6f33ca2f5a4cebd2780625",
-    };
 
     const app  = initializeApp(firebaseConfig);
     const auth = getAuth(app);

@@ -611,6 +611,7 @@
                               from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
     import { getFirestore, collection, getDocs, doc, getDoc, setDoc, addDoc, updateDoc, deleteDoc, writeBatch, query, orderBy, limit }
                               from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { firebaseConfig } from "../js/firebase-config.js";
 
 
     // ── Theme ──
@@ -628,14 +629,6 @@
     };
 
     // ── Firebase ──
-    const firebaseConfig = {
-      apiKey:            "AIzaSyD1YY-cFQxyykfYQYPORwulzuF8t6Wgid4",
-      authDomain:        "lagerbestellung-19970.firebaseapp.com",
-      projectId:         "lagerbestellung-19970",
-      storageBucket:     "lagerbestellung-19970.firebasestorage.app",
-      messagingSenderId: "939056339904",
-      appId:             "1:939056339904:web:6f33ca2f5a4cebd2780625",
-    };
 
     const app     = initializeApp(firebaseConfig);
     const auth    = getAuth(app);
@@ -879,7 +872,11 @@
     window.openArtikelModal = function(id) {
       const modal = document.getElementById('artikel-modal');
       const sel   = document.getElementById('edit-bereich');
-      sel.innerHTML = alleBereiche.map(b => `<option value="${b.id}">${b.name}</option>`).join('');
+      sel.innerHTML = '';
+      alleBereiche.forEach(b => {
+        const o = document.createElement('option'); o.value = b.id; o.textContent = b.name;
+        sel.appendChild(o);
+      });
 
       if (id) {
         const a = alleArtikel.find(x => x.id === id);
