@@ -236,8 +236,6 @@
     let camSide   = 'back';
     let buf       = '';
     let bufTimer  = null;
-    let bufLast   = 0;
-    let scanning  = true; // false nach Scan → verhindert weitere Scans
 
     // ── Auth ──
     auth.onAuthStateChanged(async user => {
@@ -330,14 +328,15 @@
     }
 
     // ── Scan Result ──
-    function onScan(raw) {
+    function onScan(raw, source) {
       if (!raw || raw.trim().length < 6) return;
-      // Gleichen Code nicht doppelt verarbeiten (Kamera scannt kontinuierlich)
       const rawTrimmed = raw.trim();
-      if (window._lastScannedCode === rawTrimmed) return;
-      window._lastScannedCode = rawTrimmed;
-      // Nach 1 Sekunde gleichen Code wieder erlauben
-      setTimeout(() => { if (window._lastScannedCode === rawTrimmed) window._lastScannedCode = null; }, 1000);
+      // Dedup nur für Kamera (scannt kontinuierlich) – BT immer durchlassen
+      if (source === 'cam') {
+        if (window._lastScannedCode === rawTrimmed) return;
+        window._lastScannedCode = rawTrimmed;
+        setTimeout(() => { if (window._lastScannedCode === rawTrimmed) window._lastScannedCode = null; }, 1000);
+      }
       if (navigator.vibrate) navigator.vibrate(80);
       const parsed = raw.startsWith('+') || raw.startsWith('/') ? parseHIBC(raw) : parseGS1(raw);
       console.log('Scan raw:', raw, '→', parsed);
@@ -381,8 +380,6 @@
       }
 
       toast('✅ Code erkannt');
-      // BT-Fokus direkt nach Scan wiederherstellen → nächster Scan sofort bereit
-      if (btOn) setTimeout(btFocus, 50);
     }
 
     // ── Artikel Suche ──
@@ -485,33 +482,37 @@
       if (saveBtn.disabled) return;
       saveBtn.disabled = true;
 
-      const ref  = db.collection('artikel').doc(selected.id);
-      const snap = await ref.get();
-      const data = snap.data() || {};
-      const ch   = [...(data.chargen||[])];
-      const idx  = ch.findIndex(c => c.lot && c.lot === lot);
+      try {
+        const ref  = db.collection('artikel').doc(selected.id);
+        const snap = await ref.get();
+        const data = snap.data() || {};
+        const ch   = [...(data.chargen||[])];
+        const idx  = ch.findIndex(c => c.lot && c.lot === lot);
 
-      // GTIN speichern falls vorhanden
-      const updateData = {chargen: ch};
-      if (lastParsed?.gtin) {
-        const existingGtins = Array.isArray(data.gtins) ? [...data.gtins] : (data.gtin ? [data.gtin] : []);
-        if (!existingGtins.includes(lastParsed.gtin)) existingGtins.push(lastParsed.gtin);
-        updateData.gtin  = lastParsed.gtin;
-        updateData.gtins = existingGtins;
+        // GTIN speichern falls vorhanden
+        const updateData = {chargen: ch};
+        if (lastParsed?.gtin) {
+          const existingGtins = Array.isArray(data.gtins) ? [...data.gtins] : (data.gtin ? [data.gtin] : []);
+          if (!existingGtins.includes(lastParsed.gtin)) existingGtins.push(lastParsed.gtin);
+          updateData.gtin  = lastParsed.gtin;
+          updateData.gtins = existingGtins;
+        }
+
+        if (idx>=0) { ch[idx]={...ch[idx],verfall:verfall||ch[idx].verfall}; toast('Charge aktualisiert ✅'); }
+        else { ch.push({lot:lot||'?',verfall:verfall||null,gtin:lastParsed?.gtin||null,erfasst:new Date().toISOString()}); toast('Charge gespeichert ✅'); }
+
+        await ref.update(updateData);
+
+        // Lokale Daten updaten
+        const artIdx = artikel.findIndex(a=>a.id===selected.id);
+        if (artIdx>=0) { artikel[artIdx] = {...artikel[artIdx], ...updateData}; }
+
+        resetForm();
+      } catch(e) {
+        toast('Fehler beim Speichern','err');
+      } finally {
+        saveBtn.disabled = false;
       }
-
-      if (idx>=0) { ch[idx]={...ch[idx],verfall:verfall||ch[idx].verfall}; toast('Charge aktualisiert ✅'); }
-      else { ch.push({lot:lot||'?',verfall:verfall||null,gtin:lastParsed?.gtin||null,erfasst:new Date().toISOString()}); toast('Charge gespeichert ✅'); }
-
-      await ref.update(updateData);
-
-      // Lokale Daten updaten
-      const artIdx = artikel.findIndex(a=>a.id===selected.id);
-      if (artIdx>=0) { artikel[artIdx] = {...artikel[artIdx], ...updateData}; }
-
-      saveBtn.disabled = false;
-      // Alles zurücksetzen für nächsten Scan
-      resetForm();
     }
 
     function resetForm() {
@@ -549,7 +550,7 @@
         await reader.decodeFromConstraints(
           {video:{facingMode:camSide==='back'?'environment':'user',width:{ideal:1280},height:{ideal:720}}},
           'video',
-          result => { if (result) onScan(result.getText()); }
+          result => { if (result) onScan(result.getText(), 'cam'); }
         );
       } catch(e) {
         toast(e.name==='NotAllowedError'?'Kamera-Zugriff verweigert':'Kamera: '+e.message,'err');
@@ -589,20 +590,13 @@
 
     // ── Bluetooth ──
     function toggleBT() {
-      btOn=!btOn;
-      document.getElementById('btn-bt').classList.toggle('bt-on',btOn);
-      document.getElementById('btn-bt').textContent=btOn?'📡 BT Aktiv':'📡 Bluetooth';
-      document.getElementById('bt-hint').classList.toggle('show',btOn);
-      if (btOn) btFocus();
+      btOn = !btOn;
+      buf = '';
+      clearTimeout(bufTimer);
+      document.getElementById('btn-bt').classList.toggle('bt-on', btOn);
+      document.getElementById('btn-bt').textContent = btOn ? '📡 BT Aktiv' : '📡 Bluetooth';
+      document.getElementById('bt-hint').classList.toggle('show', btOn);
     }
-
-    const btEl = document.createElement('input');
-    btEl.type='text'; btEl.inputMode='none';
-    btEl.style.cssText='position:fixed;left:-9999px;top:-9999px;width:1px;height:1px;opacity:0;font-size:16px;border:none;outline:none;';
-    btEl.autocomplete='off';
-    document.body.appendChild(btEl);
-
-    function btFocus() { if (!btOn) return; btEl.value=''; try{btEl.focus();}catch(e){} }
 
     // Echte Inputfelder die der Nutzer selbst befüllt
     const USER_INPUTS = ['inp-search', 'inp-lot', 'inp-verfall'];
@@ -611,53 +605,37 @@
       return USER_INPUTS.includes(document.activeElement?.id);
     }
 
-    // BT Listeners
     let userTyping = false;
     let userTypingTimer = null;
 
-    // Nur refokussieren wenn Nutzer nicht tippt
-    btEl.addEventListener('blur', () => {
-      if (btOn) setTimeout(() => { if (!userTyping) btFocus(); }, 100);
-    });
-
-    btEl.addEventListener('input', () => {
-      if (!btOn) return;
-      buf += btEl.value; btEl.value = '';
-      clearTimeout(bufTimer);
-      bufTimer = setTimeout(() => {
-        const code = buf.trim(); buf = '';
-        if (code.length >= 4) onScan(code);
-      }, 150);
-    });
-
-    btEl.addEventListener('keydown', e => {
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        clearTimeout(bufTimer);
-        const code = buf.trim(); buf = ''; btEl.value = '';
-        if (code.length >= 4) onScan(code);
-      }
-    });
-
-    // Nutzer tippt in Eingabefeld → BT pausieren
     USER_INPUTS.forEach(id => {
       const el = document.getElementById(id);
       if (!el) return;
-      el.addEventListener('focus', () => {
-        userTyping = true;
-        clearTimeout(userTypingTimer);
-      });
-      el.addEventListener('blur', () => {
-        userTypingTimer = setTimeout(() => {
-          userTyping = false;
-          if (btOn) btFocus();
-        }, 300);
-      });
+      el.addEventListener('focus', () => { userTyping = true; clearTimeout(userTypingTimer); });
+      el.addEventListener('blur',  () => { userTypingTimer = setTimeout(() => { userTyping = false; }, 300); });
     });
 
-    // Klick auf Scan/BT Bereich → refokussieren (nicht auf Formular)
-    document.getElementById('btn-bt')?.addEventListener('click', () => {
-      if (btOn) setTimeout(btFocus, 100);
+    // Globaler Keydown-Listener – kein focus() nötig, funktioniert auf iOS/iPad
+    document.addEventListener('keydown', e => {
+      if (!btOn || userTyping) return;
+
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        clearTimeout(bufTimer);
+        const code = buf.trim(); buf = '';
+        if (code.length >= 4) onScan(code, 'bt');
+        return;
+      }
+
+      if (e.key.length === 1) {
+        e.preventDefault();
+        buf += e.key;
+        clearTimeout(bufTimer);
+        bufTimer = setTimeout(() => {
+          const code = buf.trim(); buf = '';
+          if (code.length >= 4) onScan(code, 'bt');
+        }, 150);
+      }
     });
 
         // ── Toast ──
