@@ -1,0 +1,1393 @@
+<!DOCTYPE html>
+<html lang="de" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <link rel="manifest" href="../manifest.json">
+  <meta name="theme-color" content="#f97316">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="LAGER//APP">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>StockSwipe – LAGER//APP</title>
+  <link rel="stylesheet" href="../css/main.css">
+  <style>
+    .check-page { min-height: 100vh; display: flex; flex-direction: column; }
+
+    /* ── PIN ── */
+    .pin-screen { flex: 1; display: flex; align-items: center; justify-content: center; padding: 24px; }
+    .pin-box { width: 100%; max-width: 380px; display: flex; flex-direction: column; gap: 24px; align-items: center; }
+    .pin-header { text-align: center; }
+    .pin-logo  { font-family: 'IBM Plex Mono', monospace; font-size: 1.1rem; font-weight: 600; color: var(--accent); margin-bottom: 8px; }
+    .pin-title { font-size: 1.3rem; font-weight: 700; margin-bottom: 4px; }
+    .pin-sub   { font-size: 0.85rem; color: var(--text2); }
+    .pin-card  { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 28px 24px; width: 100%; display: flex; flex-direction: column; gap: 20px; }
+    .pin-dots  { display: flex; justify-content: center; gap: 16px; padding: 8px 0; }
+    .pin-dot   { width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--border); transition: all 0.15s; }
+    .pin-dot.filled { background: var(--accent); border-color: var(--accent); transform: scale(1.1); }
+    .pin-grid  { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .pin-key {
+      aspect-ratio: 1; border-radius: 12px; border: 1px solid var(--border);
+      background: var(--surface2); color: var(--text);
+      font-family: 'IBM Plex Mono', monospace; font-size: 1.4rem; font-weight: 600;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      user-select: none; -webkit-user-select: none;
+      touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+      transition: background 0.1s, transform 0.1s, border-color 0.1s;
+    }
+    .pin-key.pressed, .pin-key:active { background: var(--surface3); transform: scale(0.91); border-color: var(--accent); color: var(--accent); }
+    .pin-key.confirm { background: var(--accent); border-color: var(--accent); color: white; }
+    .pin-key.confirm.pressed, .pin-key.confirm:active { background: var(--accent-hover); }
+    .pin-key.del { color: var(--muted); }
+    .name-input { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 13px 16px; font-family: 'DM Sans', sans-serif; font-size: 1rem; color: var(--text); outline: none; transition: border-color 0.2s; width: 100%; text-align: center; }
+    .name-input:focus { border-color: var(--accent2); }
+    .name-input::placeholder { color: var(--muted); }
+    .pin-error { text-align: center; font-size: 0.82rem; color: var(--red); min-height: 22px; }
+
+    /* ── JOIN SCREEN ── */
+    #bereich-select-list::-webkit-scrollbar { width: 4px; }
+    #bereich-select-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    /* ── SIG ── */
+    .sig-screen { flex: 1; display: flex; align-items: center; justify-content: center; padding: 20px; }
+    .sig-box { width: 100%; max-width: 480px; display: flex; flex-direction: column; gap: 18px; }
+    .sig-title { font-size: 1.1rem; font-weight: 700; text-align: center; }
+    .summary-grid { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+    .summary-row { display: flex; justify-content: space-between; padding: 13px 16px; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
+    .summary-row:last-child { border-bottom: none; }
+    .summary-key { color: var(--muted); }
+    .summary-val { font-family: 'IBM Plex Mono', monospace; font-size: 0.85rem; font-weight: 700; }
+    .sig-canvas-wrap { background: var(--surface); border: 2px dashed var(--border); border-radius: 14px; overflow: hidden; position: relative; }
+    #sig-canvas { display: block; width: 100%; height: 160px; cursor: crosshair; touch-action: none; }
+    .sig-line { position: absolute; bottom: 28px; left: 16px; right: 16px; height: 1px; background: var(--border); pointer-events: none; }
+    .sig-hint { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); font-size: 0.75rem; color: var(--muted); pointer-events: none; font-family: 'IBM Plex Mono', monospace; transition: opacity 0.2s; }
+    .sig-clear { position: absolute; top: 10px; right: 10px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; color: var(--muted); font-size: 0.72rem; padding: 5px 12px; cursor: pointer; font-family: 'IBM Plex Mono', monospace; touch-action: manipulation; }
+
+    /* ── MINMAX badges (used in detail panel) ── */
+    .minmax-row { display: flex; gap: 8px; }
+    .minmax-badge { display: flex; flex-direction: column; align-items: center; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 5px 16px; min-width: 72px; }
+    .minmax-label { font-size: 0.58rem; color: var(--muted); font-family: 'IBM Plex Mono', monospace; text-transform: uppercase; letter-spacing: 0.1em; }
+    .minmax-value { font-size: 1.2rem; font-weight: 800; font-family: 'IBM Plex Mono', monospace; color: var(--text); line-height: 1.2; }
+    .minmax-unit  { font-size: 0.65rem; color: var(--text2); font-family: 'IBM Plex Mono', monospace; }
+    .minmax-badge.min .minmax-value { color: var(--yellow); }
+    .minmax-badge.max .minmax-value { color: var(--green); }
+
+    /* ── CHIPS + PLUSMINUS (menge modal) ── */
+    .chips-row { display: flex; gap: 8px; flex-wrap: wrap; }
+    .chip { min-width: 52px; height: 52px; border-radius: 12px; border: 2px solid var(--border); background: var(--surface2); color: var(--text); font-family: 'IBM Plex Mono', monospace; font-size: 1.05rem; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0 10px; touch-action: manipulation; -webkit-tap-highlight-color: transparent; transition: all 0.12s; user-select: none; -webkit-user-select: none; }
+    .chip:active { transform: scale(0.89); }
+    .chip.selected { background: var(--red); border-color: var(--red); color: white; }
+    .plusminus-row { display: flex; align-items: center; gap: 10px; }
+    .pm-btn { width: 56px; height: 56px; border-radius: 14px; border: 2px solid var(--border); background: var(--surface2); color: var(--text); font-size: 1.6rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; touch-action: manipulation; -webkit-tap-highlight-color: transparent; transition: all 0.1s; user-select: none; -webkit-user-select: none; }
+    .pm-btn:active { transform: scale(0.88); background: var(--surface3); }
+    .pm-btn.minus:active { border-color: var(--red); color: var(--red); }
+    .pm-btn.plus:active  { border-color: var(--green); color: var(--green); }
+    .pm-display { width: 80px; flex-shrink: 0; height: 56px; border-radius: 14px; border: 2px solid var(--border); background: var(--surface2); font-family: 'IBM Plex Mono', monospace; font-size: 1.4rem; font-weight: 800; color: var(--red); text-align: center; outline: none; transition: border-color 0.2s; }
+    .pm-display:focus { border-color: var(--red); }
+
+    /* ── SWIPE PAGE ── */
+    .swipe-page {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .swipe-topbar {
+      padding: 10px 16px 2px;
+      flex-shrink: 0;
+    }
+
+    .swipe-progress-bar {
+      height: 3px;
+      background: var(--border);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+
+    .swipe-progress-fill {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 2px;
+      transition: width 0.4s ease;
+      width: 0%;
+    }
+
+    .swipe-progress-text {
+      text-align: center;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.68rem;
+      color: var(--muted);
+      margin-top: 5px;
+    }
+
+    /* ── CARD STACK ── */
+    .swipe-stack {
+      flex: 1;
+      position: relative;
+      margin: 6px 14px;
+      min-height: 0;
+    }
+
+    .swipe-card {
+      position: absolute;
+      inset: 0;
+      border-radius: 20px;
+      overflow: hidden;
+      background: var(--surface2);
+      box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+      will-change: transform;
+      cursor: grab;
+      -webkit-user-select: none;
+      user-select: none;
+      touch-action: none;
+    }
+
+    .swipe-card:active { cursor: grabbing; }
+
+    .swipe-card.back-card {
+      z-index: 1;
+      transform: scale(0.94) translateY(24px);
+    }
+
+    .swipe-card.top-card {
+      z-index: 2;
+    }
+
+    .card-photo {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      pointer-events: none;
+      position: absolute;
+      inset: 0;
+    }
+
+    .card-photo-placeholder {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--surface2);
+      font-size: 5rem;
+    }
+
+    .card-footer-gradient {
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      padding: 80px 20px 24px;
+      background: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.7) 50%, rgba(0,0,0,0.93) 100%);
+      pointer-events: none;
+    }
+
+    .card-info-btn {
+      position: absolute;
+      top: 14px; right: 14px;
+      width: 40px; height: 40px;
+      border-radius: 50%;
+      background: rgba(0,0,0,0.45);
+      border: 1.5px solid rgba(255,255,255,0.4);
+      color: white;
+      font-size: 1rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 5;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      transition: transform 0.15s;
+    }
+
+    .card-info-btn:active { transform: scale(0.88); }
+
+    .card-name {
+      font-size: 1.55rem;
+      font-weight: 800;
+      color: white;
+      line-height: 1.2;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+      margin-bottom: 5px;
+    }
+
+    .card-meta {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.73rem;
+      color: rgba(255,255,255,0.72);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* Tinder-style stamp overlays */
+    .swipe-overlay {
+      position: absolute;
+      top: 44px;
+      z-index: 10;
+      pointer-events: none;
+      opacity: 0;
+      padding: 7px 14px;
+      border-radius: 8px;
+      font-size: 1.5rem;
+      font-weight: 900;
+      letter-spacing: 0.07em;
+      border: 4px solid;
+      text-transform: uppercase;
+      line-height: 1;
+    }
+
+    .swipe-overlay-right {
+      left: 20px;
+      color: #22c55e;
+      border-color: #22c55e;
+      transform: rotate(-15deg);
+      text-shadow: 0 0 8px rgba(34,197,94,0.4);
+    }
+
+    .swipe-overlay-left {
+      right: 20px;
+      color: #ef4444;
+      border-color: #ef4444;
+      transform: rotate(15deg);
+      text-shadow: 0 0 8px rgba(239,68,68,0.4);
+    }
+
+    /* ── ACTION BUTTONS (Tinder style) ── */
+    .swipe-actions {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      padding: 10px 20px 6px;
+      flex-shrink: 0;
+    }
+
+    .action-circle {
+      border-radius: 50%;
+      border: 2px solid;
+      background: var(--surface);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.25);
+      transition: transform 0.12s, box-shadow 0.12s;
+      flex-shrink: 0;
+      font-weight: 700;
+    }
+
+    .action-circle:active {
+      transform: scale(0.88);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+
+    .action-circle.nein {
+      width: 70px; height: 70px;
+      border-color: #ef4444;
+      color: #ef4444;
+      font-size: 1.7rem;
+    }
+
+    .action-circle.undo {
+      width: 50px; height: 50px;
+      border-color: var(--border);
+      color: var(--muted);
+      font-size: 1.1rem;
+    }
+
+    .action-circle.ja {
+      width: 70px; height: 70px;
+      border-color: #22c55e;
+      color: #22c55e;
+      font-size: 1.7rem;
+    }
+
+    .cancel-text-btn {
+      background: none; border: none;
+      color: var(--muted); font-size: 0.72rem;
+      cursor: pointer; font-family: 'DM Sans', sans-serif;
+      text-decoration: underline; touch-action: manipulation;
+      padding: 4px 12px;
+    }
+
+    /* ── DETAIL PANEL (fixed overlay) ── */
+    .detail-panel {
+      position: fixed;
+      top: 56px; left: 0; right: 0; bottom: 0;
+      z-index: 80;
+      background: var(--bg);
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .detail-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+      position: sticky;
+      top: 0;
+      background: var(--bg);
+      z-index: 1;
+    }
+
+    .detail-back-btn {
+      background: none; border: none;
+      color: var(--accent); font-size: 0.9rem; font-weight: 600;
+      cursor: pointer; font-family: 'DM Sans', sans-serif;
+      touch-action: manipulation; padding: 6px 8px;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .detail-title-text {
+      font-weight: 700; font-size: 0.92rem;
+      flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+
+    .detail-content { padding: 16px 16px 40px; }
+
+    .detail-section-label {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 0.62rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      margin-bottom: 8px;
+      margin-top: 20px;
+    }
+
+    .detail-section-label:first-child { margin-top: 0; }
+
+    .detail-lagerfoto {
+      width: 100%;
+      border-radius: 14px;
+      max-height: 240px;
+      object-fit: cover;
+      border: 1px solid var(--border);
+      display: block;
+    }
+
+    /* ── MENGE BOTTOM SHEET ── */
+    .menge-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      background: rgba(0,0,0,0.55);
+      display: flex;
+      align-items: flex-end;
+      backdrop-filter: blur(3px);
+      -webkit-backdrop-filter: blur(3px);
+    }
+
+    .menge-sheet {
+      background: var(--surface);
+      border-radius: 24px 24px 0 0;
+      padding: 12px 20px 36px;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .menge-handle {
+      width: 40px; height: 4px;
+      background: var(--border);
+      border-radius: 2px;
+      margin: 0 auto 4px;
+    }
+
+    .menge-sheet-title {
+      font-size: 0.95rem; font-weight: 700; text-align: center;
+      color: var(--text);
+    }
+
+    /* ── DONE STATE ── */
+    .swipe-done {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      gap: 14px;
+      text-align: center;
+      padding: 24px;
+    }
+
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body class="check-page">
+
+  <nav class="navbar">
+    <div class="navbar-inner">
+      <a href="../index.html" class="nav-logo" style="padding:0;"><img src="../LAGER_APP.png" alt="LAGER//APP" style="height:32px;width:auto;display:block;object-fit:contain;"></a>
+      <div class="nav-right">
+        <span id="nav-user" class="mono text-xs text-muted hide-mobile"></span>
+        <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" aria-label="Hell/Dunkel-Modus umschalten">☀️</button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ── PIN ── -->
+  <div id="screen-pin" class="pin-screen">
+    <div class="pin-box">
+      <div class="pin-header">
+        <div class="pin-logo">LAGER//APP</div>
+        <h1 class="pin-title">StockSwipe</h1>
+        <p class="pin-sub">PIN eingeben und Name eintragen</p>
+      </div>
+      <div class="pin-card">
+        <input type="text" id="name-input" class="name-input" placeholder="Dein Name..." maxlength="40" autocomplete="off">
+        <div class="pin-dots">
+          <div class="pin-dot" id="dot-0"></div>
+          <div class="pin-dot" id="dot-1"></div>
+          <div class="pin-dot" id="dot-2"></div>
+          <div class="pin-dot" id="dot-3"></div>
+        </div>
+        <div class="pin-grid" role="group" aria-label="PIN-Eingabe">
+          <div class="pin-key" data-key="1">1</div>
+          <div class="pin-key" data-key="2">2</div>
+          <div class="pin-key" data-key="3">3</div>
+          <div class="pin-key" data-key="4">4</div>
+          <div class="pin-key" data-key="5">5</div>
+          <div class="pin-key" data-key="6">6</div>
+          <div class="pin-key" data-key="7">7</div>
+          <div class="pin-key" data-key="8">8</div>
+          <div class="pin-key" data-key="9">9</div>
+          <div class="pin-key del" data-key="del">⌫</div>
+          <div class="pin-key" data-key="0">0</div>
+          <div class="pin-key confirm" data-key="confirm">✓</div>
+        </div>
+        <div class="pin-error" id="pin-error"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── BEREICHS-AUSWAHL ── -->
+  <div id="screen-join" class="pin-screen hidden">
+    <div class="pin-box">
+      <div class="pin-title">StockSwipe</div>
+      <div class="pin-sub" id="join-sub">Bereiche auswählen</div>
+
+      <div id="join-session-wrap" class="hidden" style="margin-bottom:16px;">
+        <div style="background:rgba(14,165,233,0.08);border:1px solid rgba(14,165,233,0.3);border-radius:12px;padding:14px;">
+          <div style="font-size:0.78rem;font-weight:700;color:var(--accent2);margin-bottom:8px;">👥 Laufende Bestellung</div>
+          <div id="join-session-info" style="font-size:0.75rem;color:var(--text2);margin-bottom:10px;"></div>
+          <button onclick="joinSession()" class="btn btn-primary btn-full" style="font-size:0.85rem;">
+            👥 Mitmachen &amp; Bereiche wählen
+          </button>
+        </div>
+      </div>
+
+      <div style="font-size:0.78rem;font-weight:600;color:var(--text2);margin-bottom:8px;" id="bereich-select-label">
+        Deine Bereiche auswählen:
+      </div>
+      <div id="bereich-select-list" style="display:flex;flex-direction:column;gap:6px;max-height:320px;overflow-y:auto;margin-bottom:14px;"></div>
+
+      <div style="display:flex;gap:8px;">
+        <button onclick="startAlleAllein()" class="btn btn-ghost btn-full" style="font-size:0.82rem;">
+          📋 Alle Bereiche alleine
+        </button>
+        <button onclick="startMitAuswahl()" class="btn btn-primary btn-full" style="font-size:0.82rem;" id="btn-start-auswahl">
+          ✅ Starten
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SWIPE SCREEN ── -->
+  <div id="screen-check" class="swipe-page hidden">
+    <div class="swipe-topbar">
+      <div class="swipe-progress-bar">
+        <div class="swipe-progress-fill" id="swipe-progress-fill"></div>
+      </div>
+      <div class="swipe-progress-text" id="swipe-progress-text">0 / 0</div>
+    </div>
+
+    <div class="swipe-stack" id="swipe-stack"></div>
+
+    <div class="swipe-actions">
+      <button class="action-circle nein" onclick="triggerSwipeLeft()" title="Bestand OK">✗</button>
+      <button class="action-circle undo" onclick="undoLastSwipe()" title="Rückgängig">↩</button>
+      <button class="action-circle ja" onclick="triggerSwipeRight()" title="Bestellen">✓</button>
+    </div>
+
+    <div style="text-align:center;padding-bottom:10px;">
+      <button onclick="storniereBestellung()" class="cancel-text-btn">🗑️ Lagerbestellung stornieren</button>
+    </div>
+  </div>
+
+  <!-- ── UNTERSCHRIFT ── -->
+  <div id="screen-sig" class="sig-screen hidden">
+    <div class="sig-box">
+      <div class="sig-title">✅ Check abgeschlossen</div>
+      <div class="summary-grid" id="summary-grid"></div>
+      <div>
+        <div class="section-label mb-8">Unterschrift</div>
+        <div class="sig-canvas-wrap">
+          <canvas id="sig-canvas"></canvas>
+          <div class="sig-line"></div>
+          <div class="sig-hint" id="sig-hint">Hier unterschreiben...</div>
+          <button class="sig-clear" onclick="clearSig()">Löschen</button>
+        </div>
+      </div>
+      <button class="btn btn-primary btn-full" style="height:56px;font-size:1rem;" onclick="submitCheck()">📄 Absenden &amp; Fertig</button>
+      <button class="btn btn-ghost btn-full" style="height:52px;" onclick="backToCheck()">← Zurück zum Check</button>
+    </div>
+  </div>
+
+  <!-- ── DETAIL PANEL (fixed overlay) ── -->
+  <div class="detail-panel hidden" id="detail-panel">
+    <div class="detail-header">
+      <button class="detail-back-btn" onclick="hideCardDetail()">← Zurück</button>
+      <div class="detail-title-text" id="detail-title-text"></div>
+    </div>
+    <div class="detail-content" id="detail-content"></div>
+  </div>
+
+  <!-- ── MENGE BOTTOM SHEET ── -->
+  <div class="menge-backdrop hidden" id="menge-backdrop">
+    <div class="menge-sheet">
+      <div class="menge-handle"></div>
+      <div class="menge-sheet-title" id="menge-sheet-title">Wie viel bestellen?</div>
+      <div class="chips-row" id="swipe-chips-row"></div>
+      <div class="plusminus-row">
+        <button class="pm-btn minus" onclick="pmAction('minus')">−</button>
+        <input class="pm-display" id="pm-swipe-input" type="number" inputmode="numeric" value="1" min="1">
+        <button class="pm-btn plus" onclick="pmAction('plus')">+</button>
+      </div>
+      <button class="btn btn-primary btn-full" style="height:52px;margin-top:4px;" onclick="confirmMenge()">✓ Bestätigen</button>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp }  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    import { getFirestore, collection, getDocs, doc, getDoc, addDoc, updateDoc, deleteDoc, query, orderBy, limit, serverTimestamp, runTransaction }
+                              from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { firebaseConfig } from "../js/firebase-config.js";
+
+    function esc(str) {
+      return String(str ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    // Theme
+    const savedTheme  = localStorage.getItem('lager-theme');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const theme       = savedTheme || (prefersDark ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    document.getElementById('theme-toggle').textContent = theme === 'dark' ? '☀️' : '🌙';
+    window.toggleTheme = function() {
+      const cur  = document.documentElement.getAttribute('data-theme');
+      const next = cur === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      localStorage.setItem('lager-theme', next);
+      document.getElementById('theme-toggle').textContent = next === 'dark' ? '☀️' : '🌙';
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db  = getFirestore(app);
+
+    // ── State ──
+    let correctPin   = '1234';
+    let alleArtikel  = [];
+    let alleBereiche = [];
+    let bestellungen = {};
+    let userName     = '';
+    let pinValue     = '';
+    let pinAttempts  = 0;
+    let pinLockedUntil = 0;
+    let autoSaveId   = null;
+    let autoSaveTimer = null;
+    let sessionId    = null;
+    let meineBereiche = [];
+
+    // Swipe state
+    let swipeArtikel = [];
+    let swipeIdx     = 0;
+    let swipeHistory = [];
+    let currentMengeArtikel = null;
+    let currentMenge = 1;
+
+    const QUICK_VALUES = [1, 2, 3, 5, 10];
+
+    // ── Auth-Check ──
+    (async function checkAuth() {
+      const pinOk = sessionStorage.getItem('lager-pin-auth');
+      const name  = sessionStorage.getItem('lager-pin-name');
+      if (pinOk && name) {
+        document.getElementById('screen-pin').classList.add('hidden');
+        userName = name;
+        document.getElementById('nav-user').textContent = userName;
+        await loadCheckData();
+        await showJoinScreen();
+      }
+    })();
+
+    // ── Natural sort ──
+    function naturalSort(a, b) {
+      const segA = a.split(/[\.\-]/).map(s => isNaN(s) ? s : parseInt(s, 10));
+      const segB = b.split(/[\.\-]/).map(s => isNaN(s) ? s : parseInt(s, 10));
+      const len  = Math.max(segA.length, segB.length);
+      for (let i = 0; i < len; i++) {
+        const sa = segA[i] ?? '', sb = segB[i] ?? '';
+        if (sa < sb) return -1;
+        if (sa > sb) return  1;
+      }
+      return 0;
+    }
+
+    // ── PIN ──
+    function handlePinKey(key) {
+      document.getElementById('pin-error').textContent = '';
+      if (key === 'del') {
+        pinValue = pinValue.slice(0, -1);
+        updateDots();
+      } else if (key === 'confirm') {
+        pinConfirm();
+      } else {
+        if (pinValue.length >= 4) return;
+        pinValue += key;
+        updateDots();
+      }
+    }
+
+    function updateDots() {
+      for (let i = 0; i < 4; i++)
+        document.getElementById(`dot-${i}`).classList.toggle('filled', i < pinValue.length);
+    }
+
+    document.querySelectorAll('.pin-key').forEach(btn => {
+      const key = btn.dataset.key;
+      btn.addEventListener('touchstart', e => { e.preventDefault(); btn.classList.add('pressed'); handlePinKey(key); }, { passive: false });
+      btn.addEventListener('touchend', () => setTimeout(() => btn.classList.remove('pressed'), 100));
+      btn.addEventListener('click', () => handlePinKey(key));
+    });
+
+    async function pinConfirm() {
+      userName = document.getElementById('name-input').value.trim();
+      const err = document.getElementById('pin-error');
+      if (!userName) { err.textContent = 'Bitte deinen Namen eingeben.'; return; }
+      if (pinValue.length < 4) { err.textContent = 'Bitte 4-stelligen PIN eingeben.'; return; }
+
+      if (Date.now() < pinLockedUntil) {
+        const secs = Math.ceil((pinLockedUntil - Date.now()) / 1000);
+        err.textContent = `Zu viele Versuche – bitte ${secs}s warten`;
+        pinValue = ''; updateDots(); return;
+      }
+
+      try {
+        const snap = await getDoc(doc(db, 'config', 'app'));
+        if (snap.exists()) correctPin = snap.data().pin || '1234';
+      } catch {}
+
+      if (pinValue !== correctPin) {
+        pinAttempts++;
+        if (pinAttempts >= 5) {
+          pinLockedUntil = Date.now() + 60000;
+          pinAttempts = 0;
+          err.textContent = 'Zu viele Versuche – bitte 60s warten';
+        } else {
+          err.textContent = `Falscher PIN – noch ${5 - pinAttempts} Versuch(e)`;
+        }
+        pinValue = ''; updateDots(); return;
+      }
+      pinAttempts = 0;
+
+      const auth = getAuth(app);
+      if (!auth.currentUser) await signInAnonymously(auth);
+
+      document.getElementById('nav-user').textContent = userName;
+      sessionStorage.setItem('lager-pin-auth', 'true');
+      sessionStorage.setItem('lager-pin-name', userName);
+      await loadCheckData();
+      await showJoinScreen();
+    }
+
+    // ── Auto-Save ──
+    async function autoSave() {
+      if (!userName) return;
+      try {
+        if (sessionId) {
+          const sessionRef = doc(db, 'bestellungen_session', sessionId);
+          await runTransaction(db, async (transaction) => {
+            const snap = await transaction.get(sessionRef);
+            const current = snap.exists() ? (snap.data().bestellungen || {}) : {};
+            transaction.update(sessionRef, {
+              bestellungen: { ...current, ...bestellungen },
+              [`fortschritt_${userName}`]: Math.round((swipeIdx / Math.max(swipeArtikel.length, 1)) * 100),
+              zuletzt: new Date().toISOString(),
+            });
+          });
+        } else if (Object.keys(bestellungen).length > 0) {
+          const data = {
+            mitarbeiter: userName,
+            datum:       new Date().toISOString(),
+            status:      'pausiert',
+            currentIdx:  swipeIdx,
+            bestellungen,
+            fortschritt: Math.round((swipeIdx / Math.max(swipeArtikel.length, 1)) * 100),
+          };
+          if (autoSaveId) {
+            await updateDoc(doc(db, 'bestellungen_draft', autoSaveId), data);
+          } else {
+            const ref = await addDoc(collection(db, 'bestellungen_draft'), data);
+            autoSaveId = ref.id;
+          }
+        }
+      } catch(e) { showToast('Speichern fehlgeschlagen', 'error'); }
+    }
+
+    function startAutoSave() {
+      if (autoSaveTimer) clearInterval(autoSaveTimer);
+      autoSaveTimer = setInterval(autoSave, 30000);
+    }
+
+    function stopAutoSave() {
+      if (autoSaveTimer) clearInterval(autoSaveTimer);
+      autoSaveTimer = null;
+    }
+
+    // ── Draft ──
+    async function checkForDraft() {
+      try {
+        const snap = await getDocs(query(collection(db, 'bestellungen_draft'), orderBy('datum', 'desc'), limit(5)));
+        if (!snap.empty) showDraftBanner(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      } catch(e) {}
+    }
+
+    function showDraftBanner(drafts) {
+      const existing = document.getElementById('draft-banner');
+      if (existing) existing.remove();
+      const banner = document.createElement('div');
+      banner.id = 'draft-banner';
+      banner.style.cssText = `position:fixed;top:56px;left:0;right:0;z-index:500;background:var(--surface);border-bottom:2px solid var(--accent);padding:12px 16px;display:flex;flex-direction:column;gap:8px;box-shadow:0 4px 16px rgba(0,0,0,0.3);`;
+      banner.innerHTML = `
+        <div style="font-size:0.82rem;font-weight:700;color:var(--accent);">📋 Offene Bestellung${drafts.length > 1 ? 'en' : ''}</div>
+        ${drafts.map(d => `
+          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:10px;">
+            <div style="flex:1;">
+              <div style="font-size:0.82rem;font-weight:600;">${esc(d.mitarbeiter)}</div>
+              <div style="font-size:0.65rem;color:var(--muted);font-family:'IBM Plex Mono',monospace;margin-top:2px;">${new Date(d.datum).toLocaleDateString('de-DE')} · ${d.fortschritt||0}% fertig</div>
+            </div>
+            <button onclick="resumeDraft('${d.id}')" style="padding:7px 14px;border-radius:8px;background:var(--accent);border:none;color:white;font-size:0.78rem;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap;touch-action:manipulation;">▶️ Fortführen</button>
+            <button onclick="discardDraft('${d.id}')" style="padding:7px 10px;border-radius:8px;background:var(--surface2);border:1px solid var(--border);color:var(--muted);font-size:0.78rem;cursor:pointer;font-family:'DM Sans',sans-serif;touch-action:manipulation;">✕</button>
+          </div>`).join('')}`;
+      document.body.appendChild(banner);
+    }
+
+    window.resumeDraft = async function(id) {
+      try {
+        const snap = await getDoc(doc(db, 'bestellungen_draft', id));
+        if (!snap.exists()) return;
+        const data = snap.data();
+        bestellungen = data.bestellungen || {};
+        autoSaveId   = id;
+        const banner = document.getElementById('draft-banner');
+        if (banner) banner.remove();
+        initSwipeMode();
+        showToast(`Fortschritt von ${esc(data.mitarbeiter)} wiederhergestellt ✅`);
+      } catch(e) { showToast('Fehler: ' + e.message, 'error'); }
+    };
+
+    window.discardDraft = async function(id) {
+      if (!confirm('Offene Bestellung verwerfen?')) return;
+      try {
+        await deleteDoc(doc(db, 'bestellungen_draft', id));
+        const banner = document.getElementById('draft-banner');
+        if (banner) banner.remove();
+      } catch(e) {}
+    };
+
+    // ── Stornieren ──
+    window.storniereBestellung = async function() {
+      try {
+        stopAutoSave();
+        if (sessionId) {
+          const sessionSnap = await getDoc(doc(db, 'bestellungen_session', sessionId));
+          if (sessionSnap.exists()) {
+            const sessionData  = sessionSnap.data();
+            const andereAktive = (sessionData.teilnehmer || []).filter(t => t.name !== userName);
+            if (andereAktive.length > 0) {
+              const namen = andereAktive.map(t => t.name).join(', ');
+              if (!confirm(`${namen} ${andereAktive.length === 1 ? 'arbeitet' : 'arbeiten'} noch.\n\nNur deinen Teil stornieren?`)) return;
+              const vergeben   = { ...(sessionData.vergebeneBereiche || {}) };
+              const teilnehmer = (sessionData.teilnehmer || []).filter(t => t.name !== userName);
+              Object.keys(vergeben).forEach(bid => { if (vergeben[bid] === userName) delete vergeben[bid]; });
+              await updateDoc(doc(db, 'bestellungen_session', sessionId), { vergeben, teilnehmer });
+            } else {
+              if (!confirm('Lagerbestellung wirklich stornieren?')) return;
+              await deleteDoc(doc(db, 'bestellungen_session', sessionId));
+            }
+          }
+          sessionId = null; autoSaveId = null;
+        } else {
+          if (!confirm('Lagerbestellung wirklich stornieren?\n\nAlle bisherigen Eingaben gehen verloren.')) return;
+          if (autoSaveId) { await deleteDoc(doc(db, 'bestellungen_draft', autoSaveId)); autoSaveId = null; }
+        }
+      } catch(e) { showToast('Fehler: ' + e.message, 'error'); }
+      window.location.href = './mitarbeiter.html';
+    };
+
+    function showToast(msg, type = 'success') {
+      const t = document.createElement('div');
+      t.style.cssText = `position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid ${type==='error'?'var(--red)':'var(--green)'};color:${type==='error'?'var(--red)':'var(--green)'};border-radius:10px;padding:10px 18px;font-size:0.82rem;box-shadow:var(--shadow-lg);z-index:3000;white-space:nowrap;`;
+      t.textContent = msg;
+      document.body.appendChild(t);
+      setTimeout(() => t.remove(), 2500);
+    }
+
+    async function loadCheckData() {
+      const [bSnap, aSnap] = await Promise.all([
+        getDocs(query(collection(db, 'bereiche'), orderBy('reihenfolge'))),
+        getDocs(collection(db, 'artikel')),
+      ]);
+      alleBereiche = bSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+      alleArtikel  = aSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    }
+
+    // ── SWIPE INIT ──
+    function initSwipeMode() {
+      const bereiche = meineBereiche.length > 0 ? meineBereiche : alleBereiche.map(b => b.id);
+      swipeArtikel = alleArtikel
+        .filter(a => bereiche.includes(a.bereich))
+        .sort((a, b) => naturalSort(a.lp || '', b.lp || ''));
+
+      // Skip already-decided articles (for resume)
+      swipeHistory = [];
+      swipeIdx = 0;
+      for (const a of swipeArtikel) {
+        if (bestellungen[a.id] !== undefined) {
+          swipeHistory.push({ artikel: a, direction: bestellungen[a.id].bestellen ? 'right' : 'left' });
+          swipeIdx++;
+        } else {
+          break;
+        }
+      }
+
+      document.getElementById('detail-panel').classList.add('hidden');
+      document.getElementById('menge-backdrop').classList.add('hidden');
+      showScreen('check');
+      renderCardStack();
+    }
+
+    // ── RENDER CARD STACK ──
+    function renderCardStack() {
+      const stack = document.getElementById('swipe-stack');
+      stack.innerHTML = '';
+
+      const total = swipeArtikel.length;
+      const done  = swipeIdx;
+      const pct   = total > 0 ? Math.round((done / total) * 100) : 0;
+      document.getElementById('swipe-progress-fill').style.width = pct + '%';
+      document.getElementById('swipe-progress-text').textContent = `${done} / ${total}`;
+
+      if (done >= total) {
+        stack.innerHTML = `
+          <div class="swipe-done">
+            <div style="font-size:3.5rem;">✅</div>
+            <div style="font-size:1.3rem;font-weight:800;">Alle Artikel geprüft!</div>
+            <div style="font-size:0.88rem;color:var(--muted);">Jetzt unterschreiben und absenden.</div>
+            <button onclick="showSignature()" style="margin-top:8px;height:54px;padding:0 32px;border-radius:16px;border:none;background:var(--green);color:white;font-size:1rem;font-weight:700;font-family:'DM Sans',sans-serif;cursor:pointer;touch-action:manipulation;">✍️ Weiter zur Unterschrift</button>
+          </div>`;
+        return;
+      }
+
+      // Back card (next article)
+      if (swipeIdx + 1 < swipeArtikel.length) {
+        const backCard = buildCard(swipeArtikel[swipeIdx + 1]);
+        backCard.classList.add('back-card');
+        stack.appendChild(backCard);
+      }
+
+      // Top card (current article)
+      const topCard = buildCard(swipeArtikel[swipeIdx]);
+      topCard.classList.add('top-card');
+      attachSwipeHandlers(topCard, swipeArtikel[swipeIdx]);
+      stack.appendChild(topCard);
+    }
+
+    // ── BUILD CARD DOM ──
+    function buildCard(artikel) {
+      const card = document.createElement('div');
+      card.className = 'swipe-card';
+
+      const bereichObj  = alleBereiche.find(b => b.id === artikel.bereich);
+      const bereichName = bereichObj ? bereichObj.name : '';
+
+      const photoHtml = artikel.fotoUrl
+        ? `<img class="card-photo" src="${esc(artikel.fotoUrl)}" alt="${esc(artikel.name)}">`
+        : `<div class="card-photo-placeholder">📦</div>`;
+
+      card.innerHTML = `
+        ${photoHtml}
+        <div class="swipe-overlay swipe-overlay-right">BESTELLEN ✓</div>
+        <div class="swipe-overlay swipe-overlay-left">OK ✗</div>
+        <button class="card-info-btn">ⓘ</button>
+        <div class="card-footer-gradient">
+          <div class="card-name">${esc(artikel.name)}</div>
+          <div class="card-meta">
+            ${artikel.lp ? `<span>${esc(artikel.lp)}</span>` : ''}
+            ${artikel.lp && bereichName ? '<span>·</span>' : ''}
+            ${bereichName ? `<span>${esc(bereichName)}</span>` : ''}
+          </div>
+        </div>`;
+
+      card.querySelector('.card-info-btn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        showCardDetail(artikel);
+      });
+
+      return card;
+    }
+
+    // ── SWIPE HANDLERS ──
+    function attachSwipeHandlers(cardEl, artikel) {
+      let startX = 0, currentX = 0, isDragging = false, startTime = 0;
+      const THRESHOLD = 80;
+
+      function snapBack() {
+        cardEl.style.transition = 'transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+        cardEl.style.transform  = 'translateX(0) rotate(0deg)';
+        cardEl.querySelector('.swipe-overlay-right').style.opacity = 0;
+        cardEl.querySelector('.swipe-overlay-left').style.opacity  = 0;
+        const back = cardEl.parentElement?.querySelector('.back-card');
+        if (back) { back.style.transition = 'transform 0.4s ease'; back.style.transform = 'scale(0.94) translateY(24px)'; }
+      }
+
+      cardEl.addEventListener('pointerdown', (e) => {
+        if (e.target.closest('.card-info-btn')) return;
+        isDragging = true;
+        startTime  = Date.now();
+        startX     = e.clientX;
+        currentX   = 0;
+        cardEl.setPointerCapture(e.pointerId);
+        cardEl.style.transition = 'none';
+      });
+
+      cardEl.addEventListener('pointermove', (e) => {
+        if (!isDragging) return;
+        currentX = e.clientX - startX;
+        const rotate = Math.max(-15, Math.min(15, currentX * 0.06));
+        cardEl.style.transform = `translateX(${currentX}px) rotate(${rotate}deg)`;
+
+        const ratio = Math.min(Math.abs(currentX) / 150, 1);
+        cardEl.querySelector('.swipe-overlay-right').style.opacity = currentX > 0 ? ratio : 0;
+        cardEl.querySelector('.swipe-overlay-left').style.opacity  = currentX < 0 ? ratio : 0;
+
+        const back = cardEl.parentElement?.querySelector('.back-card');
+        if (back) {
+          back.style.transition = 'none';
+          back.style.transform  = `scale(${0.94 + ratio * 0.06}) translateY(${24 - ratio * 24}px)`;
+        }
+      });
+
+      cardEl.addEventListener('pointerup', () => {
+        if (!isDragging) return;
+        isDragging = false;
+        const elapsed  = Math.max(Date.now() - startTime, 1);
+        const velocity = Math.abs(currentX) / elapsed;
+        if (Math.abs(currentX) > THRESHOLD || velocity > 0.5) {
+          executeSwipe(currentX > 0 ? 'right' : 'left', artikel, cardEl);
+        } else {
+          snapBack();
+        }
+      });
+
+      cardEl.addEventListener('pointercancel', () => { if (isDragging) { isDragging = false; snapBack(); } });
+    }
+
+    // ── EXECUTE SWIPE ──
+    async function executeSwipe(direction, artikel, cardEl) {
+      const flyX = direction === 'right' ? window.innerWidth * 1.5 : -window.innerWidth * 1.5;
+      cardEl.style.transition = 'transform 0.35s ease-out, opacity 0.3s';
+      cardEl.style.transform  = `translateX(${flyX}px) rotate(${direction === 'right' ? 25 : -25}deg)`;
+      cardEl.style.opacity    = '0';
+
+      const back = document.querySelector('.back-card');
+      if (back) { back.style.transition = 'transform 0.3s ease'; back.style.transform = 'scale(1) translateY(0)'; }
+
+      swipeHistory.push({ artikel, direction });
+      swipeIdx++;
+
+      await new Promise(r => setTimeout(r, 300));
+
+      if (direction === 'right') {
+        showMengeModal(artikel);
+      } else {
+        bestellungen[artikel.id] = { bestellen: false, menge: 0 };
+        renderCardStack();
+      }
+      autoSave();
+    }
+
+    window.triggerSwipeLeft = function() {
+      if (swipeIdx >= swipeArtikel.length) return;
+      const top = document.querySelector('.top-card');
+      if (top) executeSwipe('left', swipeArtikel[swipeIdx], top);
+    };
+
+    window.triggerSwipeRight = function() {
+      if (swipeIdx >= swipeArtikel.length) return;
+      const top = document.querySelector('.top-card');
+      if (top) executeSwipe('right', swipeArtikel[swipeIdx], top);
+    };
+
+    window.undoLastSwipe = function() {
+      if (swipeHistory.length === 0) { showToast('Nichts zum Rückgängigmachen', 'error'); return; }
+      // Close menge modal if open
+      document.getElementById('menge-backdrop').classList.add('hidden');
+      const last = swipeHistory.pop();
+      swipeIdx--;
+      delete bestellungen[last.artikel.id];
+      renderCardStack();
+      showToast('Rückgängig gemacht');
+    };
+
+    // ── DETAIL VIEW ──
+    window.showCardDetail = function(artikel) {
+      const bereichObj  = alleBereiche.find(b => b.id === artikel.bereich);
+      document.getElementById('detail-title-text').textContent = artikel.name;
+
+      let html = '';
+
+      if (artikel.lagerFotoUrl) {
+        html += `<div class="detail-section-label">Lagerort</div>
+                 <img class="detail-lagerfoto" src="${esc(artikel.lagerFotoUrl)}" alt="Lagerort">`;
+      }
+
+      if (artikel.min != null || artikel.max != null) {
+        html += `<div class="detail-section-label">Bestand</div><div class="minmax-row">`;
+        if (artikel.min != null) html += `
+          <div class="minmax-badge min">
+            <span class="minmax-label">MIN</span>
+            <span class="minmax-value">${artikel.min}</span>
+            <span class="minmax-unit">${esc(artikel.minEinheit || 'Stk')}</span>
+          </div>`;
+        if (artikel.max != null) html += `
+          <div class="minmax-badge max">
+            <span class="minmax-label">MAX</span>
+            <span class="minmax-value">${artikel.max}</span>
+            <span class="minmax-unit">${esc(artikel.maxEinheit || 'Stk')}</span>
+          </div>`;
+        html += `</div>`;
+      }
+
+      if (artikel.hinweis) {
+        html += `<div class="detail-section-label">Hinweis</div>
+                 <div style="background:rgba(14,165,233,0.08);border:1px solid rgba(14,165,233,0.25);border-radius:12px;padding:13px 15px;font-size:0.85rem;color:var(--text2);line-height:1.5;">
+                   💡 ${esc(artikel.hinweis)}
+                 </div>`;
+      }
+
+      if (artikel.lp || bereichObj) {
+        html += `<div class="detail-section-label">Position</div>
+                 <div style="font-family:'IBM Plex Mono',monospace;font-size:0.9rem;">
+                   ${artikel.lp ? esc(artikel.lp) : ''}${artikel.lp && bereichObj ? ' · ' : ''}${bereichObj ? esc(bereichObj.name) : ''}
+                 </div>`;
+      }
+
+      if (!html) {
+        html = `<div style="text-align:center;padding:40px 20px;color:var(--muted);font-size:0.88rem;">Keine weiteren Infos vorhanden</div>`;
+      }
+
+      document.getElementById('detail-content').innerHTML = html;
+      document.getElementById('detail-panel').classList.remove('hidden');
+    };
+
+    window.hideCardDetail = function() {
+      document.getElementById('detail-panel').classList.add('hidden');
+    };
+
+    // ── MENGE MODAL ──
+    function showMengeModal(artikel) {
+      currentMengeArtikel = artikel;
+      currentMenge = 1;
+
+      const title = artikel.name.length > 30 ? artikel.name.slice(0, 28) + '…' : artikel.name;
+      document.getElementById('menge-sheet-title').textContent = `Wie viel „${title}" bestellen?`;
+
+      const chipsHtml = QUICK_VALUES.map(v =>
+        `<div class="chip ${v === 1 ? 'selected' : ''}" data-val="${v}">${v}</div>`
+      ).join('');
+      document.getElementById('swipe-chips-row').innerHTML = chipsHtml;
+      document.getElementById('pm-swipe-input').value = 1;
+
+      document.querySelectorAll('#swipe-chips-row .chip').forEach(chip => {
+        function handleChip() {
+          currentMenge = parseInt(chip.dataset.val);
+          document.getElementById('pm-swipe-input').value = currentMenge;
+          document.querySelectorAll('#swipe-chips-row .chip').forEach(c => c.classList.remove('selected'));
+          chip.classList.add('selected');
+        }
+        chip.addEventListener('touchstart', e => { e.preventDefault(); handleChip(); }, { passive: false });
+        chip.addEventListener('click', handleChip);
+      });
+
+      document.getElementById('menge-backdrop').classList.remove('hidden');
+    }
+
+    window.pmAction = function(action) {
+      const input = document.getElementById('pm-swipe-input');
+      const cur   = parseInt(input.value) || 1;
+      currentMenge = action === 'plus' ? cur + 1 : Math.max(1, cur - 1);
+      input.value  = currentMenge;
+      document.querySelectorAll('#swipe-chips-row .chip').forEach(c => {
+        c.classList.toggle('selected', parseInt(c.dataset.val) === currentMenge);
+      });
+    };
+
+    window.confirmMenge = function() {
+      const input = document.getElementById('pm-swipe-input');
+      currentMenge = Math.max(1, parseInt(input.value) || 1);
+      if (currentMengeArtikel) {
+        bestellungen[currentMengeArtikel.id] = { bestellen: true, menge: currentMenge };
+      }
+      document.getElementById('menge-backdrop').classList.add('hidden');
+      renderCardStack();
+      autoSave();
+    };
+
+    // ── SIGNATURE ──
+    window.showSignature = function() {
+      const zuBestellen = Object.entries(bestellungen).filter(([, v]) => v.bestellen === true);
+      const bearbeitet  = Object.keys(bestellungen).length;
+      document.getElementById('summary-grid').innerHTML = `
+        <div class="summary-row"><span class="summary-key">Mitarbeiter</span><span class="summary-val">${esc(userName)}</span></div>
+        <div class="summary-row"><span class="summary-key">Datum</span><span class="summary-val">${new Date().toLocaleDateString('de-DE')} · ${new Date().toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'})}</span></div>
+        <div class="summary-row"><span class="summary-key">Bearbeitet</span><span class="summary-val">${bearbeitet} / ${swipeArtikel.length} Artikel</span></div>
+        <div class="summary-row"><span class="summary-key">Zu bestellen</span><span class="summary-val" style="color:${zuBestellen.length>0?'var(--red)':'var(--green)'}">${zuBestellen.length} Artikel</span></div>`;
+      showScreen('sig');
+      initCanvas();
+    };
+
+    window.backToCheck = function() {
+      showScreen('check');
+      renderCardStack();
+    };
+
+    // ── CANVAS ──
+    let drawing = false, hasSig = false;
+    function initCanvas() {
+      const canvas = document.getElementById('sig-canvas');
+      const ctx    = canvas.getContext('2d');
+      canvas.width  = canvas.parentElement.clientWidth;
+      canvas.height = 160;
+      ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
+      ctx.lineWidth = 2.5; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+      function getPos(e) {
+        const r = canvas.getBoundingClientRect();
+        const t = e.touches ? e.touches[0] : e;
+        return { x: (t.clientX-r.left)*(canvas.width/r.width), y: (t.clientY-r.top)*(canvas.height/r.height) };
+      }
+      canvas.addEventListener('mousedown',  e => { drawing=true; ctx.beginPath(); const p=getPos(e); ctx.moveTo(p.x,p.y); });
+      canvas.addEventListener('mousemove',  e => { if(!drawing)return; const p=getPos(e); ctx.lineTo(p.x,p.y); ctx.stroke(); hasSig=true; document.getElementById('sig-hint').style.opacity='0'; });
+      canvas.addEventListener('mouseup',    ()=>drawing=false);
+      canvas.addEventListener('mouseleave', ()=>drawing=false);
+      canvas.addEventListener('touchstart', e=>{ e.preventDefault(); drawing=true; ctx.beginPath(); const p=getPos(e); ctx.moveTo(p.x,p.y); },{passive:false});
+      canvas.addEventListener('touchmove',  e=>{ e.preventDefault(); if(!drawing)return; const p=getPos(e); ctx.lineTo(p.x,p.y); ctx.stroke(); hasSig=true; document.getElementById('sig-hint').style.opacity='0'; },{passive:false});
+      canvas.addEventListener('touchend',   ()=>drawing=false);
+    }
+
+    window.clearSig = function() {
+      const c = document.getElementById('sig-canvas');
+      c.getContext('2d').clearRect(0,0,c.width,c.height);
+      hasSig=false;
+      document.getElementById('sig-hint').style.opacity='1';
+    };
+
+    // ── SUBMIT ──
+    window.submitCheck = async function() {
+      if (!hasSig) { alert('Bitte zuerst unterschreiben!'); return; }
+
+      const nachbestellungen = alleArtikel
+        .filter(a => bestellungen[a.id]?.bestellen === true)
+        .map(a => ({ id: a.id, name: a.name, location: a.location, lp: a.lp, menge: bestellungen[a.id].menge, einheit: a.minEinheit || 'Stk' }));
+
+      try {
+        stopAutoSave();
+        let alleNamen = [userName];
+
+        if (sessionId) {
+          const sessionSnap = await getDoc(doc(db, 'bestellungen_session', sessionId));
+          const sessionData = sessionSnap.exists() ? sessionSnap.data() : {};
+          const alleBestellungen = { ...(sessionData.bestellungen || {}), ...bestellungen };
+          const alleNachbest = alleArtikel
+            .filter(a => alleBestellungen[a.id]?.bestellen === true)
+            .map(a => ({ id: a.id, name: a.name, location: a.location, lp: a.lp, menge: alleBestellungen[a.id].menge, einheit: a.minEinheit || 'Stk' }));
+          alleNamen = (sessionData.teilnehmer || [{ name: userName }]).map(t => t.name);
+          await updateDoc(doc(db, 'bestellungen_session', sessionId), { status: 'abgeschlossen', abgeschlossen: new Date().toISOString() });
+          await addDoc(collection(db, 'bestellungen'), {
+            mitarbeiter: alleNamen.join(' · '), mitarbeiterListe: alleNamen,
+            datum: serverTimestamp(), bestellungen: alleBestellungen,
+            nachbestellungen: alleNachbest, unterschrift: document.getElementById('sig-canvas').toDataURL('image/png'),
+            status: 'abgeschlossen', sessionId, quelle: 'stockswipe',
+          });
+          try { await deleteDoc(doc(db, 'bestellungen_session', sessionId)); } catch(e) {}
+        } else {
+          await addDoc(collection(db, 'bestellungen'), {
+            mitarbeiter: userName, mitarbeiterListe: [userName],
+            datum: serverTimestamp(), bestellungen, nachbestellungen,
+            unterschrift: document.getElementById('sig-canvas').toDataURL('image/png'),
+            status: 'abgeschlossen', quelle: 'stockswipe',
+          });
+        }
+
+        if (autoSaveId && !sessionId) {
+          try { await deleteDoc(doc(db, 'bestellungen_draft', autoSaveId)); } catch(e) {}
+        }
+
+        autoSaveId = null; sessionId = null;
+        alert(`✅ StockSwipe abgeschlossen!\n\n${nachbestellungen.length} Artikel wurden zur Bestellung gemeldet.`);
+        window.location.href = './mitarbeiter.html';
+      } catch(e) { alert('Fehler: ' + e.message); }
+    };
+
+    // ── JOIN SCREEN ──
+    async function showJoinScreen() {
+      showScreen('join');
+      const listEl = document.getElementById('bereich-select-list');
+      listEl.innerHTML = '';
+
+      let openSession = null;
+      try {
+        const sessions = await getDocs(query(collection(db, 'bestellungen_session'), orderBy('startzeit', 'desc'), limit(1)));
+        if (!sessions.empty) {
+          const s = { id: sessions.docs[0].id, ...sessions.docs[0].data() };
+          const alter = (new Date() - new Date(s.startzeit)) / (1000*60*60);
+          if (alter < 4 && s.status !== 'abgeschlossen') openSession = s;
+        }
+      } catch(e) {}
+
+      const sessionWrap = document.getElementById('join-session-wrap');
+      if (openSession) {
+        const mitarbeiter = openSession.teilnehmer?.map(t => t.name).join(', ') || '–';
+        const erledigte   = openSession.erledigteBereiche?.length || 0;
+        document.getElementById('join-session-info').innerHTML = `<strong>${esc(mitarbeiter)}</strong> macht gerade die Bestellung<br>${erledigte} von ${alleBereiche.length} Bereichen erledigt`;
+        sessionWrap.classList.remove('hidden');
+        window._openSession = openSession;
+      } else {
+        sessionWrap.classList.add('hidden');
+        window._openSession = null;
+      }
+
+      const gesperrte = openSession?.erledigteBereiche || [];
+      const vergeben  = openSession?.vergebeneBereiche || {};
+
+      alleBereiche.forEach(b => {
+        const istGesperrt = gesperrte.includes(b.id);
+        const istVergeben = vergeben[b.id] && vergeben[b.id] !== userName;
+        const artikelCount = alleArtikel.filter(a => a.bereich === b.id).length;
+        const icon = getBereichIcon(b.name);
+
+        const div = document.createElement('div');
+        div.style.cssText = `display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;border:1.5px solid ${istGesperrt?'var(--green)':'var(--border)'};background:${istGesperrt?'rgba(34,197,94,0.06)':istVergeben?'var(--surface2)':'var(--surface)'};opacity:${istGesperrt||istVergeben?'0.6':'1'};cursor:${istGesperrt||istVergeben?'default':'pointer'};transition:all 0.15s;-webkit-tap-highlight-color:transparent;`;
+        div.dataset.bereichId = b.id;
+        div.dataset.selected  = 'false';
+        div.dataset.gesperrt  = istGesperrt || istVergeben ? 'true' : 'false';
+        div.innerHTML = `
+          <span style="font-size:1.1rem;">${istGesperrt?'✅':icon}</span>
+          <div style="flex:1;"><div style="font-size:0.82rem;font-weight:600;">${esc(b.name)}</div><div style="font-size:0.62rem;color:var(--muted);font-family:'IBM Plex Mono',monospace;margin-top:1px;">${artikelCount} Artikel${istGesperrt?' · Erledigt':istVergeben?` · ${esc(vergeben[b.id])}`:''}
+          </div></div>
+          <div class="bereich-checkbox" style="width:22px;height:22px;border-radius:6px;border:2px solid ${istGesperrt?'var(--green)':'var(--border)'};background:${istGesperrt?'var(--green)':'transparent'};display:flex;align-items:center;justify-content:center;font-size:0.75rem;color:white;flex-shrink:0;">${istGesperrt?'✓':''}</div>`;
+
+        if (!istGesperrt && !istVergeben) div.addEventListener('click', () => toggleBereich(div, b.id));
+        listEl.appendChild(div);
+      });
+
+      await checkForDraft();
+    }
+
+    function getBereichIcon(name) {
+      const n = name.toLowerCase();
+      if (n.includes('schrank')) return '🗄️';
+      if (n.includes('regal'))   return '📦';
+      if (n.includes('sauer'))   return '🫧';
+      if (n.includes('büro'))    return '📋';
+      if (n.includes('küche'))   return '🍽️';
+      if (n.includes('wasch'))   return '🚿';
+      if (n.includes('mpg'))     return '🔋';
+      if (n.includes('medika'))  return '💊';
+      return '📁';
+    }
+
+    function toggleBereich(div, bereichId) {
+      const selected = div.dataset.selected === 'true';
+      div.dataset.selected = (!selected).toString();
+      const checkbox = div.querySelector('.bereich-checkbox');
+      if (!selected) {
+        div.style.border = '1.5px solid var(--accent2)'; div.style.background = 'rgba(14,165,233,0.08)';
+        checkbox.style.background = 'var(--accent2)'; checkbox.style.borderColor = 'var(--accent2)'; checkbox.textContent = '✓';
+      } else {
+        div.style.border = '1.5px solid var(--border)'; div.style.background = 'var(--surface)';
+        checkbox.style.background = 'transparent'; checkbox.style.borderColor = 'var(--border)'; checkbox.textContent = '';
+      }
+    }
+
+    window.startAlleAllein = async function() {
+      meineBereiche = alleBereiche.map(b => b.id);
+      await startSession(false);
+    };
+
+    window.startMitAuswahl = async function() {
+      const selected = [...document.querySelectorAll('[data-selected="true"]')].map(d => d.dataset.bereichId);
+      if (selected.length === 0) { showToast('Bitte mindestens einen Bereich auswählen', 'error'); return; }
+      meineBereiche = selected;
+      await startSession(false);
+    };
+
+    window.joinSession = async function() {
+      const selected = [...document.querySelectorAll('[data-selected="true"]')].map(d => d.dataset.bereichId);
+      if (selected.length === 0) { showToast('Bitte Bereiche auswählen', 'error'); return; }
+      meineBereiche = selected;
+      await startSession(true);
+    };
+
+    async function startSession(joinExisting) {
+      try {
+        const auth = getAuth(app);
+        if (!auth.currentUser) await signInAnonymously(auth);
+
+        if (joinExisting && window._openSession) {
+          sessionId = window._openSession.id;
+          const sessionRef = doc(db, 'bestellungen_session', sessionId);
+          const vergeben   = { ...(window._openSession.vergebeneBereiche || {}) };
+          meineBereiche.forEach(bid => { vergeben[bid] = userName; });
+          const teilnehmer = [...(window._openSession.teilnehmer || [])];
+          if (!teilnehmer.find(t => t.name === userName)) teilnehmer.push({ name: userName, beitritt: new Date().toISOString() });
+          await updateDoc(sessionRef, { vergebeneBereiche: vergeben, teilnehmer });
+        } else {
+          const vergeben = {};
+          meineBereiche.forEach(bid => vergeben[bid] = userName);
+          const sessionRef = await addDoc(collection(db, 'bestellungen_session'), {
+            startzeit: new Date().toISOString(), status: 'aktiv',
+            teilnehmer: [{ name: userName, beitritt: new Date().toISOString() }],
+            vergebeneBereiche: vergeben, erledigteBereiche: [], bestellungen: {},
+          });
+          sessionId = sessionRef.id;
+        }
+
+        autoSaveId = sessionId;
+        initSwipeMode();
+        startAutoSave();
+      } catch(e) { showToast('Fehler: ' + e.message, 'error'); }
+    }
+
+    function showScreen(name) {
+      ['pin','join','check','sig'].forEach(s =>
+        document.getElementById(`screen-${s}`).classList.toggle('hidden', s !== name)
+      );
+    }
+  </script>
+  <script src="../js/pwa.js"></script>
+</body>
+</html>
