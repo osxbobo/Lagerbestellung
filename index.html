@@ -69,10 +69,9 @@
     <div class="navbar-inner">
       <a href="index.html" class="nav-logo" style="padding:0;"><img src="LAGER_APP.png" alt="LAGER//APP" style="height:32px;width:auto;display:block;object-fit:contain;"></a>
       <div class="nav-right">
-        <button onclick="openPinModal('check')" class="nav-btn primary hide-mobile">📋 Lagerbestellung</button>
-        <button onclick="openPinModal('scanner')" class="nav-btn hide-mobile">📷 Verfallsscan</button>
+        <button onclick="openPinModal('mitarbeiter')" class="nav-btn primary hide-mobile">👤 Mitarbeiter</button>
         <a href="pages/login.html" class="nav-btn hide-mobile">🔐 Login</a>
-        <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" title="Hell/Dunkel">☀️</button>
+        <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" title="Hell/Dunkel" aria-label="Hell/Dunkel-Modus umschalten">☀️</button>
       </div>
     </div>
   </nav>
@@ -96,8 +95,7 @@
       </div>
 
       <div class="hero-actions">
-        <button onclick="openPinModal('check')" class="btn btn-primary">📋 Lagerbestellung</button>
-        <button onclick="openPinModal('scanner')" class="btn btn-secondary">📷 Verfallsscan</button>
+        <button onclick="openPinModal('mitarbeiter')" class="btn btn-primary">👤 Mitarbeiter (PIN)</button>
         <a href="pages/login.html" class="btn btn-ghost">🔐 Wachenleiter / Admin</a>
       </div>
     </div>
@@ -496,12 +494,8 @@
       const savedName = localStorage.getItem('lager-saved-name') || '';
       document.getElementById('modal-name').value = savedName;
 
-      const titles = {
-        check:   ['📋 PIN eingeben', 'Lagerbestellung starten'],
-        scanner: ['📷 PIN eingeben', 'Verfallsscan starten'],
-      };
-      document.getElementById('pin-modal-title').textContent = titles[target][0];
-      document.getElementById('pin-modal-sub').textContent   = titles[target][1];
+      document.getElementById('pin-modal-title').textContent = '👤 PIN eingeben';
+      document.getElementById('pin-modal-sub').textContent   = 'Mitarbeiter-Bereich betreten';
 
       document.getElementById('pin-modal').style.display = 'flex';
 
@@ -586,11 +580,7 @@
 
         closePinModal();
 
-        if (_modalTarget === 'scanner') {
-          window.location.href = 'pages/scanner.html';
-        } else {
-          window.location.href = 'pages/check.html';
-        }
+        window.location.href = 'pages/mitarbeiter.html';
 
       } catch(e) {
         errEl.textContent = 'Fehler: ' + e.message;
