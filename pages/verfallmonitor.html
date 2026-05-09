@@ -309,9 +309,20 @@
       container.innerHTML = html;
     }
 
+    function daysLabel(verfallIso) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const end = new Date(verfallIso);
+      end.setHours(0, 0, 0, 0);
+      const diff = Math.round((end - today) / (1000 * 60 * 60 * 24));
+      if (diff < 0)  return `Seit ${Math.abs(diff)} Tag${Math.abs(diff) === 1 ? '' : 'en'} abgelaufen`;
+      if (diff === 0) return 'Läuft heute ab';
+      return `Noch ${diff} Tag${diff === 1 ? '' : 'e'}`;
+    }
+
     function buildCard(e) {
       const color = e.status === 'ueberfaellig' ? 'red' : 'orange';
-      const statusText = e.status === 'ueberfaellig' ? 'Bereits abgelaufen' : 'Läuft diesen Monat ab';
+      const statusText = daysLabel(e.verfall);
       return `
         <div class="verfall-card">
           <div class="verfall-strip ${color}"></div>
