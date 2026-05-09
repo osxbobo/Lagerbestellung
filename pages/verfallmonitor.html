@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="de" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Verfallmonitor – LAGER//APP</title>
+  <link rel="manifest" href="../manifest.json">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+
+  <style>
+    :root {
+      --bg: #f9fafb; --surface: #fff; --surface2: #f3f4f6;
+      --border: #e5e7eb; --text: #111827; --text2: #374151;
+      --muted: #9ca3af; --accent: #f97316;
+      --red: #ef4444; --orange: #f97316; --green: #22c55e;
+    }
+    [data-theme="dark"] {
+      --bg: #0a0f1a; --surface: #111827; --surface2: #1f2937;
+      --border: #374151; --text: #f9fafb; --text2: #e5e7eb; --muted: #6b7280;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; }
+
+    /* ── Navbar ── */
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      background: var(--surface); border-bottom: 1px solid var(--border);
+      padding: 10px 16px; display: flex; align-items: center; gap: 10px;
+    }
+    .nav-back {
+      background: none; border: 1px solid var(--border); border-radius: 8px;
+      padding: 6px 12px; cursor: pointer; color: var(--text2);
+      font-family: 'DM Sans', sans-serif; font-size: 0.82rem; font-weight: 600;
+      touch-action: manipulation;
+    }
+    .nav-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+    .theme-btn {
+      background: none; border: 1px solid var(--border); border-radius: 8px;
+      padding: 5px 9px; cursor: pointer; font-size: 0.9rem;
+    }
+
+    /* ── Page ── */
+    .page { flex: 1; padding: 20px 16px 40px; max-width: 600px; width: 100%; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+
+    /* ── Header ── */
+    .page-header { }
+    .page-tag {
+      font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; font-weight: 600;
+      color: var(--accent); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 4px;
+    }
+    .page-title { font-size: 1.4rem; font-weight: 700; }
+    .page-sub { font-size: 0.82rem; color: var(--muted); margin-top: 2px; }
+
+    /* ── KPI Row ── */
+    .kpi-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .kpi-card {
+      background: var(--surface); border: 1.5px solid var(--border);
+      border-radius: 14px; padding: 18px 16px; text-align: center;
+    }
+    .kpi-card.red  { border-color: rgba(239,68,68,0.4);  background: rgba(239,68,68,0.06); }
+    .kpi-card.orange { border-color: rgba(249,115,22,0.4); background: rgba(249,115,22,0.06); }
+    .kpi-value { font-size: 2.4rem; font-weight: 700; line-height: 1; font-family: 'IBM Plex Mono', monospace; }
+    .kpi-card.red    .kpi-value { color: var(--red); }
+    .kpi-card.orange .kpi-value { color: var(--orange); }
+    .kpi-label { font-size: 0.78rem; color: var(--text2); margin-top: 4px; font-weight: 600; }
+
+    /* ── Loading / Empty ── */
+    .loading-state {
+      display: flex; flex-direction: column; align-items: center;
+      gap: 12px; padding: 48px 0; color: var(--muted); font-size: 0.85rem;
+    }
+    .spinner {
+      width: 28px; height: 28px; border: 3px solid var(--border);
+      border-top-color: var(--accent); border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .empty-state {
+      text-align: center; padding: 48px 16px; display: flex;
+      flex-direction: column; align-items: center; gap: 10px;
+    }
+    .empty-icon { font-size: 2.8rem; }
+    .empty-title { font-size: 1.05rem; font-weight: 700; color: var(--green); }
+    .empty-sub { font-size: 0.82rem; color: var(--muted); }
+
+    /* ── List ── */
+    .section-label {
+      font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; font-weight: 600;
+      color: var(--muted); letter-spacing: 0.05em; text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+
+    .verfall-list { display: flex; flex-direction: column; gap: 10px; }
+
+    .verfall-card {
+      display: flex; align-items: stretch; background: var(--surface);
+      border: 1px solid var(--border); border-radius: 14px; overflow: hidden;
+    }
+    .verfall-strip {
+      width: 5px; flex-shrink: 0;
+    }
+    .verfall-strip.red    { background: var(--red); }
+    .verfall-strip.orange { background: var(--orange); }
+
+    .verfall-body {
+      flex: 1; padding: 14px 16px; display: flex; flex-direction: column; gap: 4px;
+    }
+    .verfall-top {
+      display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    }
+    .verfall-name { font-size: 1rem; font-weight: 700; line-height: 1.2; }
+    .verfall-bereich {
+      font-size: 0.7rem; font-weight: 600; padding: 2px 8px;
+      border-radius: 20px; background: var(--surface2); color: var(--muted);
+      white-space: nowrap;
+    }
+    .verfall-bottom {
+      font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; color: var(--muted);
+    }
+    .verfall-status {
+      font-size: 0.72rem; font-weight: 600; margin-top: 2px;
+    }
+    .verfall-status.red    { color: var(--red); }
+    .verfall-status.orange { color: var(--orange); }
+
+    /* ── Footer ── */
+    .footer {
+      text-align: center; padding: 16px;
+      font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <button class="nav-back" onclick="history.back()">← Zurück</button>
+    <a href="../index.html" style="padding:0; margin-left:4px;">
+      <img src="../LAGER_APP.png" alt="LAGER//APP" style="height:28px;width:auto;display:block;">
+    </a>
+    <div class="nav-right">
+      <button class="theme-btn" id="theme-btn" onclick="toggleTheme()">☀️</button>
+    </div>
+  </nav>
+
+  <div class="page">
+    <div class="page-header">
+      <div class="page-tag">Verfallmonitor</div>
+      <div class="page-title">📅 Ablaufende Chargen</div>
+      <div class="page-sub" id="page-sub">Wird geladen…</div>
+    </div>
+
+    <!-- KPI -->
+    <div class="kpi-row">
+      <div class="kpi-card red">
+        <div class="kpi-value" id="kpi-ueberfaellig">–</div>
+        <div class="kpi-label">🔴 Überfällig</div>
+      </div>
+      <div class="kpi-card orange">
+        <div class="kpi-value" id="kpi-diesen-monat">–</div>
+        <div class="kpi-label">🟠 Dieser Monat</div>
+      </div>
+    </div>
+
+    <!-- Content -->
+    <div id="content">
+      <div class="loading-state">
+        <div class="spinner"></div>
+        <span>Verbinde mit Firebase…</span>
+      </div>
+    </div>
+  </div>
+
+  <footer class="footer">LAGER//APP · DRK Rettungswache Malmsheim · 2026</footer>
+
+  <script>
+    // ── Theme ──
+    const savedTheme  = localStorage.getItem('lager-theme');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const initTheme   = savedTheme || (prefersDark ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', initTheme);
+    document.getElementById('theme-btn').textContent = initTheme === 'dark' ? '🌙' : '☀️';
+
+    function toggleTheme() {
+      const t = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', t);
+      localStorage.setItem('lager-theme', t);
+      document.getElementById('theme-btn').textContent = t === 'dark' ? '🌙' : '☀️';
+    }
+  </script>
+
+  <script>
+    const firebaseConfig = {
+      apiKey:            "AIzaSyD1YY-cFQxyykfYQYPORwulzuF8t6Wgid4",
+      authDomain:        "lagerbestellung-19970.firebaseapp.com",
+      projectId:         "lagerbestellung-19970",
+      storageBucket:     "lagerbestellung-19970.firebasestorage.app",
+      messagingSenderId: "939056339904",
+      appId:             "1:939056339904:web:6f33ca2f5a4cebd2780625"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db   = firebase.firestore();
+    const auth = firebase.auth();
+
+    // ── Auth ──
+    auth.onAuthStateChanged(user => {
+      const pinOk = sessionStorage.getItem('lager-pin-auth');
+      if (!user && !pinOk) { window.location.href = '../index.html'; return; }
+      loadData();
+    });
+
+    // ── Load & Render ──
+    async function loadData() {
+      const now       = new Date();
+      const thisYear  = now.getFullYear();
+      const thisMonth = now.getMonth(); // 0-based
+      const monthPrefix = `${thisYear}-${String(thisMonth + 1).padStart(2, '0')}`;
+      const monthStart  = new Date(thisYear, thisMonth, 1);
+
+      // Update subtitle
+      const monthNames = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
+      document.getElementById('page-sub').textContent = `${monthNames[thisMonth]} ${thisYear}`;
+
+      try {
+        const snap = await db.collection('artikel').get();
+        const entries = []; // { name, bereich, lot, verfall, status: 'ueberfaellig'|'diesen-monat' }
+
+        snap.forEach(doc => {
+          const a = doc.data();
+          const chargen = a.chargen || [];
+          chargen.forEach(c => {
+            if (!c.verfall) return;
+            const verfallDate = new Date(c.verfall);
+            const isUeberfaellig = verfallDate < monthStart;
+            const isDiesenMonat  = c.verfall.startsWith(monthPrefix);
+            if (!isUeberfaellig && !isDiesenMonat) return;
+
+            entries.push({
+              name:    a.name || '–',
+              bereich: a.bereich || '–',
+              lot:     c.lot || '–',
+              verfall: c.verfall,
+              status:  isUeberfaellig ? 'ueberfaellig' : 'diesen-monat'
+            });
+          });
+        });
+
+        // Sort: überfällig first, then by date ascending
+        entries.sort((a, b) => {
+          if (a.status !== b.status) return a.status === 'ueberfaellig' ? -1 : 1;
+          return a.verfall.localeCompare(b.verfall);
+        });
+
+        const countUeberfaellig  = entries.filter(e => e.status === 'ueberfaellig').length;
+        const countDiesenMonat   = entries.filter(e => e.status === 'diesen-monat').length;
+
+        document.getElementById('kpi-ueberfaellig').textContent  = countUeberfaellig;
+        document.getElementById('kpi-diesen-monat').textContent  = countDiesenMonat;
+
+        renderEntries(entries);
+      } catch (e) {
+        document.getElementById('content').innerHTML =
+          `<div class="loading-state" style="color:var(--red)">⚠️ Fehler: ${e.message}</div>`;
+      }
+    }
+
+    function formatVerfall(iso) {
+      // 'YYYY-MM-DD' → 'MM/YYYY'
+      const parts = iso.split('-');
+      if (parts.length < 2) return iso;
+      return `${parts[1]}/${parts[0]}`;
+    }
+
+    function renderEntries(entries) {
+      const container = document.getElementById('content');
+      if (entries.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">✅</div>
+            <div class="empty-title">Alles in Ordnung</div>
+            <div class="empty-sub">Keine Chargen laufen diesen Monat ab</div>
+          </div>`;
+        return;
+      }
+
+      let html = '<div class="verfall-list">';
+
+      // Section: Überfällig
+      const ueberfaellig = entries.filter(e => e.status === 'ueberfaellig');
+      if (ueberfaellig.length > 0) {
+        html += `<div class="section-label">🔴 Überfällig (${ueberfaellig.length})</div>`;
+        ueberfaellig.forEach(e => { html += buildCard(e); });
+      }
+
+      // Section: Dieser Monat
+      const diesenMonat = entries.filter(e => e.status === 'diesen-monat');
+      if (diesenMonat.length > 0) {
+        if (ueberfaellig.length > 0) html += '<div style="height:8px"></div>';
+        html += `<div class="section-label">🟠 Läuft diesen Monat ab (${diesenMonat.length})</div>`;
+        diesenMonat.forEach(e => { html += buildCard(e); });
+      }
+
+      html += '</div>';
+      container.innerHTML = html;
+    }
+
+    function buildCard(e) {
+      const color = e.status === 'ueberfaellig' ? 'red' : 'orange';
+      const statusText = e.status === 'ueberfaellig' ? 'Bereits abgelaufen' : 'Läuft diesen Monat ab';
+      return `
+        <div class="verfall-card">
+          <div class="verfall-strip ${color}"></div>
+          <div class="verfall-body">
+            <div class="verfall-top">
+              <span class="verfall-name">${e.name}</span>
+              <span class="verfall-bereich">${e.bereich}</span>
+            </div>
+            <div class="verfall-bottom">LOT: ${e.lot} &nbsp;·&nbsp; ${formatVerfall(e.verfall)}</div>
+            <div class="verfall-status ${color}">${statusText}</div>
+          </div>
+        </div>`;
+    }
+  </script>
+</body>
+</html>

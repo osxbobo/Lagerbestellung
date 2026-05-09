@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="de" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <title>Mitarbeiter – LAGER//APP</title>
+  <link rel="manifest" href="../manifest.json">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+
+  <style>
+    :root {
+      --bg: #f9fafb; --surface: #fff; --surface2: #f3f4f6;
+      --border: #e5e7eb; --text: #111827; --text2: #374151;
+      --muted: #9ca3af; --accent: #f97316; --accent-hover: #ea6c0a;
+      --green: #22c55e; --red: #ef4444;
+    }
+    [data-theme="dark"] {
+      --bg: #0a0f1a; --surface: #111827; --surface2: #1f2937;
+      --border: #374151; --text: #f9fafb; --text2: #e5e7eb; --muted: #6b7280;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+    body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; }
+
+    /* ── Navbar ── */
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      background: var(--surface); border-bottom: 1px solid var(--border);
+      padding: 10px 16px; display: flex; align-items: center; gap: 10px;
+    }
+    .nav-back {
+      background: none; border: 1px solid var(--border); border-radius: 8px;
+      padding: 6px 12px; cursor: pointer; color: var(--text2);
+      font-family: 'DM Sans', sans-serif; font-size: 0.82rem; font-weight: 600;
+      touch-action: manipulation;
+    }
+    .nav-logo img { height: 28px; width: auto; display: block; }
+    .nav-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+    .theme-btn {
+      background: none; border: 1px solid var(--border); border-radius: 8px;
+      padding: 5px 9px; cursor: pointer; font-size: 0.9rem;
+    }
+    .logout-btn {
+      background: none; border: 1px solid rgba(249,115,22,0.35); border-radius: 8px;
+      padding: 5px 12px; cursor: pointer; color: var(--accent);
+      font-family: 'DM Sans', sans-serif; font-size: 0.78rem; font-weight: 600;
+      touch-action: manipulation;
+    }
+
+    /* ── Content ── */
+    .page {
+      flex: 1; display: flex; flex-direction: column;
+      padding: 28px 20px 40px; max-width: 500px; width: 100%; margin: 0 auto; gap: 28px;
+    }
+
+    /* ── Greeting ── */
+    .greeting { text-align: center; }
+    .greeting-tag {
+      font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem;
+      font-weight: 600; color: var(--accent); letter-spacing: 0.06em;
+      text-transform: uppercase; margin-bottom: 6px;
+    }
+    .greeting-title {
+      font-size: 1.5rem; font-weight: 700; color: var(--text);
+      line-height: 1.25;
+    }
+    .greeting-sub {
+      font-size: 0.85rem; color: var(--muted); margin-top: 4px;
+    }
+
+    /* ── Action Buttons ── */
+    .action-list { display: flex; flex-direction: column; gap: 14px; }
+
+    .action-btn {
+      display: flex; align-items: center; gap: 18px;
+      background: var(--surface); border: 1.5px solid var(--border);
+      border-radius: 16px; padding: 20px 22px;
+      cursor: pointer; text-decoration: none; color: var(--text);
+      transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
+      touch-action: manipulation; width: 100%;
+      font-family: 'DM Sans', sans-serif; text-align: left;
+    }
+    .action-btn:active { background: var(--surface2); transform: scale(0.985); }
+
+    .action-btn.primary {
+      background: var(--accent); border-color: var(--accent); color: #fff;
+    }
+    .action-btn.primary:active { background: var(--accent-hover); }
+
+    .action-btn.secondary {
+      background: rgba(14,165,233,0.08); border-color: rgba(14,165,233,0.3); color: var(--text);
+    }
+
+    .action-btn.tertiary {
+      background: rgba(34,197,94,0.07); border-color: rgba(34,197,94,0.3); color: var(--text);
+    }
+
+    .btn-icon {
+      font-size: 2rem; line-height: 1; flex-shrink: 0;
+    }
+    .btn-text { display: flex; flex-direction: column; gap: 2px; }
+    .btn-title { font-size: 1.1rem; font-weight: 700; line-height: 1.2; }
+    .btn-sub { font-size: 0.78rem; opacity: 0.75; font-weight: 400; }
+
+    .action-btn.primary .btn-sub { opacity: 0.85; }
+
+    .btn-arrow {
+      margin-left: auto; font-size: 1.1rem; opacity: 0.4; flex-shrink: 0;
+    }
+
+    /* ── Footer ── */
+    .footer {
+      text-align: center; padding: 16px;
+      font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <button class="nav-back" onclick="window.location.href='../index.html'">← Start</button>
+    <a href="../index.html" style="padding:0; margin-left:4px;">
+      <img src="../LAGER_APP.png" alt="LAGER//APP" style="height:28px;width:auto;display:block;">
+    </a>
+    <div class="nav-right">
+      <button class="logout-btn" onclick="doLogout()">Abmelden</button>
+      <button class="theme-btn" id="theme-btn" onclick="toggleTheme()">☀️</button>
+    </div>
+  </nav>
+
+  <div class="page">
+    <div class="greeting">
+      <div class="greeting-tag">DRK · Rettungswache Malmsheim</div>
+      <div class="greeting-title">Hallo, <span id="user-name">Mitarbeiter</span> 👋</div>
+      <div class="greeting-sub">Was möchtest du heute tun?</div>
+    </div>
+
+    <div class="action-list">
+      <a href="check.html" class="action-btn primary">
+        <span class="btn-icon">📋</span>
+        <span class="btn-text">
+          <span class="btn-title">Lagerbestellung</span>
+          <span class="btn-sub">Bestände prüfen &amp; melden</span>
+        </span>
+        <span class="btn-arrow">›</span>
+      </a>
+
+      <a href="scanner.html" class="action-btn secondary">
+        <span class="btn-icon">📷</span>
+        <span class="btn-text">
+          <span class="btn-title">Verfallsscan</span>
+          <span class="btn-sub">Chargen scannen &amp; erfassen</span>
+        </span>
+        <span class="btn-arrow">›</span>
+      </a>
+
+      <a href="verfallmonitor.html" class="action-btn tertiary">
+        <span class="btn-icon">📅</span>
+        <span class="btn-text">
+          <span class="btn-title">Verfallmonitor</span>
+          <span class="btn-sub">Was läuft diesen Monat ab?</span>
+        </span>
+        <span class="btn-arrow">›</span>
+      </a>
+    </div>
+  </div>
+
+  <footer class="footer">LAGER//APP · DRK Rettungswache Malmsheim · 2026</footer>
+
+  <script>
+    // ── Theme ──
+    const savedTheme  = localStorage.getItem('lager-theme');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const initTheme   = savedTheme || (prefersDark ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', initTheme);
+    document.getElementById('theme-btn').textContent = initTheme === 'dark' ? '🌙' : '☀️';
+
+    function toggleTheme() {
+      const t = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', t);
+      localStorage.setItem('lager-theme', t);
+      document.getElementById('theme-btn').textContent = t === 'dark' ? '🌙' : '☀️';
+    }
+  </script>
+
+  <script>
+    const firebaseConfig = {
+      apiKey:            "AIzaSyD1YY-cFQxyykfYQYPORwulzuF8t6Wgid4",
+      authDomain:        "lagerbestellung-19970.firebaseapp.com",
+      projectId:         "lagerbestellung-19970",
+      storageBucket:     "lagerbestellung-19970.firebasestorage.app",
+      messagingSenderId: "939056339904",
+      appId:             "1:939056339904:web:6f33ca2f5a4cebd2780625"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+
+    auth.onAuthStateChanged(user => {
+      const pinOk = sessionStorage.getItem('lager-pin-auth');
+      if (!user && !pinOk) { window.location.href = '../index.html'; return; }
+      const name = sessionStorage.getItem('lager-pin-name') || '';
+      if (name) document.getElementById('user-name').textContent = name;
+    });
+
+    function doLogout() {
+      sessionStorage.removeItem('lager-pin-auth');
+      sessionStorage.removeItem('lager-pin-name');
+      localStorage.removeItem('lager-saved-name');
+      auth.signOut().catch(() => {});
+      window.location.href = '../index.html';
+    }
+  </script>
+</body>
+</html>

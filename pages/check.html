@@ -441,7 +441,7 @@
       <a href="../index.html" class="nav-logo" style="padding:0;"><img src="../LAGER_APP.png" alt="LAGER//APP" style="height:32px;width:auto;display:block;object-fit:contain;"></a>
       <div class="nav-right">
         <span id="nav-user" class="mono text-xs text-muted hide-mobile"></span>
-        <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()">☀️</button>
+        <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" aria-label="Hell/Dunkel-Modus umschalten">☀️</button>
       </div>
     </div>
   </nav>
@@ -462,19 +462,19 @@
           <div class="pin-dot" id="dot-2"></div>
           <div class="pin-dot" id="dot-3"></div>
         </div>
-        <div class="pin-grid">
-          <div class="pin-key" data-key="1">1</div>
-          <div class="pin-key" data-key="2">2</div>
-          <div class="pin-key" data-key="3">3</div>
-          <div class="pin-key" data-key="4">4</div>
-          <div class="pin-key" data-key="5">5</div>
-          <div class="pin-key" data-key="6">6</div>
-          <div class="pin-key" data-key="7">7</div>
-          <div class="pin-key" data-key="8">8</div>
-          <div class="pin-key" data-key="9">9</div>
-          <div class="pin-key del" data-key="del">⌫</div>
-          <div class="pin-key" data-key="0">0</div>
-          <div class="pin-key confirm" data-key="confirm">✓</div>
+        <div class="pin-grid" role="group" aria-label="PIN-Eingabe">
+          <div class="pin-key" data-key="1" role="button" aria-label="1">1</div>
+          <div class="pin-key" data-key="2" role="button" aria-label="2">2</div>
+          <div class="pin-key" data-key="3" role="button" aria-label="3">3</div>
+          <div class="pin-key" data-key="4" role="button" aria-label="4">4</div>
+          <div class="pin-key" data-key="5" role="button" aria-label="5">5</div>
+          <div class="pin-key" data-key="6" role="button" aria-label="6">6</div>
+          <div class="pin-key" data-key="7" role="button" aria-label="7">7</div>
+          <div class="pin-key" data-key="8" role="button" aria-label="8">8</div>
+          <div class="pin-key" data-key="9" role="button" aria-label="9">9</div>
+          <div class="pin-key del" data-key="del" role="button" aria-label="Löschen">⌫</div>
+          <div class="pin-key" data-key="0" role="button" aria-label="0">0</div>
+          <div class="pin-key confirm" data-key="confirm" role="button" aria-label="Bestätigen">✓</div>
         </div>
         <div class="pin-error" id="pin-error"></div>
       </div>
@@ -584,6 +584,11 @@
                               from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
     import { firebaseConfig } from "../js/firebase-config.js";
 
+    // HTML-Escaping für innerHTML mit Nutzerdaten
+    function esc(str) {
+      return String(str ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
     // Theme
     const savedTheme  = localStorage.getItem('lager-theme');
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -616,7 +621,6 @@
     let autoSaveTimer   = null;
     let sessionId       = null;   // Gemeinsame Session ID (multi-user)
     let meineBereiche   = [];     // Bereiche die dieser Nutzer bearbeitet
-    let sessionDraft    = null;   // Aktuelle Session aus Firestore
 
     // ── Auth-Check ──
     // Wenn Nutzer von index.html kommt (sessionStorage gesetzt), PIN-Screen überspringen
@@ -758,7 +762,7 @@
             autoSaveId = ref.id;
           }
         }
-      } catch(e) { console.log('AutoSave:', e.message); }
+      } catch(e) { showToast('Speichern fehlgeschlagen – Daten möglicherweise nicht gesichert', 'error'); }
     }
 
     // Alle 30 Sekunden automatisch speichern
@@ -788,7 +792,7 @@
         const drafts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
 
         showDraftBanner(drafts);
-      } catch(e) { console.log('Draft check:', e.message); }
+      } catch(e) { showToast('Fehler beim Laden offener Entwürfe', 'error'); }
     }
 
     function showDraftBanner(drafts) {
@@ -946,10 +950,10 @@
         }
 
       } catch(e) {
-        console.log('Storno Fehler:', e.message);
+        showToast('Fehler beim Stornieren: ' + e.message, 'error');
       }
 
-      window.location.href = '../index.html';
+      window.location.href = './mitarbeiter.html';
     };
 
     function showToast(msg, type = 'success') {
@@ -1023,15 +1027,15 @@
           ? `<div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0;">
                ${a.fotoUrl ? `
                  <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
-                   <div class="artikel-foto-btn" data-foto="${a.fotoUrl}" data-name="${a.name.replace(/"/g,'&quot;')}" title="Produktfoto ansehen">
-                     <img src="${a.fotoUrl}" alt="${a.name}">
+                   <div class="artikel-foto-btn" data-foto="${esc(a.fotoUrl)}" data-name="${esc(a.name)}" title="Produktfoto ansehen">
+                     <img src="${esc(a.fotoUrl)}" alt="${esc(a.name)}">
                    </div>
                    <div style="font-size:0.5rem;color:var(--muted);font-family:'IBM Plex Mono',monospace;letter-spacing:0.03em;">PRODUKT</div>
                  </div>` : ''}
                ${a.lagerFotoUrl ? `
                  <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
-                   <div class="artikel-foto-btn" data-foto="${a.lagerFotoUrl}" data-name="Lagerort: ${a.name.replace(/"/g,'&quot;')}" title="Lagerortfoto ansehen" style="background:var(--surface3);">
-                     <img src="${a.lagerFotoUrl}" alt="Lagerort">
+                   <div class="artikel-foto-btn" data-foto="${esc(a.lagerFotoUrl)}" data-name="Lagerort: ${esc(a.name)}" title="Lagerortfoto ansehen" style="background:var(--surface3);">
+                     <img src="${esc(a.lagerFotoUrl)}" alt="Lagerort">
                    </div>
                    <div style="font-size:0.5rem;color:var(--muted);font-family:'IBM Plex Mono',monospace;letter-spacing:0.03em;">LAGERORT</div>
                  </div>` : ''}
@@ -1047,15 +1051,15 @@
             <div class="artikel-header">
               ${fotoHtml}
               <div class="artikel-info">
-                <div class="artikel-name">${a.name}</div>
-                <div class="artikel-lp">${a.lp||''} · ${a.location||''}</div>
+                <div class="artikel-name">${esc(a.name)}</div>
+                <div class="artikel-lp">${esc(a.lp)} · ${esc(a.location)}</div>
                 <div class="minmax-row">
                   ${minHtml}
                   ${maxHtml}
                 </div>
               </div>
             </div>
-            ${a.hinweis ? `<div class="artikel-hinweis">💡 ${a.hinweis}</div>` : ''}
+            ${a.hinweis ? `<div class="artikel-hinweis">💡 ${esc(a.hinweis)}</div>` : ''}
             <div class="bestell-divider"></div>
             <div class="bestell-section">
               <div class="bestell-frage">Muss bestellt werden?</div>
@@ -1190,7 +1194,7 @@
       const bearbeitet  = Object.keys(bestellungen).length;
 
       document.getElementById('summary-grid').innerHTML = `
-        <div class="summary-row"><span class="summary-key">Mitarbeiter</span><span class="summary-val">${userName}</span></div>
+        <div class="summary-row"><span class="summary-key">Mitarbeiter</span><span class="summary-val">${esc(userName)}</span></div>
         <div class="summary-row"><span class="summary-key">Datum</span><span class="summary-val">${new Date().toLocaleDateString('de-DE')} · ${new Date().toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'})}</span></div>
         <div class="summary-row"><span class="summary-key">Bearbeitet</span><span class="summary-val">${bearbeitet} / ${alleArtikel.length} Artikel</span></div>
         <div class="summary-row"><span class="summary-key">Zu bestellen</span><span class="summary-val" style="color:${zuBestellen.length>0?'var(--red)':'var(--green)'}">${zuBestellen.length} Artikel</span></div>`;
@@ -1336,7 +1340,7 @@
         }
 
         alert(`✅ Lagerbestellung abgeschlossen!\n\n${nachbestellungen.length} Artikel wurden zur Bestellung gemeldet.`);
-        window.location.href = '../index.html';
+        window.location.href = './mitarbeiter.html';
       } catch(e) { alert('Fehler: '+e.message); }
     };
 
@@ -1347,10 +1351,10 @@
       modal.innerHTML = `
         <div style="background:var(--surface);border-radius:18px;overflow:hidden;max-width:440px;width:100%;">
           <div style="padding:14px 18px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
-            <span style="font-size:0.95rem;font-weight:700;">${name}</span>
+            <span style="font-size:0.95rem;font-weight:700;">${esc(name)}</span>
             <button onclick="this.closest('div[style]').remove()" style="background:none;border:none;color:var(--muted);font-size:1.3rem;cursor:pointer;padding:4px 8px;touch-action:manipulation;">✕</button>
           </div>
-          <img src="${url}" style="width:100%;max-height:400px;object-fit:contain;background:var(--surface2);">
+          <img src="${esc(url)}" style="width:100%;max-height:400px;object-fit:contain;background:var(--surface2);">
           <div style="padding:10px 16px;font-size:0.72rem;color:var(--muted);font-family:'IBM Plex Mono',monospace;text-align:center;">Soll-Zustand</div>
         </div>`;
       modal.onclick = e => { if(e.target===modal) modal.remove(); };
@@ -1540,8 +1544,6 @@
             vergebeneBereiche: vergeben,
             teilnehmer,
           });
-          sessionDraft = { ...window._openSession, vergebeneBereiche: vergeben, teilnehmer };
-
           // Erste anderen Nutzer auch updaten (Live-Änderung der Bereiche)
           // Anderen Nutzer bekommen beim nächsten autoSave die neuen Bereiche
 
@@ -1560,10 +1562,6 @@
             bestellungen:       {},
           });
           sessionId    = sessionRef.id;
-          sessionDraft = {
-            id: sessionId, bestellungen: {}, erledigteBereiche: [],
-            teilnehmer: [{ name: userName }], vergebeneBereiche: vergeben,
-          };
         }
 
         autoSaveId = sessionId;
