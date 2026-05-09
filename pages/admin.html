@@ -148,6 +148,7 @@
     .toast { position: fixed; bottom: 24px; right: 24px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px 16px; font-size: 0.82rem; box-shadow: var(--shadow-lg); z-index: 2000; display: flex; align-items: center; gap: 8px; animation: slideUp 0.3s ease; }
     .toast.success { border-color: var(--green); color: var(--green); }
     .toast.error   { border-color: var(--red);   color: var(--red); }
+    @media (max-width: 768px) { .toast { bottom: 76px; } }
 
     @keyframes slideUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
 
@@ -158,17 +159,9 @@
     .logout-btn { padding: 7px 14px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface2); color: var(--text2); font-size: 0.82rem; cursor: pointer; transition: all 0.2s; }
     .logout-btn:hover { border-color: var(--red); color: var(--red); }
 
-    /* Mobile sidebar */
     @media (max-width: 768px) {
       .admin-sidebar { display: none; }
-      .admin-content { padding: 16px; }
-      .mobile-nav { display: flex; gap: 6px; overflow-x: auto; padding: 10px 16px; background: var(--surface); border-bottom: 1px solid var(--border); }
-      .mobile-nav-btn { padding: 7px 14px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface2); color: var(--text2); font-size: 0.75rem; white-space: nowrap; cursor: pointer; flex-shrink: 0; }
-      .mobile-nav-btn.active { background: var(--accent); border-color: var(--accent); color: white; }
-    }
-
-    @media (min-width: 769px) {
-      .mobile-nav { display: none; }
+      .admin-content { padding: 16px; padding-bottom: 76px; }
     }
   </style>
 </head>
@@ -191,15 +184,46 @@
   <!-- AUTH LOADING -->
   <div id="auth-loading" class="loading-state"><div class="spinner"></div><span>Authentifizierung...</span></div>
 
-  <!-- MOBILE NAV -->
-  <div class="mobile-nav hidden" id="mobile-nav">
-    <button class="mobile-nav-btn active" onclick="showSection('dashboard','this')">📊 Dashboard</button>
-    <button class="mobile-nav-btn" onclick="showSection('artikel','this')">📦 Artikel</button>
-    <button class="mobile-nav-btn" onclick="showSection('bereiche','this')">🏠 Bereiche</button>
-    <button class="mobile-nav-btn" onclick="showSection('fotos','this')">📸 Fotos</button>
-    <button class="mobile-nav-btn" onclick="showSection('pin','this')">🔑 PIN</button>
-    <button class="mobile-nav-btn" onclick="showSection('users','this')">👥 Accounts</button>
-    <button class="mobile-nav-btn" onclick="showSection('backup','this')">💾 Backup</button>
+  <!-- BOTTOM NAV (Mobile) -->
+  <nav class="bottom-nav hidden" id="bottom-nav">
+    <button class="bottom-tab active" data-section="dashboard" onclick="showSection('dashboard')">
+      <span class="bottom-tab-icon">📊</span>
+      <span class="bottom-tab-label">Dashboard</span>
+    </button>
+    <button class="bottom-tab" data-section="artikel" onclick="showSection('artikel')">
+      <span class="bottom-tab-icon">📦</span>
+      <span class="bottom-tab-label">Artikel</span>
+    </button>
+    <button class="bottom-tab" data-section="users" onclick="showSection('users')">
+      <span class="bottom-tab-icon">👥</span>
+      <span class="bottom-tab-label">Accounts</span>
+    </button>
+    <button class="bottom-tab" id="bottom-more-tab" onclick="openBottomSheet()">
+      <span class="bottom-tab-icon">⋯</span>
+      <span class="bottom-tab-label">Mehr</span>
+    </button>
+  </nav>
+
+  <!-- BOTTOM SHEET -->
+  <div class="bottom-sheet-backdrop hidden" id="bottom-sheet-backdrop" onclick="closeBottomSheet()"></div>
+  <div class="bottom-sheet" id="bottom-sheet">
+    <div class="bottom-sheet-handle"></div>
+    <div class="bottom-sheet-title">Navigation</div>
+    <button class="bottom-sheet-item" data-section="bereiche" onclick="showSection('bereiche');closeBottomSheet()">
+      <span class="bottom-sheet-item-icon">🏠</span> Bereiche
+    </button>
+    <button class="bottom-sheet-item" data-section="fotos" onclick="showSection('fotos');closeBottomSheet()">
+      <span class="bottom-sheet-item-icon">📸</span> Fotos & Bilder
+    </button>
+    <button class="bottom-sheet-item" data-section="pin" onclick="showSection('pin');closeBottomSheet()">
+      <span class="bottom-sheet-item-icon">🔑</span> PIN ändern
+    </button>
+    <button class="bottom-sheet-item" data-section="backup" onclick="showSection('backup');closeBottomSheet()">
+      <span class="bottom-sheet-item-icon">💾</span> Backup & Import
+    </button>
+    <button class="bottom-sheet-item" onclick="window.location.href='scanner.html'">
+      <span class="bottom-sheet-item-icon">📷</span> Charge-Scanner
+    </button>
   </div>
 
   <!-- MAIN LAYOUT -->
@@ -252,11 +276,35 @@
           <div class="page-title">Dashboard</div>
           <div class="page-sub">Übersicht aller wichtigen Kennzahlen</div>
         </div>
-        <div class="stats-row" id="stats-row">
-          <div class="stat-card"><div class="stat-num" id="stat-artikel">–</div><div class="stat-lbl">Artikel</div></div>
-          <div class="stat-card"><div class="stat-num" id="stat-bereiche">–</div><div class="stat-lbl">Bereiche</div></div>
-          <div class="stat-card"><div class="stat-num" id="stat-bestellungen">–</div><div class="stat-lbl">Bestellungen</div></div>
-          <div class="stat-card"><div class="stat-num" id="stat-ohne-foto" style="color:var(--yellow)">–</div><div class="stat-lbl">Ohne Foto</div></div>
+        <div class="kpi-grid" style="margin-bottom:24px;">
+          <div class="kpi-card kpi-orange">
+            <div class="kpi-body">
+              <div class="kpi-value" id="stat-artikel">–</div>
+              <div class="kpi-label">Artikel</div>
+            </div>
+            <div class="kpi-icon">📦</div>
+          </div>
+          <div class="kpi-card kpi-blue">
+            <div class="kpi-body">
+              <div class="kpi-value" id="stat-bereiche">–</div>
+              <div class="kpi-label">Bereiche</div>
+            </div>
+            <div class="kpi-icon">🏠</div>
+          </div>
+          <div class="kpi-card kpi-green">
+            <div class="kpi-body">
+              <div class="kpi-value" id="stat-bestellungen">–</div>
+              <div class="kpi-label">Bestellungen</div>
+            </div>
+            <div class="kpi-icon">📋</div>
+          </div>
+          <div class="kpi-card kpi-yellow">
+            <div class="kpi-body">
+              <div class="kpi-value" id="stat-ohne-foto">–</div>
+              <div class="kpi-label">Ohne Foto</div>
+            </div>
+            <div class="kpi-icon">📸</div>
+          </div>
         </div>
         <div class="table-wrap">
           <div style="padding:14px 16px;border-bottom:1px solid var(--border);font-size:0.8rem;font-weight:600;">Letzte Lagerchecks</div>
@@ -283,7 +331,7 @@
             </select>
           </div>
           <div style="overflow-x:auto;">
-            <table>
+            <table class="table-card-mobile">
               <thead>
                 <tr>
                   <th>Artikel</th>
@@ -666,7 +714,7 @@
       document.getElementById('nav-user').textContent = user.email;
       document.getElementById('auth-loading').classList.add('hidden');
       document.getElementById('admin-layout').classList.remove('hidden');
-      document.getElementById('mobile-nav').classList.remove('hidden');
+      document.getElementById('bottom-nav').classList.remove('hidden');
 
       // Rolle anzeigen
       const badge = document.getElementById('role-badge');
@@ -795,14 +843,36 @@
     }
 
     // ── Navigation ──
-    window.showSection = function(name, btn) {
+    const moreSheetSections = ['bereiche','fotos','pin','backup'];
+
+    window.showSection = function(name) {
       document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
       document.querySelectorAll('.sidebar-item').forEach(s => s.classList.remove('active'));
-      document.querySelectorAll('.mobile-nav-btn').forEach(s => s.classList.remove('active'));
+      document.querySelectorAll('.bottom-tab').forEach(s => s.classList.remove('active'));
+      document.querySelectorAll('.bottom-sheet-item').forEach(s => s.classList.remove('active'));
       document.getElementById(`section-${name}`).classList.add('active');
       const navItem = document.getElementById(`nav-${name}`);
       if (navItem) navItem.classList.add('active');
-      if (btn && btn !== 'this') btn.classList.add('active');
+      const bottomTab = document.querySelector(`.bottom-tab[data-section="${name}"]`);
+      if (bottomTab) {
+        bottomTab.classList.add('active');
+      } else if (moreSheetSections.includes(name)) {
+        document.getElementById('bottom-more-tab').classList.add('active');
+        const sheetItem = document.querySelector(`.bottom-sheet-item[data-section="${name}"]`);
+        if (sheetItem) sheetItem.classList.add('active');
+      }
+    };
+
+    window.openBottomSheet = function() {
+      document.getElementById('bottom-sheet-backdrop').classList.remove('hidden');
+      document.getElementById('bottom-sheet-backdrop').classList.add('open');
+      document.getElementById('bottom-sheet').classList.add('open');
+    };
+
+    window.closeBottomSheet = function() {
+      document.getElementById('bottom-sheet-backdrop').classList.remove('open');
+      document.getElementById('bottom-sheet').classList.remove('open');
+      setTimeout(() => document.getElementById('bottom-sheet-backdrop').classList.add('hidden'), 300);
     };
 
     // ── Toast ──
@@ -850,11 +920,11 @@
       tbody.innerHTML = data.map(a => {
         const b = alleBereiche.find(x => x.id === a.bereich);
         return `<tr>
-          <td class="td-name">${a.name}</td>
-          <td class="td-loc">${a.location || '–'}<br><span style="color:var(--muted);font-size:0.62rem;">${b?.name || a.bereich || '–'}</span></td>
-          <td class="td-minmax">${a.min ?? '–'} ${a.minEinheit||''} / ${a.max ?? '–'} ${a.maxEinheit||''}</td>
-          <td>${a.fotoUrl ? '<span style="color:var(--green);font-size:0.75rem;">✅ Foto</span>' : '<span style="color:var(--muted);font-size:0.75rem;">Kein Foto</span>'}</td>
-          <td class="td-actions">
+          <td data-label="Artikel" class="td-name">${a.name}</td>
+          <td data-label="Standort" class="td-loc">${a.location || '–'}<br><span style="color:var(--muted);font-size:0.62rem;">${b?.name || a.bereich || '–'}</span></td>
+          <td data-label="MIN / MAX" class="td-minmax">${a.min ?? '–'} ${a.minEinheit||''} / ${a.max ?? '–'} ${a.maxEinheit||''}</td>
+          <td data-label="Foto">${a.fotoUrl ? '<span style="color:var(--green);font-size:0.75rem;">✅ Foto</span>' : '<span style="color:var(--muted);font-size:0.75rem;">Kein Foto</span>'}</td>
+          <td data-label="Aktionen" class="td-actions">
             <button class="tbl-btn" onclick="openArtikelModal('${a.id}')">✏️ Edit</button>
             <button class="tbl-btn del" onclick="deleteArtikel('${a.id}','${a.name.replace(/'/g,"\\'")}')">🗑️</button>
           </td>

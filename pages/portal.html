@@ -177,15 +177,11 @@
 
     .hidden { display: none !important; }
 
-    /* Mobile */
     @media (max-width: 768px) {
       .portal-sidebar { display: none; }
-      .portal-content { padding: 16px; }
-      .mobile-nav { display: flex; gap: 6px; overflow-x: auto; padding: 10px 16px; background: var(--surface); border-bottom: 1px solid var(--border); -webkit-overflow-scrolling: touch; }
-      .mobile-nav-btn { padding: 7px 14px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface2); color: var(--text2); font-size: 0.75rem; white-space: nowrap; cursor: pointer; flex-shrink: 0; touch-action: manipulation; }
-      .mobile-nav-btn.active { background: var(--accent); border-color: var(--accent); color: white; }
+      .portal-content { padding: 16px; padding-bottom: 76px; }
+      .toast-msg { bottom: 76px; }
     }
-    @media (min-width: 769px) { .mobile-nav { display: none; } }
   </style>
 </head>
 <body class="portal-page">
@@ -208,16 +204,49 @@
   <!-- AUTH LOADING -->
   <div id="auth-loading" class="loading-state"><div class="spinner"></div><span>Authentifizierung...</span></div>
 
-  <!-- MOBILE NAV -->
-  <div class="mobile-nav hidden" id="mobile-nav">
-    <button class="mobile-nav-btn active" onclick="showSection('dashboard')">📊 Dashboard</button>
-    <button class="mobile-nav-btn" onclick="showSection('bestellungen')">📋 Bestellungen</button>
-    <button class="mobile-nav-btn" onclick="showSection('chargen')">🗄️ Chargen</button>
-    <button class="mobile-nav-btn" onclick="showSection('artikel')">📦 Artikel</button>
-    <button class="mobile-nav-btn" onclick="showSection('bereiche')">🏠 Bereiche</button>
-    <button class="mobile-nav-btn" onclick="showSection('fotos')">📸 Fotos</button>
-    <button class="mobile-nav-btn" onclick="showSection('pin')">🔑 PIN</button>
-    <button class="mobile-nav-btn" onclick="showSection('statistik')">📊 Statistik</button>
+  <!-- BOTTOM NAV (Mobile) -->
+  <nav class="bottom-nav hidden" id="bottom-nav">
+    <button class="bottom-tab active" data-section="dashboard" onclick="showSection('dashboard')">
+      <span class="bottom-tab-icon">📊</span>
+      <span class="bottom-tab-label">Dashboard</span>
+    </button>
+    <button class="bottom-tab" data-section="bestellungen" onclick="showSection('bestellungen')">
+      <span class="bottom-tab-icon">📋</span>
+      <span class="bottom-tab-label">Bestellungen</span>
+    </button>
+    <button class="bottom-tab" data-section="chargen" onclick="showSection('chargen')">
+      <span class="bottom-tab-icon">🗄️</span>
+      <span class="bottom-tab-label">Chargen</span>
+    </button>
+    <button class="bottom-tab" id="bottom-more-tab" onclick="openBottomSheet()">
+      <span class="bottom-tab-icon">⋯</span>
+      <span class="bottom-tab-label">Mehr</span>
+    </button>
+  </nav>
+
+  <!-- BOTTOM SHEET -->
+  <div class="bottom-sheet-backdrop hidden" id="bottom-sheet-backdrop" onclick="closeBottomSheet()"></div>
+  <div class="bottom-sheet" id="bottom-sheet">
+    <div class="bottom-sheet-handle"></div>
+    <div class="bottom-sheet-title">Navigation</div>
+    <button class="bottom-sheet-item" data-section="artikel" onclick="showSection('artikel');closeBottomSheet()">
+      <span class="bottom-sheet-item-icon">📦</span> Artikelverwaltung
+    </button>
+    <button class="bottom-sheet-item" data-section="bereiche" onclick="showSection('bereiche');closeBottomSheet()">
+      <span class="bottom-sheet-item-icon">🏠</span> Bereiche
+    </button>
+    <button class="bottom-sheet-item" data-section="fotos" onclick="showSection('fotos');closeBottomSheet()">
+      <span class="bottom-sheet-item-icon">📸</span> Fotos & Bilder
+    </button>
+    <button class="bottom-sheet-item" data-section="statistik" onclick="showSection('statistik');closeBottomSheet()">
+      <span class="bottom-sheet-item-icon">📊</span> Statistik
+    </button>
+    <button class="bottom-sheet-item" data-section="pin" onclick="showSection('pin');closeBottomSheet()">
+      <span class="bottom-sheet-item-icon">🔑</span> PIN ändern
+    </button>
+    <button class="bottom-sheet-item" onclick="window.location.href='scanner.html'">
+      <span class="bottom-sheet-item-icon">📷</span> Charge-Scanner
+    </button>
   </div>
 
   <!-- LAYOUT -->
@@ -254,11 +283,36 @@
           <div class="page-title">Dashboard</div>
           <div class="page-sub" id="dashboard-greeting">Willkommen</div>
         </div>
-        <div class="kpi-row">
-          <div class="kpi-card"><div class="kpi-label">Letzte Bestellung</div><div class="kpi-value" id="kpi-last">–</div><div class="kpi-sub" id="kpi-last-sub">Noch keine</div></div>
-          <div class="kpi-card"><div class="kpi-label">Bestellungen</div><div class="kpi-value" id="kpi-total" style="color:var(--accent2)">0</div><div class="kpi-sub">Gesamt</div></div>
-          <div class="kpi-card"><div class="kpi-label">Artikel</div><div class="kpi-value" id="kpi-artikel" style="color:var(--accent)">0</div><div class="kpi-sub">Im Lager</div></div>
-          <div class="kpi-card"><div class="kpi-label">Verfallswarnungen</div><div class="kpi-value" id="kpi-verfall" style="color:var(--red)">0</div><div class="kpi-sub">Kritisch</div></div>
+        <div class="kpi-grid" style="margin-bottom:24px;">
+          <div class="kpi-card kpi-blue">
+            <div class="kpi-body">
+              <div class="kpi-value" id="kpi-last">–</div>
+              <div class="kpi-label">Letzte Bestellung</div>
+              <div style="font-size:0.7rem;color:var(--text2);margin-top:4px;" id="kpi-last-sub">Noch keine</div>
+            </div>
+            <div class="kpi-icon">📋</div>
+          </div>
+          <div class="kpi-card kpi-orange">
+            <div class="kpi-body">
+              <div class="kpi-value" id="kpi-total">0</div>
+              <div class="kpi-label">Bestellungen</div>
+            </div>
+            <div class="kpi-icon">📦</div>
+          </div>
+          <div class="kpi-card kpi-green">
+            <div class="kpi-body">
+              <div class="kpi-value" id="kpi-artikel">0</div>
+              <div class="kpi-label">Artikel im Lager</div>
+            </div>
+            <div class="kpi-icon">🗄️</div>
+          </div>
+          <div class="kpi-card kpi-red">
+            <div class="kpi-body">
+              <div class="kpi-value" id="kpi-verfall">0</div>
+              <div class="kpi-label">Verfallswarnungen</div>
+            </div>
+            <div class="kpi-icon">⚠️</div>
+          </div>
         </div>
 
         <!-- Letzte Bestellungen -->
@@ -319,7 +373,7 @@
             <select class="form-input" id="bereich-filter" onchange="filterArtikel()" style="max-width:200px;"><option value="">Alle Bereiche</option></select>
           </div>
           <div style="overflow-x:auto;">
-            <table>
+            <table class="table-card-mobile">
               <thead><tr>
                 <th>Artikel</th><th>Standort</th><th>MIN / MAX</th><th>Aktionen</th>
               </tr></thead>
@@ -569,7 +623,7 @@
       document.getElementById('nav-user').textContent = user.email;
       document.getElementById('auth-loading').classList.add('hidden');
       document.getElementById('portal-layout').classList.remove('hidden');
-      document.getElementById('mobile-nav').classList.remove('hidden');
+      document.getElementById('bottom-nav').classList.remove('hidden');
       document.getElementById('dashboard-greeting').textContent =
         `Willkommen, ${snap.data()?.name || user.email}`;
 
@@ -615,17 +669,37 @@
     }
 
     // ── Navigation ──
+    const moreSheetSections = ['artikel','bereiche','fotos','statistik','pin'];
+
     window.showSection = function(name) {
       document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
       document.querySelectorAll('.sidebar-item').forEach(s => s.classList.remove('active'));
-      document.querySelectorAll('.mobile-nav-btn').forEach(s => s.classList.remove('active'));
+      document.querySelectorAll('.bottom-tab').forEach(s => s.classList.remove('active'));
+      document.querySelectorAll('.bottom-sheet-item').forEach(s => s.classList.remove('active'));
       document.getElementById(`section-${name}`).classList.add('active');
       const nav = document.getElementById(`nav-${name}`);
       if (nav) nav.classList.add('active');
-      const mBtns = document.querySelectorAll('.mobile-nav-btn');
-      mBtns.forEach(b => { if (b.getAttribute('onclick')?.includes(name)) b.classList.add('active'); });
-      // Statistik laden wenn Tab geöffnet wird
+      const bottomTab = document.querySelector(`.bottom-tab[data-section="${name}"]`);
+      if (bottomTab) {
+        bottomTab.classList.add('active');
+      } else if (moreSheetSections.includes(name)) {
+        document.getElementById('bottom-more-tab').classList.add('active');
+        const sheetItem = document.querySelector(`.bottom-sheet-item[data-section="${name}"]`);
+        if (sheetItem) sheetItem.classList.add('active');
+      }
       if (name === 'statistik') renderStatistik();
+    };
+
+    window.openBottomSheet = function() {
+      document.getElementById('bottom-sheet-backdrop').classList.remove('hidden');
+      document.getElementById('bottom-sheet-backdrop').classList.add('open');
+      document.getElementById('bottom-sheet').classList.add('open');
+    };
+
+    window.closeBottomSheet = function() {
+      document.getElementById('bottom-sheet-backdrop').classList.remove('open');
+      document.getElementById('bottom-sheet').classList.remove('open');
+      setTimeout(() => document.getElementById('bottom-sheet-backdrop').classList.add('hidden'), 300);
     };
 
     // ── Toast ──
@@ -932,10 +1006,10 @@
       tbody.innerHTML = data.map(a => {
         const b = alleBereiche.find(x => x.id === a.bereich);
         return `<tr>
-          <td style="font-weight:600;max-width:200px;">${a.name}</td>
-          <td style="font-family:'IBM Plex Mono',monospace;font-size:0.72rem;color:var(--accent);">${a.location||'–'}<br><span style="color:var(--muted);font-size:0.62rem;">${b?.name||'–'}</span></td>
-          <td style="font-family:'IBM Plex Mono',monospace;font-size:0.7rem;">${a.min??'–'} ${a.minEinheit||''} / ${a.max??'–'} ${a.maxEinheit||''}</td>
-          <td style="display:flex;gap:6px;">
+          <td data-label="Artikel" style="font-weight:600;max-width:200px;">${a.name}</td>
+          <td data-label="Standort" style="font-family:'IBM Plex Mono',monospace;font-size:0.72rem;color:var(--accent);">${a.location||'–'}<br><span style="color:var(--muted);font-size:0.62rem;">${b?.name||'–'}</span></td>
+          <td data-label="MIN / MAX" style="font-family:'IBM Plex Mono',monospace;font-size:0.7rem;">${a.min??'–'} ${a.minEinheit||''} / ${a.max??'–'} ${a.maxEinheit||''}</td>
+          <td data-label="Aktionen" style="display:flex;gap:6px;">
             <button class="tbl-btn" onclick="openArtikelModal('${a.id}')">✏️</button>
             <button class="tbl-btn del" onclick="deleteArtikel('${a.id}','${a.name.replace(/'/g,"\\'")}')">🗑️</button>
           </td>
