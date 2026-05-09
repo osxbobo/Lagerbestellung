@@ -379,11 +379,249 @@ h1, h2, h3 { font-weight: 700; line-height: 1.2; }
 .slide-in { animation: slideIn 0.3s ease forwards; }
 
 /* ═══════════════════════════════════════════════
+   KPI CARDS
+   ═══════════════════════════════════════════════ */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 16px;
+}
+
+.kpi-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  transition: border-color 0.2s, transform 0.2s;
+  position: relative;
+  overflow: hidden;
+}
+
+.kpi-card::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 4px;
+  border-radius: 14px 0 0 14px;
+}
+
+.kpi-card:hover { transform: translateY(-2px); border-color: var(--border2); }
+
+.kpi-card.kpi-orange::before { background: var(--accent); }
+.kpi-card.kpi-blue::before   { background: var(--accent2); }
+.kpi-card.kpi-green::before  { background: var(--green); }
+.kpi-card.kpi-red::before    { background: var(--red); }
+.kpi-card.kpi-yellow::before { background: var(--yellow); }
+
+.kpi-body { flex: 1; }
+
+.kpi-value {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--text);
+}
+
+.kpi-label {
+  font-size: 0.72rem;
+  font-family: 'IBM Plex Mono', monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text2);
+  margin-top: 6px;
+}
+
+.kpi-icon {
+  font-size: 1.75rem;
+  line-height: 1;
+  opacity: 0.7;
+  flex-shrink: 0;
+}
+
+/* ═══════════════════════════════════════════════
+   BOTTOM NAVIGATION (Mobile)
+   ═══════════════════════════════════════════════ */
+.bottom-nav {
+  display: none;
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  z-index: 200;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  height: 60px;
+  align-items: stretch;
+  padding: 0 4px;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.bottom-tab {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 6px 4px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text2);
+  transition: color 0.2s;
+  font-family: 'DM Sans', sans-serif;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  border-radius: 10px;
+  position: relative;
+}
+
+.bottom-tab:hover { color: var(--text); }
+
+.bottom-tab.active { color: var(--accent); }
+
+.bottom-tab.active::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 50%;
+  transform: translateX(-50%);
+  width: 24px; height: 3px;
+  background: var(--accent);
+  border-radius: 0 0 4px 4px;
+}
+
+.bottom-tab-icon { font-size: 1.25rem; line-height: 1; }
+
+.bottom-tab-label {
+  font-size: 0.62rem;
+  font-weight: 600;
+  white-space: nowrap;
+  font-family: 'IBM Plex Mono', monospace;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Bottom Sheet (Mehr-Menü) */
+.bottom-sheet-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  background: rgba(0,0,0,0.5);
+  backdrop-filter: blur(4px);
+}
+
+.bottom-sheet-backdrop.open { display: block; }
+
+.bottom-sheet {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  z-index: 301;
+  background: var(--surface);
+  border-radius: 20px 20px 0 0;
+  border-top: 1px solid var(--border);
+  padding: 12px 16px calc(16px + env(safe-area-inset-bottom));
+  transform: translateY(100%);
+  transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.bottom-sheet.open { transform: translateY(0); }
+
+.bottom-sheet-handle {
+  width: 40px; height: 4px;
+  background: var(--border2);
+  border-radius: 2px;
+  margin: 0 auto 16px;
+}
+
+.bottom-sheet-title {
+  font-family: 'IBM Plex Mono', monospace;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+
+.bottom-sheet-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 13px 14px;
+  border-radius: 12px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 500;
+  text-align: left;
+  transition: background 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.bottom-sheet-item:hover { background: var(--surface2); }
+
+.bottom-sheet-item.active {
+  background: rgba(249,115,22,0.1);
+  color: var(--accent);
+}
+
+.bottom-sheet-item-icon { font-size: 1.2rem; width: 24px; text-align: center; }
+
+/* ═══════════════════════════════════════════════
+   TABLE → CARDS (Mobile)
+   ═══════════════════════════════════════════════ */
+@media (max-width: 640px) {
+  .table-card-mobile { border-collapse: collapse; }
+  .table-card-mobile thead { display: none; }
+  .table-card-mobile tbody tr {
+    display: block;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+  }
+  .table-card-mobile td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px 0;
+    border: none;
+    font-size: 0.85rem;
+    gap: 8px;
+  }
+  .table-card-mobile td:first-child { padding-top: 0; }
+  .table-card-mobile td:last-child  { padding-bottom: 0; }
+  .table-card-mobile td::before {
+    content: attr(data-label);
+    font-size: 0.65rem;
+    font-family: 'IBM Plex Mono', monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    flex-shrink: 0;
+  }
+}
+
+/* ═══════════════════════════════════════════════
    RESPONSIVE
    ═══════════════════════════════════════════════ */
 @media (max-width: 640px) {
   .container { padding: 0 16px; }
   .hide-mobile { display: none !important; }
+}
+
+@media (max-width: 768px) {
+  .bottom-nav { display: flex; }
 }
 
 @media (min-width: 641px) and (max-width: 1024px) {
