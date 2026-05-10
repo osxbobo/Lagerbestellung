@@ -95,7 +95,7 @@ const PWA = {
     }
 
     if (kritisch.length > 0) {
-      const namen = kritisch.slice(0,3).map(x => `${x.name} (${x.days <= 0 ? 'ABGELAUFEN' : x.days + ' Tage'}`).join(', ');
+      const namen = kritisch.slice(0,3).map(x => `${x.name} (${x.days <= 0 ? 'ABGELAUFEN' : x.days + ' Tage'})`).join(', ');
       await PWA.notify(`🔴 ${kritisch.length} Artikel kritisch!`, namen,
         '/Lagerbestellung/pages/portal.html', true);
     } else if (bald.length > 0) {
