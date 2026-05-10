@@ -173,7 +173,7 @@
         <!-- Verfall -->
         <div class="field">
           <div class="label">Verfallsdatum</div>
-          <input type="date" id="inp-verfall" class="inp" oninput="showVerfallInfo()">
+          <input type="text" id="inp-verfall" class="inp" inputmode="numeric" placeholder="JJJJ-MM-TT" maxlength="10" oninput="formatVerfallInput(this); showVerfallInfo()">
           <div class="verfall-info" id="verfall-info"></div>
         </div>
 
@@ -420,11 +420,20 @@
       document.getElementById('chargen-wrap').classList.add('hidden');
     }
 
+    // ── Verfall Input Formatter ──
+    function formatVerfallInput(el) {
+      let digits = el.value.replace(/\D/g, '').substring(0, 8);
+      let formatted = digits;
+      if (digits.length > 4) formatted = digits.slice(0,4) + '-' + digits.slice(4);
+      if (digits.length > 6) formatted = digits.slice(0,4) + '-' + digits.slice(4,6) + '-' + digits.slice(6);
+      el.value = formatted;
+    }
+
     // ── Verfall Info ──
     function showVerfallInfo() {
       const val  = document.getElementById('inp-verfall').value;
       const info = document.getElementById('verfall-info');
-      if (!val) { info.textContent=''; return; }
+      if (!val || val.length < 10) { info.textContent=''; return; }
       const p    = val.split('-');
       const d    = new Date(+p[0],+p[1]-1,+p[2]);
       const heute= new Date(); heute.setHours(0,0,0,0);
@@ -542,13 +551,14 @@
       try {
         const hints = new Map();
         hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, [
-          ZXing.BarcodeFormat.DATA_MATRIX, ZXing.BarcodeFormat.QR_CODE,
-          ZXing.BarcodeFormat.CODE_128,    ZXing.BarcodeFormat.EAN_13,
+          ZXing.BarcodeFormat.EAN_13,
+          ZXing.BarcodeFormat.CODE_128,
+          ZXing.BarcodeFormat.QR_CODE,
+          ZXing.BarcodeFormat.DATA_MATRIX,
         ]);
-        hints.set(ZXing.DecodeHintType.TRY_HARDER, true);
         reader = new ZXing.BrowserMultiFormatReader(hints);
         await reader.decodeFromConstraints(
-          {video:{facingMode:camSide==='back'?'environment':'user',width:{ideal:1280},height:{ideal:720}}},
+          {video:{facingMode:camSide==='back'?'environment':'user',width:{ideal:1280},height:{ideal:720},frameRate:{ideal:15,max:30}}},
           'video',
           result => { if (result) onScan(result.getText(), 'cam'); }
         );

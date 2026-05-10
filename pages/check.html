@@ -1455,12 +1455,13 @@
     // ── Foto Modal ──
     window.openFoto = function(url, name) {
       const modal = document.createElement('div');
+      modal.className = 'foto-modal';
       modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px;';
       modal.innerHTML = `
         <div style="background:var(--surface);border-radius:18px;overflow:hidden;max-width:440px;width:100%;">
           <div style="padding:14px 18px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
             <span style="font-size:0.95rem;font-weight:700;">${esc(name)}</span>
-            <button onclick="this.closest('div[style]').remove()" style="background:none;border:none;color:var(--muted);font-size:1.3rem;cursor:pointer;padding:4px 8px;touch-action:manipulation;">✕</button>
+            <button onclick="this.closest('.foto-modal').remove()" style="background:none;border:none;color:var(--muted);font-size:1.3rem;cursor:pointer;padding:4px 8px;touch-action:manipulation;">✕</button>
           </div>
           <img src="${esc(url)}" style="width:100%;max-height:400px;object-fit:contain;background:var(--surface2);">
           <div style="padding:10px 16px;font-size:0.72rem;color:var(--muted);font-family:'IBM Plex Mono',monospace;text-align:center;">Soll-Zustand</div>

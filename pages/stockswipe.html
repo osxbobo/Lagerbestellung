@@ -90,6 +90,10 @@
       display: flex;
       flex-direction: column;
       overflow: hidden;
+      max-width: 520px;
+      width: 100%;
+      margin-left: auto;
+      margin-right: auto;
     }
 
     .swipe-topbar {
@@ -346,7 +350,12 @@
     /* ── DETAIL PANEL (fixed overlay) ── */
     .detail-panel {
       position: fixed;
-      top: 56px; left: 0; right: 0; bottom: 0;
+      top: 56px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 100%;
+      max-width: 520px;
+      bottom: 0;
       z-index: 80;
       background: var(--bg);
       display: flex;
@@ -425,6 +434,9 @@
       display: flex;
       flex-direction: column;
       gap: 14px;
+      max-width: 520px;
+      margin-left: auto;
+      margin-right: auto;
     }
 
     .menge-handle {
