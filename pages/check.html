@@ -446,9 +446,6 @@
     </div>
   </nav>
 
-  <!-- ── KOLLEGEN-LEISTE (live progress) ── -->
-  <div id="kollegen-bar" class="hidden" style="background:var(--surface2);border-bottom:1px solid var(--border);padding:5px 14px;display:flex;gap:8px;align-items:center;overflow-x:auto;font-size:0.72rem;position:sticky;top:56px;z-index:9;scrollbar-width:none;"></div>
-
   <!-- ── PIN ── -->
   <div id="screen-pin" class="pin-screen">
     <div class="pin-box">
@@ -545,7 +542,7 @@
     <div class="bottom-nav">
       <button class="bnav-btn" id="btn-prev" onclick="prevBereich()">← Zurück</button>
       <button class="bnav-btn weiter" id="btn-weiter" onclick="nextBereich()">Weiter →</button>
-      <button class="bnav-btn finish hidden" id="btn-finish" onclick="checkIfAllDone()">✅ Abschließen</button>
+      <button class="bnav-btn finish hidden" id="btn-finish" onclick="showSignature()">✅ Abschließen</button>
     </div>
 
     <!-- Stornieren -->
@@ -580,23 +577,10 @@
     </div>
   </div>
 
-  <!-- ── WARTE-SCREEN ── -->
-  <div id="screen-wait" class="pin-screen hidden">
-    <div class="pin-box" style="text-align:center;gap:20px;">
-      <div style="font-size:3rem;">✅</div>
-      <div style="font-size:1.2rem;font-weight:700;">Deine Bereiche sind fertig!</div>
-      <div id="wait-subtitle" style="font-size:0.88rem;color:var(--muted);">Warte auf die anderen...</div>
-      <div id="wait-progress-list" style="width:100%;display:flex;flex-direction:column;gap:10px;"></div>
-      <div id="wait-all-done" class="hidden">
-        <button onclick="showSignature()" class="btn btn-primary btn-full" style="height:54px;font-size:1rem;">✍️ Alle fertig – Unterschrift</button>
-      </div>
-    </div>
-  </div>
-
   <script type="module">
     import { initializeApp }  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-    import { getFirestore, collection, getDocs, doc, getDoc, addDoc, updateDoc, deleteDoc, query, orderBy, limit, serverTimestamp, runTransaction, onSnapshot, arrayUnion }
+    import { getFirestore, collection, getDocs, doc, getDoc, addDoc, updateDoc, deleteDoc, query, orderBy, limit, serverTimestamp, runTransaction }
                               from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
     import { firebaseConfig } from "../js/firebase-config.js";
 
@@ -637,8 +621,6 @@
     let autoSaveTimer   = null;
     let sessionId       = null;   // Gemeinsame Session ID (multi-user)
     let meineBereiche   = [];     // Bereiche die dieser Nutzer bearbeitet
-    let sessionUnsubscribe   = null;
-    let joinScreenUnsubscribe = null;
 
     // ── Auth-Check ──
     // Wenn Nutzer von index.html kommt (sessionStorage gesetzt), PIN-Screen überspringen
@@ -771,7 +753,6 @@
             status:      'pausiert',
             currentIdx,
             bestellungen,
-            meineBereiche,
             fortschritt: Math.round((currentIdx / Math.max(alleBereiche.length, 1)) * 100),
           };
           if (autoSaveId) {
@@ -793,96 +774,6 @@
     function stopAutoSave() {
       if (autoSaveTimer) clearInterval(autoSaveTimer);
       autoSaveTimer = null;
-    }
-
-    // ── Session Listener (Live-Sync) ──
-    function startSessionListener() {
-      if (!sessionId || sessionUnsubscribe) return;
-      sessionUnsubscribe = onSnapshot(doc(db, 'bestellungen_session', sessionId), (snap) => {
-        if (snap.exists()) updateKollegenBar(snap.data());
-      });
-    }
-
-    function stopSessionListener() {
-      if (sessionUnsubscribe) { sessionUnsubscribe(); sessionUnsubscribe = null; }
-    }
-
-    function cleanupJoinListener() {
-      if (joinScreenUnsubscribe) { joinScreenUnsubscribe(); joinScreenUnsubscribe = null; }
-    }
-
-    function updateKollegenBar(data) {
-      const bar = document.getElementById('kollegen-bar');
-      const teilnehmer = data.teilnehmer || [];
-      const anderen = teilnehmer.filter(t => t.name !== userName);
-
-      if (anderen.length === 0) {
-        bar.classList.add('hidden');
-      } else {
-        bar.classList.remove('hidden');
-        bar.innerHTML = '<span style="color:var(--muted);flex-shrink:0;font-size:1rem;margin-right:2px;">👥</span>' +
-          anderen.map(t => {
-            const pct  = data[`fortschritt_${t.name}`] ?? 0;
-            const done = pct >= 100;
-            return `<span style="display:inline-flex;align-items:center;gap:5px;background:${done ? 'rgba(34,197,94,0.12)' : 'var(--surface)'};border:1px solid ${done ? 'var(--green)' : 'var(--border)'};border-radius:20px;padding:3px 10px;white-space:nowrap;">
-              <span style="font-weight:600;">${esc(t.name)}</span>
-              <span style="color:${done ? 'var(--green)' : 'var(--muted)'};">${done ? '✓' : pct + '%'}</span>
-            </span>`;
-          }).join('');
-      }
-
-      // Warte-Screen aktualisieren
-      const waitProgressList = document.getElementById('wait-progress-list');
-      const waitAllDoneEl    = document.getElementById('wait-all-done');
-      const waitSubtitle     = document.getElementById('wait-subtitle');
-      if (waitProgressList && anderen.length > 0) {
-        waitProgressList.innerHTML = anderen.map(t => {
-          const pct  = data[`fortschritt_${t.name}`] ?? 0;
-          const done = pct >= 100;
-          return `<div style="display:flex;align-items:center;gap:10px;">
-            <span style="font-weight:600;font-size:0.85rem;min-width:80px;text-align:left;">${esc(t.name)}</span>
-            <div style="flex:1;background:var(--surface2);border-radius:4px;height:6px;overflow:hidden;">
-              <div style="width:${pct}%;background:${done ? 'var(--green)' : 'var(--accent2)'};height:100%;border-radius:4px;transition:width 0.5s;"></div>
-            </div>
-            <span style="font-size:0.75rem;font-family:'IBM Plex Mono',monospace;color:${done ? 'var(--green)' : 'var(--muted)'};">${done ? '✓' : pct + '%'}</span>
-          </div>`;
-        }).join('');
-      }
-      const allDone = teilnehmer.length > 0 && teilnehmer.every(t => (data[`fortschritt_${t.name}`] ?? 0) >= 100);
-      if (waitAllDoneEl) waitAllDoneEl.classList.toggle('hidden', !allDone);
-      if (waitSubtitle) {
-        const restliche = anderen.filter(t => (data[`fortschritt_${t.name}`] ?? 0) < 100);
-        waitSubtitle.textContent = allDone
-          ? 'Alle sind fertig! Jetzt unterschreiben.'
-          : `Warte auf: ${restliche.map(t => t.name).join(', ')}...`;
-      }
-    }
-
-    // ── Quick Save (Fortschritt sofort senden) ──
-    async function quickSave() {
-      if (!sessionId) return;
-      try {
-        await updateDoc(doc(db, 'bestellungen_session', sessionId), {
-          [`fortschritt_${userName}`]: Math.round((currentIdx / Math.max(alleBereiche.length, 1)) * 100),
-          zuletzt: new Date().toISOString(),
-        });
-      } catch(e) {}
-    }
-
-    // ── Alle fertig? ──
-    async function checkIfAllDone() {
-      if (!sessionId) { showSignature(); return; }
-      try {
-        await updateDoc(doc(db, 'bestellungen_session', sessionId), {
-          erledigteBereiche: arrayUnion(...meineBereiche),
-          [`fortschritt_${userName}`]: 100,
-          zuletzt: new Date().toISOString(),
-        });
-      } catch(e) {
-        showToast('Verbindungsfehler – bitte erneut versuchen', 'error');
-        return;
-      }
-      showScreen('wait');
     }
 
     // ── DRAFT PRÜFEN ──
@@ -957,10 +848,9 @@
         const data = snap.data();
 
         // Fortschritt wiederherstellen
-        bestellungen  = data.bestellungen  || {};
-        currentIdx    = data.currentIdx    || 0;
-        meineBereiche = data.meineBereiche || [];
-        autoSaveId    = id;
+        bestellungen = data.bestellungen || {};
+        currentIdx   = data.currentIdx   || 0;
+        autoSaveId   = id;
 
         // Banner entfernen
         const banner = document.getElementById('draft-banner');
@@ -985,7 +875,6 @@
     window.storniereBestellung = async function() {
       try {
         stopAutoSave();
-        stopSessionListener();
 
         if (sessionId) {
           // Session aus Firestore holen – prüfen ob andere noch dabei sind
@@ -1284,17 +1173,15 @@
     window.prevBereich = () => { if (currentIdx > 0) renderBereich(currentIdx - 1); };
     window.nextBereich = () => {
       autoSave();
-      quickSave();
       // Nur innerhalb meiner Bereiche navigieren
       if (meineBereiche.length > 0) {
         const meinIdx    = meineBereiche.indexOf(alleBereiche[currentIdx]?.id);
-        if (meinIdx === -1) return;
         const naechster  = meineBereiche[meinIdx + 1];
         if (naechster) {
           const naechsterIdx = alleBereiche.findIndex(b => b.id === naechster);
-          if (naechsterIdx !== -1) renderBereich(naechsterIdx);
+          renderBereich(naechsterIdx);
         } else {
-          checkIfAllDone(); // Letzter Bereich → prüfen ob alle fertig
+          showSignature(); // Letzter Bereich → zur Unterschrift
         }
       } else {
         if (currentIdx < alleBereiche.length - 1) renderBereich(currentIdx + 1);
@@ -1367,7 +1254,6 @@
 
       try {
         stopAutoSave();
-        stopSessionListener();
 
         // ── Multi-User Session ──
         let alleNamen = [userName];
@@ -1394,7 +1280,13 @@
 
           alleNamen = (sessionData.teilnehmer || [{ name: userName }]).map(t => t.name);
 
-          // Finale Bestellung zuerst speichern (vor Session-Update, damit bei Fehler nichts verloren geht)
+          // Session abschließen
+          await updateDoc(doc(db, 'bestellungen_session', sessionId), {
+            status: 'abgeschlossen',
+            abgeschlossen: new Date().toISOString(),
+          });
+
+          // Finale Bestellung speichern
           await addDoc(collection(db, 'bestellungen'), {
             mitarbeiter:     alleNamen.join(' · '),
             mitarbeiterListe:alleNamen,
@@ -1404,12 +1296,6 @@
             unterschrift:    document.getElementById('sig-canvas').toDataURL('image/png'),
             status:          'abgeschlossen',
             sessionId,
-          });
-
-          // Session als abgeschlossen markieren
-          await updateDoc(doc(db, 'bestellungen_session', sessionId), {
-            status: 'abgeschlossen',
-            abgeschlossen: new Date().toISOString(),
           });
 
           // Session löschen
@@ -1461,13 +1347,12 @@
     // ── Foto Modal ──
     window.openFoto = function(url, name) {
       const modal = document.createElement('div');
-      modal.className = 'foto-modal';
       modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px;';
       modal.innerHTML = `
         <div style="background:var(--surface);border-radius:18px;overflow:hidden;max-width:440px;width:100%;">
           <div style="padding:14px 18px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
             <span style="font-size:0.95rem;font-weight:700;">${esc(name)}</span>
-            <button onclick="this.closest('.foto-modal').remove()" style="background:none;border:none;color:var(--muted);font-size:1.3rem;cursor:pointer;padding:4px 8px;touch-action:manipulation;">✕</button>
+            <button onclick="this.closest('div[style]').remove()" style="background:none;border:none;color:var(--muted);font-size:1.3rem;cursor:pointer;padding:4px 8px;touch-action:manipulation;">✕</button>
           </div>
           <img src="${esc(url)}" style="width:100%;max-height:400px;object-fit:contain;background:var(--surface2);">
           <div style="padding:10px 16px;font-size:0.72rem;color:var(--muted);font-family:'IBM Plex Mono',monospace;text-align:center;">Soll-Zustand</div>
@@ -1479,50 +1364,51 @@
     // ── Screens ──
     // ── JOIN SCREEN ──
     async function showJoinScreen() {
-      cleanupJoinListener();
       showScreen('join');
 
-      const q = query(collection(db, 'bestellungen_session'), orderBy('startzeit', 'desc'), limit(1));
-      joinScreenUnsubscribe = onSnapshot(q, (snap) => {
-        let openSession = null;
-        if (!snap.empty) {
-          const s = { id: snap.docs[0].id, ...snap.docs[0].data() };
-          const alter = (new Date() - new Date(s.startzeit)) / (1000*60*60);
-          if (alter < 4 && s.status !== 'abgeschlossen' && s.quelle === 'check') openSession = s;
-        }
-        window._openSession = openSession;
-        const sessionWrap = document.getElementById('join-session-wrap');
-        if (openSession) {
-          const mitarbeiter = openSession.teilnehmer?.map(t => t.name).join(', ') || '–';
-          const erledigte   = openSession.erledigteBereiche?.length || 0;
-          document.getElementById('join-session-info').innerHTML = `
-            <strong>${esc(mitarbeiter)}</strong> macht gerade die Lagerbestellung<br>
-            ${erledigte} von ${alleBereiche.length} Bereichen erledigt`;
-          sessionWrap.classList.remove('hidden');
-        } else {
-          sessionWrap.classList.add('hidden');
-        }
-        // Aktuelle Auswahl vor dem Re-Render speichern, damit quickSave von User A sie nicht zurücksetzt
-        const bereitsGewaehlt = new Set(
-          [...document.querySelectorAll('#bereich-select-list [data-selected="true"]')]
-            .map(d => d.dataset.bereichId)
-        );
-        renderBereichList(openSession);
-        // Auswahl wiederherstellen (nur für noch wählbare Bereiche)
-        bereitsGewaehlt.forEach(id => {
-          const div = document.querySelector(`#bereich-select-list [data-bereich-id="${id}"]`);
-          if (div && div.dataset.gesperrt !== 'true') toggleBereich(div, id);
-        });
-      });
-    }
-
-    function renderBereichList(openSession) {
-      const listEl    = document.getElementById('bereich-select-list');
+      // Bereiche-Liste aufbauen
+      const listEl = document.getElementById('bereich-select-list');
       listEl.innerHTML = '';
+
+      // Offene Sessions prüfen
+      let openSession = null;
+      try {
+        const sessions = await getDocs(query(
+          collection(db, 'bestellungen_session'),
+          orderBy('startzeit', 'desc'),
+          limit(1)
+        ));
+        if (!sessions.empty) {
+          const s = { id: sessions.docs[0].id, ...sessions.docs[0].data() };
+          // Nur zeigen wenn nicht älter als 4 Stunden und noch nicht abgeschlossen
+          const alter = (new Date() - new Date(s.startzeit)) / (1000*60*60);
+          if (alter < 4 && s.status !== 'abgeschlossen') {
+            openSession = s;
+          }
+        }
+      } catch(e) {}
+
+      // Offene Session anzeigen
+      const sessionWrap = document.getElementById('join-session-wrap');
+      if (openSession) {
+        const mitarbeiter = openSession.teilnehmer?.map(t => t.name).join(', ') || '–';
+        const erledigte   = openSession.erledigteBereiche?.length || 0;
+        const gesamt      = alleBereiche.length;
+        document.getElementById('join-session-info').innerHTML = `
+          <strong>${mitarbeiter}</strong> macht gerade die Lagerbestellung<br>
+          ${erledigte} von ${gesamt} Bereichen erledigt`;
+        sessionWrap.classList.remove('hidden');
+        window._openSession = openSession;
+      } else {
+        sessionWrap.classList.add('hidden');
+        window._openSession = null;
+      }
+
+      // Bereiche mit Status anzeigen
       const gesperrte = openSession?.erledigteBereiche || [];
       const vergeben  = openSession?.vergebeneBereiche || {};
 
-      alleBereiche.forEach(b => {
+      alleBereiche.forEach((b, i) => {
         const istGesperrt  = gesperrte.includes(b.id);
         const istVergeben  = vergeben[b.id] && vergeben[b.id] !== userName;
         const artikelCount = alleArtikel.filter(a => a.bereich === b.id).length;
@@ -1531,22 +1417,23 @@
         const div = document.createElement('div');
         div.style.cssText = `
           display:flex;align-items:center;gap:10px;padding:10px 12px;
-          border-radius:10px;border:1.5px solid ${istGesperrt ? 'var(--green)' : 'var(--border)'};
+          border-radius:10px;border:1.5px solid ${istGesperrt ? 'var(--green)' : istVergeben ? 'var(--border)' : 'var(--border)'};
           background:${istGesperrt ? 'rgba(34,197,94,0.06)' : istVergeben ? 'var(--surface2)' : 'var(--surface)'};
-          opacity:${istGesperrt ? '0.6' : istVergeben ? '0.75' : '1'};
-          cursor:${istGesperrt ? 'default' : 'pointer'};
-          transition:all 0.15s;-webkit-tap-highlight-color:transparent;
+          opacity:${istGesperrt || istVergeben ? '0.6' : '1'};
+          cursor:${istGesperrt || istVergeben ? 'default' : 'pointer'};
+          transition:all 0.15s;
+          -webkit-tap-highlight-color:transparent;
         `;
         div.dataset.bereichId = b.id;
         div.dataset.selected  = 'false';
-        div.dataset.gesperrt  = istGesperrt ? 'true' : 'false';
+        div.dataset.gesperrt  = istGesperrt || istVergeben ? 'true' : 'false';
 
         div.innerHTML = `
           <span style="font-size:1.1rem;">${istGesperrt ? '✅' : icon}</span>
           <div style="flex:1;">
-            <div style="font-size:0.82rem;font-weight:600;">${esc(b.name)}</div>
+            <div style="font-size:0.82rem;font-weight:600;">${b.name}</div>
             <div style="font-size:0.62rem;color:var(--muted);font-family:'IBM Plex Mono',monospace;margin-top:1px;">
-              ${artikelCount} Artikel${istGesperrt ? ' · Erledigt' : istVergeben ? ` · ${esc(vergeben[b.id])}` : ''}
+              ${artikelCount} Artikel${istGesperrt ? ' · Erledigt' : istVergeben ? ` · ${vergeben[b.id]}` : ''}
             </div>
           </div>
           <div class="bereich-checkbox" style="
@@ -1558,7 +1445,10 @@
           ">${istGesperrt ? '✓' : ''}</div>
         `;
 
-        if (!istGesperrt) div.addEventListener('click', () => toggleBereich(div, b.id));
+        if (!istGesperrt && !istVergeben) {
+          div.addEventListener('click', () => toggleBereich(div, b.id));
+        }
+
         listEl.appendChild(div);
       });
     }
@@ -1626,7 +1516,6 @@
     };
 
     async function startSession(joinExisting) {
-      cleanupJoinListener();
       try {
         // Sicherstellen dass Firebase-Auth aktiv ist (Fallback falls Session verloren)
         const auth = getAuth(app);
@@ -1660,16 +1549,6 @@
 
         } else {
           // ── Neue Session erstellen (auch wenn alleine!) ──
-          // Verwaiste Solo-Session des aktuellen Nutzers aufräumen (verhindert blockierte Bereichsauswahl)
-          if (window._openSession) {
-            const alteTeilnehmer = window._openSession.teilnehmer || [];
-            const nurIch = alteTeilnehmer.length === 0 ||
-              (alteTeilnehmer.length === 1 && alteTeilnehmer[0].name === userName);
-            if (nurIch) {
-              try { await deleteDoc(doc(db, 'bestellungen_session', window._openSession.id)); } catch(e) {}
-            }
-          }
-
           // Andere können dann jederzeit beitreten
           const vergeben = {};
           meineBereiche.forEach(bid => vergeben[bid] = userName);
@@ -1677,7 +1556,6 @@
           const sessionRef = await addDoc(collection(db, 'bestellungen_session'), {
             startzeit:          new Date().toISOString(),
             status:             'aktiv',
-            quelle:             'check',
             teilnehmer:         [{ name: userName, beitritt: new Date().toISOString() }],
             vergebeneBereiche:  vergeben,
             erledigteBereiche:  [],
@@ -1694,7 +1572,6 @@
 
         showScreen('check');
         startAutoSave();
-        startSessionListener();
         renderBereich(currentIdx);
 
       } catch(e) {
@@ -1703,7 +1580,7 @@
     }
 
     function showScreen(name) {
-      ['pin','join','check','sig','wait'].forEach(s =>
+      ['pin','join','check','sig'].forEach(s =>
         document.getElementById(`screen-${s}`).classList.toggle('hidden', s !== name)
       );
     }
