@@ -466,6 +466,9 @@
     </div>
   </nav>
 
+  <!-- ── KOLLEGEN-LEISTE (live progress bar) ── -->
+  <div id="kollegen-bar" class="hidden" style="background:var(--surface2);border-bottom:1px solid var(--border);padding:5px 14px;display:flex;gap:8px;align-items:center;overflow-x:auto;font-size:0.72rem;position:sticky;top:56px;z-index:9;scrollbar-width:none;"></div>
+
   <!-- ── PIN ── -->
   <div id="screen-pin" class="pin-screen">
     <div class="pin-box">
@@ -574,6 +577,19 @@
     </div>
   </div>
 
+  <!-- ── WARTE-SCREEN ── -->
+  <div id="screen-wait" class="pin-screen hidden">
+    <div class="pin-box" style="text-align:center;gap:20px;">
+      <div style="font-size:3rem;">✅</div>
+      <div style="font-size:1.2rem;font-weight:700;">Deine Bereiche sind fertig!</div>
+      <div id="wait-subtitle" style="font-size:0.88rem;color:var(--muted);">Warte auf die anderen...</div>
+      <div id="wait-progress-list" style="width:100%;display:flex;flex-direction:column;gap:10px;"></div>
+      <div id="wait-all-done" class="hidden">
+        <button onclick="showSignature()" class="btn btn-primary btn-full" style="height:54px;font-size:1rem;">✍️ Alle fertig – Unterschrift</button>
+      </div>
+    </div>
+  </div>
+
   <!-- ── DETAIL PANEL (fixed overlay) ── -->
   <div class="detail-panel hidden" id="detail-panel">
     <div class="detail-header">
@@ -601,7 +617,7 @@
   <script type="module">
     import { initializeApp }  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-    import { getFirestore, collection, getDocs, doc, getDoc, addDoc, updateDoc, deleteDoc, query, orderBy, limit, serverTimestamp, runTransaction }
+    import { getFirestore, collection, getDocs, doc, getDoc, addDoc, updateDoc, deleteDoc, query, orderBy, limit, serverTimestamp, runTransaction, onSnapshot, arrayUnion }
                               from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
     import { firebaseConfig } from "../js/firebase-config.js";
 
@@ -639,6 +655,8 @@
     let autoSaveTimer = null;
     let sessionId    = null;
     let meineBereiche = [];
+    let sessionUnsubscribe = null;
+    let joinScreenUnsubscribe = null;
 
     // Swipe state
     let swipeArtikel = [];
@@ -786,6 +804,95 @@
       autoSaveTimer = null;
     }
 
+    // ── Session Listener (Live-Sync) ──
+    function startSessionListener() {
+      if (!sessionId || sessionUnsubscribe) return;
+      sessionUnsubscribe = onSnapshot(doc(db, 'bestellungen_session', sessionId), (snap) => {
+        if (snap.exists()) updateKollegenBar(snap.data());
+      });
+    }
+
+    function stopSessionListener() {
+      if (sessionUnsubscribe) { sessionUnsubscribe(); sessionUnsubscribe = null; }
+    }
+
+    function cleanupJoinListener() {
+      if (joinScreenUnsubscribe) { joinScreenUnsubscribe(); joinScreenUnsubscribe = null; }
+    }
+
+    function updateKollegenBar(data) {
+      const bar = document.getElementById('kollegen-bar');
+      const teilnehmer = data.teilnehmer || [];
+      const anderen = teilnehmer.filter(t => t.name !== userName);
+
+      if (anderen.length === 0) {
+        bar.classList.add('hidden');
+      } else {
+        bar.classList.remove('hidden');
+        bar.innerHTML = '<span style="color:var(--muted);flex-shrink:0;font-size:1rem;margin-right:2px;">👥</span>' +
+          anderen.map(t => {
+            const pct = data[`fortschritt_${t.name}`] ?? 0;
+            const done = pct >= 100;
+            return `<span style="display:inline-flex;align-items:center;gap:5px;background:${done ? 'rgba(34,197,94,0.12)' : 'var(--surface)'};border:1px solid ${done ? 'var(--green)' : 'var(--border)'};border-radius:20px;padding:3px 10px;white-space:nowrap;">
+              <span style="font-weight:600;">${esc(t.name)}</span>
+              <span style="color:${done ? 'var(--green)' : 'var(--muted)'};">${done ? '✓' : pct + '%'}</span>
+            </span>`;
+          }).join('');
+      }
+
+      // Warte-Screen aktualisieren
+      const waitProgressList = document.getElementById('wait-progress-list');
+      const waitAllDoneEl    = document.getElementById('wait-all-done');
+      const waitSubtitle     = document.getElementById('wait-subtitle');
+      if (waitProgressList && anderen.length > 0) {
+        waitProgressList.innerHTML = anderen.map(t => {
+          const pct  = data[`fortschritt_${t.name}`] ?? 0;
+          const done = pct >= 100;
+          return `<div style="display:flex;align-items:center;gap:10px;">
+            <span style="font-weight:600;font-size:0.85rem;min-width:80px;text-align:left;">${esc(t.name)}</span>
+            <div style="flex:1;background:var(--surface2);border-radius:4px;height:6px;overflow:hidden;">
+              <div style="width:${pct}%;background:${done ? 'var(--green)' : 'var(--accent2)'};height:100%;border-radius:4px;transition:width 0.5s;"></div>
+            </div>
+            <span style="font-size:0.75rem;font-family:'IBM Plex Mono',monospace;color:${done ? 'var(--green)' : 'var(--muted)'};">${done ? '✓' : pct + '%'}</span>
+          </div>`;
+        }).join('');
+      }
+      const allDone = teilnehmer.length > 0 && teilnehmer.every(t => (data[`fortschritt_${t.name}`] ?? 0) >= 100);
+      if (waitAllDoneEl) waitAllDoneEl.classList.toggle('hidden', !allDone);
+      if (waitSubtitle) {
+        const restliche = anderen.filter(t => (data[`fortschritt_${t.name}`] ?? 0) < 100);
+        waitSubtitle.textContent = allDone
+          ? 'Alle sind fertig! Jetzt unterschreiben.'
+          : `Warte auf: ${restliche.map(t => t.name).join(', ')}...`;
+      }
+    }
+
+    // ── Quick Save (sofort, dot-notation) ──
+    async function quickSave(artikelId, decision) {
+      if (!sessionId) return;
+      try {
+        const update = {
+          [`fortschritt_${userName}`]: Math.round((swipeIdx / Math.max(swipeArtikel.length, 1)) * 100),
+          zuletzt: new Date().toISOString(),
+        };
+        if (artikelId && decision !== undefined) update[`bestellungen.${artikelId}`] = decision;
+        await updateDoc(doc(db, 'bestellungen_session', sessionId), update);
+      } catch(e) {}
+    }
+
+    // ── Alle fertig? ──
+    async function checkIfAllDone() {
+      if (!sessionId) { showSignature(); return; }
+      try {
+        await updateDoc(doc(db, 'bestellungen_session', sessionId), {
+          erledigteBereiche: arrayUnion(...meineBereiche),
+          [`fortschritt_${userName}`]: 100,
+          zuletzt: new Date().toISOString(),
+        });
+      } catch(e) {}
+      showScreen('wait');
+    }
+
     // ── Draft ──
     async function checkForDraft() {
       try {
@@ -841,6 +948,7 @@
     window.storniereBestellung = async function() {
       try {
         stopAutoSave();
+        stopSessionListener();
         if (sessionId) {
           const sessionSnap = await getDoc(doc(db, 'bestellungen_session', sessionId));
           if (sessionSnap.exists()) {
@@ -933,7 +1041,7 @@
             <div style="font-size:3.5rem;">✅</div>
             <div style="font-size:1.3rem;font-weight:800;">Alle Artikel geprüft!</div>
             <div style="font-size:0.88rem;color:var(--muted);">Jetzt unterschreiben und absenden.</div>
-            <button onclick="showSignature()" style="margin-top:8px;height:54px;padding:0 32px;border-radius:16px;border:none;background:var(--green);color:white;font-size:1rem;font-weight:700;font-family:'DM Sans',sans-serif;cursor:pointer;touch-action:manipulation;">✍️ Weiter zur Unterschrift</button>
+            <button onclick="checkIfAllDone()" style="margin-top:8px;height:54px;padding:0 32px;border-radius:16px;border:none;background:var(--green);color:white;font-size:1rem;font-weight:700;font-family:'DM Sans',sans-serif;cursor:pointer;touch-action:manipulation;">✍️ Weiter zur Unterschrift</button>
           </div>`;
         return;
       }
@@ -1065,11 +1173,12 @@
 
       if (direction === 'right') {
         showMengeModal(artikel);
+        quickSave(null, undefined);
       } else {
         bestellungen[artikel.id] = { bestellen: false, menge: 0 };
         renderCardStack();
+        quickSave(artikel.id, { bestellen: false, menge: 0 });
       }
-      autoSave();
     }
 
     window.triggerSwipeLeft = function() {
@@ -1193,10 +1302,10 @@
       currentMenge = Math.max(1, parseInt(input.value) || 1);
       if (currentMengeArtikel) {
         bestellungen[currentMengeArtikel.id] = { bestellen: true, menge: currentMenge };
+        quickSave(currentMengeArtikel.id, { bestellen: true, menge: currentMenge });
       }
       document.getElementById('menge-backdrop').classList.add('hidden');
       renderCardStack();
-      autoSave();
     };
 
     // ── SIGNATURE ──
@@ -1257,6 +1366,7 @@
 
       try {
         stopAutoSave();
+        stopSessionListener();
         let alleNamen = [userName];
 
         if (sessionId) {
@@ -1296,38 +1406,42 @@
 
     // ── JOIN SCREEN ──
     async function showJoinScreen() {
+      cleanupJoinListener();
       showScreen('join');
-      const listEl = document.getElementById('bereich-select-list');
-      listEl.innerHTML = '';
 
-      let openSession = null;
-      try {
-        const sessions = await getDocs(query(collection(db, 'bestellungen_session'), orderBy('startzeit', 'desc'), limit(1)));
-        if (!sessions.empty) {
-          const s = { id: sessions.docs[0].id, ...sessions.docs[0].data() };
+      const q = query(collection(db, 'bestellungen_session'), orderBy('startzeit', 'desc'), limit(1));
+      joinScreenUnsubscribe = onSnapshot(q, (snap) => {
+        let openSession = null;
+        if (!snap.empty) {
+          const s = { id: snap.docs[0].id, ...snap.docs[0].data() };
           const alter = (new Date() - new Date(s.startzeit)) / (1000*60*60);
           if (alter < 4 && s.status !== 'abgeschlossen') openSession = s;
         }
-      } catch(e) {}
-
-      const sessionWrap = document.getElementById('join-session-wrap');
-      if (openSession) {
-        const mitarbeiter = openSession.teilnehmer?.map(t => t.name).join(', ') || '–';
-        const erledigte   = openSession.erledigteBereiche?.length || 0;
-        document.getElementById('join-session-info').innerHTML = `<strong>${esc(mitarbeiter)}</strong> macht gerade die Bestellung<br>${erledigte} von ${alleBereiche.length} Bereichen erledigt`;
-        sessionWrap.classList.remove('hidden');
         window._openSession = openSession;
-      } else {
-        sessionWrap.classList.add('hidden');
-        window._openSession = null;
-      }
+        const sessionWrap = document.getElementById('join-session-wrap');
+        if (openSession) {
+          const mitarbeiter = openSession.teilnehmer?.map(t => t.name).join(', ') || '–';
+          const erledigte   = openSession.erledigteBereiche?.length || 0;
+          document.getElementById('join-session-info').innerHTML = `<strong>${esc(mitarbeiter)}</strong> macht gerade die Bestellung<br>${erledigte} von ${alleBereiche.length} Bereichen erledigt`;
+          sessionWrap.classList.remove('hidden');
+        } else {
+          sessionWrap.classList.add('hidden');
+        }
+        renderBereichList(openSession);
+      });
 
+      await checkForDraft();
+    }
+
+    function renderBereichList(openSession) {
+      const listEl    = document.getElementById('bereich-select-list');
+      listEl.innerHTML = '';
       const gesperrte = openSession?.erledigteBereiche || [];
       const vergeben  = openSession?.vergebeneBereiche || {};
 
       alleBereiche.forEach(b => {
-        const istGesperrt = gesperrte.includes(b.id);
-        const istVergeben = vergeben[b.id] && vergeben[b.id] !== userName;
+        const istGesperrt  = gesperrte.includes(b.id);
+        const istVergeben  = vergeben[b.id] && vergeben[b.id] !== userName;
         const artikelCount = alleArtikel.filter(a => a.bereich === b.id).length;
         const icon = getBereichIcon(b.name);
 
@@ -1345,8 +1459,6 @@
         if (!istGesperrt && !istVergeben) div.addEventListener('click', () => toggleBereich(div, b.id));
         listEl.appendChild(div);
       });
-
-      await checkForDraft();
     }
 
     function getBereichIcon(name) {
@@ -1395,6 +1507,7 @@
     };
 
     async function startSession(joinExisting) {
+      cleanupJoinListener();
       try {
         const auth = getAuth(app);
         if (!auth.currentUser) await signInAnonymously(auth);
@@ -1421,11 +1534,12 @@
         autoSaveId = sessionId;
         initSwipeMode();
         startAutoSave();
+        startSessionListener();
       } catch(e) { showToast('Fehler: ' + e.message, 'error'); }
     }
 
     function showScreen(name) {
-      ['pin','join','check','sig'].forEach(s =>
+      ['pin','join','check','sig','wait'].forEach(s =>
         document.getElementById(`screen-${s}`).classList.toggle('hidden', s !== name)
       );
     }

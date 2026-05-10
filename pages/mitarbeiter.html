@@ -138,6 +138,16 @@
       <div class="greeting-sub">Was möchtest du heute tun?</div>
     </div>
 
+    <!-- Live Session Banner -->
+    <div id="laufende-session-banner" class="hidden" style="background:rgba(14,165,233,0.08);border:1px solid rgba(14,165,233,0.3);border-radius:14px;padding:14px 18px;display:flex;align-items:center;gap:12px;">
+      <span style="font-size:1.3rem;">👥</span>
+      <div style="flex:1;">
+        <div style="font-size:0.82rem;font-weight:700;color:#0ea5e9;">Laufende Bestellung</div>
+        <div id="session-banner-text" style="font-size:0.78rem;color:var(--text2);margin-top:2px;"></div>
+      </div>
+      <a href="stockswipe.html" class="action-btn primary" style="font-size:0.78rem;padding:8px 14px;white-space:nowrap;min-width:unset;border-radius:10px;height:auto;">Mitmachen →</a>
+    </div>
+
     <div class="action-list">
       <a href="check.html" class="action-btn primary">
         <span class="btn-icon">📋</span>
@@ -193,6 +203,35 @@
       localStorage.setItem('lager-theme', t);
       document.getElementById('theme-btn').textContent = t === 'dark' ? '🌙' : '☀️';
     }
+  </script>
+
+  <script type="module">
+    import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+    import { getFirestore, collection, query, orderBy, limit, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+
+    const firebaseConfig = {
+      apiKey:            "AIzaSyD1YY-cFQxyykfYQYPORwulzuF8t6Wgid4",
+      authDomain:        "lagerbestellung-19970.firebaseapp.com",
+      projectId:         "lagerbestellung-19970",
+      storageBucket:     "lagerbestellung-19970.firebasestorage.app",
+      messagingSenderId: "939056339904",
+      appId:             "1:939056339904:web:6f33ca2f5a4cebd2780625"
+    };
+    const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
+    const db  = getFirestore(app);
+
+    const banner     = document.getElementById('laufende-session-banner');
+    const bannerText = document.getElementById('session-banner-text');
+    const q = query(collection(db, 'bestellungen_session'), orderBy('startzeit', 'desc'), limit(1));
+    onSnapshot(q, (snap) => {
+      if (snap.empty) { banner.classList.add('hidden'); return; }
+      const s = snap.docs[0].data();
+      const alter = (new Date() - new Date(s.startzeit)) / (1000*60*60);
+      if (alter >= 4 || s.status === 'abgeschlossen') { banner.classList.add('hidden'); return; }
+      const namen = (s.teilnehmer || []).map(t => t.name).join(', ');
+      bannerText.textContent = namen + ' macht gerade die Lagerbestellung';
+      banner.classList.remove('hidden');
+    });
   </script>
 
   <script>
