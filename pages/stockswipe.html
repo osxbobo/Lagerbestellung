@@ -522,29 +522,7 @@
       <div class="pin-title">StockSwipe</div>
       <div class="pin-sub" id="join-sub">Bereiche auswählen</div>
 
-      <div id="join-session-wrap" class="hidden" style="margin-bottom:16px;">
-        <div style="background:rgba(14,165,233,0.08);border:1px solid rgba(14,165,233,0.3);border-radius:12px;padding:14px;">
-          <div style="font-size:0.78rem;font-weight:700;color:var(--accent2);margin-bottom:8px;">👥 Laufende Bestellung</div>
-          <div id="join-session-info" style="font-size:0.75rem;color:var(--text2);margin-bottom:10px;"></div>
-          <button onclick="joinSession()" class="btn btn-primary btn-full" style="font-size:0.85rem;">
-            👥 Mitmachen &amp; Bereiche wählen
-          </button>
-        </div>
-      </div>
-
-      <div style="font-size:0.78rem;font-weight:600;color:var(--text2);margin-bottom:8px;" id="bereich-select-label">
-        Deine Bereiche auswählen:
-      </div>
-      <div id="bereich-select-list" style="display:flex;flex-direction:column;gap:6px;max-height:320px;overflow-y:auto;margin-bottom:14px;"></div>
-
-      <div style="display:flex;gap:8px;">
-        <button onclick="startAlleAllein()" class="btn btn-ghost btn-full" style="font-size:0.82rem;">
-          📋 Alle Bereiche alleine
-        </button>
-        <button onclick="startMitAuswahl()" class="btn btn-primary btn-full" style="font-size:0.82rem;" id="btn-start-auswahl">
-          ✅ Starten
-        </button>
-      </div>
+      <div style="text-align:center;padding:24px 0;color:var(--muted);font-size:0.85rem;">Wird geladen…</div>
     </div>
   </div>
 
@@ -668,7 +646,7 @@
     let sessionId    = null;
     let meineBereiche = [];
     let sessionUnsubscribe = null;
-    let joinScreenUnsubscribe = null;
+
 
     // Swipe state
     let swipeArtikel = [];
@@ -688,7 +666,7 @@
         userName = name;
         document.getElementById('nav-user').textContent = userName;
         await loadCheckData();
-        await showJoinScreen();
+        await startDirectly();
       }
     })();
 
@@ -828,9 +806,7 @@
       if (sessionUnsubscribe) { sessionUnsubscribe(); sessionUnsubscribe = null; }
     }
 
-    function cleanupJoinListener() {
-      if (joinScreenUnsubscribe) { joinScreenUnsubscribe(); joinScreenUnsubscribe = null; }
-    }
+
 
     function updateKollegenBar(data) {
       const bar = document.getElementById('kollegen-bar');
@@ -1416,137 +1392,15 @@
       } catch(e) { alert('Fehler: ' + e.message); }
     };
 
-    // ── JOIN SCREEN ──
-    async function showJoinScreen() {
-      cleanupJoinListener();
-      showScreen('join');
-
-      const q = query(collection(db, 'bestellungen_session'), orderBy('startzeit', 'desc'), limit(1));
-      joinScreenUnsubscribe = onSnapshot(q, (snap) => {
-        let openSession = null;
-        if (!snap.empty) {
-          const s = { id: snap.docs[0].id, ...snap.docs[0].data() };
-          const alter = (new Date() - new Date(s.startzeit)) / (1000*60*60);
-          if (alter < 4 && s.status !== 'abgeschlossen') openSession = s;
-        }
-        window._openSession = openSession;
-        const sessionWrap = document.getElementById('join-session-wrap');
-        if (openSession) {
-          const mitarbeiter = openSession.teilnehmer?.map(t => t.name).join(', ') || '–';
-          const erledigte   = openSession.erledigteBereiche?.length || 0;
-          document.getElementById('join-session-info').innerHTML = `<strong>${esc(mitarbeiter)}</strong> macht gerade die Bestellung<br>${erledigte} von ${alleBereiche.length} Bereichen erledigt`;
-          sessionWrap.classList.remove('hidden');
-        } else {
-          sessionWrap.classList.add('hidden');
-        }
-        renderBereichList(openSession);
-      });
-
-      await checkForDraft();
-    }
-
-    function renderBereichList(openSession) {
-      const listEl    = document.getElementById('bereich-select-list');
-      listEl.innerHTML = '';
-      const gesperrte = openSession?.erledigteBereiche || [];
-      const vergeben  = openSession?.vergebeneBereiche || {};
-
-      alleBereiche.forEach(b => {
-        const istGesperrt  = gesperrte.includes(b.id);
-        const istVergeben  = vergeben[b.id] && vergeben[b.id] !== userName;
-        const artikelCount = alleArtikel.filter(a => a.bereich === b.id).length;
-        const icon = getBereichIcon(b.name);
-
-        const div = document.createElement('div');
-        div.style.cssText = `display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;border:1.5px solid ${istGesperrt?'var(--green)':'var(--border)'};background:${istGesperrt?'rgba(34,197,94,0.06)':istVergeben?'var(--surface2)':'var(--surface)'};opacity:${istGesperrt||istVergeben?'0.6':'1'};cursor:${istGesperrt||istVergeben?'default':'pointer'};transition:all 0.15s;-webkit-tap-highlight-color:transparent;`;
-        div.dataset.bereichId = b.id;
-        div.dataset.selected  = 'false';
-        div.dataset.gesperrt  = istGesperrt || istVergeben ? 'true' : 'false';
-        div.innerHTML = `
-          <span style="font-size:1.1rem;">${istGesperrt?'✅':icon}</span>
-          <div style="flex:1;"><div style="font-size:0.82rem;font-weight:600;">${esc(b.name)}</div><div style="font-size:0.62rem;color:var(--muted);font-family:'IBM Plex Mono',monospace;margin-top:1px;">${artikelCount} Artikel${istGesperrt?' · Erledigt':istVergeben?` · ${esc(vergeben[b.id])}`:''}
-          </div></div>
-          <div class="bereich-checkbox" style="width:22px;height:22px;border-radius:6px;border:2px solid ${istGesperrt?'var(--green)':'var(--border)'};background:${istGesperrt?'var(--green)':'transparent'};display:flex;align-items:center;justify-content:center;font-size:0.75rem;color:white;flex-shrink:0;">${istGesperrt?'✓':''}</div>`;
-
-        if (!istGesperrt && !istVergeben) div.addEventListener('click', () => toggleBereich(div, b.id));
-        listEl.appendChild(div);
-      });
-    }
-
-    function getBereichIcon(name) {
-      const n = name.toLowerCase();
-      if (n.includes('schrank')) return '🗄️';
-      if (n.includes('regal'))   return '📦';
-      if (n.includes('sauer'))   return '🫧';
-      if (n.includes('büro'))    return '📋';
-      if (n.includes('küche'))   return '🍽️';
-      if (n.includes('wasch'))   return '🚿';
-      if (n.includes('mpg'))     return '🔋';
-      if (n.includes('medika'))  return '💊';
-      return '📁';
-    }
-
-    function toggleBereich(div, bereichId) {
-      const selected = div.dataset.selected === 'true';
-      div.dataset.selected = (!selected).toString();
-      const checkbox = div.querySelector('.bereich-checkbox');
-      if (!selected) {
-        div.style.border = '1.5px solid var(--accent2)'; div.style.background = 'rgba(14,165,233,0.08)';
-        checkbox.style.background = 'var(--accent2)'; checkbox.style.borderColor = 'var(--accent2)'; checkbox.textContent = '✓';
-      } else {
-        div.style.border = '1.5px solid var(--border)'; div.style.background = 'var(--surface)';
-        checkbox.style.background = 'transparent'; checkbox.style.borderColor = 'var(--border)'; checkbox.textContent = '';
-      }
-    }
-
-    window.startAlleAllein = async function() {
-      meineBereiche = alleBereiche.map(b => b.id);
-      await startSession(false);
-    };
-
-    window.startMitAuswahl = async function() {
-      const selected = [...document.querySelectorAll('[data-selected="true"]')].map(d => d.dataset.bereichId);
-      if (selected.length === 0) { showToast('Bitte mindestens einen Bereich auswählen', 'error'); return; }
-      meineBereiche = selected;
-      await startSession(false);
-    };
-
-    window.joinSession = async function() {
-      const selected = [...document.querySelectorAll('[data-selected="true"]')].map(d => d.dataset.bereichId);
-      if (selected.length === 0) { showToast('Bitte Bereiche auswählen', 'error'); return; }
-      meineBereiche = selected;
-      await startSession(true);
-    };
-
-    async function startSession(joinExisting) {
-      cleanupJoinListener();
+    // ── DIREKT STARTEN (kein Join Screen, keine gemeinsame Bestellung) ──
+    async function startDirectly() {
       try {
         const auth = getAuth(app);
         if (!auth.currentUser) await signInAnonymously(auth);
-
-        if (joinExisting && window._openSession) {
-          sessionId = window._openSession.id;
-          const sessionRef = doc(db, 'bestellungen_session', sessionId);
-          const vergeben   = { ...(window._openSession.vergebeneBereiche || {}) };
-          meineBereiche.forEach(bid => { vergeben[bid] = userName; });
-          const teilnehmer = [...(window._openSession.teilnehmer || [])];
-          if (!teilnehmer.find(t => t.name === userName)) teilnehmer.push({ name: userName, beitritt: new Date().toISOString() });
-          await updateDoc(sessionRef, { vergebeneBereiche: vergeben, teilnehmer });
-        } else {
-          const vergeben = {};
-          meineBereiche.forEach(bid => vergeben[bid] = userName);
-          const sessionRef = await addDoc(collection(db, 'bestellungen_session'), {
-            startzeit: new Date().toISOString(), status: 'aktiv',
-            teilnehmer: [{ name: userName, beitritt: new Date().toISOString() }],
-            vergebeneBereiche: vergeben, erledigteBereiche: [], bestellungen: {},
-          });
-          sessionId = sessionRef.id;
-        }
-
-        autoSaveId = sessionId;
+        meineBereiche = alleBereiche.map(b => b.id);
+        await checkForDraft();
         initSwipeMode();
         startAutoSave();
-        startSessionListener();
       } catch(e) { showToast('Fehler: ' + e.message, 'error'); }
     }
 

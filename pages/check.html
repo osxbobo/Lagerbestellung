@@ -1517,13 +1517,13 @@
           display:flex;align-items:center;gap:10px;padding:10px 12px;
           border-radius:10px;border:1.5px solid ${istGesperrt ? 'var(--green)' : 'var(--border)'};
           background:${istGesperrt ? 'rgba(34,197,94,0.06)' : istVergeben ? 'var(--surface2)' : 'var(--surface)'};
-          opacity:${istGesperrt || istVergeben ? '0.6' : '1'};
-          cursor:${istGesperrt || istVergeben ? 'default' : 'pointer'};
+          opacity:${istGesperrt ? '0.6' : istVergeben ? '0.75' : '1'};
+          cursor:${istGesperrt ? 'default' : 'pointer'};
           transition:all 0.15s;-webkit-tap-highlight-color:transparent;
         `;
         div.dataset.bereichId = b.id;
         div.dataset.selected  = 'false';
-        div.dataset.gesperrt  = istGesperrt || istVergeben ? 'true' : 'false';
+        div.dataset.gesperrt  = istGesperrt ? 'true' : 'false';
 
         div.innerHTML = `
           <span style="font-size:1.1rem;">${istGesperrt ? '✅' : icon}</span>
@@ -1542,7 +1542,7 @@
           ">${istGesperrt ? '✓' : ''}</div>
         `;
 
-        if (!istGesperrt && !istVergeben) div.addEventListener('click', () => toggleBereich(div, b.id));
+        if (!istGesperrt) div.addEventListener('click', () => toggleBereich(div, b.id));
         listEl.appendChild(div);
       });
     }
