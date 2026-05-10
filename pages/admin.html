@@ -565,6 +565,62 @@
           </div>
         </div>
 
+        <!-- BILDER EXPORT -->
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px;">
+          <div style="font-size:0.9rem;font-weight:700;margin-bottom:6px;">🖼️ Artikelbilder exportieren</div>
+          <div style="font-size:0.8rem;color:var(--text2);margin-bottom:16px;">
+            Lädt alle Produkt- und Lagerfotos als ZIP-Archiv herunter. Die Dateien sind eindeutig nach Lagerplatznummer beschriftet und können wieder importiert werden.
+          </div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:16px;">
+            <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center;">
+              <div style="font-size:1.3rem;font-weight:700;font-family:'IBM Plex Mono',monospace;" id="bilder-export-produkt-count">–</div>
+              <div style="font-size:0.62rem;color:var(--muted);font-family:'IBM Plex Mono',monospace;text-transform:uppercase;margin-top:2px;">Produktfotos</div>
+            </div>
+            <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center;">
+              <div style="font-size:1.3rem;font-weight:700;font-family:'IBM Plex Mono',monospace;" id="bilder-export-lager-count">–</div>
+              <div style="font-size:0.62rem;color:var(--muted);font-family:'IBM Plex Mono',monospace;text-transform:uppercase;margin-top:2px;">Lagerfotos</div>
+            </div>
+          </div>
+          <div id="bilder-export-progress" class="hidden" style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px;">
+            <div class="progress-wrap"><div class="progress-fill" id="bilder-export-progress-fill" style="width:0%"></div></div>
+            <div style="font-size:0.72rem;color:var(--muted);font-family:'IBM Plex Mono',monospace;text-align:right;" id="bilder-export-progress-text">0%</div>
+            <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px;height:100px;overflow-y:auto;font-family:'IBM Plex Mono',monospace;font-size:0.65rem;line-height:1.6;" id="bilder-export-log"></div>
+          </div>
+          <button class="btn btn-primary" onclick="exportBilder()">🖼️ Bilder als ZIP exportieren</button>
+        </div>
+
+        <!-- BILDER IMPORT -->
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px;">
+          <div style="font-size:0.9rem;font-weight:700;margin-bottom:6px;">🖼️ Artikelbilder importieren</div>
+          <div style="font-size:0.8rem;color:var(--text2);margin-bottom:16px;">
+            Importiert Bilder aus einem zuvor exportierten ZIP-Archiv. Die Fotos werden anhand der Lagerplatznummer den richtigen Artikeln zugeordnet.
+          </div>
+          <div style="display:flex;flex-direction:column;gap:12px;">
+            <div style="background:var(--surface2);border:2px dashed var(--border);border-radius:10px;padding:24px;text-align:center;cursor:pointer;"
+              onclick="document.getElementById('bilder-import-file').click()" id="bilder-drop-zone">
+              <div style="font-size:2rem;margin-bottom:8px;">🗜️</div>
+              <div style="font-size:0.85rem;font-weight:600;margin-bottom:4px;">ZIP-Datei auswählen</div>
+              <div style="font-size:0.72rem;color:var(--muted);">oder hier reinziehen</div>
+              <input type="file" id="bilder-import-file" accept=".zip" style="display:none" onchange="loadBilderImportFile(this)">
+            </div>
+
+            <div id="bilder-import-preview" class="hidden" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px;">
+              <div style="font-size:0.82rem;font-weight:700;margin-bottom:10px;">📋 Vorschau</div>
+              <div id="bilder-import-preview-content"></div>
+            </div>
+
+            <div id="bilder-import-progress" class="hidden" style="display:flex;flex-direction:column;gap:8px;">
+              <div class="progress-wrap"><div class="progress-fill" id="bilder-import-progress-fill" style="width:0%"></div></div>
+              <div style="font-size:0.72rem;color:var(--muted);font-family:'IBM Plex Mono',monospace;text-align:right;" id="bilder-import-progress-text">0%</div>
+              <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px;height:120px;overflow-y:auto;font-family:'IBM Plex Mono',monospace;font-size:0.65rem;line-height:1.6;" id="bilder-import-log"></div>
+            </div>
+
+            <button class="btn btn-primary" id="btn-bilder-import-start" onclick="startBilderImport()" disabled style="opacity:0.4;">
+              🚀 Bilder importieren
+            </button>
+          </div>
+        </div>
+
         <!-- HISTORY -->
         <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;">
           <div style="font-size:0.9rem;font-weight:700;margin-bottom:6px;">🕐 Letzte Backups</div>
@@ -1381,6 +1437,95 @@
       } catch(e) { toast(e.message, 'error'); }
     };
 
+    function sanitizeLP(lp) {
+      return (lp || 'unbekannt').replace(/\./g, '-').replace(/\//g, '_').replace(/\s+/g, '_');
+    }
+
+    function extFromUrl(url) {
+      try {
+        const path = new URL(url).pathname;
+        const m = path.match(/\.(jpg|jpeg|png|webp|gif)(\?|$)/i);
+        return m ? m[1].toLowerCase() : 'jpg';
+      } catch { return 'jpg'; }
+    }
+
+    window.exportBilder = async function() {
+      if (typeof JSZip === 'undefined') { toast('JSZip nicht geladen', 'error'); return; }
+      const logEl   = document.getElementById('bilder-export-log');
+      const progEl  = document.getElementById('bilder-export-progress-fill');
+      const textEl  = document.getElementById('bilder-export-progress-text');
+      const progBox = document.getElementById('bilder-export-progress');
+      progBox.classList.remove('hidden');
+      logEl.innerHTML = '';
+
+      function log(msg, color = 'var(--text2)') {
+        const d = document.createElement('div');
+        d.style.color = color; d.textContent = msg;
+        logEl.appendChild(d); logEl.scrollTop = logEl.scrollHeight;
+      }
+      function setProgress(pct) {
+        progEl.style.width = pct + '%';
+        textEl.textContent = Math.round(pct) + '%';
+      }
+
+      try {
+        log('📦 Lade Artikel aus Firestore...');
+        const snap = await getDocs(collection(db, 'artikel'));
+        const artikel = snap.docs.map(d => ({ _id: d.id, ...d.data() }));
+
+        const withFoto  = artikel.filter(a => a.fotoUrl);
+        const withLager = artikel.filter(a => a.lagerFotoUrl);
+        document.getElementById('bilder-export-produkt-count').textContent = withFoto.length;
+        document.getElementById('bilder-export-lager-count').textContent   = withLager.length;
+
+        const totalImages = withFoto.length + withLager.length;
+        if (totalImages === 0) { toast('Keine Bilder vorhanden', 'error'); return; }
+
+        log(`🖼️ ${totalImages} Bilder werden heruntergeladen...`);
+        const zip      = new JSZip();
+        const manifest = [];
+        let done = 0;
+
+        for (const a of artikel) {
+          const lpSafe = sanitizeLP(a.lp);
+
+          for (const typ of ['produkt', 'lager']) {
+            const url = typ === 'produkt' ? a.fotoUrl : a.lagerFotoUrl;
+            if (!url) continue;
+            try {
+              const resp = await fetch(url);
+              if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+              const blob     = await resp.blob();
+              const ext      = extFromUrl(url);
+              const filename = `${lpSafe}_${typ}.${ext}`;
+              zip.file(filename, blob);
+              manifest.push({ filename, lp: a.lp, artikelId: a._id, name: a.name, typ });
+              done++;
+              setProgress(done / totalImages * 95);
+              log(`   ✅ ${filename}`, 'var(--green)');
+            } catch(e) {
+              log(`   ⚠️ ${a.name} (${typ}): ${e.message}`, 'var(--yellow)');
+              done++;
+              setProgress(done / totalImages * 95);
+            }
+          }
+        }
+
+        zip.file('manifest.json', JSON.stringify(manifest, null, 2));
+        log('🗜️ ZIP wird erstellt...');
+        const blob      = await zip.generateAsync({ type: 'blob' }, meta => setProgress(95 + meta.percent * 0.05));
+        const timestamp = new Date().toISOString().split('T')[0];
+        const filename  = `lagerapp_bilder_${timestamp}.zip`;
+        const url       = URL.createObjectURL(blob);
+        const a         = document.createElement('a');
+        a.href = url; a.download = filename; a.click();
+        URL.revokeObjectURL(url);
+        setProgress(100);
+        log(`🎉 ${filename} (${manifest.length} Bilder)`, 'var(--green)');
+        toast('✅ ' + filename);
+      } catch(e) { log('❌ ' + e.message, 'var(--red)'); toast(e.message, 'error'); }
+    };
+
     function renderBackupHistory() {
       const el   = document.getElementById('backup-history');
       if (!el) return;
@@ -1512,11 +1657,113 @@
       }
     };
 
+    window.loadBilderImportFile = async function(input) {
+      const file = input.files[0];
+      if (!file) return;
+      if (typeof JSZip === 'undefined') { toast('JSZip nicht geladen', 'error'); return; }
+      try {
+        const zip = await JSZip.loadAsync(file);
+        const manifestFile = zip.file('manifest.json');
+        if (!manifestFile) { toast('Ungültiges ZIP: manifest.json fehlt', 'error'); return; }
+        const manifest = JSON.parse(await manifestFile.async('string'));
+        const produktCount = manifest.filter(e => e.typ === 'produkt').length;
+        const lagerCount   = manifest.filter(e => e.typ === 'lager').length;
+        window._bilderImportData = { manifest, zip };
+        document.getElementById('bilder-import-preview').classList.remove('hidden');
+        document.getElementById('bilder-import-preview-content').innerHTML = `
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+            <span class="badge badge-blue">📦 ${produktCount} Produktfotos</span>
+            <span class="badge badge-blue">🗄️ ${lagerCount} Lagerfotos</span>
+          </div>
+          <div style="font-size:0.72rem;color:var(--muted);">${manifest.length} Bilder in ${file.name}</div>`;
+        const btn = document.getElementById('btn-bilder-import-start');
+        btn.disabled = false; btn.style.opacity = '1';
+        document.getElementById('bilder-drop-zone').style.borderColor = 'var(--green)';
+      } catch(e) { toast('Ungültige Datei: ' + e.message, 'error'); }
+    };
+
+    window.startBilderImport = async function() {
+      const data = window._bilderImportData;
+      if (!data) return;
+      const { manifest, zip } = data;
+      const logEl  = document.getElementById('bilder-import-log');
+      const progEl = document.getElementById('bilder-import-progress-fill');
+      const textEl = document.getElementById('bilder-import-progress-text');
+      document.getElementById('bilder-import-progress').classList.remove('hidden');
+      document.getElementById('btn-bilder-import-start').disabled = true;
+      logEl.innerHTML = '';
+
+      function log(msg, color = 'var(--text2)') {
+        const d = document.createElement('div');
+        d.style.color = color; d.textContent = msg;
+        logEl.appendChild(d); logEl.scrollTop = logEl.scrollHeight;
+      }
+      function setProgress(pct) {
+        progEl.style.width = pct + '%';
+        textEl.textContent = Math.round(pct) + '%';
+      }
+
+      try {
+        log('📋 Lade Artikel aus Firestore...');
+        const snap   = await getDocs(collection(db, 'artikel'));
+        const lpMap  = {};
+        snap.docs.forEach(d => { if (d.data().lp) lpMap[d.data().lp] = d.id; });
+
+        const total = manifest.length;
+        let done = 0, ok = 0, skipped = 0;
+
+        for (const entry of manifest) {
+          const { filename, lp, artikelId, name, typ } = entry;
+          const docId = lpMap[lp] || artikelId;
+          if (!docId) {
+            log(`   ⚠️ Kein Artikel für LP "${lp}" gefunden – übersprungen`, 'var(--yellow)');
+            skipped++; done++; setProgress(done / total * 100); continue;
+          }
+
+          const zipEntry = zip.file(filename);
+          if (!zipEntry) {
+            log(`   ⚠️ Datei "${filename}" nicht im ZIP – übersprungen`, 'var(--yellow)');
+            skipped++; done++; setProgress(done / total * 100); continue;
+          }
+
+          try {
+            const blob = await zipEntry.async('blob');
+            const fd   = new FormData();
+            fd.append('file', blob, filename);
+            fd.append('upload_preset', 'lagerapp_unsigned');
+            fd.append('folder', 'lagerapp/artikel');
+            const res    = await fetch('https://api.cloudinary.com/v1_1/dvqug2dcx/image/upload', { method: 'POST', body: fd });
+            const result = await res.json();
+            if (!result.secure_url) throw new Error(result.error?.message || 'Upload fehlgeschlagen');
+
+            const field = typ === 'produkt' ? 'fotoUrl' : 'lagerFotoUrl';
+            await updateDoc(doc(db, 'artikel', docId), { [field]: result.secure_url });
+            log(`   ✅ ${name} → ${typ}`, 'var(--green)');
+            ok++;
+          } catch(e) {
+            log(`   ❌ ${name} (${typ}): ${e.message}`, 'var(--red)');
+            skipped++;
+          }
+          done++; setProgress(done / total * 100);
+        }
+
+        setProgress(100);
+        log(`🎉 Fertig: ${ok} importiert, ${skipped} übersprungen`, 'var(--green)');
+        toast(`✅ ${ok} Bilder importiert`);
+        await loadAll();
+      } catch(e) {
+        log('❌ ' + e.message, 'var(--red)');
+        toast(e.message, 'error');
+        document.getElementById('btn-bilder-import-start').disabled = false;
+      }
+    };
+
     // Init
     renderBackupHistory();
 
   </script>
 
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
   <script src="../js/pwa.js"></script>
 </body>
 </html>
