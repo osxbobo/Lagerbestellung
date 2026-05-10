@@ -771,6 +771,7 @@
             status:      'pausiert',
             currentIdx,
             bestellungen,
+            meineBereiche,
             fortschritt: Math.round((currentIdx / Math.max(alleBereiche.length, 1)) * 100),
           };
           if (autoSaveId) {
@@ -877,7 +878,10 @@
           [`fortschritt_${userName}`]: 100,
           zuletzt: new Date().toISOString(),
         });
-      } catch(e) {}
+      } catch(e) {
+        showToast('Verbindungsfehler – bitte erneut versuchen', 'error');
+        return;
+      }
       showScreen('wait');
     }
 
@@ -953,9 +957,10 @@
         const data = snap.data();
 
         // Fortschritt wiederherstellen
-        bestellungen = data.bestellungen || {};
-        currentIdx   = data.currentIdx   || 0;
-        autoSaveId   = id;
+        bestellungen  = data.bestellungen  || {};
+        currentIdx    = data.currentIdx    || 0;
+        meineBereiche = data.meineBereiche || [];
+        autoSaveId    = id;
 
         // Banner entfernen
         const banner = document.getElementById('draft-banner');
@@ -1283,10 +1288,11 @@
       // Nur innerhalb meiner Bereiche navigieren
       if (meineBereiche.length > 0) {
         const meinIdx    = meineBereiche.indexOf(alleBereiche[currentIdx]?.id);
+        if (meinIdx === -1) return;
         const naechster  = meineBereiche[meinIdx + 1];
         if (naechster) {
           const naechsterIdx = alleBereiche.findIndex(b => b.id === naechster);
-          renderBereich(naechsterIdx);
+          if (naechsterIdx !== -1) renderBereich(naechsterIdx);
         } else {
           checkIfAllDone(); // Letzter Bereich → prüfen ob alle fertig
         }
@@ -1388,13 +1394,7 @@
 
           alleNamen = (sessionData.teilnehmer || [{ name: userName }]).map(t => t.name);
 
-          // Session abschließen
-          await updateDoc(doc(db, 'bestellungen_session', sessionId), {
-            status: 'abgeschlossen',
-            abgeschlossen: new Date().toISOString(),
-          });
-
-          // Finale Bestellung speichern
+          // Finale Bestellung zuerst speichern (vor Session-Update, damit bei Fehler nichts verloren geht)
           await addDoc(collection(db, 'bestellungen'), {
             mitarbeiter:     alleNamen.join(' · '),
             mitarbeiterListe:alleNamen,
@@ -1404,6 +1404,12 @@
             unterschrift:    document.getElementById('sig-canvas').toDataURL('image/png'),
             status:          'abgeschlossen',
             sessionId,
+          });
+
+          // Session als abgeschlossen markieren
+          await updateDoc(doc(db, 'bestellungen_session', sessionId), {
+            status: 'abgeschlossen',
+            abgeschlossen: new Date().toISOString(),
           });
 
           // Session löschen
