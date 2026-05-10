@@ -1660,6 +1660,16 @@
 
         } else {
           // ── Neue Session erstellen (auch wenn alleine!) ──
+          // Verwaiste Solo-Session des aktuellen Nutzers aufräumen (verhindert blockierte Bereichsauswahl)
+          if (window._openSession) {
+            const alteTeilnehmer = window._openSession.teilnehmer || [];
+            const nurIch = alteTeilnehmer.length === 0 ||
+              (alteTeilnehmer.length === 1 && alteTeilnehmer[0].name === userName);
+            if (nurIch) {
+              try { await deleteDoc(doc(db, 'bestellungen_session', window._openSession.id)); } catch(e) {}
+            }
+          }
+
           // Andere können dann jederzeit beitreten
           const vergeben = {};
           meineBereiche.forEach(bid => vergeben[bid] = userName);
