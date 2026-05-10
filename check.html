@@ -1,0 +1,1712 @@
+<!DOCTYPE html>
+<html lang="de" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <link rel="manifest" href="../manifest.json">
+  <meta name="theme-color" content="#f97316">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="LAGER//APP">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Lagerbestellung – LAGER//APP</title>
+  <link rel="stylesheet" href="../css/main.css">
+  <style>
+    .check-page { min-height: 100vh; display: flex; flex-direction: column; }
+
+    /* ── PIN ── */
+    .pin-screen { flex: 1; display: flex; align-items: center; justify-content: center; padding: 24px; }
+    .pin-box { width: 100%; max-width: 380px; display: flex; flex-direction: column; gap: 24px; align-items: center; }
+    .pin-header { text-align: center; }
+    .pin-logo  { font-family: 'IBM Plex Mono', monospace; font-size: 1.1rem; font-weight: 600; color: var(--accent); margin-bottom: 8px; }
+    .pin-title { font-size: 1.3rem; font-weight: 700; margin-bottom: 4px; }
+    .pin-sub   { font-size: 0.85rem; color: var(--text2); }
+    .pin-card  { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 28px 24px; width: 100%; display: flex; flex-direction: column; gap: 20px; }
+    .pin-dots  { display: flex; justify-content: center; gap: 16px; padding: 8px 0; }
+    .pin-dot   { width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--border); transition: all 0.15s; }
+    .pin-dot.filled { background: var(--accent); border-color: var(--accent); transform: scale(1.1); }
+    .pin-grid  { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .pin-key {
+      aspect-ratio: 1; border-radius: 12px; border: 1px solid var(--border);
+      background: var(--surface2); color: var(--text);
+      font-family: 'IBM Plex Mono', monospace; font-size: 1.4rem; font-weight: 600;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      user-select: none; -webkit-user-select: none;
+      touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+      transition: background 0.1s, transform 0.1s, border-color 0.1s;
+    }
+    .pin-key.pressed, .pin-key:active { background: var(--surface3); transform: scale(0.91); border-color: var(--accent); color: var(--accent); }
+    .pin-key.confirm { background: var(--accent); border-color: var(--accent); color: white; }
+    .pin-key.confirm.pressed, .pin-key.confirm:active { background: var(--accent-hover); }
+    .pin-key.del { color: var(--muted); }
+    .name-input { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 13px 16px; font-family: 'DM Sans', sans-serif; font-size: 1rem; color: var(--text); outline: none; transition: border-color 0.2s; width: 100%; text-align: center; }
+    .name-input:focus { border-color: var(--accent2); }
+    .name-input::placeholder { color: var(--muted); }
+    .pin-error { text-align: center; font-size: 0.82rem; color: var(--red); min-height: 22px; }
+
+    /* ── ERKLÄRUNG ── */
+    .erklaerung {
+      background: rgba(14,165,233,0.08);
+      border: 1px solid rgba(14,165,233,0.25);
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin: 12px 14px 0;
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+    .erklaerung-icon { font-size: 1.3rem; flex-shrink: 0; margin-top: 1px; }
+    .erklaerung-text { font-size: 0.82rem; color: var(--accent2); line-height: 1.5; }
+    .erklaerung-text strong { font-weight: 700; }
+
+    /* ── CHECK SCREEN ── */
+    .check-screen { flex: 1; display: flex; flex-direction: column; padding-bottom: 88px; }
+
+    .check-header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 16px 12px;
+      position: sticky;
+      top: 56px;
+      z-index: 10;
+    }
+
+    .check-bereich-name {
+      font-weight: 700;
+      color: var(--accent);
+      font-size: 1rem;
+      margin-bottom: 8px;
+    }
+
+    .check-body {
+      flex: 1;
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      max-width: 800px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    /* ── ARTIKEL CARD ── */
+    .artikel-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .artikel-card.bestellen {
+      border-color: var(--red);
+      box-shadow: 0 0 0 2px rgba(239,68,68,0.15);
+    }
+
+    .artikel-card.ok {
+      border-color: var(--green);
+      box-shadow: 0 0 0 2px rgba(34,197,94,0.1);
+    }
+
+    /* Artikel Header */
+    .artikel-header {
+      padding: 16px 16px 12px;
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+
+    .artikel-foto-btn {
+      width: 56px;
+      height: 56px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      overflow: hidden;
+      flex-shrink: 0;
+      cursor: pointer;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.4rem;
+      transition: opacity 0.15s;
+      position: relative;
+    }
+
+    .artikel-foto-btn:active { opacity: 0.7; }
+    .artikel-foto-btn img { width: 100%; height: 100%; object-fit: cover; }
+
+    .foto-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+    }
+
+    .artikel-info { flex: 1; min-width: 0; }
+
+    .artikel-name {
+      font-size: 1rem;
+      font-weight: 700;
+      line-height: 1.3;
+      margin-bottom: 4px;
+    }
+
+    .artikel-lp {
+      font-size: 0.72rem;
+      color: var(--muted);
+      font-family: 'IBM Plex Mono', monospace;
+      margin-bottom: 8px;
+    }
+
+    /* MIN MAX – groß und deutlich */
+    .minmax-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    .minmax-badge {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 5px 12px;
+      min-width: 64px;
+    }
+
+    .minmax-label {
+      font-size: 0.58rem;
+      color: var(--muted);
+      font-family: 'IBM Plex Mono', monospace;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+
+    .minmax-value {
+      font-size: 1.1rem;
+      font-weight: 800;
+      font-family: 'IBM Plex Mono', monospace;
+      color: var(--text);
+      line-height: 1.2;
+    }
+
+    .minmax-unit {
+      font-size: 0.65rem;
+      color: var(--text2);
+      font-family: 'IBM Plex Mono', monospace;
+    }
+
+    .minmax-badge.min .minmax-value { color: var(--yellow); }
+    .minmax-badge.max .minmax-value { color: var(--green); }
+
+    /* Hinweis */
+    .artikel-hinweis {
+      font-size: 0.72rem;
+      color: var(--accent2);
+      padding: 0 16px 10px;
+    }
+
+    /* ── BESTELL SECTION ── */
+    .bestell-divider {
+      height: 1px;
+      background: var(--border);
+      margin: 0 16px;
+    }
+
+    .bestell-section {
+      padding: 14px 16px 16px;
+    }
+
+    .bestell-frage {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--text2);
+      margin-bottom: 12px;
+    }
+
+    /* Ja/Nein Toggle */
+    .ja-nein-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .ja-nein-btn {
+      height: 56px;
+      border-radius: 12px;
+      border: 2px solid var(--border);
+      background: var(--surface2);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      transition: all 0.15s;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .ja-nein-btn:active { transform: scale(0.95); }
+
+    .ja-nein-btn.nein.selected {
+      background: rgba(34,197,94,0.12);
+      border-color: var(--green);
+      color: var(--green);
+    }
+
+    .ja-nein-btn.ja.selected {
+      background: rgba(239,68,68,0.12);
+      border-color: var(--red);
+      color: var(--red);
+    }
+
+    /* Mengenauswahl (nur wenn Ja) */
+    .menge-wrap {
+      display: none;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .menge-wrap.visible { display: flex; }
+
+    .menge-label {
+      font-size: 0.78rem;
+      color: var(--text2);
+      font-weight: 600;
+    }
+
+    /* Schnell-Chips */
+    .chips-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .chip {
+      min-width: 52px;
+      height: 52px;
+      border-radius: 12px;
+      border: 2px solid var(--border);
+      background: var(--surface2);
+      color: var(--text);
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 1.05rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 10px;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      transition: all 0.12s;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .chip:active, .chip.pressed { transform: scale(0.89); }
+    .chip.selected { background: var(--red); border-color: var(--red); color: white; }
+
+    /* Plus/Minus */
+    .plusminus-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      justify-content: flex-start;
+    }
+
+    .pm-btn {
+      width: 56px;
+      height: 56px;
+      border-radius: 14px;
+      border: 2px solid var(--border);
+      background: var(--surface2);
+      color: var(--text);
+      font-size: 1.6rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      transition: all 0.1s;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    .pm-btn:active, .pm-btn.pressed { transform: scale(0.88); background: var(--surface3); }
+    .pm-btn.minus:active, .pm-btn.minus.pressed { border-color: var(--red); color: var(--red); }
+    .pm-btn.plus:active,  .pm-btn.plus.pressed  { border-color: var(--green); color: var(--green); }
+
+    .pm-display {
+      width: 80px;
+      flex-shrink: 0;
+      height: 56px;
+      border-radius: 14px;
+      border: 2px solid var(--border);
+      background: var(--surface2);
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 1.4rem;
+      font-weight: 800;
+      color: var(--red);
+      text-align: center;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+
+    .pm-display:focus { border-color: var(--red); }
+
+    /* ── FIXED BOTTOM NAV ── */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      padding: 12px 16px;
+      display: flex;
+      gap: 10px;
+      z-index: 20;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+
+    .bnav-btn {
+      flex: 1;
+      height: 56px;
+      border-radius: 14px;
+      border: 2px solid var(--border);
+      background: var(--surface2);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      transition: all 0.15s;
+      user-select: none;
+    }
+
+    .bnav-btn:active { transform: scale(0.96); }
+    .bnav-btn:disabled { opacity: 0.3; cursor: not-allowed; transform: none; }
+    .bnav-btn.weiter  { background: var(--accent);  border-color: var(--accent);  color: white; flex: 2; }
+    .bnav-btn.finish  { background: var(--green);   border-color: var(--green);   color: white; flex: 2; }
+
+    /* ── UNTERSCHRIFT ── */
+    .sig-screen { flex: 1; display: flex; align-items: center; justify-content: center; padding: 20px; }
+    .sig-box { width: 100%; max-width: 480px; display: flex; flex-direction: column; gap: 18px; }
+    .sig-title { font-size: 1.1rem; font-weight: 700; text-align: center; }
+    .summary-grid { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+    .summary-row { display: flex; justify-content: space-between; padding: 13px 16px; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
+    .summary-row:last-child { border-bottom: none; }
+    .summary-key { color: var(--muted); }
+    .summary-val { font-family: 'IBM Plex Mono', monospace; font-size: 0.85rem; font-weight: 700; }
+    .sig-canvas-wrap { background: var(--surface); border: 2px dashed var(--border); border-radius: 14px; overflow: hidden; position: relative; }
+    #sig-canvas { display: block; width: 100%; height: 160px; cursor: crosshair; touch-action: none; }
+    .sig-line { position: absolute; bottom: 28px; left: 16px; right: 16px; height: 1px; background: var(--border); pointer-events: none; }
+    .sig-hint { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); font-size: 0.75rem; color: var(--muted); pointer-events: none; font-family: 'IBM Plex Mono', monospace; transition: opacity 0.2s; }
+    .sig-clear { position: absolute; top: 10px; right: 10px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; color: var(--muted); font-size: 0.72rem; padding: 5px 12px; cursor: pointer; font-family: 'IBM Plex Mono', monospace; touch-action: manipulation; }
+
+
+
+    /* ── JOIN SCREEN ── */
+    #bereich-select-list::-webkit-scrollbar { width: 4px; }
+    #bereich-select-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body class="check-page">
+
+  <nav class="navbar">
+    <div class="navbar-inner">
+      <a href="../index.html" class="nav-logo" style="padding:0;"><img src="../LAGER_APP.png" alt="LAGER//APP" style="height:32px;width:auto;display:block;object-fit:contain;"></a>
+      <div class="nav-right">
+        <span id="nav-user" class="mono text-xs text-muted hide-mobile"></span>
+        <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" aria-label="Hell/Dunkel-Modus umschalten">☀️</button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ── KOLLEGEN-LEISTE (live progress) ── -->
+  <div id="kollegen-bar" class="hidden" style="background:var(--surface2);border-bottom:1px solid var(--border);padding:5px 14px;display:flex;gap:8px;align-items:center;overflow-x:auto;font-size:0.72rem;position:sticky;top:56px;z-index:9;scrollbar-width:none;"></div>
+
+  <!-- ── PIN ── -->
+  <div id="screen-pin" class="pin-screen">
+    <div class="pin-box">
+      <div class="pin-header">
+        <div class="pin-logo">LAGER//APP</div>
+        <h1 class="pin-title">Lagerbestellung</h1>
+        <p class="pin-sub">PIN eingeben und Name eintragen</p>
+      </div>
+      <div class="pin-card">
+        <input type="text" id="name-input" class="name-input" placeholder="Dein Name..." maxlength="40" autocomplete="off">
+        <div class="pin-dots">
+          <div class="pin-dot" id="dot-0"></div>
+          <div class="pin-dot" id="dot-1"></div>
+          <div class="pin-dot" id="dot-2"></div>
+          <div class="pin-dot" id="dot-3"></div>
+        </div>
+        <div class="pin-grid" role="group" aria-label="PIN-Eingabe">
+          <div class="pin-key" data-key="1" role="button" aria-label="1">1</div>
+          <div class="pin-key" data-key="2" role="button" aria-label="2">2</div>
+          <div class="pin-key" data-key="3" role="button" aria-label="3">3</div>
+          <div class="pin-key" data-key="4" role="button" aria-label="4">4</div>
+          <div class="pin-key" data-key="5" role="button" aria-label="5">5</div>
+          <div class="pin-key" data-key="6" role="button" aria-label="6">6</div>
+          <div class="pin-key" data-key="7" role="button" aria-label="7">7</div>
+          <div class="pin-key" data-key="8" role="button" aria-label="8">8</div>
+          <div class="pin-key" data-key="9" role="button" aria-label="9">9</div>
+          <div class="pin-key del" data-key="del" role="button" aria-label="Löschen">⌫</div>
+          <div class="pin-key" data-key="0" role="button" aria-label="0">0</div>
+          <div class="pin-key confirm" data-key="confirm" role="button" aria-label="Bestätigen">✓</div>
+        </div>
+        <div class="pin-error" id="pin-error"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── CHECK ── -->
+  <!-- ── BEREICHS-AUSWAHL SCREEN ── -->
+  <div id="screen-join" class="pin-screen hidden">
+    <div class="pin-box">
+      <div class="pin-title">Lagerbestellung</div>
+      <div class="pin-sub" id="join-sub">Bereiche auswählen</div>
+
+      <!-- Offene Session von anderen -->
+      <div id="join-session-wrap" class="hidden" style="margin-bottom:16px;">
+        <div style="background:rgba(14,165,233,0.08);border:1px solid rgba(14,165,233,0.3);border-radius:12px;padding:14px;">
+          <div style="font-size:0.78rem;font-weight:700;color:var(--accent2);margin-bottom:8px;">👥 Laufende Bestellung</div>
+          <div id="join-session-info" style="font-size:0.75rem;color:var(--text2);margin-bottom:10px;"></div>
+          <button onclick="joinSession()" class="btn btn-primary btn-full" style="font-size:0.85rem;">
+            👥 Mitmachen & Bereiche wählen
+          </button>
+        </div>
+      </div>
+
+      <!-- Bereiche Liste -->
+      <div style="font-size:0.78rem;font-weight:600;color:var(--text2);margin-bottom:8px;" id="bereich-select-label">
+        Deine Bereiche auswählen:
+      </div>
+      <div id="bereich-select-list" style="display:flex;flex-direction:column;gap:6px;max-height:320px;overflow-y:auto;margin-bottom:14px;"></div>
+
+      <div style="display:flex;gap:8px;">
+        <button onclick="startAlleAllein()" class="btn btn-ghost btn-full" style="font-size:0.82rem;">
+          📋 Alle Bereiche alleine
+        </button>
+        <button onclick="startMitAuswahl()" class="btn btn-primary btn-full" style="font-size:0.82rem;" id="btn-start-auswahl">
+          ✅ Starten
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <div id="screen-check" class="check-screen hidden">
+
+    <!-- Erklärung -->
+    <div class="erklaerung">
+      <div class="erklaerung-icon">ℹ️</div>
+      <div class="erklaerung-text">
+        <strong>So funktioniert der Lagercheck:</strong><br>
+        Schau bei jedem Artikel nach dem Bestand. Wenn etwas nachbestellt werden muss, tippe auf <strong>„Ja"</strong> und wähle die benötigte Menge. Bei ausreichendem Bestand tippe auf <strong>„Nein"</strong>.
+      </div>
+    </div>
+
+    <div class="check-header">
+      <div class="check-bereich-name" id="check-bereich-name">Bereich</div>
+      <div class="progress-wrap"><div class="progress-fill" id="check-progress"></div></div>
+      <div style="display:flex;justify-content:space-between;font-size:0.65rem;color:var(--muted);font-family:'IBM Plex Mono',monospace;margin-top:4px;">
+        <span id="check-progress-label">Bereich 1 von 1</span>
+        <span id="check-progress-pct">0%</span>
+      </div>
+    </div>
+
+    <div class="check-body" id="check-body"></div>
+
+    <!-- Fixed Bottom Nav -->
+    <div class="bottom-nav">
+      <button class="bnav-btn" id="btn-prev" onclick="prevBereich()">← Zurück</button>
+      <button class="bnav-btn weiter" id="btn-weiter" onclick="nextBereich()">Weiter →</button>
+      <button class="bnav-btn finish hidden" id="btn-finish" onclick="checkIfAllDone()">✅ Abschließen</button>
+    </div>
+
+    <!-- Stornieren -->
+    <div style="text-align:center;padding:8px 16px 16px;">
+      <button onclick="storniereBestellung()" style="
+        background:none;border:none;color:var(--muted);
+        font-size:0.75rem;cursor:pointer;
+        font-family:'DM Sans',sans-serif;
+        text-decoration:underline;
+        touch-action:manipulation;
+        padding:6px 12px;
+      ">🗑️ Lagerbestellung stornieren</button>
+    </div>
+  </div>
+
+  <!-- ── UNTERSCHRIFT ── -->
+  <div id="screen-sig" class="sig-screen hidden">
+    <div class="sig-box">
+      <div class="sig-title">✅ Check abgeschlossen</div>
+      <div class="summary-grid" id="summary-grid"></div>
+      <div>
+        <div class="section-label mb-8">Unterschrift</div>
+        <div class="sig-canvas-wrap">
+          <canvas id="sig-canvas"></canvas>
+          <div class="sig-line"></div>
+          <div class="sig-hint" id="sig-hint">Hier unterschreiben...</div>
+          <button class="sig-clear" onclick="clearSig()">Löschen</button>
+        </div>
+      </div>
+      <button class="btn btn-primary btn-full" style="height:56px;font-size:1rem;" onclick="submitCheck()">📄 Absenden & Fertig</button>
+      <button class="btn btn-ghost btn-full" style="height:52px;" onclick="backToCheck()">← Zurück zum Check</button>
+    </div>
+  </div>
+
+  <!-- ── WARTE-SCREEN ── -->
+  <div id="screen-wait" class="pin-screen hidden">
+    <div class="pin-box" style="text-align:center;gap:20px;">
+      <div style="font-size:3rem;">✅</div>
+      <div style="font-size:1.2rem;font-weight:700;">Deine Bereiche sind fertig!</div>
+      <div id="wait-subtitle" style="font-size:0.88rem;color:var(--muted);">Warte auf die anderen...</div>
+      <div id="wait-progress-list" style="width:100%;display:flex;flex-direction:column;gap:10px;"></div>
+      <div id="wait-all-done" class="hidden">
+        <button onclick="showSignature()" class="btn btn-primary btn-full" style="height:54px;font-size:1rem;">✍️ Alle fertig – Unterschrift</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp }  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    import { getFirestore, collection, getDocs, doc, getDoc, addDoc, updateDoc, deleteDoc, query, orderBy, limit, serverTimestamp, runTransaction, onSnapshot, arrayUnion }
+                              from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { firebaseConfig } from "../js/firebase-config.js";
+
+    // HTML-Escaping für innerHTML mit Nutzerdaten
+    function esc(str) {
+      return String(str ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    // Theme
+    const savedTheme  = localStorage.getItem('lager-theme');
+    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const theme       = savedTheme || (prefersDark ? 'dark' : 'light');
+    document.documentElement.setAttribute('data-theme', theme);
+    document.getElementById('theme-toggle').textContent = theme === 'dark' ? '☀️' : '🌙';
+    window.toggleTheme = function() {
+      const cur  = document.documentElement.getAttribute('data-theme');
+      const next = cur === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', next);
+      localStorage.setItem('lager-theme', next);
+      document.getElementById('theme-toggle').textContent = next === 'dark' ? '☀️' : '🌙';
+    };
+
+    // Firebase
+
+    const app = initializeApp(firebaseConfig);
+    const db  = getFirestore(app);
+
+    let correctPin   = '1234';
+    let alleArtikel     = [];
+    let alleBereiche    = [];
+    let bestellungen    = {}; // artikelId → { bestellen: bool, menge: number }
+    let currentIdx      = 0;
+    let userName        = '';
+    let pinValue        = '';
+    let pinAttempts     = 0;
+    let pinLockedUntil  = 0;
+    let autoSaveId      = null;   // Firestore ID der laufenden Bestellung
+    let autoSaveTimer   = null;
+    let sessionId       = null;   // Gemeinsame Session ID (multi-user)
+    let meineBereiche   = [];     // Bereiche die dieser Nutzer bearbeitet
+    let sessionUnsubscribe   = null;
+    let joinScreenUnsubscribe = null;
+
+    // ── Auth-Check ──
+    // Wenn Nutzer von index.html kommt (sessionStorage gesetzt), PIN-Screen überspringen
+    (async function checkAuth() {
+      const pinOk = sessionStorage.getItem('lager-pin-auth');
+      const name  = sessionStorage.getItem('lager-pin-name');
+      if (pinOk && name) {
+        document.getElementById('screen-pin').classList.add('hidden');
+        userName = name;
+        document.getElementById('nav-user').textContent = userName;
+        await loadCheckData();
+        await showJoinScreen();
+      }
+      // Kein sessionStorage → PIN-Screen bleibt sichtbar (Nutzer gibt PIN direkt hier ein)
+    })();
+
+    const QUICK_VALUES = [1, 2, 3, 5, 10];
+
+    // ── Natürliche Sortierung für LP-Nummern ──
+    // S.1.2.1 < S.1.10.1 < S.1.2.2 etc.
+    function naturalSort(a, b) {
+      const segmentsA = a.split(/[\.\-]/).map(s => isNaN(s) ? s : parseInt(s, 10));
+      const segmentsB = b.split(/[\.\-]/).map(s => isNaN(s) ? s : parseInt(s, 10));
+      const len = Math.max(segmentsA.length, segmentsB.length);
+      for (let i = 0; i < len; i++) {
+        const sa = segmentsA[i] ?? '';
+        const sb = segmentsB[i] ?? '';
+        if (sa < sb) return -1;
+        if (sa > sb) return  1;
+      }
+      return 0;
+    }
+
+    // ── PIN ──
+    function handlePinKey(key) {
+      document.getElementById('pin-error').textContent = '';
+      if (key === 'del') {
+        pinValue = pinValue.slice(0, -1);
+        updateDots();
+      } else if (key === 'confirm') {
+        pinConfirm();
+      } else {
+        if (pinValue.length >= 4) return;
+        pinValue += key;
+        updateDots();
+      }
+    }
+
+    function updateDots() {
+      for (let i = 0; i < 4; i++)
+        document.getElementById(`dot-${i}`).classList.toggle('filled', i < pinValue.length);
+    }
+
+    document.querySelectorAll('.pin-key').forEach(btn => {
+      const key = btn.dataset.key;
+      btn.addEventListener('touchstart', e => {
+        e.preventDefault();
+        btn.classList.add('pressed');
+        handlePinKey(key);
+      }, { passive: false });
+      btn.addEventListener('touchend', () => setTimeout(() => btn.classList.remove('pressed'), 100));
+      btn.addEventListener('click', () => handlePinKey(key));
+    });
+
+    async function pinConfirm() {
+      userName = document.getElementById('name-input').value.trim();
+      const err = document.getElementById('pin-error');
+      if (!userName) { err.textContent = 'Bitte deinen Namen eingeben.'; return; }
+      if (pinValue.length < 4) { err.textContent = 'Bitte 4-stelligen PIN eingeben.'; return; }
+
+      if (Date.now() < pinLockedUntil) {
+        const secs = Math.ceil((pinLockedUntil - Date.now()) / 1000);
+        err.textContent = `Zu viele Versuche – bitte ${secs}s warten`;
+        pinValue = ''; updateDots(); return;
+      }
+
+      try {
+        const snap = await getDoc(doc(db, 'config', 'app'));
+        if (snap.exists()) correctPin = snap.data().pin || '1234';
+      } catch {}
+      if (pinValue !== correctPin) {
+        pinAttempts++;
+        if (pinAttempts >= 5) {
+          pinLockedUntil = Date.now() + 60000;
+          pinAttempts = 0;
+          err.textContent = 'Zu viele Versuche – bitte 60s warten';
+        } else {
+          err.textContent = `Falscher PIN – noch ${5 - pinAttempts} Versuch(e)`;
+        }
+        pinValue = ''; updateDots(); return;
+      }
+      pinAttempts = 0;
+
+      // Anonym in Firebase einloggen – ermöglicht sichere Firestore-Rules
+      const auth = getAuth(app);
+      if (!auth.currentUser) await signInAnonymously(auth);
+
+      document.getElementById('nav-user').textContent = userName;
+      // PIN-Auth in sessionStorage speichern (für Scanner-Zugang)
+      sessionStorage.setItem('lager-pin-auth', 'true');
+      sessionStorage.setItem('lager-pin-name', userName);
+      await loadCheckData();
+
+      // Zur Bereichs-Auswahl gehen
+      await showJoinScreen();
+    }
+
+    // ── Load ──
+    // ── AUTO-SAVE ──
+    async function autoSave() {
+      if (!userName) return;
+      try {
+        if (sessionId) {
+          // Multi-user: Transaktion verhindert Race Condition bei gleichzeitigen Schreibvorgängen
+          const sessionRef = doc(db, 'bestellungen_session', sessionId);
+          await runTransaction(db, async (transaction) => {
+            const snap = await transaction.get(sessionRef);
+            const current = snap.exists() ? (snap.data().bestellungen || {}) : {};
+            transaction.update(sessionRef, {
+              bestellungen: { ...current, ...bestellungen },
+              [`fortschritt_${userName}`]: Math.round((currentIdx / Math.max(alleBereiche.length, 1)) * 100),
+              zuletzt: new Date().toISOString(),
+            });
+          });
+        } else if (Object.keys(bestellungen).length > 0) {
+          // Single-user: Draft speichern
+          const data = {
+            mitarbeiter: userName,
+            datum:       new Date().toISOString(),
+            status:      'pausiert',
+            currentIdx,
+            bestellungen,
+            meineBereiche,
+            fortschritt: Math.round((currentIdx / Math.max(alleBereiche.length, 1)) * 100),
+          };
+          if (autoSaveId) {
+            await updateDoc(doc(db, 'bestellungen_draft', autoSaveId), data);
+          } else {
+            const ref = await addDoc(collection(db, 'bestellungen_draft'), data);
+            autoSaveId = ref.id;
+          }
+        }
+      } catch(e) { showToast('Speichern fehlgeschlagen – Daten möglicherweise nicht gesichert', 'error'); }
+    }
+
+    // Alle 30 Sekunden automatisch speichern
+    function startAutoSave() {
+      if (autoSaveTimer) clearInterval(autoSaveTimer);
+      autoSaveTimer = setInterval(autoSave, 30000);
+    }
+
+    function stopAutoSave() {
+      if (autoSaveTimer) clearInterval(autoSaveTimer);
+      autoSaveTimer = null;
+    }
+
+    // ── Session Listener (Live-Sync) ──
+    function startSessionListener() {
+      if (!sessionId || sessionUnsubscribe) return;
+      sessionUnsubscribe = onSnapshot(doc(db, 'bestellungen_session', sessionId), (snap) => {
+        if (snap.exists()) updateKollegenBar(snap.data());
+      });
+    }
+
+    function stopSessionListener() {
+      if (sessionUnsubscribe) { sessionUnsubscribe(); sessionUnsubscribe = null; }
+    }
+
+    function cleanupJoinListener() {
+      if (joinScreenUnsubscribe) { joinScreenUnsubscribe(); joinScreenUnsubscribe = null; }
+    }
+
+    function updateKollegenBar(data) {
+      const bar = document.getElementById('kollegen-bar');
+      const teilnehmer = data.teilnehmer || [];
+      const anderen = teilnehmer.filter(t => t.name !== userName);
+
+      if (anderen.length === 0) {
+        bar.classList.add('hidden');
+      } else {
+        bar.classList.remove('hidden');
+        bar.innerHTML = '<span style="color:var(--muted);flex-shrink:0;font-size:1rem;margin-right:2px;">👥</span>' +
+          anderen.map(t => {
+            const pct  = data[`fortschritt_${t.name}`] ?? 0;
+            const done = pct >= 100;
+            return `<span style="display:inline-flex;align-items:center;gap:5px;background:${done ? 'rgba(34,197,94,0.12)' : 'var(--surface)'};border:1px solid ${done ? 'var(--green)' : 'var(--border)'};border-radius:20px;padding:3px 10px;white-space:nowrap;">
+              <span style="font-weight:600;">${esc(t.name)}</span>
+              <span style="color:${done ? 'var(--green)' : 'var(--muted)'};">${done ? '✓' : pct + '%'}</span>
+            </span>`;
+          }).join('');
+      }
+
+      // Warte-Screen aktualisieren
+      const waitProgressList = document.getElementById('wait-progress-list');
+      const waitAllDoneEl    = document.getElementById('wait-all-done');
+      const waitSubtitle     = document.getElementById('wait-subtitle');
+      if (waitProgressList && anderen.length > 0) {
+        waitProgressList.innerHTML = anderen.map(t => {
+          const pct  = data[`fortschritt_${t.name}`] ?? 0;
+          const done = pct >= 100;
+          return `<div style="display:flex;align-items:center;gap:10px;">
+            <span style="font-weight:600;font-size:0.85rem;min-width:80px;text-align:left;">${esc(t.name)}</span>
+            <div style="flex:1;background:var(--surface2);border-radius:4px;height:6px;overflow:hidden;">
+              <div style="width:${pct}%;background:${done ? 'var(--green)' : 'var(--accent2)'};height:100%;border-radius:4px;transition:width 0.5s;"></div>
+            </div>
+            <span style="font-size:0.75rem;font-family:'IBM Plex Mono',monospace;color:${done ? 'var(--green)' : 'var(--muted)'};">${done ? '✓' : pct + '%'}</span>
+          </div>`;
+        }).join('');
+      }
+      const allDone = teilnehmer.length > 0 && teilnehmer.every(t => (data[`fortschritt_${t.name}`] ?? 0) >= 100);
+      if (waitAllDoneEl) waitAllDoneEl.classList.toggle('hidden', !allDone);
+      if (waitSubtitle) {
+        const restliche = anderen.filter(t => (data[`fortschritt_${t.name}`] ?? 0) < 100);
+        waitSubtitle.textContent = allDone
+          ? 'Alle sind fertig! Jetzt unterschreiben.'
+          : `Warte auf: ${restliche.map(t => t.name).join(', ')}...`;
+      }
+    }
+
+    // ── Quick Save (Fortschritt sofort senden) ──
+    async function quickSave() {
+      if (!sessionId) return;
+      try {
+        await updateDoc(doc(db, 'bestellungen_session', sessionId), {
+          [`fortschritt_${userName}`]: Math.round((currentIdx / Math.max(alleBereiche.length, 1)) * 100),
+          zuletzt: new Date().toISOString(),
+        });
+      } catch(e) {}
+    }
+
+    // ── Alle fertig? ──
+    window.checkIfAllDone = async function() {
+      if (!sessionId) { showSignature(); return; }
+      try {
+        await updateDoc(doc(db, 'bestellungen_session', sessionId), {
+          erledigteBereiche: arrayUnion(...meineBereiche),
+          [`fortschritt_${userName}`]: 100,
+          zuletzt: new Date().toISOString(),
+        });
+      } catch(e) {
+        showToast('Verbindungsfehler – bitte erneut versuchen', 'error');
+        return;
+      }
+      showScreen('wait');
+    }
+
+    // ── DRAFT PRÜFEN ──
+    async function checkForDraft() {
+      try {
+        const snap = await getDocs(
+          query(collection(db, 'bestellungen_draft'),
+            orderBy('datum', 'desc'),
+            limit(5)
+          )
+        );
+
+        if (snap.empty) return;
+
+        // Alle offenen Drafts anzeigen
+        const drafts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+        showDraftBanner(drafts);
+      } catch(e) { showToast('Fehler beim Laden offener Entwürfe', 'error'); }
+    }
+
+    function showDraftBanner(drafts) {
+      // Altes Banner entfernen
+      const existing = document.getElementById('draft-banner');
+      if (existing) existing.remove();
+
+      const banner = document.createElement('div');
+      banner.id = 'draft-banner';
+      banner.style.cssText = `
+        position: fixed; top: 56px; left: 0; right: 0; z-index: 500;
+        background: var(--surface);
+        border-bottom: 2px solid var(--accent);
+        padding: 12px 16px;
+        display: flex; flex-direction: column; gap: 8px;
+        box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+      `;
+
+      banner.innerHTML = `
+        <div style="font-size:0.82rem;font-weight:700;color:var(--accent);">
+          📋 Offene Lagerbestellung${drafts.length > 1 ? 'en' : ''}
+        </div>
+        ${drafts.map(d => `
+          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:10px;">
+            <div style="flex:1;">
+              <div style="font-size:0.82rem;font-weight:600;">${d.mitarbeiter}</div>
+              <div style="font-size:0.65rem;color:var(--muted);font-family:'IBM Plex Mono',monospace;margin-top:2px;">
+                ${new Date(d.datum).toLocaleDateString('de-DE')} · ${new Date(d.datum).toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'})} · ${d.fortschritt||0}% fertig
+              </div>
+            </div>
+            <button onclick="resumeDraft('${d.id}')" style="
+              padding:7px 14px;border-radius:8px;background:var(--accent);
+              border:none;color:white;font-size:0.78rem;font-weight:600;
+              cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap;
+              touch-action:manipulation;
+            ">▶️ Fortführen</button>
+            <button onclick="discardDraft('${d.id}')" style="
+              padding:7px 10px;border-radius:8px;background:var(--surface2);
+              border:1px solid var(--border);color:var(--muted);font-size:0.78rem;
+              cursor:pointer;font-family:'DM Sans',sans-serif;
+              touch-action:manipulation;
+            ">✕</button>
+          </div>`).join('')}
+      `;
+
+      document.body.appendChild(banner);
+    }
+
+    window.resumeDraft = async function(id) {
+      try {
+        const snap = await getDoc(doc(db, 'bestellungen_draft', id));
+        if (!snap.exists()) return;
+        const data = snap.data();
+
+        // Fortschritt wiederherstellen
+        bestellungen  = data.bestellungen  || {};
+        currentIdx    = data.currentIdx    || 0;
+        meineBereiche = data.meineBereiche || [];
+        autoSaveId    = id;
+
+        // Banner entfernen
+        const banner = document.getElementById('draft-banner');
+        if (banner) banner.remove();
+
+        // Check-Screen neu rendern
+        renderBereich(currentIdx);
+        showToast(`Fortschritt von ${data.mitarbeiter} wiederhergestellt ✅`);
+      } catch(e) { showToast('Fehler: ' + e.message, 'error'); }
+    };
+
+    window.discardDraft = async function(id) {
+      if (!confirm('Offene Bestellung verwerfen?')) return;
+      try {
+        await deleteDoc(doc(db, 'bestellungen_draft', id));
+        const banner = document.getElementById('draft-banner');
+        if (banner) banner.remove();
+      } catch(e) {}
+    };
+
+    // ── Lagerbestellung stornieren ──
+    window.storniereBestellung = async function() {
+      try {
+        stopAutoSave();
+        stopSessionListener();
+
+        if (sessionId) {
+          // Session aus Firestore holen – prüfen ob andere noch dabei sind
+          const sessionSnap = await getDoc(doc(db, 'bestellungen_session', sessionId));
+          if (sessionSnap.exists()) {
+            const sessionData  = sessionSnap.data();
+            const andereAktive = (sessionData.teilnehmer || [])
+              .filter(t => t.name !== userName);
+
+            if (andereAktive.length > 0) {
+              // Andere arbeiten noch → nur selbst austreten
+              const namen = andereAktive.map(t => t.name).join(', ');
+              const confirmed = confirm(
+                `${namen} ${andereAktive.length === 1 ? 'arbeitet' : 'arbeiten'} noch an der Bestellung.\n\nNur deinen Teil stornieren und die anderen weitermachen lassen?`
+              );
+              if (!confirmed) return;
+
+              // Nur eigene Bereiche freigeben + aus Teilnehmer entfernen
+              const vergeben   = { ...(sessionData.vergebeneBereiche || {}) };
+              const teilnehmer = (sessionData.teilnehmer || []).filter(t => t.name !== userName);
+
+              // Eigene Bereiche aus vergeben entfernen
+              Object.keys(vergeben).forEach(bid => {
+                if (vergeben[bid] === userName) delete vergeben[bid];
+              });
+
+              // Eigene Bestellungen aus Session entfernen
+              const bestellungen = { ...(sessionData.bestellungen || {}) };
+              // Artikel die diesem Nutzer gehören entfernen
+              meineBereiche.forEach(bid => {
+                const artikelImBereich = alleArtikel.filter(a => a.bereich === bid);
+                artikelImBereich.forEach(a => delete bestellungen[a.id]);
+              });
+
+              await updateDoc(doc(db, 'bestellungen_session', sessionId), {
+                vergeben, teilnehmer, bestellungen,
+              });
+
+            } else {
+              // Nur ich bin dabei → komplette Session löschen
+              const confirmed = confirm(
+                'Lagerbestellung wirklich stornieren?\n\nAlle bisherigen Eingaben gehen verloren.'
+              );
+              if (!confirmed) return;
+
+              await deleteDoc(doc(db, 'bestellungen_session', sessionId));
+            }
+          }
+          sessionId  = null;
+          autoSaveId = null;
+
+        } else {
+          // Einzelner Nutzer ohne Session
+          const confirmed = confirm(
+            'Lagerbestellung wirklich stornieren?\n\nAlle bisherigen Eingaben gehen verloren.'
+          );
+          if (!confirmed) return;
+
+          // Draft löschen
+          if (autoSaveId) {
+            await deleteDoc(doc(db, 'bestellungen_draft', autoSaveId));
+            autoSaveId = null;
+          }
+          // Alle eigenen Drafts löschen
+          try {
+            const drafts = await getDocs(query(collection(db, 'bestellungen_draft'), orderBy('datum', 'desc')));
+            for (const d of drafts.docs) {
+              if (d.data().mitarbeiter === userName) {
+                await deleteDoc(doc(db, 'bestellungen_draft', d.id));
+              }
+            }
+          } catch(e) {}
+        }
+
+      } catch(e) {
+        showToast('Fehler beim Stornieren: ' + e.message, 'error');
+      }
+
+      window.location.href = './mitarbeiter.html';
+    };
+
+    function showToast(msg, type = 'success') {
+      const t = document.createElement('div');
+      t.style.cssText = `position:fixed;bottom:80px;left:50%;transform:translateX(-50%);
+        background:var(--surface);border:1px solid ${type==='error'?'var(--red)':'var(--green)'};
+        color:${type==='error'?'var(--red)':'var(--green)'};
+        border-radius:10px;padding:10px 18px;font-size:0.82rem;
+        box-shadow:var(--shadow-lg);z-index:3000;white-space:nowrap;`;
+      t.textContent = msg;
+      document.body.appendChild(t);
+      setTimeout(() => t.remove(), 2500);
+    }
+
+    async function loadCheckData() {
+      const [bSnap, aSnap] = await Promise.all([
+        getDocs(query(collection(db, 'bereiche'), orderBy('reihenfolge'))),
+        getDocs(collection(db, 'artikel')),
+      ]);
+      alleBereiche = bSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+      alleArtikel  = aSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+      renderBereich(0);
+    }
+
+    // ── Render Bereich ──
+    function renderBereich(idx) {
+      currentIdx = idx;
+      const bereich = alleBereiche[idx];
+      const artikel = alleArtikel
+        .filter(a => a.bereich === bereich.id)
+        .sort((a, b) => naturalSort(a.lp || '', b.lp || ''));
+      // Fortschritt nur über meine Bereiche berechnen
+      const meineIdx = meineBereiche.length > 0
+        ? meineBereiche.indexOf(alleBereiche[idx]?.id) + 1
+        : idx + 1;
+      const meineTotal = meineBereiche.length > 0 ? meineBereiche.length : alleBereiche.length;
+      const pct     = Math.round((meineIdx / meineTotal) * 100);
+      const isLast  = meineBereiche.length > 0
+        ? meineBereiche[meineBereiche.length - 1] === alleBereiche[idx]?.id
+        : idx === alleBereiche.length - 1;
+
+      document.getElementById('check-bereich-name').textContent  = bereich.name;
+      document.getElementById('check-progress').style.width       = pct + '%';
+      document.getElementById('check-progress-label').textContent = `Bereich ${idx + 1} von ${alleBereiche.length}`;
+      document.getElementById('check-progress-pct').textContent   = pct + '%';
+      document.getElementById('btn-prev').disabled = idx === 0;
+      document.getElementById('btn-weiter').classList.toggle('hidden', isLast);
+      document.getElementById('btn-finish').classList.toggle('hidden', !isLast);
+
+      document.getElementById('check-body').innerHTML = artikel.map(a => {
+        const state   = bestellungen[a.id] || { bestellen: null, menge: 1 };
+        const bestell = state.bestellen;
+        const menge   = state.menge || 1;
+
+        const minHtml = a.min != null ? `
+          <div class="minmax-badge min">
+            <span class="minmax-label">MIN</span>
+            <span class="minmax-value">${a.min}</span>
+            <span class="minmax-unit">${a.minEinheit||'Stk'}</span>
+          </div>` : '';
+
+        const maxHtml = a.max != null ? `
+          <div class="minmax-badge max">
+            <span class="minmax-label">MAX</span>
+            <span class="minmax-value">${a.max}</span>
+            <span class="minmax-unit">${a.maxEinheit||'Stk'}</span>
+          </div>` : '';
+
+        // Produkt-Foto für Artikel, Lagerort-Foto als Extra-Button
+        const fotoHtml = (a.fotoUrl || a.lagerFotoUrl)
+          ? `<div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0;">
+               ${a.fotoUrl ? `
+                 <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
+                   <div class="artikel-foto-btn" data-foto="${esc(a.fotoUrl)}" data-name="${esc(a.name)}" title="Produktfoto ansehen">
+                     <img src="${esc(a.fotoUrl)}" alt="${esc(a.name)}">
+                   </div>
+                   <div style="font-size:0.5rem;color:var(--muted);font-family:'IBM Plex Mono',monospace;letter-spacing:0.03em;">PRODUKT</div>
+                 </div>` : ''}
+               ${a.lagerFotoUrl ? `
+                 <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
+                   <div class="artikel-foto-btn" data-foto="${esc(a.lagerFotoUrl)}" data-name="Lagerort: ${esc(a.name)}" title="Lagerortfoto ansehen" style="background:var(--surface3);">
+                     <img src="${esc(a.lagerFotoUrl)}" alt="Lagerort">
+                   </div>
+                   <div style="font-size:0.5rem;color:var(--muted);font-family:'IBM Plex Mono',monospace;letter-spacing:0.03em;">LAGERORT</div>
+                 </div>` : ''}
+             </div>`
+          : `<div class="artikel-foto-btn" style="cursor:default;opacity:0.4;">📦</div>`;
+
+        const chipsHtml = QUICK_VALUES.map(v => `
+          <div class="chip ${menge === v && bestell ? 'selected' : ''}" data-id="${a.id}" data-val="${v}">${v}</div>
+        `).join('');
+
+        return `
+          <div class="artikel-card ${bestell===true?'bestellen':bestell===false?'ok':''}" id="card-${a.id}">
+            <div class="artikel-header">
+              ${fotoHtml}
+              <div class="artikel-info">
+                <div class="artikel-name">${esc(a.name)}</div>
+                <div class="artikel-lp">${esc(a.lp)} · ${esc(a.location)}</div>
+                <div class="minmax-row">
+                  ${minHtml}
+                  ${maxHtml}
+                </div>
+              </div>
+            </div>
+            ${a.hinweis ? `<div class="artikel-hinweis">💡 ${esc(a.hinweis)}</div>` : ''}
+            <div class="bestell-divider"></div>
+            <div class="bestell-section">
+              <div class="bestell-frage">Muss bestellt werden?</div>
+              <div class="ja-nein-row">
+                <button class="ja-nein-btn nein ${bestell===false?'selected':''}" data-id="${a.id}" data-val="nein">✅ Nein</button>
+                <button class="ja-nein-btn ja   ${bestell===true ?'selected':''}" data-id="${a.id}" data-val="ja">⚠️ Ja</button>
+              </div>
+              <div class="menge-wrap ${bestell===true?'visible':''}" id="menge-${a.id}">
+                <div class="menge-label">Wie viel soll bestellt werden?</div>
+                <div class="chips-row" data-id="${a.id}">${chipsHtml}</div>
+                <div class="plusminus-row">
+                  <button class="pm-btn minus" data-id="${a.id}" data-action="minus">−</button>
+                  <input class="pm-display" id="pm-${a.id}" type="number" inputmode="numeric" value="${menge}" min="1">
+                  <button class="pm-btn plus"  data-id="${a.id}" data-action="plus">+</button>
+                </div>
+              </div>
+            </div>
+          </div>`;
+      }).join('') || `<div class="text-muted text-sm" style="padding:30px;text-align:center;font-size:1rem;">Keine Artikel in diesem Bereich</div>`;
+
+      attachListeners();
+      window.scrollTo(0, 0);
+    }
+
+    // ── Listeners ──
+    function attachListeners() {
+
+      // Ja/Nein
+      document.querySelectorAll('.ja-nein-btn').forEach(btn => {
+        const id  = btn.dataset.id;
+        const val = btn.dataset.val;
+
+        function handle() {
+          const bestellen = val === 'ja';
+          if (!bestellungen[id]) bestellungen[id] = { bestellen: null, menge: 1 };
+          bestellungen[id].bestellen = bestellen;
+
+          // Update card
+          const card = document.getElementById(`card-${id}`);
+          card.className = `artikel-card ${bestellen ? 'bestellen' : 'ok'}`;
+
+          // Update buttons
+          document.querySelectorAll(`.ja-nein-btn[data-id="${id}"]`).forEach(b => {
+            b.classList.toggle('selected', b.dataset.val === val);
+          });
+
+          // Show/hide menge
+          const mengeWrap = document.getElementById(`menge-${id}`);
+          mengeWrap.classList.toggle('visible', bestellen);
+        }
+
+        btn.addEventListener('touchstart', e => { e.preventDefault(); btn.style.transform='scale(0.95)'; handle(); }, { passive: false });
+        btn.addEventListener('touchend',   () => { btn.style.transform=''; });
+        btn.addEventListener('click', handle);
+      });
+
+      // Chips
+      document.querySelectorAll('.chip').forEach(chip => {
+        const id  = chip.dataset.id;
+        const val = parseInt(chip.dataset.val);
+
+        function handle() {
+          setMenge(id, val);
+        }
+
+        chip.addEventListener('touchstart', e => { e.preventDefault(); chip.classList.add('pressed'); handle(); }, { passive: false });
+        chip.addEventListener('touchend',   () => setTimeout(() => chip.classList.remove('pressed'), 100));
+        chip.addEventListener('click', handle);
+      });
+
+      // +/- Buttons
+      document.querySelectorAll('.pm-btn').forEach(btn => {
+        const id     = btn.dataset.id;
+        const action = btn.dataset.action;
+
+        function handle() {
+          const cur  = parseInt(document.getElementById(`pm-${id}`).value) || 1;
+          const next = action === 'plus' ? cur + 1 : Math.max(1, cur - 1);
+          setMenge(id, next);
+        }
+
+        btn.addEventListener('touchstart', e => { e.preventDefault(); btn.classList.add('pressed'); handle(); }, { passive: false });
+        btn.addEventListener('touchend',   () => setTimeout(() => btn.classList.remove('pressed'), 100));
+        btn.addEventListener('click', handle);
+      });
+
+      // Direct input
+      document.querySelectorAll('.pm-display').forEach(input => {
+        const id = input.id.replace('pm-', '');
+        input.addEventListener('change', () => setMenge(id, Math.max(1, parseInt(input.value) || 1)));
+      });
+
+      // Foto buttons
+      document.querySelectorAll('.artikel-foto-btn[data-foto]').forEach(btn => {
+        btn.addEventListener('click', () => openFoto(btn.dataset.foto, btn.dataset.name));
+      });
+    }
+
+    function setMenge(id, val) {
+      if (!bestellungen[id]) bestellungen[id] = { bestellen: true, menge: val };
+      bestellungen[id].menge = val;
+
+      const input = document.getElementById(`pm-${id}`);
+      if (input) input.value = val;
+
+      document.querySelectorAll(`.chip[data-id="${id}"]`).forEach(chip => {
+        chip.classList.toggle('selected', parseInt(chip.dataset.val) === val);
+      });
+    }
+
+    window.prevBereich = () => { if (currentIdx > 0) renderBereich(currentIdx - 1); };
+    window.nextBereich = () => {
+      autoSave();
+      // Nur innerhalb meiner Bereiche navigieren
+      if (meineBereiche.length > 0) {
+        const meinIdx    = meineBereiche.indexOf(alleBereiche[currentIdx]?.id);
+        if (meinIdx === -1) return;
+        const naechster  = meineBereiche[meinIdx + 1];
+        if (naechster) {
+          const naechsterIdx = alleBereiche.findIndex(b => b.id === naechster);
+          if (naechsterIdx !== -1) renderBereich(naechsterIdx);
+        } else {
+          checkIfAllDone(); // Letzter Bereich → prüfen ob alle fertig
+        }
+      } else {
+        if (currentIdx < alleBereiche.length - 1) renderBereich(currentIdx + 1);
+      }
+    };
+
+    // ── Signature ──
+    window.showSignature = function() {
+      const zuBestellen = Object.entries(bestellungen).filter(([, v]) => v.bestellen === true);
+      const bearbeitet  = Object.keys(bestellungen).length;
+
+      document.getElementById('summary-grid').innerHTML = `
+        <div class="summary-row"><span class="summary-key">Mitarbeiter</span><span class="summary-val">${esc(userName)}</span></div>
+        <div class="summary-row"><span class="summary-key">Datum</span><span class="summary-val">${new Date().toLocaleDateString('de-DE')} · ${new Date().toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'})}</span></div>
+        <div class="summary-row"><span class="summary-key">Bearbeitet</span><span class="summary-val">${bearbeitet} / ${alleArtikel.length} Artikel</span></div>
+        <div class="summary-row"><span class="summary-key">Zu bestellen</span><span class="summary-val" style="color:${zuBestellen.length>0?'var(--red)':'var(--green)'}">${zuBestellen.length} Artikel</span></div>`;
+      showScreen('sig');
+      initCanvas();
+    };
+
+    window.backToCheck = () => {
+      showScreen('check');
+      renderBereich(currentIdx);
+    };
+
+    // ── Canvas ──
+    let drawing = false, hasSig = false;
+    function initCanvas() {
+      const canvas = document.getElementById('sig-canvas');
+      const ctx    = canvas.getContext('2d');
+      canvas.width  = canvas.parentElement.clientWidth;
+      canvas.height = 160;
+      ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
+      ctx.lineWidth = 2.5; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+      function getPos(e) {
+        const r = canvas.getBoundingClientRect();
+        const t = e.touches ? e.touches[0] : e;
+        return { x: (t.clientX-r.left)*(canvas.width/r.width), y: (t.clientY-r.top)*(canvas.height/r.height) };
+      }
+      canvas.addEventListener('mousedown',  e => { drawing=true; ctx.beginPath(); const p=getPos(e); ctx.moveTo(p.x,p.y); });
+      canvas.addEventListener('mousemove',  e => { if(!drawing)return; const p=getPos(e); ctx.lineTo(p.x,p.y); ctx.stroke(); hasSig=true; document.getElementById('sig-hint').style.opacity='0'; });
+      canvas.addEventListener('mouseup',    ()=>drawing=false);
+      canvas.addEventListener('mouseleave', ()=>drawing=false);
+      canvas.addEventListener('touchstart', e=>{ e.preventDefault(); drawing=true; ctx.beginPath(); const p=getPos(e); ctx.moveTo(p.x,p.y); },{passive:false});
+      canvas.addEventListener('touchmove',  e=>{ e.preventDefault(); if(!drawing)return; const p=getPos(e); ctx.lineTo(p.x,p.y); ctx.stroke(); hasSig=true; document.getElementById('sig-hint').style.opacity='0'; },{passive:false});
+      canvas.addEventListener('touchend',   ()=>drawing=false);
+    }
+
+    window.clearSig = function() {
+      const c = document.getElementById('sig-canvas');
+      c.getContext('2d').clearRect(0,0,c.width,c.height);
+      hasSig=false;
+      document.getElementById('sig-hint').style.opacity='1';
+    };
+
+    // ── Submit ──
+    window.submitCheck = async function() {
+      if (!hasSig) { alert('Bitte zuerst unterschreiben!'); return; }
+
+      const nachbestellungen = alleArtikel
+        .filter(a => bestellungen[a.id]?.bestellen === true)
+        .map(a => ({
+          id:       a.id,
+          name:     a.name,
+          location: a.location,
+          lp:       a.lp,
+          menge:    bestellungen[a.id].menge,
+          einheit:  a.minEinheit || 'Stk',
+        }));
+
+      try {
+        stopAutoSave();
+        stopSessionListener();
+
+        // ── Multi-User Session ──
+        let alleNamen = [userName];
+
+        if (sessionId) {
+          // Session als abgeschlossen markieren
+          const sessionSnap = await getDoc(doc(db, 'bestellungen_session', sessionId));
+          const sessionData = sessionSnap.exists() ? sessionSnap.data() : {};
+
+          // Alle Bestellungen aus Session + meine zusammenführen
+          const alleBestellungen = { ...(sessionData.bestellungen || {}), ...bestellungen };
+
+          // Alle Nachbestellungen neu berechnen
+          const alleNachbest = alleArtikel
+            .filter(a => alleBestellungen[a.id]?.bestellen === true)
+            .map(a => ({
+              id:      a.id,
+              name:    a.name,
+              location:a.location,
+              lp:      a.lp,
+              menge:   alleBestellungen[a.id].menge,
+              einheit: a.minEinheit || 'Stk',
+            }));
+
+          alleNamen = (sessionData.teilnehmer || [{ name: userName }]).map(t => t.name);
+
+          // Finale Bestellung zuerst speichern (vor Session-Update, damit bei Fehler nichts verloren geht)
+          await addDoc(collection(db, 'bestellungen'), {
+            mitarbeiter:     alleNamen.join(' · '),
+            mitarbeiterListe:alleNamen,
+            datum:           serverTimestamp(),
+            bestellungen:    alleBestellungen,
+            nachbestellungen:alleNachbest,
+            unterschrift:    document.getElementById('sig-canvas').toDataURL('image/png'),
+            status:          'abgeschlossen',
+            sessionId,
+          });
+
+          // Session als abgeschlossen markieren
+          await updateDoc(doc(db, 'bestellungen_session', sessionId), {
+            status: 'abgeschlossen',
+            abgeschlossen: new Date().toISOString(),
+          });
+
+          // Session löschen
+          try { await deleteDoc(doc(db, 'bestellungen_session', sessionId)); } catch(e) {}
+
+        } else {
+          // ── Single-User ──
+          await addDoc(collection(db, 'bestellungen'), {
+            mitarbeiter:     userName,
+            mitarbeiterListe:[userName],
+            datum:           serverTimestamp(),
+            bestellungen,
+            nachbestellungen,
+            unterschrift:    document.getElementById('sig-canvas').toDataURL('image/png'),
+            status:          'abgeschlossen',
+          });
+        }
+
+        // ── Draft löschen ──
+        if (autoSaveId && !sessionId) {
+          try {
+            await deleteDoc(doc(db, 'bestellungen_draft', autoSaveId));
+          } catch(e) {}
+        }
+
+        // Alle Drafts dieses Nutzers löschen
+        try {
+          const drafts = await getDocs(query(collection(db, 'bestellungen_draft'), orderBy('datum', 'desc')));
+          for (const d of drafts.docs) {
+            if (d.data().mitarbeiter === userName) {
+              await deleteDoc(doc(db, 'bestellungen_draft', d.id));
+            }
+          }
+        } catch(e) {}
+
+        autoSaveId = null;
+        sessionId  = null;
+
+        // Push Benachrichtigung
+        if (typeof PWA !== 'undefined') {
+          await PWA.notifyLagercheck(alleNamen.join(' & '), nachbestellungen.length);
+        }
+
+        alert(`✅ Lagerbestellung abgeschlossen!\n\n${nachbestellungen.length} Artikel wurden zur Bestellung gemeldet.`);
+        window.location.href = './mitarbeiter.html';
+      } catch(e) { alert('Fehler: '+e.message); }
+    };
+
+    // ── Foto Modal ──
+    window.openFoto = function(url, name) {
+      const modal = document.createElement('div');
+      modal.className = 'foto-modal';
+      modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px;';
+      modal.innerHTML = `
+        <div style="background:var(--surface);border-radius:18px;overflow:hidden;max-width:440px;width:100%;">
+          <div style="padding:14px 18px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+            <span style="font-size:0.95rem;font-weight:700;">${esc(name)}</span>
+            <button onclick="this.closest('.foto-modal').remove()" style="background:none;border:none;color:var(--muted);font-size:1.3rem;cursor:pointer;padding:4px 8px;touch-action:manipulation;">✕</button>
+          </div>
+          <img src="${esc(url)}" style="width:100%;max-height:400px;object-fit:contain;background:var(--surface2);">
+          <div style="padding:10px 16px;font-size:0.72rem;color:var(--muted);font-family:'IBM Plex Mono',monospace;text-align:center;">Soll-Zustand</div>
+        </div>`;
+      modal.onclick = e => { if(e.target===modal) modal.remove(); };
+      document.body.appendChild(modal);
+    };
+
+    // ── Screens ──
+    // ── JOIN SCREEN ──
+    async function showJoinScreen() {
+      cleanupJoinListener();
+      showScreen('join');
+
+      const q = query(collection(db, 'bestellungen_session'), orderBy('startzeit', 'desc'), limit(1));
+      joinScreenUnsubscribe = onSnapshot(q, (snap) => {
+        let openSession = null;
+        if (!snap.empty) {
+          const s = { id: snap.docs[0].id, ...snap.docs[0].data() };
+          const alter = (new Date() - new Date(s.startzeit)) / (1000*60*60);
+          if (alter < 4 && s.status !== 'abgeschlossen' && s.quelle === 'check') openSession = s;
+        }
+        window._openSession = openSession;
+        const sessionWrap = document.getElementById('join-session-wrap');
+        if (openSession) {
+          const mitarbeiter = openSession.teilnehmer?.map(t => t.name).join(', ') || '–';
+          const erledigte   = openSession.erledigteBereiche?.length || 0;
+          document.getElementById('join-session-info').innerHTML = `
+            <strong>${esc(mitarbeiter)}</strong> macht gerade die Lagerbestellung<br>
+            ${erledigte} von ${alleBereiche.length} Bereichen erledigt`;
+          sessionWrap.classList.remove('hidden');
+        } else {
+          sessionWrap.classList.add('hidden');
+        }
+        // Aktuelle Auswahl vor dem Re-Render speichern, damit quickSave von User A sie nicht zurücksetzt
+        const bereitsGewaehlt = new Set(
+          [...document.querySelectorAll('#bereich-select-list [data-selected="true"]')]
+            .map(d => d.dataset.bereichId)
+        );
+        renderBereichList(openSession);
+        // Auswahl wiederherstellen (nur für noch wählbare Bereiche)
+        bereitsGewaehlt.forEach(id => {
+          const div = document.querySelector(`#bereich-select-list [data-bereich-id="${id}"]`);
+          if (div && div.dataset.gesperrt !== 'true') toggleBereich(div, id);
+        });
+      });
+    }
+
+    function renderBereichList(openSession) {
+      const listEl    = document.getElementById('bereich-select-list');
+      listEl.innerHTML = '';
+      const gesperrte = openSession?.erledigteBereiche || [];
+      const vergeben  = openSession?.vergebeneBereiche || {};
+
+      alleBereiche.forEach(b => {
+        const istGesperrt  = gesperrte.includes(b.id);
+        const istVergeben  = vergeben[b.id] && vergeben[b.id] !== userName;
+        const artikelCount = alleArtikel.filter(a => a.bereich === b.id).length;
+        const icon = getBereichIcon(b.name);
+
+        const div = document.createElement('div');
+        div.style.cssText = `
+          display:flex;align-items:center;gap:10px;padding:10px 12px;
+          border-radius:10px;border:1.5px solid ${istGesperrt ? 'var(--green)' : 'var(--border)'};
+          background:${istGesperrt ? 'rgba(34,197,94,0.06)' : istVergeben ? 'var(--surface2)' : 'var(--surface)'};
+          opacity:${istGesperrt ? '0.6' : istVergeben ? '0.75' : '1'};
+          cursor:${istGesperrt ? 'default' : 'pointer'};
+          transition:all 0.15s;-webkit-tap-highlight-color:transparent;
+        `;
+        div.dataset.bereichId = b.id;
+        div.dataset.selected  = 'false';
+        div.dataset.gesperrt  = istGesperrt ? 'true' : 'false';
+
+        div.innerHTML = `
+          <span style="font-size:1.1rem;">${istGesperrt ? '✅' : icon}</span>
+          <div style="flex:1;">
+            <div style="font-size:0.82rem;font-weight:600;">${esc(b.name)}</div>
+            <div style="font-size:0.62rem;color:var(--muted);font-family:'IBM Plex Mono',monospace;margin-top:1px;">
+              ${artikelCount} Artikel${istGesperrt ? ' · Erledigt' : istVergeben ? ` · ${esc(vergeben[b.id])}` : ''}
+            </div>
+          </div>
+          <div class="bereich-checkbox" style="
+            width:22px;height:22px;border-radius:6px;
+            border:2px solid ${istGesperrt ? 'var(--green)' : 'var(--border)'};
+            background:${istGesperrt ? 'var(--green)' : 'transparent'};
+            display:flex;align-items:center;justify-content:center;
+            font-size:0.75rem;color:white;flex-shrink:0;
+          ">${istGesperrt ? '✓' : ''}</div>
+        `;
+
+        if (!istGesperrt) div.addEventListener('click', () => toggleBereich(div, b.id));
+        listEl.appendChild(div);
+      });
+    }
+
+    function getBereichIcon(name) {
+      const n = name.toLowerCase();
+      if (n.includes('schrank')) return '🗄️';
+      if (n.includes('regal'))   return '📦';
+      if (n.includes('sauer'))   return '🫧';
+      if (n.includes('büro'))    return '📋';
+      if (n.includes('küche'))   return '🍽️';
+      if (n.includes('wasch'))   return '🚿';
+      if (n.includes('mpg'))     return '🔋';
+      if (n.includes('medika'))  return '💊';
+      return '📁';
+    }
+
+    function toggleBereich(div, bereichId) {
+      const selected = div.dataset.selected === 'true';
+      div.dataset.selected = (!selected).toString();
+      const checkbox = div.querySelector('.bereich-checkbox');
+      if (!selected) {
+        div.style.border      = '1.5px solid var(--accent2)';
+        div.style.background  = 'rgba(14,165,233,0.08)';
+        checkbox.style.background   = 'var(--accent2)';
+        checkbox.style.borderColor  = 'var(--accent2)';
+        checkbox.textContent         = '✓';
+      } else {
+        div.style.border      = '1.5px solid var(--border)';
+        div.style.background  = 'var(--surface)';
+        checkbox.style.background   = 'transparent';
+        checkbox.style.borderColor  = 'var(--border)';
+        checkbox.textContent         = '';
+      }
+    }
+
+    // Alle Bereiche alleine machen
+    window.startAlleAllein = async function() {
+      meineBereiche = alleBereiche.map(b => b.id);
+      await startSession(false);
+    };
+
+    // Nur ausgewählte Bereiche
+    window.startMitAuswahl = async function() {
+      const selected = [...document.querySelectorAll('[data-selected="true"]')]
+        .map(d => d.dataset.bereichId);
+      if (selected.length === 0) {
+        showToast('Bitte mindestens einen Bereich auswählen', 'error');
+        return;
+      }
+      meineBereiche = selected;
+      await startSession(false);
+    };
+
+    // Laufende Session beitreten
+    window.joinSession = async function() {
+      const selected = [...document.querySelectorAll('[data-selected="true"]')]
+        .map(d => d.dataset.bereichId);
+      if (selected.length === 0) {
+        showToast('Bitte Bereiche auswählen die du übernimmst', 'error');
+        return;
+      }
+      meineBereiche = selected;
+      await startSession(true);
+    };
+
+    async function startSession(joinExisting) {
+      cleanupJoinListener();
+      try {
+        // Sicherstellen dass Firebase-Auth aktiv ist (Fallback falls Session verloren)
+        const auth = getAuth(app);
+        if (!auth.currentUser) await signInAnonymously(auth);
+
+        if (joinExisting && window._openSession) {
+          // ── Bestehende Session beitreten ──
+          sessionId = window._openSession.id;
+          const sessionRef = doc(db, 'bestellungen_session', sessionId);
+
+          // Vergabene Bereiche updaten
+          const vergeben = { ...(window._openSession.vergebeneBereiche || {}) };
+
+          // Bereiche vom vorherigen Besitzer übernehmen
+          meineBereiche.forEach(bid => {
+            vergeben[bid] = userName;
+          });
+
+          // Teilnehmer hinzufügen
+          const teilnehmer = [...(window._openSession.teilnehmer || [])];
+          if (!teilnehmer.find(t => t.name === userName)) {
+            teilnehmer.push({ name: userName, beitritt: new Date().toISOString() });
+          }
+
+          await updateDoc(sessionRef, {
+            vergebeneBereiche: vergeben,
+            teilnehmer,
+          });
+          // Erste anderen Nutzer auch updaten (Live-Änderung der Bereiche)
+          // Anderen Nutzer bekommen beim nächsten autoSave die neuen Bereiche
+
+        } else {
+          // ── Neue Session erstellen (auch wenn alleine!) ──
+          // Verwaiste Solo-Session des aktuellen Nutzers aufräumen (verhindert blockierte Bereichsauswahl)
+          if (window._openSession) {
+            const alteTeilnehmer = window._openSession.teilnehmer || [];
+            const nurIch = alteTeilnehmer.length === 0 ||
+              (alteTeilnehmer.length === 1 && alteTeilnehmer[0].name === userName);
+            if (nurIch) {
+              try { await deleteDoc(doc(db, 'bestellungen_session', window._openSession.id)); } catch(e) {}
+            }
+          }
+
+          // Andere können dann jederzeit beitreten
+          const vergeben = {};
+          meineBereiche.forEach(bid => vergeben[bid] = userName);
+
+          const sessionRef = await addDoc(collection(db, 'bestellungen_session'), {
+            startzeit:          new Date().toISOString(),
+            status:             'aktiv',
+            quelle:             'check',
+            teilnehmer:         [{ name: userName, beitritt: new Date().toISOString() }],
+            vergebeneBereiche:  vergeben,
+            erledigteBereiche:  [],
+            bestellungen:       {},
+          });
+          sessionId    = sessionRef.id;
+        }
+
+        autoSaveId = sessionId;
+
+        // currentIdx auf ersten meiner Bereiche setzen
+        const ersterIdx = alleBereiche.findIndex(b => meineBereiche.includes(b.id));
+        currentIdx = ersterIdx >= 0 ? ersterIdx : 0;
+
+        showScreen('check');
+        startAutoSave();
+        startSessionListener();
+        renderBereich(currentIdx);
+
+      } catch(e) {
+        showToast('Fehler: ' + e.message, 'error');
+      }
+    }
+
+    function showScreen(name) {
+      ['pin','join','check','sig','wait'].forEach(s =>
+        document.getElementById(`screen-${s}`).classList.toggle('hidden', s !== name)
+      );
+    }
+  </script>
+  <script src="../js/pwa.js"></script>
+</body>
+</html>
