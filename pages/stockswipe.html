@@ -869,7 +869,7 @@
     }
 
     // ── Alle fertig? ──
-    async function checkIfAllDone() {
+    window.checkIfAllDone = async function() {
       if (!sessionId) { showSignature(); return; }
       try {
         await updateDoc(doc(db, 'bestellungen_session', sessionId), {
