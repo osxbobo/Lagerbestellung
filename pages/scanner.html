@@ -49,11 +49,11 @@
     .btn.bt-on { background:rgba(34,197,94,0.12); border-color:var(--green); color:var(--green); }
 
     /* Camera */
-    .cam-wrap { border-radius:10px; overflow:hidden; background:#000; position:relative; display:none; }
+    .cam-wrap { border-radius:10px; overflow:hidden; background:#000; position:relative; display:none; aspect-ratio:4/3; }
     .cam-wrap.show { display:block; }
-    #video { width:100%; max-height:45vh; object-fit:cover; display:block; }
+    #video { width:100%; height:100%; object-fit:cover; display:block; }
     .cam-frame { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; pointer-events:none; }
-    .cam-frame div { width:200px; height:200px; border:2px solid var(--accent); border-radius:8px; }
+    .cam-frame div { width:65%; max-width:240px; aspect-ratio:1; border:2px solid var(--accent); border-radius:8px; }
     .cam-btns { display:flex; gap:6px; }
     .cam-btn { flex:1; height:34px; border-radius:8px; border:1px solid var(--border); background:var(--surface2); color:var(--text2); font-family:'DM Sans',sans-serif; font-size:0.72rem; font-weight:600; cursor:pointer; touch-action:manipulation; }
     .cam-btn.on { background:var(--accent); border-color:var(--accent); color:#fff; }
@@ -558,7 +558,7 @@
         ]);
         reader = new ZXing.BrowserMultiFormatReader(hints);
         await reader.decodeFromConstraints(
-          {video:{facingMode:camSide==='back'?'environment':'user',width:{ideal:1280},height:{ideal:720},frameRate:{ideal:15,max:30}}},
+          {video:{facingMode:camSide==='back'?'environment':'user',width:{ideal:1280},height:{ideal:720}}},
           'video',
           result => { if (result) onScan(result.getText(), 'cam'); }
         );
@@ -609,7 +609,8 @@
     }
 
     // Echte Inputfelder die der Nutzer selbst befüllt
-    const USER_INPUTS = ['inp-search', 'inp-lot', 'inp-verfall'];
+    // inp-verfall ist bewusst nicht hier – BT Scanner soll auch bei fokussiertem Datumsfeld funktionieren
+    const USER_INPUTS = ['inp-search', 'inp-lot'];
 
     function isUserInputFocused() {
       return USER_INPUTS.includes(document.activeElement?.id);

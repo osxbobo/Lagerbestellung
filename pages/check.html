@@ -1482,7 +1482,7 @@
         if (!snap.empty) {
           const s = { id: snap.docs[0].id, ...snap.docs[0].data() };
           const alter = (new Date() - new Date(s.startzeit)) / (1000*60*60);
-          if (alter < 4 && s.status !== 'abgeschlossen') openSession = s;
+          if (alter < 4 && s.status !== 'abgeschlossen' && s.quelle === 'check') openSession = s;
         }
         window._openSession = openSession;
         const sessionWrap = document.getElementById('join-session-wrap');
@@ -1496,7 +1496,17 @@
         } else {
           sessionWrap.classList.add('hidden');
         }
+        // Aktuelle Auswahl vor dem Re-Render speichern, damit quickSave von User A sie nicht zurücksetzt
+        const bereitsGewaehlt = new Set(
+          [...document.querySelectorAll('#bereich-select-list [data-selected="true"]')]
+            .map(d => d.dataset.bereichId)
+        );
         renderBereichList(openSession);
+        // Auswahl wiederherstellen (nur für noch wählbare Bereiche)
+        bereitsGewaehlt.forEach(id => {
+          const div = document.querySelector(`#bereich-select-list [data-bereich-id="${id}"]`);
+          if (div && div.dataset.gesperrt !== 'true') toggleBereich(div, id);
+        });
       });
     }
 
@@ -1651,6 +1661,7 @@
           const sessionRef = await addDoc(collection(db, 'bestellungen_session'), {
             startzeit:          new Date().toISOString(),
             status:             'aktiv',
+            quelle:             'check',
             teilnehmer:         [{ name: userName, beitritt: new Date().toISOString() }],
             vergebeneBereiche:  vergeben,
             erledigteBereiche:  [],
