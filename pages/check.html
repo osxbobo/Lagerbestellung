@@ -620,6 +620,11 @@
        DATEN LADEN
     ════════════════════════════════════════ */
     async function loadCheckData() {
+      // Auth sicherstellen – auch wenn User per sessionStorage wiederhergestellt wird
+      // (checkAuth() ruft signInAnonymously nicht auf, pinConfirm() schon)
+      const auth = getAuth(app);
+      if (!auth.currentUser) await signInAnonymously(auth);
+
       const [bSnap, aSnap] = await Promise.all([
         getDocs(query(collection(db, 'bereiche'), orderBy('reihenfolge'))),
         getDocs(collection(db, 'artikel')),
