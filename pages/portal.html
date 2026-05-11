@@ -1260,6 +1260,20 @@
       } catch(e) { toast(e.message, 'error'); }
     };
 
+    window.updateArtikelLP = async function(id, lp) {
+      try {
+        await updateDoc(doc(db, 'artikel', id), { lp });
+        const idx = alleArtikel.findIndex(a => a.id === id);
+        if (idx >= 0) alleArtikel[idx].lp = lp;
+        toast('LP gespeichert');
+      } catch(e) { toast(e.message, 'error'); }
+    };
+
+    function getLpOptions(currentLp) {
+      const lps = [...new Set(alleArtikel.map(a => a.lp).filter(Boolean))].sort((a,b) => naturalSort(a,b));
+      return lps.map(lp => `<option value="${esc(lp)}"${lp === currentLp ? ' selected' : ''}>${esc(lp)}</option>`).join('');
+    }
+
     window.renderFotos = function renderFotos() {
       const grid    = document.getElementById('foto-grid');
       const search  = (document.getElementById('foto-search')?.value  || '').toLowerCase();
@@ -1310,9 +1324,15 @@
               <button class="foto-upload-btn" style="flex:1;border:none;text-align:left;" onclick="triggerFotoUpload('${esc(a.id)}','lager')">🗄️ Lagerortfoto</button>
               ${delL}
             </div>
-            <div class="foto-name">
-              ${a.lp ? `<div style="font-size:0.6rem;color:var(--accent2);margin-bottom:2px;font-family:'IBM Plex Mono',monospace;">${esc(a.lp)}</div>` : ''}
+            <div class="foto-name" style="padding-bottom:4px;">
               ${esc(short)}
+            </div>
+            <div style="padding:0 8px 8px;">
+              <select onchange="updateArtikelLP('${esc(a.id)}', this.value)"
+                style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:4px 6px;font-size:0.68rem;color:var(--accent2);font-family:'IBM Plex Mono',monospace;cursor:pointer;">
+                <option value="">— kein LP —</option>
+                ${getLpOptions(a.lp)}
+              </select>
             </div>
           </div>`;
       }).join('') || '<div class="empty-state">Keine Artikel gefunden</div>';
