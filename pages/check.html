@@ -636,11 +636,17 @@
       selectedBereichId = null;
       document.getElementById('btn-join-start').disabled = true;
       document.getElementById('btn-join-start').textContent = 'Bereich auswählen…';
+      document.getElementById('join-session-badge').classList.add('hidden');
+      document.getElementById('join-title').textContent = 'Neue Lagerbestellung';
+      document.getElementById('join-sub').textContent = 'Wähle deinen Bereich';
+
+      // Bereiche sofort anzeigen (unabhängig von Session-Query)
+      renderBereichList(null);
 
       // Alten Join-Screen-Listener stoppen
       if (joinUnsubscribe) { joinUnsubscribe(); joinUnsubscribe = null; }
 
-      // Live-Listener auf alle aktiven Sessions (erkennt auch neu erstellte Sessions)
+      // Live-Listener auf aktive Sessions
       const q = query(collection(db, 'bestellungen_session'), where('status', '==', 'aktiv'), limit(1));
       joinUnsubscribe = onSnapshot(q, snap => {
         if (!snap.empty) {
@@ -648,7 +654,7 @@
           const data = d.data();
           const startMs = data.startzeit?.toMillis?.() ?? Date.now();
           if (Date.now() - startMs < 8 * 3600 * 1000) {
-            // Session gefunden – Session-Listener starten falls noch nicht aktiv
+            // Session gefunden
             if (sessionId !== d.id) {
               sessionId = d.id;
               startSessionListener(d.id);
@@ -667,6 +673,7 @@
         }
         // Keine aktive Session
         if (!sessionId) {
+          sessionId = null;
           document.getElementById('join-session-badge').classList.add('hidden');
           document.getElementById('join-title').textContent = 'Neue Lagerbestellung';
           document.getElementById('join-sub').textContent = 'Wähle deinen Bereich';
@@ -674,7 +681,10 @@
           if (!btn.textContent.includes('→')) btn.textContent = 'Session starten →';
           renderBereichList(null);
         }
-      }, () => {});
+      }, () => {
+        // Query fehlgeschlagen – Bereiche trotzdem anzeigen
+        renderBereichList(null);
+      });
     }
 
     function renderBereichList(sessionData) {
