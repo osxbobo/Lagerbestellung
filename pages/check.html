@@ -640,8 +640,9 @@
       document.getElementById('join-title').textContent = 'Neue Lagerbestellung';
       document.getElementById('join-sub').textContent = 'Wähle deinen Bereich';
 
-      // Bereiche sofort anzeigen (unabhängig von Session-Query)
-      renderBereichList(null);
+      // Bereiche sofort anzeigen – mit letzten bekannten Session-Daten wenn verfügbar
+      // (verhindert orange Flash und macht erledigte Bereiche sofort nicht-wählbar)
+      renderBereichList(latestSessionData || null);
 
       // Alten Join-Screen-Listener stoppen
       if (joinUnsubscribe) { joinUnsubscribe(); joinUnsubscribe = null; }
@@ -1303,7 +1304,8 @@
       // "Weiteren Bereich" Button – nur anzeigen wenn noch freie/abgebrochene Bereiche
       const hasFree = alleBereiche.some(b => {
         const s = bereichStatus[b.id]?.status;
-        return s === 'frei' || s === 'abgebrochen';
+        // kein Eintrag = implizit 'frei'
+        return !s || s === 'frei' || s === 'abgebrochen';
       });
       const btnWeiterer = document.getElementById('btn-weiterer-bereich');
       if (btnWeiterer) btnWeiterer.style.display = hasFree ? '' : 'none';
