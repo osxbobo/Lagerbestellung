@@ -516,6 +516,18 @@
     </div>
   </div>
 
+  <!-- ── BLOCK SCREEN (aktive check.html Session) ── -->
+  <div id="screen-blocked" class="pin-screen hidden">
+    <div class="pin-box" style="text-align:center;gap:20px;">
+      <div style="font-size:3rem;">🔒</div>
+      <div style="font-size:1.2rem;font-weight:700;">Lagerbestellung läuft</div>
+      <div style="font-size:0.88rem;color:var(--muted);">StockSwipe ist während einer laufenden Teambestellung gesperrt.</div>
+      <div id="block-session-info" style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.25);border-radius:12px;padding:14px;font-size:0.85rem;color:var(--text2);line-height:1.5;"></div>
+      <div style="font-size:0.72rem;color:var(--muted);font-family:'IBM Plex Mono',monospace;">Wird automatisch entsperrt wenn die Bestellung abgeschlossen ist…</div>
+      <button onclick="window.location.href='./mitarbeiter.html'" class="btn btn-ghost btn-full">← Zurück</button>
+    </div>
+  </div>
+
   <!-- ── BEREICHS-AUSWAHL ── -->
   <div id="screen-join" class="pin-screen hidden">
     <div class="pin-box">
@@ -607,7 +619,7 @@
   <script type="module">
     import { initializeApp }  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-    import { getFirestore, collection, getDocs, doc, getDoc, addDoc, updateDoc, deleteDoc, query, orderBy, limit, serverTimestamp, runTransaction, onSnapshot, arrayUnion }
+    import { getFirestore, collection, getDocs, doc, getDoc, addDoc, updateDoc, deleteDoc, query, orderBy, where, limit, serverTimestamp, runTransaction, onSnapshot, arrayUnion }
                               from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
     import { firebaseConfig } from "../js/firebase-config.js";
 
@@ -1056,8 +1068,9 @@
       const bereichObj  = alleBereiche.find(b => b.id === artikel.bereich);
       const bereichName = bereichObj ? bereichObj.name : '';
 
-      const photoHtml = artikel.fotoUrl
-        ? `<img class="card-photo" src="${esc(artikel.fotoUrl)}" alt="${esc(artikel.name)}">`
+      const cardFoto  = artikel.stockswipeFotoUrl || artikel.fotoUrl;
+      const photoHtml = cardFoto
+        ? `<img class="card-photo" src="${esc(cardFoto)}" alt="${esc(artikel.name)}">`
         : `<div class="card-photo-placeholder">📦</div>`;
 
       const minMaxHtml = (artikel.min != null || artikel.max != null) ? `
@@ -1392,11 +1405,70 @@
       } catch(e) { alert('Fehler: ' + e.message); }
     };
 
+    // ── BLOCK-SCREEN: aktive check.html Session erkennen ──
+    let blockUnsubscribe = null;
+
+    async function checkForActiveCheckSession() {
+      try {
+        const q    = query(collection(db, 'bestellungen_session'), where('status', '==', 'aktiv'), limit(1));
+        const snap = await getDocs(q);
+        if (!snap.empty) {
+          const d       = snap.docs[0];
+          const data    = d.data();
+          const startMs = data.startzeit?.toMillis?.() ?? Date.now();
+          if (Date.now() - startMs < 8 * 3600 * 1000) {
+            // Prüfen ob noch jemand aktiv ist (frischer Heartbeat < 90s)
+            const heartbeats = data.heartbeats ?? {};
+            const hasAliveUser = Object.values(heartbeats).some(ts => {
+              const lastBeat = ts?.toMillis?.() ?? 0;
+              return lastBeat > 0 && (Date.now() - lastBeat) < 90_000;
+            });
+            if (hasAliveUser) {
+              showBlockScreen(d.id, data);
+              return true;
+            }
+            // Zombie-Session – alle Heartbeats abgelaufen → löschen
+            try { await deleteDoc(d.ref); } catch(e2) {}
+          }
+        }
+      } catch(e) {}
+      return false;
+    }
+
+    function showBlockScreen(sid, data) {
+      const namen = (data.teilnehmer || []).map(t => t.name).join(', ') || 'Ein Kollege';
+      const offen = Object.values(data.bereichStatus || {}).filter(v => v.status !== 'erledigt' && v.status !== 'abgebrochen').length;
+      document.getElementById('block-session-info').innerHTML =
+        `<strong>${esc(namen)}</strong> macht gerade die Lagerbestellung.<br>
+         ${offen} Bereich${offen !== 1 ? 'e' : ''} noch offen.`;
+
+      ['pin','join','check','sig','wait'].forEach(s => {
+        const el = document.getElementById(`screen-${s}`);
+        if (el) el.classList.add('hidden');
+      });
+      document.getElementById('screen-blocked').classList.remove('hidden');
+
+      if (blockUnsubscribe) blockUnsubscribe();
+      blockUnsubscribe = onSnapshot(doc(db, 'bestellungen_session', sid), snap => {
+        if (!snap.exists() || snap.data().status === 'abgeschlossen') {
+          if (blockUnsubscribe) { blockUnsubscribe(); blockUnsubscribe = null; }
+          document.getElementById('screen-blocked').classList.add('hidden');
+          document.getElementById('screen-pin').classList.remove('hidden');
+          showToast('Lagerbestellung abgeschlossen – StockSwipe ist wieder verfügbar ✅');
+        }
+      });
+    }
+
     // ── DIREKT STARTEN (kein Join Screen, keine gemeinsame Bestellung) ──
     async function startDirectly() {
       try {
         const auth = getAuth(app);
         if (!auth.currentUser) await signInAnonymously(auth);
+
+        // Prüfen ob aktive Team-Bestellung läuft
+        const blocked = await checkForActiveCheckSession();
+        if (blocked) return;
+
         meineBereiche = alleBereiche.map(b => b.id);
         await checkForDraft();
         initSwipeMode();

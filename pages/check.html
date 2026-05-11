@@ -43,7 +43,102 @@
     .name-input::placeholder { color: var(--muted); }
     .pin-error { text-align: center; font-size: 0.82rem; color: var(--red); min-height: 22px; }
 
-    /* ── ERKLÄRUNG ── */
+    /* ── JOIN SCREEN – Bereichsauswahl ── */
+    .join-screen { flex: 1; display: flex; flex-direction: column; padding: 20px; gap: 0; overflow-y: auto; }
+    .join-box { width: 100%; max-width: 480px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; padding-bottom: 100px; }
+
+    .session-badge {
+      background: rgba(14,165,233,0.08);
+      border: 1px solid rgba(14,165,233,0.3);
+      border-radius: 12px;
+      padding: 12px 14px;
+      font-size: 0.82rem;
+    }
+    .session-badge-title { font-weight: 700; color: var(--accent2); margin-bottom: 4px; font-size: 0.78rem; }
+
+    /* Bereich-Row */
+    .bereich-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 13px 14px;
+      border-radius: 12px;
+      border: 1.5px solid var(--border);
+      background: var(--surface);
+      cursor: pointer;
+      transition: all 0.15s;
+      -webkit-tap-highlight-color: transparent;
+      touch-action: manipulation;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    .bereich-row.selectable:active { transform: scale(0.98); }
+    .bereich-row.selected { border-color: var(--accent2); background: rgba(14,165,233,0.08); }
+    .bereich-row.blocked  { opacity: 0.55; cursor: default; pointer-events: none; }
+    .bereich-row.erledigt { border-color: var(--green); background: rgba(34,197,94,0.05); cursor: default; pointer-events: none; }
+    .bereich-row.abgebrochen { border-color: var(--red); background: rgba(239,68,68,0.05); cursor: pointer; }
+    .bereich-row.abgebrochen:active { transform: scale(0.98); }
+
+    .status-indicator { width: 14px; height: 14px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+    .status-dot { width: 12px; height: 12px; border-radius: 50%; }
+    .dot-frei       { background: #f97316; }
+    .dot-erledigt   { background: #22c55e; }
+    .dot-abgebrochen{ background: #ef4444; }
+
+    .bereich-row-info { flex: 1; min-width: 0; }
+    .bereich-row-name { font-size: 0.9rem; font-weight: 700; }
+    .bereich-row-sub  { font-size: 0.65rem; color: var(--muted); font-family: 'IBM Plex Mono', monospace; margin-top: 2px; }
+
+    .bereich-radio {
+      width: 20px; height: 20px; border-radius: 50%;
+      border: 2px solid var(--border);
+      background: transparent;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; transition: all 0.15s;
+    }
+    .bereich-row.selected .bereich-radio {
+      border-color: var(--accent2);
+      background: var(--accent2);
+    }
+    .bereich-radio::after {
+      content: '';
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: white;
+      opacity: 0;
+      transition: opacity 0.15s;
+    }
+    .bereich-row.selected .bereich-radio::after { opacity: 1; }
+
+    /* Floating bottom bar on join screen */
+    .join-bottom {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      padding: 12px 16px;
+      padding-bottom: max(12px, env(safe-area-inset-bottom));
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      z-index: 20;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+
+    /* ── CHECK SCREEN ── */
+    .check-screen { flex: 1; display: flex; flex-direction: column; padding-bottom: 88px; }
+    .check-header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 14px 16px 12px;
+      position: sticky;
+      top: 56px;
+      z-index: 10;
+    }
+    .check-bereich-name { font-weight: 700; color: var(--accent); font-size: 1rem; margin-bottom: 8px; }
+    .check-body { flex: 1; padding: 14px; display: flex; flex-direction: column; gap: 14px; max-width: 800px; margin: 0 auto; width: 100%; }
+
     .erklaerung {
       background: rgba(14,165,233,0.08);
       border: 1px solid rgba(14,165,233,0.25);
@@ -58,379 +153,138 @@
     .erklaerung-text { font-size: 0.82rem; color: var(--accent2); line-height: 1.5; }
     .erklaerung-text strong { font-weight: 700; }
 
-    /* ── CHECK SCREEN ── */
-    .check-screen { flex: 1; display: flex; flex-direction: column; padding-bottom: 88px; }
-
-    .check-header {
-      background: var(--surface);
-      border-bottom: 1px solid var(--border);
-      padding: 14px 16px 12px;
-      position: sticky;
-      top: 56px;
-      z-index: 10;
-    }
-
-    .check-bereich-name {
-      font-weight: 700;
-      color: var(--accent);
-      font-size: 1rem;
-      margin-bottom: 8px;
-    }
-
-    .check-body {
-      flex: 1;
-      padding: 14px;
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-      max-width: 800px;
-      margin: 0 auto;
-      width: 100%;
-    }
-
     /* ── ARTIKEL CARD ── */
-    .artikel-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      overflow: hidden;
-      transition: border-color 0.2s, box-shadow 0.2s;
-    }
-
-    .artikel-card.bestellen {
-      border-color: var(--red);
-      box-shadow: 0 0 0 2px rgba(239,68,68,0.15);
-    }
-
-    .artikel-card.ok {
-      border-color: var(--green);
-      box-shadow: 0 0 0 2px rgba(34,197,94,0.1);
-    }
-
-    /* Artikel Header */
-    .artikel-header {
-      padding: 16px 16px 12px;
-      display: flex;
-      gap: 12px;
-      align-items: flex-start;
-    }
-
+    .artikel-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; transition: border-color 0.2s, box-shadow 0.2s; }
+    .artikel-card.bestellen { border-color: var(--red);   box-shadow: 0 0 0 2px rgba(239,68,68,0.15); }
+    .artikel-card.ok        { border-color: var(--green); box-shadow: 0 0 0 2px rgba(34,197,94,0.10); }
+    .artikel-header { padding: 16px 16px 12px; display: flex; gap: 12px; align-items: flex-start; }
     .artikel-foto-btn {
-      width: 56px;
-      height: 56px;
-      border-radius: 10px;
-      border: 1px solid var(--border);
-      background: var(--surface2);
-      overflow: hidden;
-      flex-shrink: 0;
-      cursor: pointer;
-      touch-action: manipulation;
-      -webkit-tap-highlight-color: transparent;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1.4rem;
-      transition: opacity 0.15s;
-      position: relative;
+      width: 56px; height: 56px; border-radius: 10px; border: 1px solid var(--border);
+      background: var(--surface2); overflow: hidden; flex-shrink: 0; cursor: pointer;
+      touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+      display: flex; align-items: center; justify-content: center; font-size: 1.4rem;
+      transition: opacity 0.15s; position: relative;
     }
-
     .artikel-foto-btn:active { opacity: 0.7; }
     .artikel-foto-btn img { width: 100%; height: 100%; object-fit: cover; }
-
-    .foto-overlay {
-      position: absolute;
-      inset: 0;
-      background: rgba(0,0,0,0.3);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 1rem;
-    }
-
     .artikel-info { flex: 1; min-width: 0; }
-
-    .artikel-name {
-      font-size: 1rem;
-      font-weight: 700;
-      line-height: 1.3;
-      margin-bottom: 4px;
-    }
-
-    .artikel-lp {
-      font-size: 0.72rem;
-      color: var(--muted);
-      font-family: 'IBM Plex Mono', monospace;
-      margin-bottom: 8px;
-    }
-
-    /* MIN MAX – groß und deutlich */
-    .minmax-row {
-      display: flex;
-      gap: 8px;
-    }
-
-    .minmax-badge {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      background: var(--surface2);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 5px 12px;
-      min-width: 64px;
-    }
-
-    .minmax-label {
-      font-size: 0.58rem;
-      color: var(--muted);
-      font-family: 'IBM Plex Mono', monospace;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-    }
-
-    .minmax-value {
-      font-size: 1.1rem;
-      font-weight: 800;
-      font-family: 'IBM Plex Mono', monospace;
-      color: var(--text);
-      line-height: 1.2;
-    }
-
-    .minmax-unit {
-      font-size: 0.65rem;
-      color: var(--text2);
-      font-family: 'IBM Plex Mono', monospace;
-    }
-
+    .artikel-name { font-size: 1rem; font-weight: 700; line-height: 1.3; margin-bottom: 4px; }
+    .artikel-lp   { font-size: 0.72rem; color: var(--muted); font-family: 'IBM Plex Mono', monospace; margin-bottom: 8px; }
+    .minmax-row { display: flex; gap: 8px; }
+    .minmax-badge { display: flex; flex-direction: column; align-items: center; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 5px 12px; min-width: 64px; }
+    .minmax-label { font-size: 0.58rem; color: var(--muted); font-family: 'IBM Plex Mono', monospace; text-transform: uppercase; letter-spacing: 0.1em; }
+    .minmax-value { font-size: 1.1rem; font-weight: 800; font-family: 'IBM Plex Mono', monospace; color: var(--text); line-height: 1.2; }
+    .minmax-unit  { font-size: 0.65rem; color: var(--text2); font-family: 'IBM Plex Mono', monospace; }
     .minmax-badge.min .minmax-value { color: var(--yellow); }
-    .minmax-badge.max .minmax-value { color: var(--green); }
-
-    /* Hinweis */
-    .artikel-hinweis {
-      font-size: 0.72rem;
-      color: var(--accent2);
-      padding: 0 16px 10px;
-    }
-
-    /* ── BESTELL SECTION ── */
-    .bestell-divider {
-      height: 1px;
-      background: var(--border);
-      margin: 0 16px;
-    }
-
-    .bestell-section {
-      padding: 14px 16px 16px;
-    }
-
-    .bestell-frage {
-      font-size: 0.82rem;
-      font-weight: 600;
-      color: var(--text2);
-      margin-bottom: 12px;
-    }
-
-    /* Ja/Nein Toggle */
-    .ja-nein-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-      margin-bottom: 14px;
-    }
-
+    .minmax-badge.max .minmax-value { color: var(--green);  }
+    .artikel-hinweis { font-size: 0.72rem; color: var(--accent2); padding: 0 16px 10px; }
+    .bestell-divider { height: 1px; background: var(--border); margin: 0 16px; }
+    .bestell-section { padding: 14px 16px 16px; }
+    .bestell-frage { font-size: 0.82rem; font-weight: 600; color: var(--text2); margin-bottom: 12px; }
+    .ja-nein-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
     .ja-nein-btn {
-      height: 56px;
-      border-radius: 12px;
-      border: 2px solid var(--border);
-      background: var(--surface2);
-      font-family: 'DM Sans', sans-serif;
-      font-size: 1rem;
-      font-weight: 700;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-      touch-action: manipulation;
-      -webkit-tap-highlight-color: transparent;
-      transition: all 0.15s;
-      user-select: none;
-      -webkit-user-select: none;
+      height: 56px; border-radius: 12px; border: 2px solid var(--border);
+      background: var(--surface2); font-family: 'DM Sans', sans-serif;
+      font-size: 1rem; font-weight: 700; cursor: pointer;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+      transition: all 0.15s; user-select: none; -webkit-user-select: none;
     }
-
     .ja-nein-btn:active { transform: scale(0.95); }
-
-    .ja-nein-btn.nein.selected {
-      background: rgba(34,197,94,0.12);
-      border-color: var(--green);
-      color: var(--green);
-    }
-
-    .ja-nein-btn.ja.selected {
-      background: rgba(239,68,68,0.12);
-      border-color: var(--red);
-      color: var(--red);
-    }
-
-    /* Mengenauswahl (nur wenn Ja) */
-    .menge-wrap {
-      display: none;
-      flex-direction: column;
-      gap: 10px;
-    }
-
+    .ja-nein-btn.nein.selected { background: rgba(34,197,94,0.12); border-color: var(--green); color: var(--green); }
+    .ja-nein-btn.ja.selected   { background: rgba(239,68,68,0.12);  border-color: var(--red);   color: var(--red);   }
+    .menge-wrap { display: none; flex-direction: column; gap: 10px; }
     .menge-wrap.visible { display: flex; }
-
-    .menge-label {
-      font-size: 0.78rem;
-      color: var(--text2);
-      font-weight: 600;
-    }
-
-    /* Schnell-Chips */
-    .chips-row {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-
+    .menge-label { font-size: 0.78rem; color: var(--text2); font-weight: 600; }
+    .chips-row { display: flex; gap: 8px; flex-wrap: wrap; }
     .chip {
-      min-width: 52px;
-      height: 52px;
-      border-radius: 12px;
-      border: 2px solid var(--border);
-      background: var(--surface2);
-      color: var(--text);
-      font-family: 'IBM Plex Mono', monospace;
-      font-size: 1.05rem;
-      font-weight: 700;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 0 10px;
-      touch-action: manipulation;
-      -webkit-tap-highlight-color: transparent;
-      transition: all 0.12s;
-      user-select: none;
-      -webkit-user-select: none;
+      min-width: 52px; height: 52px; border-radius: 12px; border: 2px solid var(--border);
+      background: var(--surface2); color: var(--text);
+      font-family: 'IBM Plex Mono', monospace; font-size: 1.05rem; font-weight: 700;
+      cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0 10px;
+      touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+      transition: all 0.12s; user-select: none; -webkit-user-select: none;
     }
-
     .chip:active, .chip.pressed { transform: scale(0.89); }
     .chip.selected { background: var(--red); border-color: var(--red); color: white; }
-
-    /* Plus/Minus */
-    .plusminus-row {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      justify-content: flex-start;
-    }
-
+    .plusminus-row { display: flex; align-items: center; gap: 10px; justify-content: flex-start; }
     .pm-btn {
-      width: 56px;
-      height: 56px;
-      border-radius: 14px;
-      border: 2px solid var(--border);
-      background: var(--surface2);
-      color: var(--text);
-      font-size: 1.6rem;
-      font-weight: 600;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-      touch-action: manipulation;
-      -webkit-tap-highlight-color: transparent;
-      transition: all 0.1s;
-      user-select: none;
-      -webkit-user-select: none;
+      width: 56px; height: 56px; border-radius: 14px; border: 2px solid var(--border);
+      background: var(--surface2); color: var(--text); font-size: 1.6rem; font-weight: 600;
+      cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+      touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+      transition: all 0.1s; user-select: none; -webkit-user-select: none;
     }
-
     .pm-btn:active, .pm-btn.pressed { transform: scale(0.88); background: var(--surface3); }
-    .pm-btn.minus:active, .pm-btn.minus.pressed { border-color: var(--red); color: var(--red); }
+    .pm-btn.minus:active, .pm-btn.minus.pressed { border-color: var(--red);   color: var(--red);   }
     .pm-btn.plus:active,  .pm-btn.plus.pressed  { border-color: var(--green); color: var(--green); }
-
     .pm-display {
-      width: 80px;
-      flex-shrink: 0;
-      height: 56px;
-      border-radius: 14px;
-      border: 2px solid var(--border);
-      background: var(--surface2);
-      font-family: 'IBM Plex Mono', monospace;
-      font-size: 1.4rem;
-      font-weight: 800;
-      color: var(--red);
-      text-align: center;
-      outline: none;
-      transition: border-color 0.2s;
+      width: 80px; flex-shrink: 0; height: 56px; border-radius: 14px;
+      border: 2px solid var(--border); background: var(--surface2);
+      font-family: 'IBM Plex Mono', monospace; font-size: 1.4rem; font-weight: 800;
+      color: var(--red); text-align: center; outline: none; transition: border-color 0.2s;
     }
-
     .pm-display:focus { border-color: var(--red); }
 
-    /* ── FIXED BOTTOM NAV ── */
+    /* ── FIXED BOTTOM NAV (check screen) ── */
     .bottom-nav {
-      position: fixed;
-      bottom: 0; left: 0; right: 0;
-      background: var(--surface);
-      border-top: 1px solid var(--border);
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: var(--surface); border-top: 1px solid var(--border);
       padding: 12px 16px;
       padding-bottom: max(12px, env(safe-area-inset-bottom));
-      display: flex;
-      gap: 10px;
-      z-index: 20;
-      backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
+      display: flex; gap: 10px; z-index: 20;
+      backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
     }
-
     .bnav-btn {
-      flex: 1;
-      height: 56px;
-      border-radius: 14px;
-      border: 2px solid var(--border);
-      background: var(--surface2);
-      color: var(--text);
-      font-family: 'DM Sans', sans-serif;
-      font-size: 1rem;
-      font-weight: 700;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 6px;
-      touch-action: manipulation;
-      -webkit-tap-highlight-color: transparent;
-      transition: all 0.15s;
-      user-select: none;
+      flex: 1; height: 56px; border-radius: 14px; border: 2px solid var(--border);
+      background: var(--surface2); color: var(--text);
+      font-family: 'DM Sans', sans-serif; font-size: 1rem; font-weight: 700;
+      cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;
+      touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+      transition: all 0.15s; user-select: none;
     }
+    .bnav-btn:active  { transform: scale(0.96); }
+    .bnav-btn:disabled{ opacity: 0.3; cursor: not-allowed; transform: none; }
+    .bnav-btn.finish  { background: var(--green); border-color: var(--green); color: white; flex: 2; }
 
-    .bnav-btn:active { transform: scale(0.96); }
-    .bnav-btn:disabled { opacity: 0.3; cursor: not-allowed; transform: none; }
-    .bnav-btn.weiter  { background: var(--accent);  border-color: var(--accent);  color: white; flex: 2; }
-    .bnav-btn.finish  { background: var(--green);   border-color: var(--green);   color: white; flex: 2; }
+    /* ── WAIT SCREEN ── */
+    .wait-screen { flex: 1; display: flex; flex-direction: column; padding: 20px; overflow-y: auto; }
+    .wait-box { width: 100%; max-width: 480px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; padding-bottom: 100px; }
+
+    .wait-bereich-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 14px; border-radius: 12px;
+      border: 1.5px solid var(--border);
+      background: var(--surface);
+    }
+    .wait-bereich-row.w-erledigt   { border-color: var(--green);  background: rgba(34,197,94,0.05); }
+    .wait-bereich-row.w-abgebrochen{ border-color: var(--red);    background: rgba(239,68,68,0.05); }
+    .wait-bereich-row.w-gesperrt   { border-color: var(--accent2); background: rgba(14,165,233,0.05); }
+    .wait-bereich-row.w-frei       { opacity: 0.6; }
+
+    .wait-bottom {
+      position: fixed; bottom: 0; left: 0; right: 0;
+      background: var(--surface); border-top: 1px solid var(--border);
+      padding: 12px 16px;
+      padding-bottom: max(12px, env(safe-area-inset-bottom));
+      z-index: 20;
+      backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+    }
 
     /* ── UNTERSCHRIFT ── */
     .sig-screen { flex: 1; display: flex; align-items: center; justify-content: center; padding: 20px; }
     .sig-box { width: 100%; max-width: 480px; display: flex; flex-direction: column; gap: 18px; }
     .sig-title { font-size: 1.1rem; font-weight: 700; text-align: center; }
     .summary-grid { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
-    .summary-row { display: flex; justify-content: space-between; padding: 13px 16px; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
+    .summary-row  { display: flex; justify-content: space-between; padding: 13px 16px; border-bottom: 1px solid var(--border); font-size: 0.9rem; }
     .summary-row:last-child { border-bottom: none; }
-    .summary-key { color: var(--muted); }
-    .summary-val { font-family: 'IBM Plex Mono', monospace; font-size: 0.85rem; font-weight: 700; }
+    .summary-key  { color: var(--muted); }
+    .summary-val  { font-family: 'IBM Plex Mono', monospace; font-size: 0.85rem; font-weight: 700; }
     .sig-canvas-wrap { background: var(--surface); border: 2px dashed var(--border); border-radius: 14px; overflow: hidden; position: relative; }
     #sig-canvas { display: block; width: 100%; height: 160px; cursor: crosshair; touch-action: none; }
     .sig-line { position: absolute; bottom: 28px; left: 16px; right: 16px; height: 1px; background: var(--border); pointer-events: none; }
     .sig-hint { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); font-size: 0.75rem; color: var(--muted); pointer-events: none; font-family: 'IBM Plex Mono', monospace; transition: opacity 0.2s; }
     .sig-clear { position: absolute; top: 10px; right: 10px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; color: var(--muted); font-size: 0.72rem; padding: 5px 12px; cursor: pointer; font-family: 'IBM Plex Mono', monospace; touch-action: manipulation; }
-
-
-
-    /* ── JOIN SCREEN ── */
-    #bereich-select-list::-webkit-scrollbar { width: 4px; }
-    #bereich-select-list::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
     .hidden { display: none !important; }
   </style>
@@ -447,7 +301,7 @@
     </div>
   </nav>
 
-  <!-- ── PIN ── -->
+  <!-- ── SCREEN: PIN ── -->
   <div id="screen-pin" class="pin-screen">
     <div class="pin-box">
       <div class="pin-header">
@@ -464,67 +318,62 @@
           <div class="pin-dot" id="dot-3"></div>
         </div>
         <div class="pin-grid" role="group" aria-label="PIN-Eingabe">
-          <div class="pin-key" data-key="1" role="button" aria-label="1">1</div>
-          <div class="pin-key" data-key="2" role="button" aria-label="2">2</div>
-          <div class="pin-key" data-key="3" role="button" aria-label="3">3</div>
-          <div class="pin-key" data-key="4" role="button" aria-label="4">4</div>
-          <div class="pin-key" data-key="5" role="button" aria-label="5">5</div>
-          <div class="pin-key" data-key="6" role="button" aria-label="6">6</div>
-          <div class="pin-key" data-key="7" role="button" aria-label="7">7</div>
-          <div class="pin-key" data-key="8" role="button" aria-label="8">8</div>
-          <div class="pin-key" data-key="9" role="button" aria-label="9">9</div>
-          <div class="pin-key del" data-key="del" role="button" aria-label="Löschen">⌫</div>
-          <div class="pin-key" data-key="0" role="button" aria-label="0">0</div>
-          <div class="pin-key confirm" data-key="confirm" role="button" aria-label="Bestätigen">✓</div>
+          <div class="pin-key" data-key="1">1</div>
+          <div class="pin-key" data-key="2">2</div>
+          <div class="pin-key" data-key="3">3</div>
+          <div class="pin-key" data-key="4">4</div>
+          <div class="pin-key" data-key="5">5</div>
+          <div class="pin-key" data-key="6">6</div>
+          <div class="pin-key" data-key="7">7</div>
+          <div class="pin-key" data-key="8">8</div>
+          <div class="pin-key" data-key="9">9</div>
+          <div class="pin-key del" data-key="del">⌫</div>
+          <div class="pin-key" data-key="0">0</div>
+          <div class="pin-key confirm" data-key="confirm">✓</div>
         </div>
         <div class="pin-error" id="pin-error"></div>
       </div>
     </div>
   </div>
 
-  <!-- ── CHECK ── -->
-  <!-- ── BEREICHS-AUSWAHL SCREEN ── -->
-  <div id="screen-join" class="pin-screen hidden">
-    <div class="pin-box">
-      <div class="pin-title">Lagerbestellung</div>
-      <div class="pin-sub" id="join-sub">Bereiche auswählen</div>
-
-      <!-- Offene Session von anderen -->
-      <div id="join-session-wrap" class="hidden" style="margin-bottom:16px;">
-        <div style="background:rgba(14,165,233,0.08);border:1px solid rgba(14,165,233,0.3);border-radius:12px;padding:14px;">
-          <div style="font-size:0.78rem;font-weight:700;color:var(--accent2);margin-bottom:8px;">👥 Laufende Bestellung</div>
-          <div id="join-session-info" style="font-size:0.75rem;color:var(--text2);margin-bottom:10px;"></div>
-          <button onclick="joinSession()" class="btn btn-primary btn-full" style="font-size:0.85rem;">
-            👥 Mitmachen & Bereiche wählen
-          </button>
-        </div>
+  <!-- ── SCREEN: BEREICHSAUSWAHL ── -->
+  <div id="screen-join" class="join-screen hidden">
+    <div class="join-box">
+      <div>
+        <div class="pin-title" id="join-title">Lagerbestellung</div>
+        <div class="pin-sub" id="join-sub" style="margin-top:4px;">Bereich auswählen und starten</div>
       </div>
 
-      <!-- Bereiche Liste -->
-      <div style="font-size:0.78rem;font-weight:600;color:var(--text2);margin-bottom:8px;" id="bereich-select-label">
-        Deine Bereiche auswählen:
+      <!-- Session-Info-Badge (wird eingeblendet wenn Session läuft) -->
+      <div id="join-session-badge" class="session-badge hidden">
+        <div class="session-badge-title">👥 Laufende Bestellung</div>
+        <div id="join-session-info" style="font-size:0.78rem;color:var(--text2);"></div>
       </div>
-      <div id="bereich-select-list" style="display:flex;flex-direction:column;gap:6px;max-height:320px;overflow-y:auto;margin-bottom:14px;"></div>
 
-      <div style="display:flex;gap:8px;">
-        <button onclick="startAlleAllein()" class="btn btn-ghost btn-full" style="font-size:0.82rem;">
-          📋 Alle Bereiche alleine
-        </button>
-        <button onclick="startMitAuswahl()" class="btn btn-primary btn-full" style="font-size:0.82rem;" id="btn-start-auswahl">
-          ✅ Starten
-        </button>
-      </div>
+      <div style="font-size:0.75rem;font-weight:600;color:var(--text2);">Bereich wählen:</div>
+
+      <div id="bereich-list" style="display:flex;flex-direction:column;gap:8px;"></div>
+    </div>
+
+    <!-- Fixed Bottom -->
+    <div class="join-bottom">
+      <button id="btn-join-start" class="btn btn-primary btn-full" style="height:56px;font-size:1rem;font-weight:700;" onclick="lockUndStart()" disabled>
+        Bereich auswählen…
+      </button>
+      <button onclick="window.location.href='./mitarbeiter.html'" class="btn btn-ghost btn-full" style="height:44px;font-size:0.82rem;">
+        ← Zurück
+      </button>
     </div>
   </div>
 
+  <!-- ── SCREEN: BESTELLUNG (Ja/Nein) ── -->
   <div id="screen-check" class="check-screen hidden">
 
-    <!-- Erklärung -->
     <div class="erklaerung">
       <div class="erklaerung-icon">ℹ️</div>
       <div class="erklaerung-text">
         <strong>So funktioniert der Lagercheck:</strong><br>
-        Schau bei jedem Artikel nach dem Bestand. Wenn etwas nachbestellt werden muss, tippe auf <strong>„Ja"</strong> und wähle die benötigte Menge. Bei ausreichendem Bestand tippe auf <strong>„Nein"</strong>.
+        Schau bei jedem Artikel nach dem Bestand. Wenn etwas nachbestellt werden muss, tippe auf <strong>„Ja"</strong> und wähle die Menge. Bei ausreichendem Bestand tippe auf <strong>„Nein"</strong>.
       </div>
     </div>
 
@@ -532,37 +381,67 @@
       <div class="check-bereich-name" id="check-bereich-name">Bereich</div>
       <div class="progress-wrap"><div class="progress-fill" id="check-progress"></div></div>
       <div style="display:flex;justify-content:space-between;font-size:0.65rem;color:var(--muted);font-family:'IBM Plex Mono',monospace;margin-top:4px;">
-        <span id="check-progress-label">Bereich 1 von 1</span>
+        <span id="check-progress-label">0 / 0 beantwortet</span>
         <span id="check-progress-pct">0%</span>
       </div>
     </div>
 
     <div class="check-body" id="check-body"></div>
 
-    <!-- Fixed Bottom Nav -->
     <div class="bottom-nav">
-      <button class="bnav-btn" id="btn-prev" onclick="prevBereich()">← Zurück</button>
-      <button class="bnav-btn weiter" id="btn-weiter" onclick="nextBereich()">Weiter →</button>
-      <button class="bnav-btn finish hidden" id="btn-finish" onclick="showSignature()">✅ Abschließen</button>
-    </div>
-
-    <!-- Stornieren -->
-    <div style="text-align:center;padding:8px 16px 16px;">
-      <button onclick="storniereBestellung()" style="
-        background:none;border:none;color:var(--muted);
-        font-size:0.75rem;cursor:pointer;
-        font-family:'DM Sans',sans-serif;
-        text-decoration:underline;
-        touch-action:manipulation;
-        padding:6px 12px;
-      ">🗑️ Lagerbestellung stornieren</button>
+      <button class="bnav-btn" onclick="storniereBestellung()" style="flex:1;">🗑️ Abbrechen</button>
+      <button class="bnav-btn finish hidden" id="btn-finish" onclick="abschliesseBereich()">✅ Bereich fertig</button>
     </div>
   </div>
 
-  <!-- ── UNTERSCHRIFT ── -->
+  <!-- ── SCREEN: WARTEN / ÜBERSICHT ── -->
+  <div id="screen-wait" class="wait-screen hidden">
+    <div class="wait-box">
+      <div style="text-align:center;padding:8px 0 4px;">
+        <div style="font-size:2rem;margin-bottom:8px;">🎉</div>
+        <div style="font-size:1.2rem;font-weight:700;">Dein Bereich ist fertig!</div>
+        <div style="font-size:0.85rem;color:var(--text2);margin-top:4px;" id="wait-subtitle">Warte auf deine Kollegen…</div>
+      </div>
+
+      <div>
+        <div style="font-size:0.72rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;font-family:'IBM Plex Mono',monospace;">
+          Live-Status aller Bereiche
+        </div>
+        <div id="wait-bereich-list" style="display:flex;flex-direction:column;gap:8px;"></div>
+      </div>
+
+      <div id="wait-teilnehmer-block" style="display:none;">
+        <div style="font-size:0.72rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;font-family:'IBM Plex Mono',monospace;">
+          Mitarbeiter
+        </div>
+        <div id="wait-teilnehmer-list" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
+      </div>
+
+      <!-- Weiteren Bereich übernehmen -->
+      <button id="btn-weiterer-bereich" class="btn btn-full" onclick="wähleWeiterenBereich()"
+        style="background:var(--surface2);border:1px solid var(--border);border-radius:14px;height:50px;font-size:0.9rem;font-weight:600;display:none;">
+        + Weiteren Bereich übernehmen
+      </button>
+
+      <!-- Spinner while waiting -->
+      <div id="wait-spinner" style="display:flex;flex-direction:column;align-items:center;gap:10px;padding:16px 0;">
+        <div class="spinner"></div>
+        <div style="font-size:0.8rem;color:var(--muted);">Warte auf andere Bereiche…</div>
+      </div>
+    </div>
+
+    <!-- Fixed bottom: Unterschrift-Button (nur wenn alleErledigt) -->
+    <div class="wait-bottom hidden" id="wait-bottom">
+      <button class="btn btn-primary btn-full" style="height:56px;font-size:1rem;font-weight:700;" onclick="showSignature()">
+        ✅ Alle fertig – Unterschrift
+      </button>
+    </div>
+  </div>
+
+  <!-- ── SCREEN: UNTERSCHRIFT ── -->
   <div id="screen-sig" class="sig-screen hidden">
     <div class="sig-box">
-      <div class="sig-title">✅ Check abgeschlossen</div>
+      <div class="sig-title">✅ Lagerbestellung abgeschlossen</div>
       <div class="summary-grid" id="summary-grid"></div>
       <div>
         <div class="section-label mb-8">Unterschrift</div>
@@ -573,29 +452,45 @@
           <button class="sig-clear" onclick="clearSig()">Löschen</button>
         </div>
       </div>
-      <button class="btn btn-primary btn-full" style="height:56px;font-size:1rem;" onclick="submitCheck()">📄 Absenden & Fertig</button>
-      <button class="btn btn-ghost btn-full" style="height:52px;" onclick="backToCheck()">← Zurück zum Check</button>
+      <button class="btn btn-primary btn-full" style="height:56px;font-size:1rem;" id="btn-submit" onclick="submitCheck()">
+        📄 Absenden &amp; Fertig
+      </button>
+      <button class="btn btn-ghost btn-full" style="height:52px;" onclick="backToWait()">← Zurück</button>
     </div>
   </div>
 
   <script type="module">
     import { initializeApp }  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-    import { getFirestore, collection, getDocs, doc, getDoc, addDoc, updateDoc, deleteDoc, query, orderBy, limit, serverTimestamp, runTransaction }
-                              from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import {
+      getFirestore, collection, getDocs, doc, getDoc,
+      addDoc, updateDoc, deleteDoc, setDoc,
+      query, orderBy, where, limit,
+      serverTimestamp, runTransaction,
+      onSnapshot, arrayUnion, writeBatch
+    } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
     import { firebaseConfig } from "../js/firebase-config.js";
 
-    // HTML-Escaping für innerHTML mit Nutzerdaten
     function esc(str) {
       return String(str ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     }
 
-    // Theme
+    function naturalSort(a, b) {
+      const seg = s => s.split(/[\.\-]/).map(x => isNaN(x) ? x : parseInt(x, 10));
+      const A = seg(a), B = seg(b);
+      for (let i = 0; i < Math.max(A.length, B.length); i++) {
+        const sa = A[i] ?? '', sb = B[i] ?? '';
+        if (sa < sb) return -1;
+        if (sa > sb) return  1;
+      }
+      return 0;
+    }
+
+    /* ── Theme ── */
     const savedTheme  = localStorage.getItem('lager-theme');
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const theme       = savedTheme || (prefersDark ? 'dark' : 'light');
-    document.documentElement.setAttribute('data-theme', theme);
-    document.getElementById('theme-toggle').textContent = theme === 'dark' ? '☀️' : '🌙';
+    document.documentElement.setAttribute('data-theme', savedTheme || (prefersDark ? 'dark' : 'light'));
+    document.getElementById('theme-toggle').textContent = (savedTheme || (prefersDark ? 'dark' : 'light')) === 'dark' ? '☀️' : '🌙';
     window.toggleTheme = function() {
       const cur  = document.documentElement.getAttribute('data-theme');
       const next = cur === 'dark' ? 'light' : 'dark';
@@ -604,27 +499,44 @@
       document.getElementById('theme-toggle').textContent = next === 'dark' ? '☀️' : '🌙';
     };
 
-    // Firebase
-
+    /* ── Firebase ── */
     const app = initializeApp(firebaseConfig);
     const db  = getFirestore(app);
 
-    let correctPin   = '1234';
+    /* ── State ── */
+    let correctPin      = '1234';
     let alleArtikel     = [];
     let alleBereiche    = [];
-    let bestellungen    = {}; // artikelId → { bestellen: bool, menge: number }
-    let currentIdx      = 0;
     let userName        = '';
     let pinValue        = '';
     let pinAttempts     = 0;
     let pinLockedUntil  = 0;
-    let autoSaveId      = null;   // Firestore ID der laufenden Bestellung
-    let autoSaveTimer   = null;
-    let sessionId       = null;   // Gemeinsame Session ID (multi-user)
-    let meineBereiche   = [];     // Bereiche die dieser Nutzer bearbeitet
 
-    // ── Auth-Check ──
-    // Wenn Nutzer von index.html kommt (sessionStorage gesetzt), PIN-Screen überspringen
+    // Session
+    let sessionId         = null;
+    let currentBereichId  = null;
+    let bereichArtikel    = [];   // Artikel für den gesperrten Bereich
+    let bestellungen      = {};   // lokaler Spiegel: artikelId → { bestellen, menge }
+    let selectedBereichId = null; // auf dem Join-Screen ausgewählt
+
+    // Heartbeat
+    let heartbeatTimer = null;
+
+    // Abandoned-Detection Timer (unabhängig von onSnapshot)
+    let abandonedCheckTimer = null;
+
+    // Listener
+    let sessionUnsubscribe = null;
+    let joinUnsubscribe    = null;
+
+    // Zwischenspeicher für letzten Session-Snapshot
+    let latestSessionData = null;
+
+    const QUICK_VALUES = [1, 2, 3, 5, 10];
+
+    /* ════════════════════════════════════════
+       AUTH-CHECK (von index.html weitergeleitet)
+    ════════════════════════════════════════ */
     (async function checkAuth() {
       const pinOk = sessionStorage.getItem('lager-pin-auth');
       const name  = sessionStorage.getItem('lager-pin-name');
@@ -633,29 +545,13 @@
         userName = name;
         document.getElementById('nav-user').textContent = userName;
         await loadCheckData();
-        await showJoinScreen();
+        showJoinScreen();
       }
-      // Kein sessionStorage → PIN-Screen bleibt sichtbar (Nutzer gibt PIN direkt hier ein)
     })();
 
-    const QUICK_VALUES = [1, 2, 3, 5, 10];
-
-    // ── Natürliche Sortierung für LP-Nummern ──
-    // S.1.2.1 < S.1.10.1 < S.1.2.2 etc.
-    function naturalSort(a, b) {
-      const segmentsA = a.split(/[\.\-]/).map(s => isNaN(s) ? s : parseInt(s, 10));
-      const segmentsB = b.split(/[\.\-]/).map(s => isNaN(s) ? s : parseInt(s, 10));
-      const len = Math.max(segmentsA.length, segmentsB.length);
-      for (let i = 0; i < len; i++) {
-        const sa = segmentsA[i] ?? '';
-        const sb = segmentsB[i] ?? '';
-        if (sa < sb) return -1;
-        if (sa > sb) return  1;
-      }
-      return 0;
-    }
-
-    // ── PIN ──
+    /* ════════════════════════════════════════
+       PIN
+    ════════════════════════════════════════ */
     function handlePinKey(key) {
       document.getElementById('pin-error').textContent = '';
       if (key === 'del') {
@@ -677,20 +573,16 @@
 
     document.querySelectorAll('.pin-key').forEach(btn => {
       const key = btn.dataset.key;
-      btn.addEventListener('touchstart', e => {
-        e.preventDefault();
-        btn.classList.add('pressed');
-        handlePinKey(key);
-      }, { passive: false });
-      btn.addEventListener('touchend', () => setTimeout(() => btn.classList.remove('pressed'), 100));
-      btn.addEventListener('click', () => handlePinKey(key));
+      btn.addEventListener('touchstart', e => { e.preventDefault(); btn.classList.add('pressed'); handlePinKey(key); }, { passive: false });
+      btn.addEventListener('touchend',   () => setTimeout(() => btn.classList.remove('pressed'), 100));
+      btn.addEventListener('click',      () => handlePinKey(key));
     });
 
     async function pinConfirm() {
       userName = document.getElementById('name-input').value.trim();
       const err = document.getElementById('pin-error');
-      if (!userName) { err.textContent = 'Bitte deinen Namen eingeben.'; return; }
-      if (pinValue.length < 4) { err.textContent = 'Bitte 4-stelligen PIN eingeben.'; return; }
+      if (!userName)          { err.textContent = 'Bitte deinen Namen eingeben.';    return; }
+      if (pinValue.length < 4){ err.textContent = 'Bitte 4-stelligen PIN eingeben.'; return; }
 
       if (Date.now() < pinLockedUntil) {
         const secs = Math.ceil((pinLockedUntil - Date.now()) / 1000);
@@ -702,6 +594,7 @@
         const snap = await getDoc(doc(db, 'config', 'app'));
         if (snap.exists()) correctPin = snap.data().pin || '1234';
       } catch {}
+
       if (pinValue !== correctPin) {
         pinAttempts++;
         if (pinAttempts >= 5) {
@@ -715,405 +608,427 @@
       }
       pinAttempts = 0;
 
-      // Anonym in Firebase einloggen – ermöglicht sichere Firestore-Rules
       const auth = getAuth(app);
       if (!auth.currentUser) await signInAnonymously(auth);
 
       document.getElementById('nav-user').textContent = userName;
-      // PIN-Auth in sessionStorage speichern (für Scanner-Zugang)
       sessionStorage.setItem('lager-pin-auth', 'true');
       sessionStorage.setItem('lager-pin-name', userName);
+
       await loadCheckData();
-
-      // Zur Bereichs-Auswahl gehen
-      await showJoinScreen();
+      showJoinScreen();
     }
 
-    // ── Load ──
-    // ── AUTO-SAVE ──
-    async function autoSave() {
-      if (!userName) return;
-      try {
-        if (sessionId) {
-          // Multi-user: Transaktion verhindert Race Condition bei gleichzeitigen Schreibvorgängen
-          const sessionRef = doc(db, 'bestellungen_session', sessionId);
-          await runTransaction(db, async (transaction) => {
-            const snap = await transaction.get(sessionRef);
-            const current = snap.exists() ? (snap.data().bestellungen || {}) : {};
-            transaction.update(sessionRef, {
-              bestellungen: { ...current, ...bestellungen },
-              [`fortschritt_${userName}`]: Math.round((currentIdx / Math.max(alleBereiche.length, 1)) * 100),
-              zuletzt: new Date().toISOString(),
-            });
-          });
-        } else if (Object.keys(bestellungen).length > 0) {
-          // Single-user: Draft speichern
-          const data = {
-            mitarbeiter: userName,
-            datum:       new Date().toISOString(),
-            status:      'pausiert',
-            currentIdx,
-            bestellungen,
-            fortschritt: Math.round((currentIdx / Math.max(alleBereiche.length, 1)) * 100),
-          };
-          if (autoSaveId) {
-            await updateDoc(doc(db, 'bestellungen_draft', autoSaveId), data);
-          } else {
-            const ref = await addDoc(collection(db, 'bestellungen_draft'), data);
-            autoSaveId = ref.id;
-          }
-        }
-      } catch(e) { showToast('Speichern fehlgeschlagen – Daten möglicherweise nicht gesichert', 'error'); }
-    }
-
-    // Alle 30 Sekunden automatisch speichern
-    function startAutoSave() {
-      if (autoSaveTimer) clearInterval(autoSaveTimer);
-      autoSaveTimer = setInterval(autoSave, 30000);
-    }
-
-    function stopAutoSave() {
-      if (autoSaveTimer) clearInterval(autoSaveTimer);
-      autoSaveTimer = null;
-    }
-
-    // ── DRAFT PRÜFEN ──
-    async function checkForDraft() {
-      try {
-        const snap = await getDocs(
-          query(collection(db, 'bestellungen_draft'),
-            orderBy('datum', 'desc'),
-            limit(5)
-          )
-        );
-
-        if (snap.empty) return;
-
-        // Alle offenen Drafts anzeigen
-        const drafts = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-
-        showDraftBanner(drafts);
-      } catch(e) { showToast('Fehler beim Laden offener Entwürfe', 'error'); }
-    }
-
-    function showDraftBanner(drafts) {
-      // Altes Banner entfernen
-      const existing = document.getElementById('draft-banner');
-      if (existing) existing.remove();
-
-      const banner = document.createElement('div');
-      banner.id = 'draft-banner';
-      banner.style.cssText = `
-        position: fixed; top: 56px; left: 0; right: 0; z-index: 500;
-        background: var(--surface);
-        border-bottom: 2px solid var(--accent);
-        padding: 12px 16px;
-        display: flex; flex-direction: column; gap: 8px;
-        box-shadow: 0 4px 16px rgba(0,0,0,0.3);
-      `;
-
-      banner.innerHTML = `
-        <div style="font-size:0.82rem;font-weight:700;color:var(--accent);">
-          📋 Offene Lagerbestellung${drafts.length > 1 ? 'en' : ''}
-        </div>
-        ${drafts.map(d => `
-          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:10px;">
-            <div style="flex:1;">
-              <div style="font-size:0.82rem;font-weight:600;">${d.mitarbeiter}</div>
-              <div style="font-size:0.65rem;color:var(--muted);font-family:'IBM Plex Mono',monospace;margin-top:2px;">
-                ${new Date(d.datum).toLocaleDateString('de-DE')} · ${new Date(d.datum).toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'})} · ${d.fortschritt||0}% fertig
-              </div>
-            </div>
-            <button onclick="resumeDraft('${d.id}')" style="
-              padding:7px 14px;border-radius:8px;background:var(--accent);
-              border:none;color:white;font-size:0.78rem;font-weight:600;
-              cursor:pointer;font-family:'DM Sans',sans-serif;white-space:nowrap;
-              touch-action:manipulation;
-            ">▶️ Fortführen</button>
-            <button onclick="discardDraft('${d.id}')" style="
-              padding:7px 10px;border-radius:8px;background:var(--surface2);
-              border:1px solid var(--border);color:var(--muted);font-size:0.78rem;
-              cursor:pointer;font-family:'DM Sans',sans-serif;
-              touch-action:manipulation;
-            ">✕</button>
-          </div>`).join('')}
-      `;
-
-      document.body.appendChild(banner);
-    }
-
-    window.resumeDraft = async function(id) {
-      try {
-        const snap = await getDoc(doc(db, 'bestellungen_draft', id));
-        if (!snap.exists()) return;
-        const data = snap.data();
-
-        // Fortschritt wiederherstellen
-        bestellungen = data.bestellungen || {};
-        currentIdx   = data.currentIdx   || 0;
-        autoSaveId   = id;
-
-        // Banner entfernen
-        const banner = document.getElementById('draft-banner');
-        if (banner) banner.remove();
-
-        // Check-Screen neu rendern
-        renderBereich(currentIdx);
-        showToast(`Fortschritt von ${data.mitarbeiter} wiederhergestellt ✅`);
-      } catch(e) { showToast('Fehler: ' + e.message, 'error'); }
-    };
-
-    window.discardDraft = async function(id) {
-      if (!confirm('Offene Bestellung verwerfen?')) return;
-      try {
-        await deleteDoc(doc(db, 'bestellungen_draft', id));
-        const banner = document.getElementById('draft-banner');
-        if (banner) banner.remove();
-      } catch(e) {}
-    };
-
-    // ── Lagerbestellung stornieren ──
-    window.storniereBestellung = async function() {
-      try {
-        stopAutoSave();
-
-        if (sessionId) {
-          // Session aus Firestore holen – prüfen ob andere noch dabei sind
-          const sessionSnap = await getDoc(doc(db, 'bestellungen_session', sessionId));
-          if (sessionSnap.exists()) {
-            const sessionData  = sessionSnap.data();
-            const andereAktive = (sessionData.teilnehmer || [])
-              .filter(t => t.name !== userName);
-
-            if (andereAktive.length > 0) {
-              // Andere arbeiten noch → nur selbst austreten
-              const namen = andereAktive.map(t => t.name).join(', ');
-              const confirmed = confirm(
-                `${namen} ${andereAktive.length === 1 ? 'arbeitet' : 'arbeiten'} noch an der Bestellung.\n\nNur deinen Teil stornieren und die anderen weitermachen lassen?`
-              );
-              if (!confirmed) return;
-
-              // Nur eigene Bereiche freigeben + aus Teilnehmer entfernen
-              const vergeben   = { ...(sessionData.vergebeneBereiche || {}) };
-              const teilnehmer = (sessionData.teilnehmer || []).filter(t => t.name !== userName);
-
-              // Eigene Bereiche aus vergeben entfernen
-              Object.keys(vergeben).forEach(bid => {
-                if (vergeben[bid] === userName) delete vergeben[bid];
-              });
-
-              // Eigene Bestellungen aus Session entfernen
-              const bestellungen = { ...(sessionData.bestellungen || {}) };
-              // Artikel die diesem Nutzer gehören entfernen
-              meineBereiche.forEach(bid => {
-                const artikelImBereich = alleArtikel.filter(a => a.bereich === bid);
-                artikelImBereich.forEach(a => delete bestellungen[a.id]);
-              });
-
-              await updateDoc(doc(db, 'bestellungen_session', sessionId), {
-                vergeben, teilnehmer, bestellungen,
-              });
-
-            } else {
-              // Nur ich bin dabei → komplette Session löschen
-              const confirmed = confirm(
-                'Lagerbestellung wirklich stornieren?\n\nAlle bisherigen Eingaben gehen verloren.'
-              );
-              if (!confirmed) return;
-
-              await deleteDoc(doc(db, 'bestellungen_session', sessionId));
-            }
-          }
-          sessionId  = null;
-          autoSaveId = null;
-
-        } else {
-          // Einzelner Nutzer ohne Session
-          const confirmed = confirm(
-            'Lagerbestellung wirklich stornieren?\n\nAlle bisherigen Eingaben gehen verloren.'
-          );
-          if (!confirmed) return;
-
-          // Draft löschen
-          if (autoSaveId) {
-            await deleteDoc(doc(db, 'bestellungen_draft', autoSaveId));
-            autoSaveId = null;
-          }
-          // Alle eigenen Drafts löschen
-          try {
-            const drafts = await getDocs(query(collection(db, 'bestellungen_draft'), orderBy('datum', 'desc')));
-            for (const d of drafts.docs) {
-              if (d.data().mitarbeiter === userName) {
-                await deleteDoc(doc(db, 'bestellungen_draft', d.id));
-              }
-            }
-          } catch(e) {}
-        }
-
-      } catch(e) {
-        showToast('Fehler beim Stornieren: ' + e.message, 'error');
-      }
-
-      window.location.href = './mitarbeiter.html';
-    };
-
-    function showToast(msg, type = 'success') {
-      const t = document.createElement('div');
-      t.style.cssText = `position:fixed;bottom:80px;left:50%;transform:translateX(-50%);
-        background:var(--surface);border:1px solid ${type==='error'?'var(--red)':'var(--green)'};
-        color:${type==='error'?'var(--red)':'var(--green)'};
-        border-radius:10px;padding:10px 18px;font-size:0.82rem;
-        box-shadow:var(--shadow-lg);z-index:3000;white-space:nowrap;`;
-      t.textContent = msg;
-      document.body.appendChild(t);
-      setTimeout(() => t.remove(), 2500);
-    }
-
+    /* ════════════════════════════════════════
+       DATEN LADEN
+    ════════════════════════════════════════ */
     async function loadCheckData() {
+      // Auth sicherstellen – auch wenn User per sessionStorage wiederhergestellt wird
+      // (checkAuth() ruft signInAnonymously nicht auf, pinConfirm() schon)
+      const auth = getAuth(app);
+      if (!auth.currentUser) await signInAnonymously(auth);
+
       const [bSnap, aSnap] = await Promise.all([
         getDocs(query(collection(db, 'bereiche'), orderBy('reihenfolge'))),
         getDocs(collection(db, 'artikel')),
       ]);
       alleBereiche = bSnap.docs.map(d => ({ id: d.id, ...d.data() }));
       alleArtikel  = aSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-      renderBereich(0);
     }
 
-    // ── Render Bereich ──
-    function renderBereich(idx) {
-      currentIdx = idx;
-      const bereich = alleBereiche[idx];
-      const artikel = alleArtikel
-        .filter(a => a.bereich === bereich.id)
+    /* ════════════════════════════════════════
+       JOIN SCREEN
+    ════════════════════════════════════════ */
+    async function showJoinScreen() {
+      showScreen('join');
+      selectedBereichId = null;
+      document.getElementById('btn-join-start').disabled = true;
+      document.getElementById('btn-join-start').textContent = 'Bereich auswählen…';
+      document.getElementById('join-session-badge').classList.add('hidden');
+      document.getElementById('join-title').textContent = 'Neue Lagerbestellung';
+      document.getElementById('join-sub').textContent = 'Wähle deinen Bereich';
+
+      // Bereiche sofort anzeigen – mit letzten bekannten Session-Daten wenn verfügbar
+      // (verhindert orange Flash und macht erledigte Bereiche sofort nicht-wählbar)
+      renderBereichList(latestSessionData || null);
+
+      // Alten Join-Screen-Listener stoppen
+      if (joinUnsubscribe) { joinUnsubscribe(); joinUnsubscribe = null; }
+
+      // Live-Listener auf aktive Sessions
+      const q = query(collection(db, 'bestellungen_session'), where('status', '==', 'aktiv'), limit(1));
+      joinUnsubscribe = onSnapshot(q, snap => {
+        if (!snap.empty) {
+          const d = snap.docs[0];
+          const data = d.data();
+          const startMs = data.startzeit?.toMillis?.() ?? Date.now();
+          if (Date.now() - startMs < 8 * 3600 * 1000) {
+            // Session gefunden
+            if (sessionId !== d.id) {
+              sessionId = d.id;
+              startSessionListener(d.id);
+            }
+            const namen = (data.teilnehmer || []).map(t => t.name).join(', ');
+            document.getElementById('join-session-badge').classList.remove('hidden');
+            document.getElementById('join-session-info').textContent =
+              `${namen} macht${namen.includes(',') ? 'en' : ''} gerade die Lagerbestellung`;
+            document.getElementById('join-title').textContent = 'Lagerbestellung beitreten';
+            document.getElementById('join-sub').textContent = 'Wähle einen freien Bereich';
+            const btn = document.getElementById('btn-join-start');
+            if (!btn.textContent.includes('→')) btn.textContent = 'Beitreten & starten →';
+            renderBereichList({ id: d.id, ...data });
+            return;
+          }
+        }
+        // Keine aktive Session
+        if (!sessionId) {
+          sessionId = null;
+          document.getElementById('join-session-badge').classList.add('hidden');
+          document.getElementById('join-title').textContent = 'Neue Lagerbestellung';
+          document.getElementById('join-sub').textContent = 'Wähle deinen Bereich';
+          const btn = document.getElementById('btn-join-start');
+          if (!btn.textContent.includes('→')) btn.textContent = 'Session starten →';
+          renderBereichList(null);
+        }
+      }, () => {
+        // Query fehlgeschlagen – Bereiche trotzdem anzeigen
+        renderBereichList(null);
+      });
+    }
+
+    function renderBereichList(sessionData) {
+      const listEl = document.getElementById('bereich-list');
+      const bereichStatus = sessionData?.bereichStatus || {};
+
+      listEl.innerHTML = '';
+      alleBereiche.forEach(b => {
+        const bs     = bereichStatus[b.id] || { status: 'frei' };
+        const status = bs.status;
+        const count  = alleArtikel.filter(a => a.bereich === b.id).length;
+
+        const div = document.createElement('div');
+        div.className = 'bereich-row';
+        div.dataset.bereichId = b.id;
+
+        let indicatorHtml = '';
+        let subText = `${count} Artikel`;
+        let rowClass = '';
+        let canSelect = false;
+
+        if (status === 'erledigt') {
+          indicatorHtml = '<div class="status-dot dot-erledigt"></div>';
+          subText += ` · Erledigt von ${esc(bs.mitarbeiter || '')}`;
+          rowClass = 'erledigt';
+        } else if (status === 'gesperrt') {
+          indicatorHtml = '<span style="font-size:0.95rem;line-height:1;">🔒</span>';
+          subText += ` · ${esc(bs.mitarbeiter || '')} ist gerade hier`;
+          rowClass = 'blocked';
+        } else if (status === 'abgebrochen') {
+          indicatorHtml = '<div class="status-dot dot-abgebrochen"></div>';
+          subText += ` · Abgebrochen (fortführen?)`;
+          rowClass = 'abgebrochen selectable';
+          canSelect = true;
+        } else {
+          indicatorHtml = '<div class="status-dot dot-frei"></div>';
+          rowClass = 'selectable';
+          canSelect = true;
+        }
+
+        const isSelected = selectedBereichId === b.id;
+        if (isSelected) rowClass += ' selected';
+
+        div.className = 'bereich-row ' + rowClass;
+        div.innerHTML = `
+          <div class="status-indicator">${indicatorHtml}</div>
+          <div class="bereich-row-info">
+            <div class="bereich-row-name">${esc(b.name)}</div>
+            <div class="bereich-row-sub">${subText}</div>
+          </div>
+          ${canSelect ? '<div class="bereich-radio"></div>' : ''}
+        `;
+
+        if (canSelect) {
+          div.addEventListener('click', () => selectBereich(b.id));
+        }
+
+        listEl.appendChild(div);
+      });
+    }
+
+    function selectBereich(id) {
+      selectedBereichId = id;
+      // Radio-Style: Alle zurücksetzen
+      document.querySelectorAll('.bereich-row.selectable').forEach(row => {
+        row.classList.remove('selected');
+      });
+      const row = document.querySelector(`.bereich-row[data-bereich-id="${id}"]`);
+      if (row) row.classList.add('selected');
+
+      const bereich = alleBereiche.find(b => b.id === id);
+      document.getElementById('btn-join-start').disabled = false;
+      document.getElementById('btn-join-start').textContent =
+        sessionId
+          ? `Beitreten: ${bereich?.name} →`
+          : `Starten: ${bereich?.name} →`;
+    }
+
+    /* ════════════════════════════════════════
+       LOCK-TRANSACTION & START
+    ════════════════════════════════════════ */
+    window.lockUndStart = async function() {
+      if (!selectedBereichId) return;
+
+      const btn = document.getElementById('btn-join-start');
+      btn.disabled = true;
+      btn.textContent = 'Bitte warten…';
+
+      // Join-Screen-Listener stoppen (wir verlassen den Join-Screen)
+      if (joinUnsubscribe) { joinUnsubscribe(); joinUnsubscribe = null; }
+
+      try {
+        const auth = getAuth(app);
+        if (!auth.currentUser) await signInAnonymously(auth);
+
+        // Race-Condition-Schutz: falls kein sessionId, nochmal prüfen ob inzwischen eine Session existiert
+        if (!sessionId) {
+          const q = query(collection(db, 'bestellungen_session'), where('status', '==', 'aktiv'), limit(1));
+          const snap = await getDocs(q);
+          if (!snap.empty) {
+            const d = snap.docs[0];
+            const startMs = d.data().startzeit?.toMillis?.() ?? Date.now();
+            if (Date.now() - startMs < 8 * 3600 * 1000) {
+              sessionId = d.id;
+            }
+          }
+        }
+
+        if (sessionId) {
+          // Bestehende Session – beitreten
+          await runTransaction(db, async tx => {
+            const ref  = doc(db, 'bestellungen_session', sessionId);
+            const snap = await tx.get(ref);
+            if (!snap.exists()) throw new Error('Session nicht mehr aktiv');
+            const data = snap.data();
+            const bs   = data.bereichStatus?.[selectedBereichId];
+
+            // Nur blockieren wenn jemand anderes den Bereich gerade hat
+            if (bs?.status === 'gesperrt' && bs.mitarbeiter !== userName) {
+              throw new Error(`Bereich wird gerade von ${bs.mitarbeiter} bearbeitet`);
+            }
+            if (bs?.status === 'erledigt') {
+              throw new Error('Bereich ist bereits abgeschlossen');
+            }
+
+            const teilnehmer = data.teilnehmer || [];
+            const bereitsRin = teilnehmer.some(t => t.name === userName);
+
+            tx.update(ref, {
+              [`bereichStatus.${selectedBereichId}`]: {
+                status:      'gesperrt',
+                mitarbeiter: userName,
+                gesperrtAt:  serverTimestamp(),
+                erledigtAt:  null,
+              },
+              ...(bereitsRin ? {} : {
+                teilnehmer: arrayUnion({ name: userName, beitritt: new Date().toISOString() })
+              }),
+              [`heartbeats.${userName}`]: serverTimestamp(),
+            });
+          });
+
+        } else {
+          // Neue Session erstellen
+          const newSessionRef = doc(collection(db, 'bestellungen_session'));
+          sessionId = newSessionRef.id;
+          await setDoc(newSessionRef, {
+            status:     'aktiv',
+            startzeit:  serverTimestamp(),
+            teilnehmer: [{ name: userName, beitritt: new Date().toISOString() }],
+            bereichStatus: {
+              [selectedBereichId]: {
+                status:      'gesperrt',
+                mitarbeiter: userName,
+                gesperrtAt:  serverTimestamp(),
+                erledigtAt:  null,
+              }
+            },
+            heartbeats:  { [userName]: serverTimestamp() },
+            alleErledigt: false,
+          });
+        }
+
+        currentBereichId = selectedBereichId;
+
+        // Vorhandene Warenkorb-Einträge für diesen Bereich laden (falls abgebrochen+übernommen)
+        await loadBereichWarenkorb();
+
+        startSessionListener(sessionId);
+        startHeartbeat();
+        startAbandonedCheck();
+        renderCheckScreen();
+        showScreen('check');
+
+      } catch(e) {
+        showToast(e.message, 'error');
+        btn.disabled = false;
+        btn.textContent = sessionId ? 'Beitreten & starten →' : 'Session starten →';
+      }
+    };
+
+    /* ════════════════════════════════════════
+       WARENKORB: vorhandene Einträge laden
+       (für übernommene abgebrochene Bereiche)
+    ════════════════════════════════════════ */
+    async function loadBereichWarenkorb() {
+      try {
+        const snap = await getDocs(collection(db, 'bestellungen_session', sessionId, 'warenkorb'));
+        bestellungen = {};
+        snap.forEach(d => {
+          const item = d.data();
+          if (item.bereich === currentBereichId) {
+            bestellungen[item.artikelId] = {
+              bestellen: item.bestellen,
+              menge:     item.menge ?? 1,
+            };
+          }
+        });
+      } catch(e) {
+        bestellungen = {};
+      }
+    }
+
+    /* ════════════════════════════════════════
+       CHECK SCREEN
+    ════════════════════════════════════════ */
+    function renderCheckScreen() {
+      const bereich = alleBereiche.find(b => b.id === currentBereichId);
+      document.getElementById('check-bereich-name').textContent = bereich?.name || '–';
+
+      bereichArtikel = alleArtikel
+        .filter(a => a.bereich === currentBereichId)
         .sort((a, b) => naturalSort(a.lp || '', b.lp || ''));
-      // Fortschritt nur über meine Bereiche berechnen
-      const meineIdx = meineBereiche.length > 0
-        ? meineBereiche.indexOf(alleBereiche[idx]?.id) + 1
-        : idx + 1;
-      const meineTotal = meineBereiche.length > 0 ? meineBereiche.length : alleBereiche.length;
-      const pct     = Math.round((meineIdx / meineTotal) * 100);
-      const isLast  = meineBereiche.length > 0
-        ? meineBereiche[meineBereiche.length - 1] === alleBereiche[idx]?.id
-        : idx === alleBereiche.length - 1;
 
-      document.getElementById('check-bereich-name').textContent  = bereich.name;
-      document.getElementById('check-progress').style.width       = pct + '%';
-      document.getElementById('check-progress-label').textContent = `Bereich ${idx + 1} von ${alleBereiche.length}`;
-      document.getElementById('check-progress-pct').textContent   = pct + '%';
-      document.getElementById('btn-prev').disabled = idx === 0;
-      document.getElementById('btn-weiter').classList.toggle('hidden', isLast);
-      document.getElementById('btn-finish').classList.toggle('hidden', !isLast);
+      renderArtikelCards();
+      updateCheckProgress();
+    }
 
-      document.getElementById('check-body').innerHTML = artikel.map(a => {
-        const state   = bestellungen[a.id] || { bestellen: null, menge: 1 };
-        const bestell = state.bestellen;
-        const menge   = state.menge || 1;
+    function renderArtikelCards() {
+      document.getElementById('check-body').innerHTML =
+        bereichArtikel.map(a => {
+          const state   = bestellungen[a.id] || { bestellen: null, menge: 1 };
+          const bestell = state.bestellen;
+          const menge   = state.menge ?? 1;
 
-        const minHtml = a.min != null ? `
-          <div class="minmax-badge min">
-            <span class="minmax-label">MIN</span>
-            <span class="minmax-value">${a.min}</span>
-            <span class="minmax-unit">${a.minEinheit||'Stk'}</span>
-          </div>` : '';
+          const minHtml = a.min != null ? `
+            <div class="minmax-badge min">
+              <span class="minmax-label">MIN</span>
+              <span class="minmax-value">${a.min}</span>
+              <span class="minmax-unit">${a.minEinheit || 'Stk'}</span>
+            </div>` : '';
 
-        const maxHtml = a.max != null ? `
-          <div class="minmax-badge max">
-            <span class="minmax-label">MAX</span>
-            <span class="minmax-value">${a.max}</span>
-            <span class="minmax-unit">${a.maxEinheit||'Stk'}</span>
-          </div>` : '';
+          const maxHtml = a.max != null ? `
+            <div class="minmax-badge max">
+              <span class="minmax-label">MAX</span>
+              <span class="minmax-value">${a.max}</span>
+              <span class="minmax-unit">${a.maxEinheit || 'Stk'}</span>
+            </div>` : '';
 
-        // Produkt-Foto für Artikel, Lagerort-Foto als Extra-Button
-        const fotoHtml = (a.fotoUrl || a.lagerFotoUrl)
-          ? `<div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0;">
-               ${a.fotoUrl ? `
-                 <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
-                   <div class="artikel-foto-btn" data-foto="${esc(a.fotoUrl)}" data-name="${esc(a.name)}" title="Produktfoto ansehen">
-                     <img src="${esc(a.fotoUrl)}" alt="${esc(a.name)}">
-                   </div>
-                   <div style="font-size:0.5rem;color:var(--muted);font-family:'IBM Plex Mono',monospace;letter-spacing:0.03em;">PRODUKT</div>
-                 </div>` : ''}
-               ${a.lagerFotoUrl ? `
-                 <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
-                   <div class="artikel-foto-btn" data-foto="${esc(a.lagerFotoUrl)}" data-name="Lagerort: ${esc(a.name)}" title="Lagerortfoto ansehen" style="background:var(--surface3);">
-                     <img src="${esc(a.lagerFotoUrl)}" alt="Lagerort">
-                   </div>
-                   <div style="font-size:0.5rem;color:var(--muted);font-family:'IBM Plex Mono',monospace;letter-spacing:0.03em;">LAGERORT</div>
-                 </div>` : ''}
-             </div>`
-          : `<div class="artikel-foto-btn" style="cursor:default;opacity:0.4;">📦</div>`;
+          const fotoHtml = (a.fotoUrl || a.lagerFotoUrl)
+            ? `<div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0;">
+                 ${a.fotoUrl ? `
+                   <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
+                     <div class="artikel-foto-btn" data-foto="${esc(a.fotoUrl)}" data-name="${esc(a.name)}">
+                       <img src="${esc(a.fotoUrl)}" alt="${esc(a.name)}" loading="lazy">
+                     </div>
+                     <div style="font-size:0.5rem;color:var(--muted);font-family:'IBM Plex Mono',monospace;letter-spacing:0.03em;">PRODUKT</div>
+                   </div>` : ''}
+                 ${a.lagerFotoUrl ? `
+                   <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
+                     <div class="artikel-foto-btn" data-foto="${esc(a.lagerFotoUrl)}" data-name="Lagerort: ${esc(a.name)}" style="background:var(--surface3);">
+                       <img src="${esc(a.lagerFotoUrl)}" alt="Lagerort" loading="lazy">
+                     </div>
+                     <div style="font-size:0.5rem;color:var(--muted);font-family:'IBM Plex Mono',monospace;letter-spacing:0.03em;">LAGERORT</div>
+                   </div>` : ''}
+               </div>`
+            : `<div class="artikel-foto-btn" style="cursor:default;opacity:0.4;">📦</div>`;
 
-        const chipsHtml = QUICK_VALUES.map(v => `
-          <div class="chip ${menge === v && bestell ? 'selected' : ''}" data-id="${a.id}" data-val="${v}">${v}</div>
-        `).join('');
+          const chipsHtml = QUICK_VALUES.map(v =>
+            `<div class="chip ${menge === v && bestell ? 'selected' : ''}" data-id="${a.id}" data-val="${v}">${v}</div>`
+          ).join('');
 
-        return `
-          <div class="artikel-card ${bestell===true?'bestellen':bestell===false?'ok':''}" id="card-${a.id}">
-            <div class="artikel-header">
-              ${fotoHtml}
-              <div class="artikel-info">
-                <div class="artikel-name">${esc(a.name)}</div>
-                <div class="artikel-lp">${esc(a.lp)} · ${esc(a.location)}</div>
-                <div class="minmax-row">
-                  ${minHtml}
-                  ${maxHtml}
+          return `
+            <div class="artikel-card ${bestell === true ? 'bestellen' : bestell === false ? 'ok' : ''}" id="card-${a.id}">
+              <div class="artikel-header">
+                ${fotoHtml}
+                <div class="artikel-info">
+                  <div class="artikel-name">${esc(a.name)}</div>
+                  <div class="artikel-lp">${esc(a.lp)} · ${esc(a.location)}</div>
+                  <div class="minmax-row">${minHtml}${maxHtml}</div>
                 </div>
               </div>
-            </div>
-            ${a.hinweis ? `<div class="artikel-hinweis">💡 ${esc(a.hinweis)}</div>` : ''}
-            <div class="bestell-divider"></div>
-            <div class="bestell-section">
-              <div class="bestell-frage">Muss bestellt werden?</div>
-              <div class="ja-nein-row">
-                <button class="ja-nein-btn nein ${bestell===false?'selected':''}" data-id="${a.id}" data-val="nein">✅ Nein</button>
-                <button class="ja-nein-btn ja   ${bestell===true ?'selected':''}" data-id="${a.id}" data-val="ja">⚠️ Ja</button>
-              </div>
-              <div class="menge-wrap ${bestell===true?'visible':''}" id="menge-${a.id}">
-                <div class="menge-label">Wie viel soll bestellt werden?</div>
-                <div class="chips-row" data-id="${a.id}">${chipsHtml}</div>
-                <div class="plusminus-row">
-                  <button class="pm-btn minus" data-id="${a.id}" data-action="minus">−</button>
-                  <input class="pm-display" id="pm-${a.id}" type="number" inputmode="numeric" value="${menge}" min="1">
-                  <button class="pm-btn plus"  data-id="${a.id}" data-action="plus">+</button>
+              ${a.hinweis ? `<div class="artikel-hinweis">💡 ${esc(a.hinweis)}</div>` : ''}
+              <div class="bestell-divider"></div>
+              <div class="bestell-section">
+                <div class="bestell-frage">Muss bestellt werden?</div>
+                <div class="ja-nein-row">
+                  <button class="ja-nein-btn nein ${bestell === false ? 'selected' : ''}" data-id="${a.id}" data-val="nein">✅ Nein</button>
+                  <button class="ja-nein-btn ja   ${bestell === true  ? 'selected' : ''}" data-id="${a.id}" data-val="ja">⚠️ Ja</button>
+                </div>
+                <div class="menge-wrap ${bestell === true ? 'visible' : ''}" id="menge-${a.id}">
+                  <div class="menge-label">Wie viel soll bestellt werden?</div>
+                  <div class="chips-row" data-id="${a.id}">${chipsHtml}</div>
+                  <div class="plusminus-row">
+                    <button class="pm-btn minus" data-id="${a.id}" data-action="minus">−</button>
+                    <input  class="pm-display" id="pm-${a.id}" type="number" inputmode="numeric" value="${menge}" min="1">
+                    <button class="pm-btn plus"  data-id="${a.id}" data-action="plus">+</button>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>`;
-      }).join('') || `<div class="text-muted text-sm" style="padding:30px;text-align:center;font-size:1rem;">Keine Artikel in diesem Bereich</div>`;
+            </div>`;
+        }).join('') || `<div class="text-muted text-sm" style="padding:30px;text-align:center;font-size:1rem;">Keine Artikel in diesem Bereich</div>`;
 
       attachListeners();
       window.scrollTo(0, 0);
     }
 
-    // ── Listeners ──
-    function attachListeners() {
+    function updateCheckProgress() {
+      const total     = bereichArtikel.length;
+      const beantwortet = bereichArtikel.filter(a => bestellungen[a.id]?.bestellen !== undefined && bestellungen[a.id]?.bestellen !== null).length;
+      const pct = total > 0 ? Math.round((beantwortet / total) * 100) : 0;
 
+      document.getElementById('check-progress').style.width     = pct + '%';
+      document.getElementById('check-progress-label').textContent = `${beantwortet} / ${total} beantwortet`;
+      document.getElementById('check-progress-pct').textContent   = pct + '%';
+
+      const alleBeantwortet = beantwortet === total && total > 0;
+      document.getElementById('btn-finish').classList.toggle('hidden', !alleBeantwortet);
+    }
+
+    function attachListeners() {
       // Ja/Nein
       document.querySelectorAll('.ja-nein-btn').forEach(btn => {
         const id  = btn.dataset.id;
         const val = btn.dataset.val;
 
-        function handle() {
+        const handle = () => {
           const bestellen = val === 'ja';
           if (!bestellungen[id]) bestellungen[id] = { bestellen: null, menge: 1 };
           bestellungen[id].bestellen = bestellen;
 
-          // Update card
-          const card = document.getElementById(`card-${id}`);
-          card.className = `artikel-card ${bestellen ? 'bestellen' : 'ok'}`;
+          document.getElementById(`card-${id}`).className =
+            `artikel-card ${bestellen ? 'bestellen' : 'ok'}`;
 
-          // Update buttons
-          document.querySelectorAll(`.ja-nein-btn[data-id="${id}"]`).forEach(b => {
-            b.classList.toggle('selected', b.dataset.val === val);
-          });
+          document.querySelectorAll(`.ja-nein-btn[data-id="${id}"]`).forEach(b =>
+            b.classList.toggle('selected', b.dataset.val === val)
+          );
 
-          // Show/hide menge
-          const mengeWrap = document.getElementById(`menge-${id}`);
-          mengeWrap.classList.toggle('visible', bestellen);
-        }
+          document.getElementById(`menge-${id}`).classList.toggle('visible', bestellen);
+          updateCheckProgress();
+          saveWarenkorb(id);
+        };
 
-        btn.addEventListener('touchstart', e => { e.preventDefault(); btn.style.transform='scale(0.95)'; handle(); }, { passive: false });
-        btn.addEventListener('touchend',   () => { btn.style.transform=''; });
+        btn.addEventListener('touchstart', e => { e.preventDefault(); btn.style.transform = 'scale(0.95)'; handle(); }, { passive: false });
+        btn.addEventListener('touchend',   () => { btn.style.transform = ''; });
         btn.addEventListener('click', handle);
       });
 
@@ -1121,27 +1036,22 @@
       document.querySelectorAll('.chip').forEach(chip => {
         const id  = chip.dataset.id;
         const val = parseInt(chip.dataset.val);
-
-        function handle() {
-          setMenge(id, val);
-        }
-
+        const handle = () => { setMenge(id, val); saveWarenkorb(id); };
         chip.addEventListener('touchstart', e => { e.preventDefault(); chip.classList.add('pressed'); handle(); }, { passive: false });
         chip.addEventListener('touchend',   () => setTimeout(() => chip.classList.remove('pressed'), 100));
         chip.addEventListener('click', handle);
       });
 
-      // +/- Buttons
+      // +/-
       document.querySelectorAll('.pm-btn').forEach(btn => {
         const id     = btn.dataset.id;
         const action = btn.dataset.action;
-
-        function handle() {
+        const handle = () => {
           const cur  = parseInt(document.getElementById(`pm-${id}`).value) || 1;
           const next = action === 'plus' ? cur + 1 : Math.max(1, cur - 1);
           setMenge(id, next);
-        }
-
+          saveWarenkorb(id);
+        };
         btn.addEventListener('touchstart', e => { e.preventDefault(); btn.classList.add('pressed'); handle(); }, { passive: false });
         btn.addEventListener('touchend',   () => setTimeout(() => btn.classList.remove('pressed'), 100));
         btn.addEventListener('click', handle);
@@ -1150,10 +1060,10 @@
       // Direct input
       document.querySelectorAll('.pm-display').forEach(input => {
         const id = input.id.replace('pm-', '');
-        input.addEventListener('change', () => setMenge(id, Math.max(1, parseInt(input.value) || 1)));
+        input.addEventListener('change', () => { setMenge(id, Math.max(1, parseInt(input.value) || 1)); saveWarenkorb(id); });
       });
 
-      // Foto buttons
+      // Foto-Buttons
       document.querySelectorAll('.artikel-foto-btn[data-foto]').forEach(btn => {
         btn.addEventListener('click', () => openFoto(btn.dataset.foto, btn.dataset.name));
       });
@@ -1162,53 +1072,346 @@
     function setMenge(id, val) {
       if (!bestellungen[id]) bestellungen[id] = { bestellen: true, menge: val };
       bestellungen[id].menge = val;
-
       const input = document.getElementById(`pm-${id}`);
       if (input) input.value = val;
-
-      document.querySelectorAll(`.chip[data-id="${id}"]`).forEach(chip => {
-        chip.classList.toggle('selected', parseInt(chip.dataset.val) === val);
-      });
+      document.querySelectorAll(`.chip[data-id="${id}"]`).forEach(c =>
+        c.classList.toggle('selected', parseInt(c.dataset.val) === val)
+      );
     }
 
-    window.prevBereich = () => { if (currentIdx > 0) renderBereich(currentIdx - 1); };
-    window.nextBereich = () => {
-      autoSave();
-      // Nur innerhalb meiner Bereiche navigieren
-      if (meineBereiche.length > 0) {
-        const meinIdx    = meineBereiche.indexOf(alleBereiche[currentIdx]?.id);
-        const naechster  = meineBereiche[meinIdx + 1];
-        if (naechster) {
-          const naechsterIdx = alleBereiche.findIndex(b => b.id === naechster);
-          renderBereich(naechsterIdx);
-        } else {
-          showSignature(); // Letzter Bereich → zur Unterschrift
+    /* ════════════════════════════════════════
+       SOFORTIGES SPEICHERN → WARENKORB
+    ════════════════════════════════════════ */
+    async function saveWarenkorb(artikelId) {
+      if (!sessionId || !currentBereichId) return;
+      const item = bestellungen[artikelId];
+      if (!item || item.bestellen === null || item.bestellen === undefined) return;
+
+      const artikel = alleArtikel.find(a => a.id === artikelId);
+      const bereich = alleBereiche.find(b => b.id === currentBereichId);
+
+      try {
+        await setDoc(
+          doc(db, 'bestellungen_session', sessionId, 'warenkorb', artikelId),
+          {
+            artikelId,
+            artikelName:  artikel?.name  ?? artikelId,
+            bestellen:    item.bestellen,
+            menge:        item.menge ?? 1,
+            mitarbeiter:  userName,
+            bereich:      currentBereichId,
+            bereichName:  bereich?.name ?? '',
+            timestamp:    serverTimestamp(),
+            quelle:       'check',
+          }
+        );
+      } catch(e) {
+        // Stille Fehler – Nutzer sieht lokalen State trotzdem korrekt
+      }
+    }
+
+    /* ════════════════════════════════════════
+       HEARTBEAT
+    ════════════════════════════════════════ */
+    function startHeartbeat() {
+      stopHeartbeat();
+      heartbeatTimer = setInterval(async () => {
+        if (!sessionId) return;
+        try {
+          await updateDoc(doc(db, 'bestellungen_session', sessionId), {
+            [`heartbeats.${userName}`]: serverTimestamp(),
+          });
+        } catch(e) {}
+      }, 30_000);
+    }
+
+    function stopHeartbeat() {
+      if (heartbeatTimer) { clearInterval(heartbeatTimer); heartbeatTimer = null; }
+    }
+
+    /* ════════════════════════════════════════
+       ABANDONED-CHECK (periodisch, unabhängig von onSnapshot)
+       Läuft auch wenn sich das Session-Dokument nicht ändert
+       (z.B. wenn jemand einfach den Tab schliesst)
+    ════════════════════════════════════════ */
+    function startAbandonedCheck() {
+      stopAbandonedCheck();
+      abandonedCheckTimer = setInterval(async () => {
+        if (!sessionId || !latestSessionData) return;
+        const now      = Date.now();
+        const STALE_MS = 90_000;
+        const updates  = {};
+
+        Object.entries(latestSessionData.heartbeats ?? {}).forEach(([name, ts]) => {
+          const lastBeat = ts?.toMillis?.() ?? 0;
+          if (lastBeat === 0) return;
+          if (now - lastBeat > STALE_MS) {
+            Object.entries(latestSessionData.bereichStatus ?? {}).forEach(([bid, bs]) => {
+              if (bs.mitarbeiter === name && bs.status === 'gesperrt') {
+                updates[`bereichStatus.${bid}.status`] = 'abgebrochen';
+              }
+            });
+          }
+        });
+
+        if (Object.keys(updates).length > 0) {
+          try {
+            await updateDoc(doc(db, 'bestellungen_session', sessionId), updates);
+          } catch(e) {}
         }
-      } else {
-        if (currentIdx < alleBereiche.length - 1) renderBereich(currentIdx + 1);
+      }, 30_000);
+    }
+
+    function stopAbandonedCheck() {
+      if (abandonedCheckTimer) { clearInterval(abandonedCheckTimer); abandonedCheckTimer = null; }
+    }
+
+    /* ════════════════════════════════════════
+       SESSION LISTENER (onSnapshot)
+    ════════════════════════════════════════ */
+    function startSessionListener(sid) {
+      if (sessionUnsubscribe) { sessionUnsubscribe(); sessionUnsubscribe = null; }
+      sessionUnsubscribe = onSnapshot(doc(db, 'bestellungen_session', sid), handleSessionUpdate);
+    }
+
+    function stopSessionListener() {
+      if (sessionUnsubscribe) { sessionUnsubscribe(); sessionUnsubscribe = null; }
+    }
+
+    function handleSessionUpdate(snap) {
+      if (!snap.exists()) return;
+      const data = snap.data();
+      latestSessionData = data;
+
+      // ── Verlassene User erkennen und markieren ──
+      // Nur auf server-bestätigten Snapshots prüfen (hasPendingWrites=true bedeutet
+      // serverTimestamp() ist noch null → würde fälschlich alle als "abandoned" markieren)
+      if (!snap.metadata.hasPendingWrites) {
+        const now      = Date.now();
+        const STALE_MS = 90_000;
+        const updates  = {};
+
+        Object.entries(data.heartbeats ?? {}).forEach(([name, ts]) => {
+          const lastBeat = ts?.toMillis?.() ?? 0;
+          if (lastBeat === 0) return; // Pending timestamp überspringen
+          if (now - lastBeat > STALE_MS) {
+            Object.entries(data.bereichStatus ?? {}).forEach(([bid, bs]) => {
+              if (bs.mitarbeiter === name && bs.status === 'gesperrt') {
+                updates[`bereichStatus.${bid}.status`] = 'abgebrochen';
+              }
+            });
+          }
+        });
+
+        if (Object.keys(updates).length > 0) {
+          updateDoc(snap.ref, updates).catch(() => {});
+        }
+      }
+
+      // ── Alle Bereiche erledigt? ──
+      if (data.alleErledigt) {
+        checkAlleDone();
+      }
+
+      // ── Join-Screen: Live-Bereiche aktualisieren ──
+      const joinScreen = document.getElementById('screen-join');
+      if (!joinScreen.classList.contains('hidden')) {
+        renderBereichList(data);
+        // Selektion wiederherstellen
+        if (selectedBereichId) {
+          const row = document.querySelector(`.bereich-row[data-bereich-id="${selectedBereichId}"]`);
+          if (row && !row.classList.contains('blocked') && !row.classList.contains('erledigt')) {
+            row.classList.add('selected');
+          } else {
+            // Gewählter Bereich wurde von jemand anderem gesperrt
+            selectedBereichId = null;
+            document.getElementById('btn-join-start').disabled = true;
+            document.getElementById('btn-join-start').textContent = 'Bereich auswählen…';
+            showToast('Dein gewählter Bereich wurde soeben von einem Kollegen übernommen', 'error');
+          }
+        }
+      }
+
+      // ── Wait-Screen: Übersicht aktualisieren ──
+      const waitScreen = document.getElementById('screen-wait');
+      if (!waitScreen.classList.contains('hidden')) {
+        renderWaitStatus(data);
+      }
+    }
+
+    /* ════════════════════════════════════════
+       BEREICH ABSCHLIESSEN
+    ════════════════════════════════════════ */
+    window.abschliesseBereich = async function() {
+      try {
+        await runTransaction(db, async tx => {
+          const ref  = doc(db, 'bestellungen_session', sessionId);
+          const snap = await tx.get(ref);
+          if (!snap.exists()) throw new Error('Session nicht gefunden');
+          const data = snap.data();
+
+          const newStatus = {
+            ...(data.bereichStatus || {}),
+            [currentBereichId]: {
+              status:      'erledigt',
+              mitarbeiter: userName,
+              gesperrtAt:  data.bereichStatus?.[currentBereichId]?.gesperrtAt ?? null,
+              erledigtAt:  serverTimestamp(),
+            }
+          };
+
+          // Prüfen ob alle Bereiche done sind
+          const alleDone = alleBereiche.every(b => {
+            const s = newStatus[b.id]?.status;
+            return s === 'erledigt' || s === 'abgebrochen';
+          });
+
+          tx.update(ref, {
+            bereichStatus: newStatus,
+            alleErledigt:  alleDone,
+            [`heartbeats.${userName}`]: serverTimestamp(),
+          });
+        });
+
+        stopHeartbeat();
+        // AbandonedCheck läuft weiter – erkennt Kollegen die abbrechen während wir warten
+        showScreen('wait');
+        if (latestSessionData) renderWaitStatus(latestSessionData);
+
+        // Sofort prüfen ob schon alle done (falls alleErledigt bereits true)
+        if (latestSessionData?.alleErledigt) {
+          checkAlleDone();
+        }
+
+      } catch(e) {
+        showToast('Fehler: ' + e.message, 'error');
       }
     };
 
-    // ── Signature ──
-    window.showSignature = function() {
-      const zuBestellen = Object.entries(bestellungen).filter(([, v]) => v.bestellen === true);
-      const bearbeitet  = Object.keys(bestellungen).length;
+    /* ════════════════════════════════════════
+       WAIT SCREEN
+    ════════════════════════════════════════ */
+    function renderWaitStatus(data) {
+      const bereichStatus = data.bereichStatus || {};
+
+      // Bereiche-Liste
+      const listEl = document.getElementById('wait-bereich-list');
+      listEl.innerHTML = alleBereiche.map(b => {
+        const bs = bereichStatus[b.id] || { status: 'frei' };
+        let dotHtml = '', rowClass = '', infoText = '';
+
+        if (bs.status === 'erledigt') {
+          dotHtml  = '<div class="status-dot dot-erledigt" style="width:10px;height:10px;border-radius:50%;background:#22c55e;flex-shrink:0;"></div>';
+          rowClass = 'w-erledigt';
+          infoText = `Erledigt von ${bs.mitarbeiter}`;
+        } else if (bs.status === 'gesperrt') {
+          dotHtml  = '<span style="font-size:0.85rem;">🔒</span>';
+          rowClass = 'w-gesperrt';
+          infoText = `${bs.mitarbeiter} ist gerade hier`;
+        } else if (bs.status === 'abgebrochen') {
+          dotHtml  = '<div style="width:10px;height:10px;border-radius:50%;background:#ef4444;flex-shrink:0;"></div>';
+          rowClass = 'w-abgebrochen';
+          infoText = 'Abgebrochen';
+        } else {
+          dotHtml  = '<div style="width:10px;height:10px;border-radius:50%;background:#f97316;flex-shrink:0;"></div>';
+          rowClass = 'w-frei';
+          infoText = 'Noch nicht bearbeitet';
+        }
+
+        return `
+          <div class="wait-bereich-row ${rowClass}">
+            ${dotHtml}
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:0.88rem;font-weight:700;">${esc(b.name)}</div>
+              <div style="font-size:0.65rem;color:var(--muted);font-family:'IBM Plex Mono',monospace;margin-top:2px;">${esc(infoText)}</div>
+            </div>
+          </div>`;
+      }).join('');
+
+      // Teilnehmer
+      const teilnehmer = data.teilnehmer || [];
+      const teilBlock  = document.getElementById('wait-teilnehmer-block');
+      if (teilnehmer.length > 0) {
+        teilBlock.style.display = 'block';
+        document.getElementById('wait-teilnehmer-list').innerHTML = teilnehmer.map(t => `
+          <span style="background:var(--surface);border:1px solid var(--border);border-radius:20px;padding:5px 12px;font-size:0.78rem;font-weight:600;">
+            ${esc(t.name)}
+          </span>`).join('');
+      }
+
+      // Untertitel
+      const offen = alleBereiche.filter(b => {
+        const s = bereichStatus[b.id]?.status;
+        return s !== 'erledigt' && s !== 'abgebrochen';
+      });
+      document.getElementById('wait-subtitle').textContent = offen.length > 0
+        ? `Noch ${offen.length} Bereich${offen.length > 1 ? 'e' : ''} offen…`
+        : 'Alle Bereiche fertig!';
+
+      // "Weiteren Bereich" Button – nur anzeigen wenn noch freie/abgebrochene Bereiche
+      const hasFree = alleBereiche.some(b => {
+        const s = bereichStatus[b.id]?.status;
+        // kein Eintrag = implizit 'frei'
+        return !s || s === 'frei' || s === 'abgebrochen';
+      });
+      const btnWeiterer = document.getElementById('btn-weiterer-bereich');
+      if (btnWeiterer) btnWeiterer.style.display = hasFree ? '' : 'none';
+    }
+
+    window.wähleWeiterenBereich = function() {
+      showJoinScreen();
+    };
+
+    function checkAlleDone() {
+      document.getElementById('wait-spinner').style.display = 'none';
+      document.getElementById('wait-subtitle').textContent = 'Alle Bereiche fertig!';
+      document.getElementById('wait-bottom').classList.remove('hidden');
+    }
+
+    window.backToWait = function() { showScreen('wait'); };
+
+    /* ════════════════════════════════════════
+       UNTERSCHRIFT
+    ════════════════════════════════════════ */
+    window.showSignature = async function() {
+      // Alle Warenkorb-Einträge lesen
+      let warenkorbItems = [];
+      try {
+        const snap = await getDocs(collection(db, 'bestellungen_session', sessionId, 'warenkorb'));
+        snap.forEach(d => warenkorbItems.push({ id: d.id, ...d.data() }));
+      } catch(e) {}
+
+      const zuBestellen = warenkorbItems.filter(i => i.bestellen === true);
+
+      // Session-Teilnehmer
+      const teilnehmer = latestSessionData?.teilnehmer ?? [];
+      const alleNamen  = teilnehmer.map(t => t.name);
 
       document.getElementById('summary-grid').innerHTML = `
-        <div class="summary-row"><span class="summary-key">Mitarbeiter</span><span class="summary-val">${esc(userName)}</span></div>
-        <div class="summary-row"><span class="summary-key">Datum</span><span class="summary-val">${new Date().toLocaleDateString('de-DE')} · ${new Date().toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'})}</span></div>
-        <div class="summary-row"><span class="summary-key">Bearbeitet</span><span class="summary-val">${bearbeitet} / ${alleArtikel.length} Artikel</span></div>
-        <div class="summary-row"><span class="summary-key">Zu bestellen</span><span class="summary-val" style="color:${zuBestellen.length>0?'var(--red)':'var(--green)'}">${zuBestellen.length} Artikel</span></div>`;
+        <div class="summary-row">
+          <span class="summary-key">Mitarbeiter</span>
+          <span class="summary-val">${esc(alleNamen.join(' · ') || userName)}</span>
+        </div>
+        <div class="summary-row">
+          <span class="summary-key">Datum</span>
+          <span class="summary-val">${new Date().toLocaleDateString('de-DE')} · ${new Date().toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'})}</span>
+        </div>
+        <div class="summary-row">
+          <span class="summary-key">Bereiche</span>
+          <span class="summary-val">${alleBereiche.length} gesamt</span>
+        </div>
+        <div class="summary-row">
+          <span class="summary-key">Zu bestellen</span>
+          <span class="summary-val" style="color:${zuBestellen.length > 0 ? 'var(--red)' : 'var(--green)'};">${zuBestellen.length} Artikel</span>
+        </div>`;
+
       showScreen('sig');
       initCanvas();
     };
 
-    window.backToCheck = () => {
-      showScreen('check');
-      renderBereich(currentIdx);
-    };
-
-    // ── Canvas ──
+    /* ════════════════════════════════════════
+       CANVAS
+    ════════════════════════════════════════ */
     let drawing = false, hasSig = false;
     function initCanvas() {
       const canvas = document.getElementById('sig-canvas');
@@ -1217,135 +1420,163 @@
       canvas.height = 160;
       ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim();
       ctx.lineWidth = 2.5; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+
       function getPos(e) {
         const r = canvas.getBoundingClientRect();
         const t = e.touches ? e.touches[0] : e;
-        return { x: (t.clientX-r.left)*(canvas.width/r.width), y: (t.clientY-r.top)*(canvas.height/r.height) };
+        return { x: (t.clientX - r.left) * (canvas.width / r.width), y: (t.clientY - r.top) * (canvas.height / r.height) };
       }
-      canvas.addEventListener('mousedown',  e => { drawing=true; ctx.beginPath(); const p=getPos(e); ctx.moveTo(p.x,p.y); });
-      canvas.addEventListener('mousemove',  e => { if(!drawing)return; const p=getPos(e); ctx.lineTo(p.x,p.y); ctx.stroke(); hasSig=true; document.getElementById('sig-hint').style.opacity='0'; });
-      canvas.addEventListener('mouseup',    ()=>drawing=false);
-      canvas.addEventListener('mouseleave', ()=>drawing=false);
-      canvas.addEventListener('touchstart', e=>{ e.preventDefault(); drawing=true; ctx.beginPath(); const p=getPos(e); ctx.moveTo(p.x,p.y); },{passive:false});
-      canvas.addEventListener('touchmove',  e=>{ e.preventDefault(); if(!drawing)return; const p=getPos(e); ctx.lineTo(p.x,p.y); ctx.stroke(); hasSig=true; document.getElementById('sig-hint').style.opacity='0'; },{passive:false});
-      canvas.addEventListener('touchend',   ()=>drawing=false);
+      canvas.addEventListener('mousedown',  e => { drawing = true; ctx.beginPath(); const p = getPos(e); ctx.moveTo(p.x, p.y); });
+      canvas.addEventListener('mousemove',  e => { if (!drawing) return; const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); hasSig = true; document.getElementById('sig-hint').style.opacity = '0'; });
+      canvas.addEventListener('mouseup',    () => drawing = false);
+      canvas.addEventListener('mouseleave', () => drawing = false);
+      canvas.addEventListener('touchstart', e => { e.preventDefault(); drawing = true; ctx.beginPath(); const p = getPos(e); ctx.moveTo(p.x, p.y); }, { passive: false });
+      canvas.addEventListener('touchmove',  e => { e.preventDefault(); if (!drawing) return; const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); hasSig = true; document.getElementById('sig-hint').style.opacity = '0'; }, { passive: false });
+      canvas.addEventListener('touchend',   () => drawing = false);
     }
 
     window.clearSig = function() {
       const c = document.getElementById('sig-canvas');
-      c.getContext('2d').clearRect(0,0,c.width,c.height);
-      hasSig=false;
-      document.getElementById('sig-hint').style.opacity='1';
+      c.getContext('2d').clearRect(0, 0, c.width, c.height);
+      hasSig = false;
+      document.getElementById('sig-hint').style.opacity = '1';
     };
 
-    // ── Submit ──
+    /* ════════════════════════════════════════
+       SUBMIT
+    ════════════════════════════════════════ */
     window.submitCheck = async function() {
-      if (!hasSig) { alert('Bitte zuerst unterschreiben!'); return; }
+      if (!hasSig) { showToast('Bitte zuerst unterschreiben!', 'error'); return; }
 
-      const nachbestellungen = alleArtikel
-        .filter(a => bestellungen[a.id]?.bestellen === true)
-        .map(a => ({
-          id:       a.id,
-          name:     a.name,
-          location: a.location,
-          lp:       a.lp,
-          menge:    bestellungen[a.id].menge,
-          einheit:  a.minEinheit || 'Stk',
-        }));
+      const btn = document.getElementById('btn-submit');
+      btn.disabled    = true;
+      btn.textContent = 'Wird gespeichert…';
 
       try {
-        stopAutoSave();
+        // Alle Warenkorb-Einträge lesen
+        const warenkorbSnap = await getDocs(
+          collection(db, 'bestellungen_session', sessionId, 'warenkorb')
+        );
+        const bestellungenMap = {};
+        const nachbestellungen = [];
 
-        // ── Multi-User Session ──
-        let alleNamen = [userName];
-
-        if (sessionId) {
-          // Session als abgeschlossen markieren
-          const sessionSnap = await getDoc(doc(db, 'bestellungen_session', sessionId));
-          const sessionData = sessionSnap.exists() ? sessionSnap.data() : {};
-
-          // Alle Bestellungen aus Session + meine zusammenführen
-          const alleBestellungen = { ...(sessionData.bestellungen || {}), ...bestellungen };
-
-          // Alle Nachbestellungen neu berechnen
-          const alleNachbest = alleArtikel
-            .filter(a => alleBestellungen[a.id]?.bestellen === true)
-            .map(a => ({
-              id:      a.id,
-              name:    a.name,
-              location:a.location,
-              lp:      a.lp,
-              menge:   alleBestellungen[a.id].menge,
-              einheit: a.minEinheit || 'Stk',
-            }));
-
-          alleNamen = (sessionData.teilnehmer || [{ name: userName }]).map(t => t.name);
-
-          // Session abschließen
-          await updateDoc(doc(db, 'bestellungen_session', sessionId), {
-            status: 'abgeschlossen',
-            abgeschlossen: new Date().toISOString(),
-          });
-
-          // Finale Bestellung speichern
-          await addDoc(collection(db, 'bestellungen'), {
-            mitarbeiter:     alleNamen.join(' · '),
-            mitarbeiterListe:alleNamen,
-            datum:           serverTimestamp(),
-            bestellungen:    alleBestellungen,
-            nachbestellungen:alleNachbest,
-            unterschrift:    document.getElementById('sig-canvas').toDataURL('image/png'),
-            status:          'abgeschlossen',
-            sessionId,
-          });
-
-          // Session löschen
-          try { await deleteDoc(doc(db, 'bestellungen_session', sessionId)); } catch(e) {}
-
-        } else {
-          // ── Single-User ──
-          await addDoc(collection(db, 'bestellungen'), {
-            mitarbeiter:     userName,
-            mitarbeiterListe:[userName],
-            datum:           serverTimestamp(),
-            bestellungen,
-            nachbestellungen,
-            unterschrift:    document.getElementById('sig-canvas').toDataURL('image/png'),
-            status:          'abgeschlossen',
-          });
-        }
-
-        // ── Draft löschen ──
-        if (autoSaveId && !sessionId) {
-          try {
-            await deleteDoc(doc(db, 'bestellungen_draft', autoSaveId));
-          } catch(e) {}
-        }
-
-        // Alle Drafts dieses Nutzers löschen
-        try {
-          const drafts = await getDocs(query(collection(db, 'bestellungen_draft'), orderBy('datum', 'desc')));
-          for (const d of drafts.docs) {
-            if (d.data().mitarbeiter === userName) {
-              await deleteDoc(doc(db, 'bestellungen_draft', d.id));
-            }
+        warenkorbSnap.forEach(d => {
+          const item = d.data();
+          const art  = alleArtikel.find(a => a.id === item.artikelId);
+          bestellungenMap[item.artikelId] = {
+            bestellen:   item.bestellen,
+            menge:       item.menge ?? 1,
+            mitarbeiter: item.mitarbeiter,
+          };
+          if (item.bestellen) {
+            nachbestellungen.push({
+              id:          item.artikelId,
+              name:        item.artikelName,
+              menge:       item.menge ?? 1,
+              mitarbeiter: item.mitarbeiter,
+              location:    art?.location ?? '',
+              lp:          art?.lp ?? '',
+              einheit:     art?.minEinheit ?? 'Stk',
+            });
           }
-        } catch(e) {}
+        });
 
-        autoSaveId = null;
-        sessionId  = null;
+        const teilnehmer = latestSessionData?.teilnehmer ?? [{ name: userName }];
+        const alleNamen  = teilnehmer.map(t => t.name);
 
-        // Push Benachrichtigung
-        if (typeof PWA !== 'undefined') {
-          await PWA.notifyLagercheck(alleNamen.join(' & '), nachbestellungen.length);
-        }
+        // Finale Bestellung speichern
+        await addDoc(collection(db, 'bestellungen'), {
+          mitarbeiter:      alleNamen.join(' · '),
+          mitarbeiterListe: alleNamen,
+          datum:            serverTimestamp(),
+          unterschrift:     document.getElementById('sig-canvas').toDataURL('image/png'),
+          status:           'abgeschlossen',
+          sessionId,
+          quelle:           'check',
+          bestellungen:     bestellungenMap,
+          nachbestellungen,
+        });
 
-        alert(`✅ Lagerbestellung abgeschlossen!\n\n${nachbestellungen.length} Artikel wurden zur Bestellung gemeldet.`);
+        // Session schließen
+        await updateDoc(doc(db, 'bestellungen_session', sessionId), { status: 'abgeschlossen' });
+
+        // Cleanup
+        stopHeartbeat();
+        stopAbandonedCheck();
+        stopSessionListener();
+
+        // Session-Dokument löschen
+        try { await deleteDoc(doc(db, 'bestellungen_session', sessionId)); } catch(e) {}
+
+        sessionId        = null;
+        currentBereichId = null;
+        bestellungen     = {};
+
+        alert(`✅ Lagerbestellung abgeschlossen!\n${nachbestellungen.length} Artikel zur Bestellung gemeldet.`);
         window.location.href = './mitarbeiter.html';
-      } catch(e) { alert('Fehler: '+e.message); }
+
+      } catch(e) {
+        btn.disabled    = false;
+        btn.textContent = '📄 Absenden & Fertig';
+        showToast('Fehler: ' + e.message, 'error');
+      }
     };
 
-    // ── Foto Modal ──
+    /* ════════════════════════════════════════
+       STORNIEREN
+    ════════════════════════════════════════ */
+    window.storniereBestellung = async function() {
+      const ok = confirm('Lagerbestellung abbrechen?\n\nDein Bereich wird freigegeben, andere können weitermachen.');
+      if (!ok) return;
+
+      try {
+        stopHeartbeat();
+        stopAbandonedCheck();
+        if (joinUnsubscribe) { joinUnsubscribe(); joinUnsubscribe = null; }
+
+        if (sessionId && currentBereichId) {
+          const sessionRef = doc(db, 'bestellungen_session', sessionId);
+          const snap = await getDoc(sessionRef);
+          if (snap.exists()) {
+            const data        = snap.data();
+            const andereAktiv = (data.teilnehmer || []).filter(t => t.name !== userName);
+
+            if (andereAktiv.length > 0) {
+              // Andere arbeiten noch → nur eigenen Bereich freigeben
+              await updateDoc(sessionRef, {
+                [`bereichStatus.${currentBereichId}.status`]:      'frei',
+                [`bereichStatus.${currentBereichId}.mitarbeiter`]: null,
+                teilnehmer: (data.teilnehmer || []).filter(t => t.name !== userName),
+              });
+              // Eigene Warenkorb-Einträge löschen
+              try {
+                const wk = await getDocs(collection(db, 'bestellungen_session', sessionId, 'warenkorb'));
+                const batch = writeBatch(db);
+                wk.forEach(d => { if (d.data().mitarbeiter === userName) batch.delete(d.ref); });
+                await batch.commit();
+              } catch(e) {}
+            } else {
+              // Letzter User → Session löschen
+              await deleteDoc(sessionRef);
+            }
+          }
+        }
+
+        stopSessionListener();
+        sessionId        = null;
+        currentBereichId = null;
+        bestellungen     = {};
+
+      } catch(e) {
+        showToast('Fehler beim Stornieren: ' + e.message, 'error');
+      }
+
+      window.location.href = './mitarbeiter.html';
+    };
+
+    /* ════════════════════════════════════════
+       FOTO MODAL
+    ════════════════════════════════════════ */
     window.openFoto = function(url, name) {
       const modal = document.createElement('div');
       modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.88);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px;';
@@ -1353,235 +1584,35 @@
         <div style="background:var(--surface);border-radius:18px;overflow:hidden;max-width:440px;width:100%;">
           <div style="padding:14px 18px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
             <span style="font-size:0.95rem;font-weight:700;">${esc(name)}</span>
-            <button onclick="this.closest('div[style]').remove()" style="background:none;border:none;color:var(--muted);font-size:1.3rem;cursor:pointer;padding:4px 8px;touch-action:manipulation;">✕</button>
+            <button onclick="this.closest('[style]').remove()" style="background:none;border:none;color:var(--muted);font-size:1.3rem;cursor:pointer;padding:4px 8px;touch-action:manipulation;">✕</button>
           </div>
           <img src="${esc(url)}" style="width:100%;max-height:400px;object-fit:contain;background:var(--surface2);">
           <div style="padding:10px 16px;font-size:0.72rem;color:var(--muted);font-family:'IBM Plex Mono',monospace;text-align:center;">Soll-Zustand</div>
         </div>`;
-      modal.onclick = e => { if(e.target===modal) modal.remove(); };
+      modal.onclick = e => { if (e.target === modal) modal.remove(); };
       document.body.appendChild(modal);
     };
 
-    // ── Screens ──
-    // ── JOIN SCREEN ──
-    async function showJoinScreen() {
-      showScreen('join');
-
-      // Bereiche-Liste aufbauen
-      const listEl = document.getElementById('bereich-select-list');
-      listEl.innerHTML = '';
-
-      // Offene Sessions prüfen
-      let openSession = null;
-      try {
-        const sessions = await getDocs(query(
-          collection(db, 'bestellungen_session'),
-          orderBy('startzeit', 'desc'),
-          limit(1)
-        ));
-        if (!sessions.empty) {
-          const s = { id: sessions.docs[0].id, ...sessions.docs[0].data() };
-          // Nur zeigen wenn nicht älter als 4 Stunden und noch nicht abgeschlossen
-          const alter = (new Date() - new Date(s.startzeit)) / (1000*60*60);
-          if (alter < 4 && s.status !== 'abgeschlossen') {
-            openSession = s;
-          }
-        }
-      } catch(e) {}
-
-      // Offene Session anzeigen
-      const sessionWrap = document.getElementById('join-session-wrap');
-      if (openSession) {
-        const mitarbeiter = openSession.teilnehmer?.map(t => t.name).join(', ') || '–';
-        const erledigte   = openSession.erledigteBereiche?.length || 0;
-        const gesamt      = alleBereiche.length;
-        document.getElementById('join-session-info').innerHTML = `
-          <strong>${mitarbeiter}</strong> macht gerade die Lagerbestellung<br>
-          ${erledigte} von ${gesamt} Bereichen erledigt`;
-        sessionWrap.classList.remove('hidden');
-        window._openSession = openSession;
-      } else {
-        sessionWrap.classList.add('hidden');
-        window._openSession = null;
-      }
-
-      // Bereiche mit Status anzeigen
-      const gesperrte = openSession?.erledigteBereiche || [];
-      const vergeben  = openSession?.vergebeneBereiche || {};
-
-      alleBereiche.forEach((b, i) => {
-        const istGesperrt  = gesperrte.includes(b.id);
-        const istVergeben  = vergeben[b.id] && vergeben[b.id] !== userName;
-        const artikelCount = alleArtikel.filter(a => a.bereich === b.id).length;
-        const icon = getBereichIcon(b.name);
-
-        const div = document.createElement('div');
-        div.style.cssText = `
-          display:flex;align-items:center;gap:10px;padding:10px 12px;
-          border-radius:10px;border:1.5px solid ${istGesperrt ? 'var(--green)' : istVergeben ? 'var(--border)' : 'var(--border)'};
-          background:${istGesperrt ? 'rgba(34,197,94,0.06)' : istVergeben ? 'var(--surface2)' : 'var(--surface)'};
-          opacity:${istGesperrt || istVergeben ? '0.6' : '1'};
-          cursor:${istGesperrt || istVergeben ? 'default' : 'pointer'};
-          transition:all 0.15s;
-          -webkit-tap-highlight-color:transparent;
-        `;
-        div.dataset.bereichId = b.id;
-        div.dataset.selected  = 'false';
-        div.dataset.gesperrt  = istGesperrt || istVergeben ? 'true' : 'false';
-
-        div.innerHTML = `
-          <span style="font-size:1.1rem;">${istGesperrt ? '✅' : icon}</span>
-          <div style="flex:1;">
-            <div style="font-size:0.82rem;font-weight:600;">${b.name}</div>
-            <div style="font-size:0.62rem;color:var(--muted);font-family:'IBM Plex Mono',monospace;margin-top:1px;">
-              ${artikelCount} Artikel${istGesperrt ? ' · Erledigt' : istVergeben ? ` · ${vergeben[b.id]}` : ''}
-            </div>
-          </div>
-          <div class="bereich-checkbox" style="
-            width:22px;height:22px;border-radius:6px;
-            border:2px solid ${istGesperrt ? 'var(--green)' : 'var(--border)'};
-            background:${istGesperrt ? 'var(--green)' : 'transparent'};
-            display:flex;align-items:center;justify-content:center;
-            font-size:0.75rem;color:white;flex-shrink:0;
-          ">${istGesperrt ? '✓' : ''}</div>
-        `;
-
-        if (!istGesperrt && !istVergeben) {
-          div.addEventListener('click', () => toggleBereich(div, b.id));
-        }
-
-        listEl.appendChild(div);
-      });
+    /* ════════════════════════════════════════
+       TOAST
+    ════════════════════════════════════════ */
+    function showToast(msg, type = 'success') {
+      const t = document.createElement('div');
+      t.style.cssText = `position:fixed;bottom:80px;left:50%;transform:translateX(-50%);
+        background:var(--surface);border:1px solid ${type === 'error' ? 'var(--red)' : 'var(--green)'};
+        color:${type === 'error' ? 'var(--red)' : 'var(--green)'};
+        border-radius:10px;padding:10px 18px;font-size:0.82rem;
+        box-shadow:var(--shadow-lg);z-index:3000;white-space:nowrap;max-width:90vw;text-overflow:ellipsis;overflow:hidden;`;
+      t.textContent = msg;
+      document.body.appendChild(t);
+      setTimeout(() => t.remove(), 2800);
     }
 
-    function getBereichIcon(name) {
-      const n = name.toLowerCase();
-      if (n.includes('schrank')) return '🗄️';
-      if (n.includes('regal'))   return '📦';
-      if (n.includes('sauer'))   return '🫧';
-      if (n.includes('büro'))    return '📋';
-      if (n.includes('küche'))   return '🍽️';
-      if (n.includes('wasch'))   return '🚿';
-      if (n.includes('mpg'))     return '🔋';
-      if (n.includes('medika'))  return '💊';
-      return '📁';
-    }
-
-    function toggleBereich(div, bereichId) {
-      const selected = div.dataset.selected === 'true';
-      div.dataset.selected = (!selected).toString();
-      const checkbox = div.querySelector('.bereich-checkbox');
-      if (!selected) {
-        div.style.border      = '1.5px solid var(--accent2)';
-        div.style.background  = 'rgba(14,165,233,0.08)';
-        checkbox.style.background   = 'var(--accent2)';
-        checkbox.style.borderColor  = 'var(--accent2)';
-        checkbox.textContent         = '✓';
-      } else {
-        div.style.border      = '1.5px solid var(--border)';
-        div.style.background  = 'var(--surface)';
-        checkbox.style.background   = 'transparent';
-        checkbox.style.borderColor  = 'var(--border)';
-        checkbox.textContent         = '';
-      }
-    }
-
-    // Alle Bereiche alleine machen
-    window.startAlleAllein = async function() {
-      meineBereiche = alleBereiche.map(b => b.id);
-      await startSession(false);
-    };
-
-    // Nur ausgewählte Bereiche
-    window.startMitAuswahl = async function() {
-      const selected = [...document.querySelectorAll('[data-selected="true"]')]
-        .map(d => d.dataset.bereichId);
-      if (selected.length === 0) {
-        showToast('Bitte mindestens einen Bereich auswählen', 'error');
-        return;
-      }
-      meineBereiche = selected;
-      await startSession(false);
-    };
-
-    // Laufende Session beitreten
-    window.joinSession = async function() {
-      const selected = [...document.querySelectorAll('[data-selected="true"]')]
-        .map(d => d.dataset.bereichId);
-      if (selected.length === 0) {
-        showToast('Bitte Bereiche auswählen die du übernimmst', 'error');
-        return;
-      }
-      meineBereiche = selected;
-      await startSession(true);
-    };
-
-    async function startSession(joinExisting) {
-      try {
-        // Sicherstellen dass Firebase-Auth aktiv ist (Fallback falls Session verloren)
-        const auth = getAuth(app);
-        if (!auth.currentUser) await signInAnonymously(auth);
-
-        if (joinExisting && window._openSession) {
-          // ── Bestehende Session beitreten ──
-          sessionId = window._openSession.id;
-          const sessionRef = doc(db, 'bestellungen_session', sessionId);
-
-          // Vergabene Bereiche updaten
-          const vergeben = { ...(window._openSession.vergebeneBereiche || {}) };
-
-          // Bereiche vom vorherigen Besitzer übernehmen
-          meineBereiche.forEach(bid => {
-            vergeben[bid] = userName;
-          });
-
-          // Teilnehmer hinzufügen
-          const teilnehmer = [...(window._openSession.teilnehmer || [])];
-          if (!teilnehmer.find(t => t.name === userName)) {
-            teilnehmer.push({ name: userName, beitritt: new Date().toISOString() });
-          }
-
-          await updateDoc(sessionRef, {
-            vergebeneBereiche: vergeben,
-            teilnehmer,
-          });
-          // Erste anderen Nutzer auch updaten (Live-Änderung der Bereiche)
-          // Anderen Nutzer bekommen beim nächsten autoSave die neuen Bereiche
-
-        } else {
-          // ── Neue Session erstellen (auch wenn alleine!) ──
-          // Andere können dann jederzeit beitreten
-          const vergeben = {};
-          meineBereiche.forEach(bid => vergeben[bid] = userName);
-
-          const sessionRef = await addDoc(collection(db, 'bestellungen_session'), {
-            startzeit:          new Date().toISOString(),
-            status:             'aktiv',
-            teilnehmer:         [{ name: userName, beitritt: new Date().toISOString() }],
-            vergebeneBereiche:  vergeben,
-            erledigteBereiche:  [],
-            bestellungen:       {},
-          });
-          sessionId    = sessionRef.id;
-        }
-
-        autoSaveId = sessionId;
-
-        // currentIdx auf ersten meiner Bereiche setzen
-        const ersterIdx = alleBereiche.findIndex(b => meineBereiche.includes(b.id));
-        currentIdx = ersterIdx >= 0 ? ersterIdx : 0;
-
-        showScreen('check');
-        startAutoSave();
-        renderBereich(currentIdx);
-
-      } catch(e) {
-        showToast('Fehler: ' + e.message, 'error');
-      }
-    }
-
+    /* ════════════════════════════════════════
+       SCREENS
+    ════════════════════════════════════════ */
     function showScreen(name) {
-      ['pin','join','check','sig'].forEach(s =>
+      ['pin', 'join', 'check', 'wait', 'sig'].forEach(s =>
         document.getElementById(`screen-${s}`).classList.toggle('hidden', s !== name)
       );
     }

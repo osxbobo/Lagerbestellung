@@ -139,13 +139,25 @@
     </div>
 
     <!-- Live Session Banner -->
-    <div id="laufende-session-banner" class="hidden" style="background:rgba(14,165,233,0.08);border:1px solid rgba(14,165,233,0.3);border-radius:14px;padding:14px 18px;display:flex;align-items:center;gap:12px;">
-      <span style="font-size:1.3rem;">👥</span>
-      <div style="flex:1;">
-        <div style="font-size:0.82rem;font-weight:700;color:#0ea5e9;">Laufende Bestellung</div>
-        <div id="session-banner-text" style="font-size:0.78rem;color:var(--text2);margin-top:2px;"></div>
+    <div id="laufende-session-banner" class="hidden" style="background:rgba(14,165,233,0.08);border:1px solid rgba(14,165,233,0.3);border-radius:14px;padding:14px 18px;gap:10px;flex-direction:column;display:none;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:1.3rem;">🔒</span>
+        <div style="flex:1;">
+          <div style="font-size:0.82rem;font-weight:700;color:#0ea5e9;">Laufende Lagerbestellung</div>
+          <div id="session-banner-text" style="font-size:0.78rem;color:var(--text2);margin-top:2px;"></div>
+        </div>
+        <a href="check.html" style="background:#0ea5e9;color:#fff;border:none;border-radius:10px;padding:8px 14px;font-size:0.78rem;font-weight:700;text-decoration:none;white-space:nowrap;flex-shrink:0;">Mitmachen →</a>
       </div>
-      <a href="stockswipe.html" class="action-btn primary" style="font-size:0.78rem;padding:8px 14px;white-space:nowrap;min-width:unset;border-radius:10px;height:auto;">Mitmachen →</a>
+      <div id="session-banner-bereiche" style="display:flex;flex-direction:column;gap:5px;padding-top:4px;border-top:1px solid rgba(14,165,233,0.2);"></div>
+    </div>
+
+    <!-- Letzte Bestellung -->
+    <div id="letzte-bestellung-info" style="background:var(--surface2);border:1px solid var(--border);border-radius:14px;padding:12px 18px;display:none;align-items:center;gap:10px;">
+      <span style="font-size:1.1rem;">📋</span>
+      <div>
+        <div style="font-size:0.75rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;font-family:'IBM Plex Mono',monospace;">Letzte Bestellung</div>
+        <div id="letzte-bestellung-text" style="font-size:0.85rem;font-weight:600;margin-top:2px;"></div>
+      </div>
     </div>
 
     <div class="action-list">
@@ -207,7 +219,8 @@
 
   <script type="module">
     import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-    import { getFirestore, collection, query, orderBy, limit, onSnapshot } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+    import { getFirestore, collection, query, where, orderBy, limit, onSnapshot, getDocs } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+    import { getAuth, signInAnonymously } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 
     const firebaseConfig = {
       apiKey:            "AIzaSyD1YY-cFQxyykfYQYPORwulzuF8t6Wgid4",
@@ -220,18 +233,69 @@
     const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
     const db  = getFirestore(app);
 
-    const banner     = document.getElementById('laufende-session-banner');
-    const bannerText = document.getElementById('session-banner-text');
-    const q = query(collection(db, 'bestellungen_session'), orderBy('startzeit', 'desc'), limit(1));
-    onSnapshot(q, (snap) => {
-      if (snap.empty) { banner.classList.add('hidden'); return; }
-      const s = snap.docs[0].data();
-      const alter = (new Date() - new Date(s.startzeit)) / (1000*60*60);
-      if (alter >= 4 || s.status === 'abgeschlossen') { banner.classList.add('hidden'); return; }
-      const namen = (s.teilnehmer || []).map(t => t.name).join(', ');
-      bannerText.textContent = namen + ' macht gerade die Lagerbestellung';
-      banner.classList.remove('hidden');
-    });
+    // Anonym einloggen damit bestellungen_session gelesen werden darf
+    try {
+      const auth = getAuth(app);
+      if (!auth.currentUser) await signInAnonymously(auth);
+    } catch(e) {}
+
+    const banner         = document.getElementById('laufende-session-banner');
+    const bannerText     = document.getElementById('session-banner-text');
+    const bannerBereiche = document.getElementById('session-banner-bereiche');
+    const letzteEl      = document.getElementById('letzte-bestellung-info');
+    const letzteText    = document.getElementById('letzte-bestellung-text');
+
+    // Bereiche laden für Namen-Zuordnung
+    let bereiche = [];
+    try {
+      const bs = await getDocs(collection(db, 'bereiche'));
+      bs.forEach(d => bereiche.push({ id: d.id, ...d.data() }));
+    } catch(e) {}
+
+    // Live-Listener: aktive Session
+    const qSession = query(collection(db, 'bestellungen_session'), where('status', '==', 'aktiv'), limit(1));
+    onSnapshot(qSession, async (snap) => {
+      if (!snap.empty) {
+        const s = snap.docs[0].data();
+        const startMs = s.startzeit?.toMillis?.() ?? 0;
+        if (Date.now() - startMs < 8 * 3600 * 1000) {
+          const namen = (s.teilnehmer || []).map(t => t.name).join(', ');
+          bannerText.textContent = `${namen} ${namen.includes(',') ? 'machen' : 'macht'} gerade die Lagerbestellung`;
+
+          // Bereiche pro Person
+          const bereichStatus = s.bereichStatus || {};
+          const zeilen = Object.entries(bereichStatus).map(([bid, bs]) => {
+            const bName = bereiche.find(b => b.id === bid)?.name || bid;
+            const dot = bs.status === 'erledigt' ? '🟢' : bs.status === 'gesperrt' ? '🔒' : bs.status === 'abgebrochen' ? '🔴' : '🟠';
+            const info = bs.status === 'gesperrt' ? `${bs.mitarbeiter} – ${bName}`
+                       : bs.status === 'erledigt' ? `${bName} ✓ (${bs.mitarbeiter})`
+                       : bName;
+            return `<div style="font-size:0.75rem;color:var(--text2);display:flex;gap:6px;align-items:center;">${dot} ${info}</div>`;
+          });
+          bannerBereiche.innerHTML = zeilen.join('') || '';
+          bannerBereiche.style.display = zeilen.length ? '' : 'none';
+
+          banner.style.display = 'flex';
+          letzteEl.classList.add('hidden');
+          return;
+        }
+      }
+      // Keine aktive Session → "Letzte Bestellung" laden
+      banner.style.display = 'none';
+      try {
+        const qLast = query(collection(db, 'bestellungen'), orderBy('datum', 'desc'), limit(1));
+        const lastSnap = await getDocs(qLast);
+        if (!lastSnap.empty) {
+          const b = lastSnap.docs[0].data();
+          const d = b.datum?.toDate ? b.datum.toDate() : new Date(b.datum);
+          const wer = b.mitarbeiter || '–';
+          letzteText.textContent = `${d.toLocaleDateString('de-DE')} · ${wer}`;
+          letzteEl.style.display = 'flex';
+        } else {
+          letzteEl.style.display = 'none';
+        }
+      } catch(e) { letzteEl.style.display = 'none'; }
+    }, () => {});
   </script>
 
   <script>

@@ -238,6 +238,9 @@
     <button class="bottom-sheet-item" data-section="fotos" onclick="showSection('fotos');closeBottomSheet()">
       <span class="bottom-sheet-item-icon">📸</span> Fotos & Bilder
     </button>
+    <button class="bottom-sheet-item" data-section="ss-fotos" onclick="showSection('ss-fotos');closeBottomSheet()">
+      <span class="bottom-sheet-item-icon">🃏</span> StockSwipe Fotos
+    </button>
     <button class="bottom-sheet-item" data-section="statistik" onclick="showSection('statistik');closeBottomSheet()">
       <span class="bottom-sheet-item-icon">📊</span> Statistik
     </button>
@@ -264,6 +267,7 @@
         <div class="sidebar-item" id="nav-bereiche" onclick="showSection('bereiche')"><span class="icon">🏠</span> Bereiche</div>
         <div class="sidebar-divider"></div>
         <div class="sidebar-item" id="nav-fotos" onclick="showSection('fotos')"><span class="icon">📸</span> Fotos & Bilder</div>
+        <div class="sidebar-item" id="nav-ss-fotos" onclick="showSection('ss-fotos')"><span class="icon">🃏</span> StockSwipe Fotos</div>
         <div class="sidebar-divider"></div>
         <div class="sidebar-item" id="nav-pin" onclick="showSection('pin')"><span class="icon">🔑</span> PIN ändern</div>
         <div class="sidebar-divider"></div>
@@ -398,33 +402,50 @@
       <section class="content-section" id="section-fotos">
         <div class="page-header">
           <div class="page-title">Fotos & Referenzbilder</div>
-          <div class="page-sub">Produktfotos und Lagerort-Fotos hochladen</div>
+          <div class="page-sub">Produktfotos und Lagerort-Fotos hochladen oder löschen</div>
         </div>
-        <div class="table-wrap" style="padding:16px;margin-bottom:16px;">
-          <div class="form-group">
-            <div class="form-label">Artikel auswählen</div>
-            <select class="form-input" id="foto-artikel-select" onchange="loadFotoPreview()"><option value="">– Artikel wählen –</option></select>
-          </div>
-          <div id="foto-preview" style="margin-top:16px;"></div>
-          <input type="file" id="foto-file-input" accept="image/*" style="display:none" onchange="uploadFoto()">
+        <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center;">
+          <input type="text" id="foto-search" class="form-input" placeholder="Name oder LP suchen…" oninput="renderFotos()" style="flex:1;min-width:140px;">
+          <select id="foto-filter" class="form-input" onchange="renderFotos()" style="width:auto;">
+            <option value="alle">Alle Artikel</option>
+            <option value="ohne-produkt">Ohne Produktfoto</option>
+            <option value="ohne-lager">Ohne Lagerortfoto</option>
+            <option value="ohne-beide">Ohne beide Fotos</option>
+            <option value="vollstaendig">Vollständig</option>
+          </select>
+          <select id="foto-bereich" class="form-input" onchange="renderFotos()" style="width:auto;">
+            <option value="">Alle Bereiche</option>
+          </select>
+          <select id="foto-sort" class="form-input" onchange="renderFotos()" style="width:auto;">
+            <option value="name">Name</option>
+            <option value="lp">Lagerort</option>
+          </select>
         </div>
-        <div>
-          <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center;">
-            <input type="text" id="foto-search" class="form-input" placeholder="Name oder LP suchen…" oninput="renderFotos()" style="flex:1;min-width:140px;">
-            <select id="foto-filter" class="form-input" onchange="renderFotos()" style="width:auto;">
-              <option value="ohne-produkt">Ohne Produktfoto</option>
-              <option value="ohne-lager">Ohne Lagerortfoto</option>
-              <option value="ohne-beide">Ohne beide Fotos</option>
-              <option value="alle">Alle Artikel</option>
-            </select>
-            <select id="foto-sort" class="form-input" onchange="renderFotos()" style="width:auto;">
-              <option value="name">Sortierung: Name</option>
-              <option value="lp">Sortierung: Lagerort</option>
-            </select>
-          </div>
-          <div class="section-label mb-12" id="foto-grid-label">Artikel ohne Produktfoto</div>
-          <div class="foto-grid" id="foto-grid"></div>
+        <div class="section-label mb-12" id="foto-grid-label">Artikel</div>
+        <div class="foto-grid" id="foto-grid"></div>
+        <input type="file" id="foto-file-input" accept="image/*" style="display:none" onchange="uploadFotoFromGrid()">
+      </section>
+
+      <!-- ── STOCKSWIPE FOTOS ── -->
+      <section class="content-section" id="section-ss-fotos">
+        <div class="page-header">
+          <div class="page-title">StockSwipe Fotos</div>
+          <div class="page-sub">Karten-Fotos für StockSwipe separat verwalten (überschreibt nicht das allgemeine Produktfoto)</div>
         </div>
+        <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center;">
+          <input type="text" id="ss-foto-search" class="form-input" placeholder="Artikel suchen…" oninput="renderSsFotos()" style="flex:1;min-width:160px;">
+          <select id="ss-foto-filter" class="form-input" onchange="renderSsFotos()" style="width:auto;">
+            <option value="alle">Alle Artikel</option>
+            <option value="ohne-ss">Ohne StockSwipe-Foto</option>
+            <option value="mit-ss">Mit StockSwipe-Foto</option>
+          </select>
+          <select id="ss-foto-bereich" class="form-input" onchange="renderSsFotos()" style="width:auto;">
+            <option value="">Alle Bereiche</option>
+          </select>
+        </div>
+        <div class="section-label mb-12" id="ss-foto-grid-label">Artikel</div>
+        <div class="foto-grid" id="ss-foto-grid"></div>
+        <input type="file" id="ss-foto-file-input" accept="image/*" style="display:none" onchange="uploadSsFoto()">
       </section>
 
       <!-- ── PIN ── -->
@@ -666,10 +687,12 @@
       renderFotos();
       populateBereichFilter();
       populateFotoSelect();
+      populateSsBereichFilter();
+      populateFotoBereichFilter();
     }
 
     // ── Navigation ──
-    const moreSheetSections = ['artikel','bereiche','fotos','statistik','pin'];
+    const moreSheetSections = ['artikel','bereiche','fotos','ss-fotos','statistik','pin'];
 
     window.showSection = function(name) {
       document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
@@ -688,6 +711,7 @@
         if (sheetItem) sheetItem.classList.add('active');
       }
       if (name === 'statistik') renderStatistik();
+      if (name === 'ss-fotos') renderSsFotos();
     };
 
     window.openBottomSheet = function() {
@@ -701,6 +725,10 @@
       document.getElementById('bottom-sheet').classList.remove('open');
       setTimeout(() => document.getElementById('bottom-sheet-backdrop').classList.add('hidden'), 300);
     };
+
+    function esc(str) {
+      return String(str ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
 
     // ── Toast ──
     function toast(msg, type = 'success') {
@@ -1177,105 +1205,236 @@
       });
     }
 
-    window.loadFotoPreview = function() {
-      const id  = document.getElementById('foto-artikel-select').value;
-      const div = document.getElementById('foto-preview');
-      if (!id) { div.innerHTML = ''; return; }
-      const a = alleArtikel.find(x => x.id === id);
-      div.innerHTML = `
-        <div style="font-weight:600;margin-bottom:12px;">${a.name}</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;max-width:340px;">
-          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;overflow:hidden;">
-            <div style="aspect-ratio:1;display:flex;align-items:center;justify-content:center;">
-              ${a.fotoUrl?`<img src="${a.fotoUrl}" style="width:100%;height:100%;object-fit:cover;">`:'<div style="font-size:2rem;opacity:0.4;">📦</div>'}
-            </div>
-            <div style="padding:8px;border-top:1px solid var(--border);">
-              <div style="font-size:0.65rem;color:var(--muted);font-family:'IBM Plex Mono',monospace;margin-bottom:6px;">PRODUKTFOTO</div>
-              <button class="btn btn-blue btn-full" style="font-size:0.75rem;padding:6px;" onclick="currentFotoType='produkt';document.getElementById('foto-file-input').click()">📸 Hochladen</button>
-            </div>
-          </div>
-          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;overflow:hidden;">
-            <div style="aspect-ratio:1;display:flex;align-items:center;justify-content:center;">
-              ${a.lagerFotoUrl?`<img src="${a.lagerFotoUrl}" style="width:100%;height:100%;object-fit:cover;">`:'<div style="font-size:2rem;opacity:0.4;">🗄️</div>'}
-            </div>
-            <div style="padding:8px;border-top:1px solid var(--border);">
-              <div style="font-size:0.65rem;color:var(--muted);font-family:'IBM Plex Mono',monospace;margin-bottom:6px;">LAGERORT-FOTO</div>
-              <button class="btn btn-primary btn-full" style="font-size:0.75rem;padding:6px;" onclick="currentFotoType='lager';document.getElementById('foto-file-input').click()">📸 Hochladen</button>
-            </div>
-          </div>
-        </div>`;
+    let fotoUploadTargetId = null;
+    let fotoUploadType = 'produkt';
+
+    function populateFotoBereichFilter() {
+      const sel = document.getElementById('foto-bereich');
+      if (!sel) return;
+      while (sel.options.length > 1) sel.remove(1);
+      alleBereiche.forEach(b => {
+        const o = document.createElement('option');
+        o.value = b.id; o.textContent = b.name;
+        sel.appendChild(o);
+      });
+    }
+
+    window.triggerFotoUpload = function(id, type) {
+      fotoUploadTargetId = id;
+      fotoUploadType = type;
+      const inp = document.getElementById('foto-file-input');
+      inp.value = '';
+      inp.click();
     };
 
-    window.uploadFoto = async function() {
+    window.uploadFotoFromGrid = async function() {
       const file = document.getElementById('foto-file-input').files[0];
-      const id   = document.getElementById('foto-artikel-select').value;
-      if (!file || !id) return;
-      toast('Foto wird hochgeladen...');
+      if (!file || !fotoUploadTargetId) return;
+      toast('Foto wird hochgeladen…');
       try {
         const formData = new FormData();
         formData.append('file', file);
         formData.append('upload_preset', CLOUDINARY_PRESET);
         formData.append('folder', 'lagerapp/artikel');
-        const res  = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, { method:'POST', body:formData });
+        const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, { method: 'POST', body: formData });
         if (!res.ok) throw new Error('Upload fehlgeschlagen');
         const data = await res.json();
-        const url  = data.secure_url;
-        const field = currentFotoType === 'lager' ? 'lagerFotoUrl' : 'fotoUrl';
-        await updateDoc(doc(db, 'artikel', id), { [field]: url });
-        const idx = alleArtikel.findIndex(a => a.id === id);
-        if (idx >= 0) alleArtikel[idx][field] = url;
-        loadFotoPreview();
+        const field = fotoUploadType === 'lager' ? 'lagerFotoUrl' : 'fotoUrl';
+        await updateDoc(doc(db, 'artikel', fotoUploadTargetId), { [field]: data.secure_url });
+        const idx = alleArtikel.findIndex(a => a.id === fotoUploadTargetId);
+        if (idx >= 0) alleArtikel[idx][field] = data.secure_url;
         renderFotos();
-        toast('Foto hochgeladen ✅');
+        toast('Foto gespeichert ✅');
       } catch(e) { toast(e.message, 'error'); }
     };
 
+    window.deleteFotoFromGrid = async function(id, type) {
+      if (!confirm('Foto wirklich löschen?')) return;
+      const field = type === 'lager' ? 'lagerFotoUrl' : 'fotoUrl';
+      try {
+        await updateDoc(doc(db, 'artikel', id), { [field]: '' });
+        const idx = alleArtikel.findIndex(a => a.id === id);
+        if (idx >= 0) alleArtikel[idx][field] = '';
+        renderFotos();
+        toast('Foto gelöscht');
+      } catch(e) { toast(e.message, 'error'); }
+    };
+
+    window.updateArtikelLP = async function(id, lp) {
+      try {
+        await updateDoc(doc(db, 'artikel', id), { lp });
+        const idx = alleArtikel.findIndex(a => a.id === id);
+        if (idx >= 0) alleArtikel[idx].lp = lp;
+        toast('LP gespeichert');
+      } catch(e) { toast(e.message, 'error'); }
+    };
+
+    function getLpOptions(currentLp) {
+      const lps = [...new Set(alleArtikel.map(a => a.lp).filter(Boolean))].sort((a,b) => naturalSort(a,b));
+      return lps.map(lp => `<option value="${esc(lp)}"${lp === currentLp ? ' selected' : ''}>${esc(lp)}</option>`).join('');
+    }
+
     window.renderFotos = function renderFotos() {
-      const grid   = document.getElementById('foto-grid');
-      const search = (document.getElementById('foto-search')?.value || '').toLowerCase();
-      const filter = document.getElementById('foto-filter')?.value || 'ohne-produkt';
-      const sort   = document.getElementById('foto-sort')?.value   || 'name';
+      const grid    = document.getElementById('foto-grid');
+      const search  = (document.getElementById('foto-search')?.value  || '').toLowerCase();
+      const filter  = document.getElementById('foto-filter')?.value   || 'alle';
+      const bereich = document.getElementById('foto-bereich')?.value  || '';
+      const sort    = document.getElementById('foto-sort')?.value     || 'name';
 
       let items = alleArtikel.filter(a => {
-        const matchSearch = !search
-          || (a.name||'').toLowerCase().includes(search)
-          || (a.lp||'').toLowerCase().includes(search);
-        const matchFilter = filter === 'alle'         ? true
-          : filter === 'ohne-produkt' ? !a.fotoUrl
-          : filter === 'ohne-lager'   ? !a.lagerFotoUrl
-          :                             !a.fotoUrl && !a.lagerFotoUrl;
-        return matchSearch && matchFilter;
+        const matchSearch  = !search || (a.name||'').toLowerCase().includes(search) || (a.lp||'').toLowerCase().includes(search);
+        const matchFilter  = filter === 'ohne-produkt' ? !a.fotoUrl
+                           : filter === 'ohne-lager'   ? !a.lagerFotoUrl
+                           : filter === 'ohne-beide'   ? !a.fotoUrl && !a.lagerFotoUrl
+                           : filter === 'vollstaendig' ? !!a.fotoUrl && !!a.lagerFotoUrl
+                           : true;
+        const matchBereich = !bereich || a.bereich === bereich;
+        return matchSearch && matchFilter && matchBereich;
       });
 
       if (sort === 'lp') items.sort((a,b) => naturalSort(a.lp||'', b.lp||''));
       else               items.sort((a,b) => (a.name||'').localeCompare(b.name||''));
 
       document.getElementById('foto-grid-label').textContent = `${items.length} Artikel`;
-      items = items.slice(0, 48);
+      items = items.slice(0, 60);
 
       grid.innerHTML = items.map(a => {
-        const short = a.name.length > 22 ? a.name.substring(0,19)+'…' : a.name;
-        const lpBadge = a.lp ? `<div style="font-size:0.6rem;color:var(--accent2);margin-bottom:2px;">${a.lp}</div>` : '';
+        const short = a.name.length > 24 ? a.name.substring(0,21) + '…' : a.name;
         const slotP = a.fotoUrl
-          ? `<img src="${a.fotoUrl}" style="width:50%;height:90px;object-fit:cover;flex-shrink:0;">`
-          : `<div style="width:50%;height:90px;background:var(--surface2);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;flex-shrink:0;"><span style="font-size:1.2rem;">📦</span><span style="font-size:0.55rem;color:var(--text3);">Produkt</span></div>`;
+          ? `<img src="${esc(a.fotoUrl)}" style="width:100%;height:110px;object-fit:cover;display:block;" loading="lazy">`
+          : `<div style="width:100%;height:110px;background:var(--surface2);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;"><span style="font-size:1.8rem;">📦</span><span style="font-size:0.58rem;color:var(--muted);">Kein Produktfoto</span></div>`;
         const slotL = a.lagerFotoUrl
-          ? `<img src="${a.lagerFotoUrl}" style="width:50%;height:90px;object-fit:cover;flex-shrink:0;">`
-          : `<div style="width:50%;height:90px;background:var(--surface3);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;flex-shrink:0;"><span style="font-size:1.2rem;">🗄️</span><span style="font-size:0.55rem;color:var(--text3);">Lagerort</span></div>`;
+          ? `<img src="${esc(a.lagerFotoUrl)}" style="width:100%;height:110px;object-fit:cover;display:block;" loading="lazy">`
+          : `<div style="width:100%;height:110px;background:var(--surface3);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;"><span style="font-size:1.8rem;">🗄️</span><span style="font-size:0.58rem;color:var(--muted);">Kein Lagerortfoto</span></div>`;
+        const delP = a.fotoUrl
+          ? `<button onclick="deleteFotoFromGrid('${esc(a.id)}','produkt')" style="padding:6px 10px;background:none;border:none;color:var(--red);cursor:pointer;font-size:0.85rem;flex-shrink:0;" title="Löschen">🗑</button>`
+          : '';
+        const delL = a.lagerFotoUrl
+          ? `<button onclick="deleteFotoFromGrid('${esc(a.id)}','lager')" style="padding:6px 10px;background:none;border:none;color:var(--red);cursor:pointer;font-size:0.85rem;flex-shrink:0;" title="Löschen">🗑</button>`
+          : '';
         return `
           <div class="foto-card">
-            <div style="display:flex;">${slotP}${slotL}</div>
-            <div class="foto-name">${lpBadge}${short}</div>
-            <button class="foto-upload-btn" onclick="quickUploadFoto('${a.id}')">📸 Foto hochladen</button>
+            ${slotP}
+            <div style="display:flex;align-items:center;border-top:1px solid var(--border);">
+              <button class="foto-upload-btn" style="flex:1;border:none;text-align:left;" onclick="triggerFotoUpload('${esc(a.id)}','produkt')">📸 Produktfoto</button>
+              ${delP}
+            </div>
+            <div style="border-top:1px solid var(--border);">${slotL}</div>
+            <div style="display:flex;align-items:center;border-top:1px solid var(--border);">
+              <button class="foto-upload-btn" style="flex:1;border:none;text-align:left;" onclick="triggerFotoUpload('${esc(a.id)}','lager')">🗄️ Lagerortfoto</button>
+              ${delL}
+            </div>
+            <div class="foto-name" style="padding-bottom:4px;">
+              ${esc(short)}
+            </div>
+            <div style="padding:0 8px 8px;">
+              <select onchange="updateArtikelLP('${esc(a.id)}', this.value)"
+                style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:4px 6px;font-size:0.68rem;color:var(--accent2);font-family:'IBM Plex Mono',monospace;cursor:pointer;">
+                <option value="">— kein LP —</option>
+                ${getLpOptions(a.lp)}
+              </select>
+            </div>
           </div>`;
-      }).join('');
+      }).join('') || '<div class="empty-state">Keine Artikel gefunden</div>';
+    };
+
+    // ── STOCKSWIPE FOTOS ──
+    let ssFotoTargetId = null;
+
+    function populateSsBereichFilter() {
+      const sel = document.getElementById('ss-foto-bereich');
+      if (!sel) return;
+      // Remove old options except first
+      while (sel.options.length > 1) sel.remove(1);
+      alleBereiche.forEach(b => {
+        const o = document.createElement('option');
+        o.value = b.id; o.textContent = b.name;
+        sel.appendChild(o);
+      });
     }
 
-    window.quickUploadFoto = function(id) {
-      document.getElementById('foto-artikel-select').value = id;
-      loadFotoPreview();
-      showSection('fotos');
-      document.getElementById('foto-file-input').click();
+    window.renderSsFotos = function() {
+      const grid    = document.getElementById('ss-foto-grid');
+      if (!grid) return;
+      const search  = (document.getElementById('ss-foto-search')?.value || '').toLowerCase();
+      const filter  = document.getElementById('ss-foto-filter')?.value  || 'alle';
+      const bereich = document.getElementById('ss-foto-bereich')?.value || '';
+
+      let items = alleArtikel.filter(a => {
+        const matchSearch  = !search || (a.name||'').toLowerCase().includes(search) || (a.lp||'').toLowerCase().includes(search);
+        const matchFilter  = filter === 'ohne-ss' ? !a.stockswipeFotoUrl
+                           : filter === 'mit-ss'  ?  !!a.stockswipeFotoUrl
+                           : true;
+        const matchBereich = !bereich || a.bereich === bereich;
+        return matchSearch && matchFilter && matchBereich;
+      });
+      items.sort((a, b) => (a.name||'').localeCompare(b.name||''));
+
+      document.getElementById('ss-foto-grid-label').textContent = `${items.length} Artikel`;
+
+      grid.innerHTML = items.map(a => {
+        const short    = a.name.length > 26 ? a.name.substring(0,23) + '…' : a.name;
+        const hasSsFoto = !!a.stockswipeFotoUrl;
+        const photoSlot = hasSsFoto
+          ? `<img src="${esc(a.stockswipeFotoUrl)}" style="width:100%;height:120px;object-fit:cover;display:block;" loading="lazy">`
+          : (a.fotoUrl
+              ? `<div style="position:relative;"><img src="${esc(a.fotoUrl)}" style="width:100%;height:120px;object-fit:cover;display:block;filter:grayscale(0.4);opacity:0.7;" loading="lazy"><div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.35);font-size:0.6rem;color:white;font-family:'IBM Plex Mono',monospace;letter-spacing:0.05em;">STANDARD FOTO</div></div>`
+              : `<div style="width:100%;height:120px;background:var(--surface2);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;"><span style="font-size:2rem;">📦</span><span style="font-size:0.62rem;color:var(--muted);">Kein Foto</span></div>`
+            );
+        return `
+          <div class="foto-card">
+            ${photoSlot}
+            <div class="foto-name">
+              ${a.lp ? `<div style="font-size:0.6rem;color:var(--accent2);margin-bottom:2px;font-family:'IBM Plex Mono',monospace;">${esc(a.lp)}</div>` : ''}
+              ${esc(short)}
+              ${hasSsFoto ? '<div style="font-size:0.58rem;color:var(--green);margin-top:2px;">✓ StockSwipe-Foto</div>' : ''}
+            </div>
+            <div style="display:flex;align-items:center;border-top:1px solid var(--border);">
+              <button class="foto-upload-btn" style="flex:1;border:none;text-align:left;" onclick="triggerSsFotoUpload('${esc(a.id)}')">
+                🃏 ${hasSsFoto ? 'Ändern' : 'Hochladen'}
+              </button>
+              ${hasSsFoto ? `<button onclick="deleteSsFoto('${esc(a.id)}')" style="padding:6px 10px;background:none;border:none;color:var(--red);cursor:pointer;font-size:0.85rem;flex-shrink:0;" title="Löschen">🗑</button>` : ''}
+            </div>
+          </div>`;
+      }).join('') || '<div class="empty-state">Keine Artikel gefunden</div>';
+    };
+
+    window.triggerSsFotoUpload = function(id) {
+      ssFotoTargetId = id;
+      const inp = document.getElementById('ss-foto-file-input');
+      inp.value = '';
+      inp.click();
+    };
+
+    window.uploadSsFoto = async function() {
+      const file = document.getElementById('ss-foto-file-input').files[0];
+      if (!file || !ssFotoTargetId) return;
+      toast('StockSwipe-Foto wird hochgeladen…');
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('upload_preset', CLOUDINARY_PRESET);
+        formData.append('folder', 'lagerapp/stockswipe');
+        const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, { method: 'POST', body: formData });
+        if (!res.ok) throw new Error('Upload fehlgeschlagen');
+        const data = await res.json();
+        await updateDoc(doc(db, 'artikel', ssFotoTargetId), { stockswipeFotoUrl: data.secure_url });
+        const idx = alleArtikel.findIndex(a => a.id === ssFotoTargetId);
+        if (idx >= 0) alleArtikel[idx].stockswipeFotoUrl = data.secure_url;
+        renderSsFotos();
+        toast('StockSwipe-Foto gespeichert ✅');
+      } catch(e) { toast(e.message, 'error'); }
+    };
+
+    window.deleteSsFoto = async function(id) {
+      if (!confirm('StockSwipe-Foto wirklich löschen?')) return;
+      try {
+        await updateDoc(doc(db, 'artikel', id), { stockswipeFotoUrl: '' });
+        const idx = alleArtikel.findIndex(a => a.id === id);
+        if (idx >= 0) alleArtikel[idx].stockswipeFotoUrl = '';
+        renderSsFotos();
+        toast('Foto gelöscht');
+      } catch(e) { toast(e.message, 'error'); }
     };
 
     // ── PIN ──
