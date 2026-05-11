@@ -1,0 +1,1220 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lagerbestellung App – Responsive Mockup v2</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;600;700&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #080c14;
+    --surface: #0f1623;
+    --surface2: #162030;
+    --surface3: #1c2a3e;
+    --border: #1e3050;
+    --accent: #f97316;
+    --accent2: #0ea5e9;
+    --text: #e2e8f0;
+    --muted: #4a6080;
+    --green: #22c55e;
+    --yellow: #eab308;
+    --red: #ef4444;
+  }
+
+  body {
+    background: var(--bg);
+    font-family: 'IBM Plex Sans', sans-serif;
+    color: var(--text);
+    padding: 40px 24px 60px;
+  }
+
+  /* ── HEADER ── */
+  .page-header {
+    text-align: center;
+    margin-bottom: 56px;
+  }
+
+  .page-title {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 0.3em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+
+  .page-name {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: -0.02em;
+  }
+
+  .page-name span { color: var(--accent); }
+
+  .page-sub {
+    font-size: 0.75rem;
+    color: var(--muted);
+    font-family: 'IBM Plex Mono', monospace;
+    margin-top: 6px;
+    letter-spacing: 0.1em;
+  }
+
+  /* ── SECTION HEADERS ── */
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 24px;
+    margin-top: 56px;
+  }
+
+  .section-header:first-of-type { margin-top: 0; }
+
+  .section-tag {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+
+  .tag-phone { background: #f9731618; color: var(--accent); border: 1px solid #f9731630; }
+  .tag-tablet { background: #0ea5e918; color: var(--accent2); border: 1px solid #0ea5e930; }
+  .tag-desktop { background: #22c55e18; color: var(--green); border: 1px solid #22c55e30; }
+
+  .section-line { flex: 1; height: 1px; background: var(--border); }
+  .section-desc { font-size: 0.72rem; color: var(--muted); flex-shrink: 0; }
+
+  /* ── SHARED COMPONENTS ── */
+  .app-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+  }
+
+  .logo {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--accent);
+    letter-spacing: 0.05em;
+  }
+
+  .badge {
+    font-size: 0.55rem;
+    padding: 2px 7px;
+    border-radius: 3px;
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .badge-o { background: #f9731620; color: var(--accent); border: 1px solid #f9731640; }
+  .badge-b { background: #0ea5e920; color: var(--accent2); border: 1px solid #0ea5e940; }
+  .badge-g { background: #22c55e20; color: var(--green); border: 1px solid #22c55e40; }
+  .badge-r { background: #ef444420; color: var(--red); border: 1px solid #ef444440; }
+
+  .btn {
+    border-radius: 7px;
+    border: none;
+    font-family: 'IBM Plex Sans', sans-serif;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+  }
+
+  .btn-sm { padding: 7px 10px; font-size: 0.72rem; }
+  .btn-md { padding: 9px 14px; font-size: 0.78rem; }
+  .btn-full { width: 100%; }
+  .btn-primary { background: var(--accent); color: white; }
+  .btn-ghost { background: var(--surface3); color: var(--text); border: 1px solid var(--border); }
+  .btn-blue { background: var(--accent2); color: white; }
+
+  .label {
+    font-size: 0.6rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    font-family: 'IBM Plex Mono', monospace;
+    margin-bottom: 5px;
+  }
+
+  .progress-wrap {
+    background: var(--surface3);
+    border-radius: 3px;
+    height: 4px;
+    overflow: hidden;
+  }
+
+  .progress-fill {
+    height: 100%;
+    border-radius: 3px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+  }
+
+  .progress-meta {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.58rem;
+    color: var(--muted);
+    font-family: 'IBM Plex Mono', monospace;
+    margin-top: 3px;
+  }
+
+  /* ── PHONE SCREENS ── */
+  .phones-row {
+    display: flex;
+    gap: 20px;
+    overflow-x: auto;
+    padding-bottom: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .phone-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  .screen-label {
+    font-size: 0.6rem;
+    font-family: 'IBM Plex Mono', monospace;
+    color: var(--muted);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .phone {
+    width: 230px;
+    background: var(--surface);
+    border-radius: 30px;
+    border: 1.5px solid var(--border);
+    overflow: hidden;
+    box-shadow: 0 0 0 1px #ffffff05, 0 20px 48px #00000070;
+  }
+
+  .phone::before {
+    content: '';
+    display: block;
+    width: 64px;
+    height: 5px;
+    background: var(--border);
+    border-radius: 3px;
+    margin: 12px auto 0;
+  }
+
+  .phone-body {
+    padding: 14px 12px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-height: 440px;
+  }
+
+  /* Search */
+  .search-box {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 9px 11px;
+  }
+
+  .search-icon { font-size: 0.85rem; }
+
+  .search-placeholder {
+    font-size: 0.72rem;
+    color: var(--muted);
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  .result-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 9px 10px;
+    display: flex;
+    gap: 9px;
+    align-items: center;
+  }
+
+  .result-thumb {
+    width: 36px;
+    height: 36px;
+    background: var(--surface3);
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    flex-shrink: 0;
+    border: 1px solid var(--border);
+  }
+
+  .result-name { font-size: 0.7rem; font-weight: 600; }
+  .result-loc { font-size: 0.6rem; color: var(--accent); font-family: 'IBM Plex Mono', monospace; margin-top: 2px; }
+  .result-meta { font-size: 0.57rem; color: var(--muted); margin-top: 1px; }
+
+  .divider-line {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--muted);
+    font-size: 0.6rem;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  .divider-line::before, .divider-line::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  /* PIN */
+  .pin-dots {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    padding: 10px 0 4px;
+  }
+
+  .dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 1.5px solid var(--border);
+  }
+  .dot.on { background: var(--accent); border-color: var(--accent); }
+
+  .pin-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+  }
+
+  .pin-key {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px;
+    text-align: center;
+    font-size: 0.9rem;
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: 600;
+  }
+
+  .pin-key.confirm { background: var(--accent); border-color: var(--accent); color: white; }
+  .pin-key.del { color: var(--muted); }
+
+  /* Article card */
+  .article-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 9px 11px;
+  }
+
+  .article-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 7px;
+  }
+
+  .article-name { font-size: 0.72rem; font-weight: 600; }
+  .article-sub { font-size: 0.58rem; color: var(--muted); margin-top: 1px; }
+
+  .info-btn {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--surface3);
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.58rem;
+    color: var(--accent2);
+    flex-shrink: 0;
+  }
+
+  .article-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.62rem;
+  }
+
+  .soll-text { color: var(--muted); }
+
+  .ist-box {
+    background: var(--surface);
+    border: 1px solid var(--accent);
+    border-radius: 5px;
+    padding: 3px 8px;
+    font-size: 0.68rem;
+    font-family: 'IBM Plex Mono', monospace;
+    color: var(--accent);
+    width: 44px;
+    text-align: center;
+  }
+
+  .ist-box.warn { border-color: var(--red); color: var(--red); }
+
+  .nav-btns { display: flex; gap: 6px; }
+
+  /* Signature */
+  .sig-pad {
+    background: var(--surface2);
+    border: 1px dashed var(--border);
+    border-radius: 8px;
+    height: 90px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .sig-line {
+    position: absolute;
+    bottom: 20px;
+    left: 14px;
+    right: 14px;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .sig-hint { font-size: 0.6rem; color: var(--muted); font-family: 'IBM Plex Mono', monospace; }
+
+  .sig-svg {
+    position: absolute;
+    bottom: 24px;
+    left: 16px;
+    width: 120px;
+    height: 36px;
+  }
+
+  .summary-line {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.66rem;
+    padding: 5px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .s-key { color: var(--muted); }
+  .s-val { font-family: 'IBM Plex Mono', monospace; font-size: 0.62rem; }
+
+  /* Wachenleiter */
+  .stat-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 9px 11px;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+  }
+
+  .stat-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 7px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    flex-shrink: 0;
+  }
+
+  .stat-lbl { font-size: 0.57rem; color: var(--muted); font-family: 'IBM Plex Mono', monospace; }
+  .stat-val { font-size: 0.9rem; font-weight: 700; }
+
+  .verfall-row {
+    background: var(--surface2);
+    border-radius: 7px;
+    padding: 7px 9px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .vdot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .vname { font-size: 0.68rem; font-weight: 600; flex: 1; }
+  .vdate { font-size: 0.58rem; font-family: 'IBM Plex Mono', monospace; }
+
+  .order-row {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 7px 9px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .o-name { font-size: 0.67rem; font-weight: 600; }
+  .o-date { font-size: 0.57rem; color: var(--muted); font-family: 'IBM Plex Mono', monospace; }
+
+  .dl-btn {
+    font-size: 0.58rem;
+    padding: 3px 7px;
+    background: var(--surface3);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    color: var(--accent2);
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  /* Admin */
+  .admin-item {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 11px;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+  }
+
+  .a-icon {
+    width: 26px;
+    height: 26px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    flex-shrink: 0;
+  }
+
+  .a-name { font-size: 0.7rem; font-weight: 600; }
+  .a-sub { font-size: 0.57rem; color: var(--muted); margin-top: 1px; }
+  .a-arrow { margin-left: auto; color: var(--muted); font-size: 0.7rem; }
+
+  /* ── TABLET FRAME ── */
+  .tablet {
+    width: 100%;
+    max-width: 720px;
+    margin: 0 auto;
+    background: var(--surface);
+    border-radius: 20px;
+    border: 1.5px solid var(--border);
+    overflow: hidden;
+    box-shadow: 0 0 0 1px #ffffff05, 0 24px 64px #00000070;
+  }
+
+  .tablet-body {
+    display: flex;
+    height: 440px;
+  }
+
+  .tablet-sidebar {
+    width: 180px;
+    background: var(--surface2);
+    border-right: 1px solid var(--border);
+    padding: 14px 10px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .sidebar-title {
+    font-size: 0.58rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    font-family: 'IBM Plex Mono', monospace;
+    padding: 0 4px;
+    margin-bottom: 6px;
+  }
+
+  .sidebar-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 8px;
+    border-radius: 6px;
+    font-size: 0.7rem;
+    color: var(--muted);
+  }
+
+  .sidebar-item.active {
+    background: var(--surface3);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+
+  .sidebar-item.done { color: var(--green); }
+  .sidebar-dot { font-size: 0.7rem; }
+
+  .tablet-main {
+    flex: 1;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    overflow: hidden;
+  }
+
+  .tablet-article {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 11px 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .ta-thumb {
+    width: 44px;
+    height: 44px;
+    background: var(--surface3);
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    flex-shrink: 0;
+  }
+
+  .ta-name { font-size: 0.78rem; font-weight: 600; }
+  .ta-sub { font-size: 0.62rem; color: var(--muted); margin-top: 2px; }
+
+  .ta-soll { font-size: 0.65rem; color: var(--muted); margin-top: 4px; }
+
+  .ta-input {
+    margin-left: auto;
+    background: var(--surface);
+    border: 1.5px solid var(--accent);
+    border-radius: 7px;
+    padding: 6px 12px;
+    font-size: 0.85rem;
+    font-family: 'IBM Plex Mono', monospace;
+    color: var(--accent);
+    width: 60px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+
+  .ta-input.warn { border-color: var(--red); color: var(--red); }
+
+  .ta-info {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--surface3);
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.65rem;
+    color: var(--accent2);
+    flex-shrink: 0;
+  }
+
+  /* ── DESKTOP FRAME ── */
+  .desktop {
+    width: 100%;
+    max-width: 1000px;
+    margin: 0 auto;
+    background: var(--surface);
+    border-radius: 16px;
+    border: 1.5px solid var(--border);
+    overflow: hidden;
+    box-shadow: 0 0 0 1px #ffffff05, 0 24px 64px #00000070;
+  }
+
+  .desktop-sidebar {
+    width: 200px;
+    background: var(--surface2);
+    border-right: 1px solid var(--border);
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .ds-logo {
+    padding: 16px 14px 12px;
+    border-bottom: 1px solid var(--border);
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--accent);
+  }
+
+  .ds-user {
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.65rem;
+    color: var(--muted);
+  }
+
+  .ds-user span { color: var(--text); font-weight: 600; display: block; margin-top: 1px; }
+
+  .ds-nav {
+    padding: 10px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .ds-nav-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    border-radius: 6px;
+    font-size: 0.72rem;
+    color: var(--muted);
+    cursor: pointer;
+  }
+
+  .ds-nav-item.active {
+    background: var(--surface3);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+
+  .desktop-body {
+    display: flex;
+    height: 480px;
+  }
+
+  .desktop-main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .desktop-content {
+    flex: 1;
+    padding: 18px;
+    display: flex;
+    gap: 14px;
+    overflow: hidden;
+  }
+
+  .desktop-col {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 0;
+  }
+
+  .widget {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+  }
+
+  .widget-title {
+    font-size: 0.6rem;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    font-family: 'IBM Plex Mono', monospace;
+    margin-bottom: 10px;
+  }
+
+  .kpi-row {
+    display: flex;
+    gap: 8px;
+  }
+
+  .kpi {
+    flex: 1;
+    background: var(--surface3);
+    border-radius: 8px;
+    padding: 10px;
+    text-align: center;
+    border: 1px solid var(--border);
+  }
+
+  .kpi-num { font-size: 1.3rem; font-weight: 700; }
+  .kpi-lbl { font-size: 0.57rem; color: var(--muted); font-family: 'IBM Plex Mono', monospace; margin-top: 2px; }
+
+  .table-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.68rem;
+  }
+
+  .table-row:last-child { border-bottom: none; }
+
+  .t-date { color: var(--muted); font-family: 'IBM Plex Mono', monospace; font-size: 0.62rem; width: 90px; flex-shrink: 0; }
+  .t-name { font-weight: 600; flex: 1; }
+  .t-count { color: var(--muted); font-size: 0.62rem; font-family: 'IBM Plex Mono', monospace; width: 50px; text-align: center; flex-shrink: 0; }
+  .t-dl { font-size: 0.6rem; padding: 3px 8px; background: var(--surface3); border: 1px solid var(--border); border-radius: 4px; color: var(--accent2); font-family: 'IBM Plex Mono', monospace; flex-shrink: 0; }
+
+  .verfall-widget-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.68rem;
+  }
+  .verfall-widget-row:last-child { border-bottom: none; }
+
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <div class="page-title">UI Mockup · Responsive Design</div>
+  <div class="page-name">LAGER<span>//</span>APP</div>
+  <div class="page-sub">Rettungswache · 2026 · Smartphone · Tablet · Desktop</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- SMARTPHONE -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="section-header">
+  <span class="section-tag tag-phone">📱 Smartphone</span>
+  <div class="section-line"></div>
+  <span class="section-desc">Einspaltiges Layout · Touch-optimiert</span>
+</div>
+
+<div class="phones-row">
+
+  <!-- 01 Startseite -->
+  <div class="phone-wrap">
+    <div class="screen-label">01 · Startseite</div>
+    <div class="phone">
+      <div class="phone-body">
+        <div class="app-bar" style="padding:8px 12px;">
+          <span class="logo">LAGER//APP</span>
+          <span class="badge badge-o">WACHE 1</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:7px;padding:2px 0;">
+          <div class="label">Artikelsuche</div>
+          <div class="search-box">
+            <span class="search-icon">🔍</span>
+            <span class="search-placeholder">Tubus Größe 8...</span>
+          </div>
+          <div class="result-card">
+            <div class="result-thumb">💉</div>
+            <div>
+              <div class="result-name">Endotrachialtubus Gr. 8</div>
+              <div class="result-loc">📦 Schrank 2 · Regal 3 · Fach 1</div>
+              <div class="result-meta">Soll: 5–10 Stk · CH-2024-88</div>
+            </div>
+          </div>
+          <div class="result-card">
+            <div class="result-thumb">🧤</div>
+            <div>
+              <div class="result-name">Vigo grün (L)</div>
+              <div class="result-loc">📦 Schrank 1 · Regal 1 · Fach 2</div>
+              <div class="result-meta">Soll: 2 Einheiten</div>
+            </div>
+          </div>
+          <div class="divider-line">oder</div>
+          <button class="btn btn-primary btn-full btn-sm">🗂 Lagercheck starten</button>
+          <button class="btn btn-ghost btn-full btn-sm">🔐 Wachenleiter / Admin</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 02 PIN -->
+  <div class="phone-wrap">
+    <div class="screen-label">02 · PIN-Eingabe</div>
+    <div class="phone">
+      <div class="phone-body">
+        <div class="app-bar" style="padding:8px 12px;">
+          <span class="logo">LAGER//APP</span>
+          <span class="badge badge-o">PIN</span>
+        </div>
+        <div style="text-align:center;padding:8px 0 4px;">
+          <div style="font-size:1rem;font-weight:700;margin-bottom:3px;">Zugang</div>
+          <div style="font-size:0.65rem;color:var(--muted);">4-stelligen PIN eingeben</div>
+        </div>
+        <div class="pin-dots">
+          <div class="dot on"></div>
+          <div class="dot on"></div>
+          <div class="dot on"></div>
+          <div class="dot"></div>
+        </div>
+        <div class="pin-grid">
+          <div class="pin-key">1</div><div class="pin-key">2</div><div class="pin-key">3</div>
+          <div class="pin-key">4</div><div class="pin-key">5</div><div class="pin-key">6</div>
+          <div class="pin-key">7</div><div class="pin-key">8</div><div class="pin-key">9</div>
+          <div class="pin-key del">⌫</div><div class="pin-key">0</div><div class="pin-key confirm">✓</div>
+        </div>
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:8px 10px;font-size:0.7rem;color:var(--muted);font-family:'IBM Plex Mono',monospace;">
+          Name eingeben...
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 03 Lagercheck -->
+  <div class="phone-wrap">
+    <div class="screen-label">03 · Bestandscheck</div>
+    <div class="phone">
+      <div class="phone-body">
+        <div class="app-bar" style="padding:8px 12px;">
+          <span class="logo">LAGER//APP</span>
+          <span class="badge badge-b">CHECK</span>
+        </div>
+        <div>
+          <div class="progress-wrap"><div class="progress-fill" style="width:42%"></div></div>
+          <div class="progress-meta"><span>Schrank 2 von 5</span><span>42%</span></div>
+        </div>
+        <div style="font-size:0.75rem;font-weight:700;color:var(--accent);">📦 Schrank 2 – Notfallmedizin</div>
+        <div class="article-card">
+          <div class="article-head">
+            <div><div class="article-name">Endotrachialtubus Gr. 8</div><div class="article-sub">Regal 1 · Fach 2</div></div>
+            <div class="info-btn">ℹ</div>
+          </div>
+          <div class="article-row"><span class="soll-text">Soll: 5–10 Stk</span><div class="ist-box">8</div></div>
+        </div>
+        <div class="article-card">
+          <div class="article-head">
+            <div><div class="article-name">Larynxtubus Gr. 4</div><div class="article-sub">Regal 1 · Fach 3</div></div>
+            <div class="info-btn">ℹ</div>
+          </div>
+          <div class="article-row"><span class="soll-text">Soll: 2 Stk</span><div class="ist-box warn">1</div></div>
+        </div>
+        <div class="nav-btns">
+          <button class="btn btn-ghost btn-sm" style="flex:1;">← Zurück</button>
+          <button class="btn btn-primary btn-sm" style="flex:1;">Weiter →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 04 Unterschrift -->
+  <div class="phone-wrap">
+    <div class="screen-label">04 · Unterschrift</div>
+    <div class="phone">
+      <div class="phone-body">
+        <div class="app-bar" style="padding:8px 12px;">
+          <span class="logo">LAGER//APP</span>
+          <span class="badge badge-g">FERTIG</span>
+        </div>
+        <div style="font-size:0.75rem;font-weight:700;">✅ Check abgeschlossen</div>
+        <div>
+          <div class="summary-line"><span class="s-key">Mitarbeiter</span><span class="s-val">M. Mustermann</span></div>
+          <div class="summary-line"><span class="s-key">Datum</span><span class="s-val">20.04.2026 · 09:14</span></div>
+          <div class="summary-line"><span class="s-key">Artikel geprüft</span><span class="s-val">48 / 48</span></div>
+          <div class="summary-line" style="border:none;"><span class="s-key">Nachbestellen</span><span class="s-val" style="color:var(--red);">3 Artikel</span></div>
+        </div>
+        <div class="label">Unterschrift</div>
+        <div class="sig-pad">
+          <svg class="sig-svg" viewBox="0 0 120 36" fill="none">
+            <path d="M8 28 Q16 8 26 24 Q36 38 46 18 Q56 4 66 22 Q76 36 86 16 Q96 4 108 18" stroke="#f97316" stroke-width="2" fill="none" stroke-linecap="round"/>
+          </svg>
+          <div class="sig-line"></div>
+        </div>
+        <button class="btn btn-primary btn-full btn-sm">📄 PDF erstellen & senden</button>
+        <div style="text-align:center;font-size:0.57rem;color:var(--muted);font-family:'IBM Plex Mono',monospace;">Portal · Mail-Benachrichtigung</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 05 Wachenleiter -->
+  <div class="phone-wrap">
+    <div class="screen-label">05 · Wachenleiter</div>
+    <div class="phone">
+      <div class="phone-body">
+        <div class="app-bar" style="padding:8px 12px;">
+          <span class="logo">LAGER//APP</span>
+          <span class="badge badge-b">PORTAL</span>
+        </div>
+        <div style="font-size:0.62rem;color:var(--muted);">Guten Morgen, <span style="color:var(--text);font-weight:600;">OStBR Fischer</span></div>
+        <div style="display:flex;flex-direction:column;gap:5px;">
+          <div class="stat-card">
+            <div class="stat-icon" style="background:#22c55e12;">📋</div>
+            <div><div class="stat-lbl">LETZTE BESTELLUNG</div><div class="stat-val" style="font-size:0.78rem;">Heute · 09:14</div></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon" style="background:#ef444412;">⚠️</div>
+            <div><div class="stat-lbl">VERFALLSWARNUNGEN</div><div class="stat-val" style="color:var(--red);">3</div></div>
+          </div>
+        </div>
+        <div class="label">Verfall</div>
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          <div class="verfall-row" style="border:1px solid #ef444428;">
+            <div class="vdot" style="background:var(--red);"></div>
+            <div class="vname">Adrenalin 1mg/ml</div>
+            <div class="vdate" style="color:var(--red);">3 Tage</div>
+          </div>
+          <div class="verfall-row" style="border:1px solid #eab30828;">
+            <div class="vdot" style="background:var(--yellow);"></div>
+            <div class="vname">NaCl 0,9% 500ml</div>
+            <div class="vdate" style="color:var(--yellow);">18 Tage</div>
+          </div>
+        </div>
+        <div class="label">Bestellhistorie</div>
+        <div style="display:flex;flex-direction:column;gap:4px;">
+          <div class="order-row"><div><div class="o-name">M. Mustermann</div><div class="o-date">20.04.2026 · 09:14</div></div><div class="dl-btn">↓ PDF</div></div>
+          <div class="order-row"><div><div class="o-name">L. Huber</div><div class="o-date">13.04.2026 · 11:32</div></div><div class="dl-btn">↓ PDF</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 06 Admin -->
+  <div class="phone-wrap">
+    <div class="screen-label">06 · Admin</div>
+    <div class="phone">
+      <div class="phone-body">
+        <div class="app-bar" style="padding:8px 12px;">
+          <span class="logo">LAGER//APP</span>
+          <span class="badge badge-o">ADMIN</span>
+        </div>
+        <div style="font-size:0.62rem;color:var(--muted);">Angemeldet als <span style="color:var(--accent);font-weight:600;">Administrator</span></div>
+        <div style="display:flex;flex-direction:column;gap:5px;">
+          <div class="admin-item"><div class="a-icon" style="background:#f9731615;">📦</div><div><div class="a-name">Artikelverwaltung</div><div class="a-sub">Hinzufügen, bearbeiten, löschen</div></div><span class="a-arrow">›</span></div>
+          <div class="admin-item"><div class="a-icon" style="background:#0ea5e915;">📸</div><div><div class="a-name">Fotos & Referenzbilder</div><div class="a-sub">Hochladen via Kamera</div></div><span class="a-arrow">›</span></div>
+          <div class="admin-item"><div class="a-icon" style="background:#22c55e15;">🔍</div><div><div class="a-name">Barcode / KI-Scanner</div><div class="a-sub">Charge & Verfall erfassen</div></div><span class="a-arrow">›</span></div>
+          <div class="admin-item"><div class="a-icon" style="background:#a855f715;">🏠</div><div><div class="a-name">Bereiche verwalten</div><div class="a-sub">Schränke, Lager, Räume</div></div><span class="a-arrow">›</span></div>
+          <div class="admin-item"><div class="a-icon" style="background:#f9731615;">👥</div><div><div class="a-name">Accounts & PIN</div><div class="a-sub">Nutzer & PIN verwalten</div></div><span class="a-arrow">›</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- TABLET -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="section-header">
+  <span class="section-tag tag-tablet">📟 Tablet</span>
+  <div class="section-line"></div>
+  <span class="section-desc">Zweispaltiges Layout · Klemmbrett-Feeling</span>
+</div>
+
+<div class="tablet">
+  <div class="app-bar">
+    <span class="logo">LAGER//APP</span>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <div>
+        <div class="progress-wrap" style="width:200px;"><div class="progress-fill" style="width:42%"></div></div>
+        <div class="progress-meta" style="width:200px;"><span>Schrank 2 von 5</span><span>42%</span></div>
+      </div>
+      <span class="badge badge-b">CHECK</span>
+    </div>
+  </div>
+  <div class="tablet-body">
+    <div class="tablet-sidebar">
+      <div class="sidebar-title">Bereiche</div>
+      <div class="sidebar-item done"><span class="sidebar-dot">✅</span> Schrank 1</div>
+      <div class="sidebar-item active"><span class="sidebar-dot">▶</span> Schrank 2</div>
+      <div class="sidebar-item"><span class="sidebar-dot">○</span> Schrank 3</div>
+      <div class="sidebar-item"><span class="sidebar-dot">○</span> Schrank 4</div>
+      <div class="sidebar-item"><span class="sidebar-dot">○</span> Schrank 5</div>
+      <div class="sidebar-item"><span class="sidebar-dot">○</span> Sauerstofflager</div>
+      <div class="sidebar-item"><span class="sidebar-dot">○</span> Küche</div>
+      <div class="sidebar-item"><span class="sidebar-dot">○</span> Hygieneraum</div>
+      <div style="margin-top:auto;display:flex;flex-direction:column;gap:5px;padding-top:10px;border-top:1px solid var(--border);">
+        <button class="btn btn-ghost btn-sm" style="font-size:0.65rem;">← Zurück</button>
+        <button class="btn btn-primary btn-sm" style="font-size:0.65rem;">Weiter →</button>
+      </div>
+    </div>
+    <div class="tablet-main">
+      <div style="font-size:0.85rem;font-weight:700;color:var(--accent);">📦 Schrank 2 – Notfallmedizin</div>
+      <div class="tablet-article">
+        <div class="ta-thumb">💉</div>
+        <div style="flex:1;">
+          <div class="ta-name">Endotrachialtubus Gr. 8</div>
+          <div class="ta-sub">Regal 1 · Fach 2</div>
+          <div class="ta-soll">Soll: 5–10 Stück</div>
+        </div>
+        <div class="ta-info">ℹ</div>
+        <input class="ta-input" value="8" readonly>
+      </div>
+      <div class="tablet-article">
+        <div class="ta-thumb">🫁</div>
+        <div style="flex:1;">
+          <div class="ta-name">Larynxtubus Gr. 4</div>
+          <div class="ta-sub">Regal 1 · Fach 3</div>
+          <div class="ta-soll">Soll: 2 Stück</div>
+        </div>
+        <div class="ta-info">ℹ</div>
+        <input class="ta-input warn" value="1" readonly>
+      </div>
+      <div class="tablet-article">
+        <div class="ta-thumb">🩺</div>
+        <div style="flex:1;">
+          <div class="ta-name">Guedel Tubus Gr. 3</div>
+          <div class="ta-sub">Regal 2 · Fach 1</div>
+          <div class="ta-soll">Soll: 3 Stück</div>
+        </div>
+        <div class="ta-info">ℹ</div>
+        <input class="ta-input" value="3" readonly>
+      </div>
+      <div class="tablet-article">
+        <div class="ta-thumb">💊</div>
+        <div style="flex:1;">
+          <div class="ta-name">Adrenalin 1mg/ml</div>
+          <div class="ta-sub">Regal 2 · Fach 2</div>
+          <div class="ta-soll">Soll: 5 Ampullen</div>
+        </div>
+        <div class="ta-info">ℹ</div>
+        <input class="ta-input" value="5" readonly>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════ -->
+<!-- DESKTOP -->
+<!-- ═══════════════════════════════════════════════════════ -->
+<div class="section-header">
+  <span class="section-tag tag-desktop">🖥️ Desktop</span>
+  <div class="section-line"></div>
+  <span class="section-desc">Dashboard-Layout · Wachenleiter-Portal</span>
+</div>
+
+<div class="desktop">
+  <div class="desktop-body">
+    <div class="desktop-sidebar">
+      <div class="ds-logo">LAGER//APP</div>
+      <div class="ds-user">Angemeldet als<span>OStBR Fischer</span></div>
+      <div class="ds-nav">
+        <div class="ds-nav-item active">📊 Dashboard</div>
+        <div class="ds-nav-item">📋 Bestellungen</div>
+        <div class="ds-nav-item">⚠️ Verfall</div>
+        <div class="ds-nav-item">📦 Archiv</div>
+        <div style="margin-top:auto;padding:8px 10px;border-top:1px solid var(--border);">
+          <div class="ds-nav-item" style="color:var(--muted);font-size:0.68rem;">↪ Abmelden</div>
+        </div>
+      </div>
+    </div>
+    <div class="desktop-main">
+      <div class="app-bar" style="border-bottom:1px solid var(--border);">
+        <span style="font-size:0.75rem;font-weight:600;">Dashboard</span>
+        <span class="badge badge-b">WACHENLEITER</span>
+      </div>
+      <div class="desktop-content">
+        <div class="desktop-col">
+          <div class="widget">
+            <div class="widget-title">Übersicht</div>
+            <div class="kpi-row">
+              <div class="kpi"><div class="kpi-num">1</div><div class="kpi-lbl">HEUTE</div></div>
+              <div class="kpi"><div class="kpi-num">3</div><div class="kpi-lbl">DIESE WOCHE</div></div>
+              <div class="kpi"><div class="kpi-num" style="color:var(--red);">3</div><div class="kpi-lbl">WARNUNGEN</div></div>
+            </div>
+          </div>
+          <div class="widget" style="flex:1;">
+            <div class="widget-title">Bestellhistorie</div>
+            <div style="display:flex;align-items:center;gap:10px;padding:5px 0 8px;border-bottom:1px solid var(--border);font-size:0.58rem;color:var(--muted);font-family:'IBM Plex Mono',monospace;">
+              <span style="width:90px;">DATUM</span>
+              <span style="flex:1;">MITARBEITER</span>
+              <span style="width:50px;text-align:center;">ARTIKEL</span>
+              <span style="width:40px;">PDF</span>
+            </div>
+            <div class="table-row">
+              <span class="t-date">20.04.2026 09:14</span>
+              <span class="t-name">Max Mustermann</span>
+              <span class="t-count">48 / 48</span>
+              <span class="t-dl">↓ PDF</span>
+            </div>
+            <div class="table-row">
+              <span class="t-date">13.04.2026 11:32</span>
+              <span class="t-name">Lisa Huber</span>
+              <span class="t-count">48 / 48</span>
+              <span class="t-dl">↓ PDF</span>
+            </div>
+            <div class="table-row">
+              <span class="t-date">06.04.2026 08:55</span>
+              <span class="t-name">Thomas Berger</span>
+              <span class="t-count">48 / 48</span>
+              <span class="t-dl">↓ PDF</span>
+            </div>
+            <div class="table-row">
+              <span class="t-date">30.03.2026 10:20</span>
+              <span class="t-name">Anna Schneider</span>
+              <span class="t-count">48 / 48</span>
+              <span class="t-dl">↓ PDF</span>
+            </div>
+          </div>
+        </div>
+        <div class="desktop-col" style="max-width:280px;">
+          <div class="widget" style="flex:1;">
+            <div class="widget-title">Verfallswarnungen</div>
+            <div style="display:flex;flex-direction:column;gap:2px;">
+              <div class="verfall-widget-row">
+                <div class="vdot" style="background:var(--red);"></div>
+                <div style="flex:1;">
+                  <div style="font-size:0.7rem;font-weight:600;">Adrenalin 1mg/ml</div>
+                  <div style="font-size:0.57rem;color:var(--muted);font-family:'IBM Plex Mono',monospace;">CH-2024-11</div>
+                </div>
+                <div style="font-size:0.62rem;color:var(--red);font-family:'IBM Plex Mono',monospace;">3 Tage</div>
+              </div>
+              <div class="verfall-widget-row">
+                <div class="vdot" style="background:var(--yellow);"></div>
+                <div style="flex:1;">
+                  <div style="font-size:0.7rem;font-weight:600;">NaCl 0,9% 500ml</div>
+                  <div style="font-size:0.57rem;color:var(--muted);font-family:'IBM Plex Mono',monospace;">CH-2024-44</div>
+                </div>
+                <div style="font-size:0.62rem;color:var(--yellow);font-family:'IBM Plex Mono',monospace;">18 Tage</div>
+              </div>
+              <div class="verfall-widget-row">
+                <div class="vdot" style="background:var(--yellow);"></div>
+                <div style="flex:1;">
+                  <div style="font-size:0.7rem;font-weight:600;">Pflaster 6x5cm</div>
+                  <div style="font-size:0.57rem;color:var(--muted);font-family:'IBM Plex Mono',monospace;">CH-2024-77</div>
+                </div>
+                <div style="font-size:0.62rem;color:var(--yellow);font-family:'IBM Plex Mono',monospace;">22 Tage</div>
+              </div>
+              <div class="verfall-widget-row">
+                <div class="vdot" style="background:var(--green);"></div>
+                <div style="flex:1;">
+                  <div style="font-size:0.7rem;font-weight:600;">Tubus Gr. 8</div>
+                  <div style="font-size:0.57rem;color:var(--muted);font-family:'IBM Plex Mono',monospace;">CH-2025-02</div>
+                </div>
+                <div style="font-size:0.62rem;color:var(--green);font-family:'IBM Plex Mono',monospace;">8 Monate</div>
+              </div>
+              <div class="verfall-widget-row" style="border:none;">
+                <div class="vdot" style="background:var(--green);"></div>
+                <div style="flex:1;">
+                  <div style="font-size:0.7rem;font-weight:600;">Vigo grün (L)</div>
+                  <div style="font-size:0.57rem;color:var(--muted);font-family:'IBM Plex Mono',monospace;">CH-2025-09</div>
+                </div>
+                <div style="font-size:0.62rem;color:var(--green);font-family:'IBM Plex Mono',monospace;">1 Jahr</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div style="text-align:center;margin-top:48px;font-size:0.6rem;color:var(--muted);font-family:'IBM Plex Mono',monospace;letter-spacing:0.12em;">
+  LAGER//APP · RETTUNGSWACHE · RESPONSIVE MOCKUP V2 · 2026
+</div>
+
+</body>
+</html>
