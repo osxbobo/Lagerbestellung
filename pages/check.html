@@ -417,6 +417,12 @@
         <div id="wait-teilnehmer-list" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
       </div>
 
+      <!-- Weiteren Bereich übernehmen -->
+      <button id="btn-weiterer-bereich" class="btn btn-full" onclick="wähleWeiterenBereich()"
+        style="background:var(--surface2);border:1px solid var(--border);border-radius:14px;height:50px;font-size:0.9rem;font-weight:600;display:none;">
+        + Weiteren Bereich übernehmen
+      </button>
+
       <!-- Spinner while waiting -->
       <div id="wait-spinner" style="display:flex;flex-direction:column;align-items:center;gap:10px;padding:16px 0;">
         <div class="spinner"></div>
@@ -518,6 +524,7 @@
 
     // Listener
     let sessionUnsubscribe = null;
+    let joinUnsubscribe    = null;
 
     // Zwischenspeicher für letzten Session-Snapshot
     let latestSessionData = null;
@@ -630,48 +637,44 @@
       document.getElementById('btn-join-start').disabled = true;
       document.getElementById('btn-join-start').textContent = 'Bereich auswählen…';
 
-      // Aktive Session suchen
-      let activeSession = null;
-      try {
-        const q = query(
-          collection(db, 'bestellungen_session'),
-          where('status', '==', 'aktiv'),
-          orderBy('startzeit', 'desc'),
-          limit(1)
-        );
-        const snap = await getDocs(q);
+      // Alten Join-Screen-Listener stoppen
+      if (joinUnsubscribe) { joinUnsubscribe(); joinUnsubscribe = null; }
+
+      // Live-Listener auf alle aktiven Sessions (erkennt auch neu erstellte Sessions)
+      const q = query(collection(db, 'bestellungen_session'), where('status', '==', 'aktiv'), limit(1));
+      joinUnsubscribe = onSnapshot(q, snap => {
         if (!snap.empty) {
           const d = snap.docs[0];
           const data = d.data();
-          // Nur wenn nicht älter als 8h
-          const startMs = data.startzeit?.toMillis?.() ?? Date.parse(data.startzeit);
+          const startMs = data.startzeit?.toMillis?.() ?? Date.now();
           if (Date.now() - startMs < 8 * 3600 * 1000) {
-            activeSession = { id: d.id, ...data };
+            // Session gefunden – Session-Listener starten falls noch nicht aktiv
+            if (sessionId !== d.id) {
+              sessionId = d.id;
+              startSessionListener(d.id);
+            }
+            const namen = (data.teilnehmer || []).map(t => t.name).join(', ');
+            document.getElementById('join-session-badge').classList.remove('hidden');
+            document.getElementById('join-session-info').textContent =
+              `${namen} macht${namen.includes(',') ? 'en' : ''} gerade die Lagerbestellung`;
+            document.getElementById('join-title').textContent = 'Lagerbestellung beitreten';
+            document.getElementById('join-sub').textContent = 'Wähle einen freien Bereich';
+            const btn = document.getElementById('btn-join-start');
+            if (!btn.textContent.includes('→')) btn.textContent = 'Beitreten & starten →';
+            renderBereichList({ id: d.id, ...data });
+            return;
           }
         }
-      } catch(e) {}
-
-      if (activeSession) {
-        sessionId = activeSession.id;
-        const namen = (activeSession.teilnehmer || []).map(t => t.name).join(', ');
-        document.getElementById('join-session-badge').classList.remove('hidden');
-        document.getElementById('join-session-info').textContent =
-          `${namen} macht${namen.includes(',') ? 'en' : ''} gerade die Lagerbestellung`;
-        document.getElementById('join-title').textContent = 'Lagerbestellung beitreten';
-        document.getElementById('join-sub').textContent = 'Wähle einen freien Bereich';
-        document.getElementById('btn-join-start').textContent = 'Beitreten & starten →';
-
-        // Live-Listener starten
-        startSessionListener(activeSession.id);
-        renderBereichList(activeSession);
-      } else {
-        sessionId = null;
-        document.getElementById('join-session-badge').classList.add('hidden');
-        document.getElementById('join-title').textContent = 'Neue Lagerbestellung';
-        document.getElementById('join-sub').textContent = 'Wähle deinen Bereich';
-        document.getElementById('btn-join-start').textContent = 'Session starten →';
-        renderBereichList(null);
-      }
+        // Keine aktive Session
+        if (!sessionId) {
+          document.getElementById('join-session-badge').classList.add('hidden');
+          document.getElementById('join-title').textContent = 'Neue Lagerbestellung';
+          document.getElementById('join-sub').textContent = 'Wähle deinen Bereich';
+          const btn = document.getElementById('btn-join-start');
+          if (!btn.textContent.includes('→')) btn.textContent = 'Session starten →';
+          renderBereichList(null);
+        }
+      }, () => {});
     }
 
     function renderBereichList(sessionData) {
@@ -760,9 +763,25 @@
       btn.disabled = true;
       btn.textContent = 'Bitte warten…';
 
+      // Join-Screen-Listener stoppen (wir verlassen den Join-Screen)
+      if (joinUnsubscribe) { joinUnsubscribe(); joinUnsubscribe = null; }
+
       try {
         const auth = getAuth(app);
         if (!auth.currentUser) await signInAnonymously(auth);
+
+        // Race-Condition-Schutz: falls kein sessionId, nochmal prüfen ob inzwischen eine Session existiert
+        if (!sessionId) {
+          const q = query(collection(db, 'bestellungen_session'), where('status', '==', 'aktiv'), limit(1));
+          const snap = await getDocs(q);
+          if (!snap.empty) {
+            const d = snap.docs[0];
+            const startMs = d.data().startzeit?.toMillis?.() ?? Date.now();
+            if (Date.now() - startMs < 8 * 3600 * 1000) {
+              sessionId = d.id;
+            }
+          }
+        }
 
         if (sessionId) {
           // Bestehende Session – beitreten
@@ -1108,23 +1127,28 @@
       latestSessionData = data;
 
       // ── Verlassene User erkennen und markieren ──
-      const now      = Date.now();
-      const STALE_MS = 90_000;
-      const updates  = {};
+      // Nur auf server-bestätigten Snapshots prüfen (hasPendingWrites=true bedeutet
+      // serverTimestamp() ist noch null → würde fälschlich alle als "abandoned" markieren)
+      if (!snap.metadata.hasPendingWrites) {
+        const now      = Date.now();
+        const STALE_MS = 90_000;
+        const updates  = {};
 
-      Object.entries(data.heartbeats ?? {}).forEach(([name, ts]) => {
-        const lastBeat = ts?.toMillis?.() ?? 0;
-        if (now - lastBeat > STALE_MS) {
-          Object.entries(data.bereichStatus ?? {}).forEach(([bid, bs]) => {
-            if (bs.mitarbeiter === name && bs.status === 'gesperrt') {
-              updates[`bereichStatus.${bid}.status`] = 'abgebrochen';
-            }
-          });
+        Object.entries(data.heartbeats ?? {}).forEach(([name, ts]) => {
+          const lastBeat = ts?.toMillis?.() ?? 0;
+          if (lastBeat === 0) return; // Pending timestamp überspringen
+          if (now - lastBeat > STALE_MS) {
+            Object.entries(data.bereichStatus ?? {}).forEach(([bid, bs]) => {
+              if (bs.mitarbeiter === name && bs.status === 'gesperrt') {
+                updates[`bereichStatus.${bid}.status`] = 'abgebrochen';
+              }
+            });
+          }
+        });
+
+        if (Object.keys(updates).length > 0) {
+          updateDoc(snap.ref, updates).catch(() => {});
         }
-      });
-
-      if (Object.keys(updates).length > 0) {
-        updateDoc(snap.ref, updates).catch(() => {});
       }
 
       // ── Alle Bereiche erledigt? ──
@@ -1265,7 +1289,19 @@
       document.getElementById('wait-subtitle').textContent = offen.length > 0
         ? `Noch ${offen.length} Bereich${offen.length > 1 ? 'e' : ''} offen…`
         : 'Alle Bereiche fertig!';
+
+      // "Weiteren Bereich" Button – nur anzeigen wenn noch freie/abgebrochene Bereiche
+      const hasFree = alleBereiche.some(b => {
+        const s = bereichStatus[b.id]?.status;
+        return s === 'frei' || s === 'abgebrochen';
+      });
+      const btnWeiterer = document.getElementById('btn-weiterer-bereich');
+      if (btnWeiterer) btnWeiterer.style.display = hasFree ? '' : 'none';
     }
+
+    window.wähleWeiterenBereich = function() {
+      showJoinScreen();
+    };
 
     function checkAlleDone() {
       document.getElementById('wait-spinner').style.display = 'none';
@@ -1435,6 +1471,7 @@
 
       try {
         stopHeartbeat();
+        if (joinUnsubscribe) { joinUnsubscribe(); joinUnsubscribe = null; }
 
         if (sessionId && currentBereichId) {
           const sessionRef = doc(db, 'bestellungen_session', sessionId);

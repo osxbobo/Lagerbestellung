@@ -220,6 +220,7 @@
   <script type="module">
     import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
     import { getFirestore, collection, query, where, orderBy, limit, onSnapshot, getDocs } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+    import { getAuth, signInAnonymously } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 
     const firebaseConfig = {
       apiKey:            "AIzaSyD1YY-cFQxyykfYQYPORwulzuF8t6Wgid4",
@@ -231,6 +232,12 @@
     };
     const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
     const db  = getFirestore(app);
+
+    // Anonym einloggen damit bestellungen_session gelesen werden darf
+    try {
+      const auth = getAuth(app);
+      if (!auth.currentUser) await signInAnonymously(auth);
+    } catch(e) {}
 
     const banner         = document.getElementById('laufende-session-banner');
     const bannerText     = document.getElementById('session-banner-text');

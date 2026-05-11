@@ -1410,12 +1410,12 @@
 
     async function checkForActiveCheckSession() {
       try {
-        const q    = query(collection(db, 'bestellungen_session'), where('status', '==', 'aktiv'), orderBy('startzeit', 'desc'), limit(1));
+        const q    = query(collection(db, 'bestellungen_session'), where('status', '==', 'aktiv'), limit(1));
         const snap = await getDocs(q);
         if (!snap.empty) {
           const d       = snap.docs[0];
           const data    = d.data();
-          const startMs = data.startzeit?.toMillis?.() ?? Date.parse(data.startzeit);
+          const startMs = data.startzeit?.toMillis?.() ?? Date.now();
           if (Date.now() - startMs < 8 * 3600 * 1000) {
             showBlockScreen(d.id, data);
             return true;
