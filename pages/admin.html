@@ -215,6 +215,9 @@
     <button class="bottom-sheet-item" data-section="fotos" onclick="showSection('fotos');closeBottomSheet()">
       <span class="bottom-sheet-item-icon">📸</span> Fotos & Bilder
     </button>
+    <button class="bottom-sheet-item" data-section="ss-fotos" onclick="showSection('ss-fotos');closeBottomSheet()">
+      <span class="bottom-sheet-item-icon">🃏</span> StockSwipe Fotos
+    </button>
     <button class="bottom-sheet-item" data-section="pin" onclick="showSection('pin');closeBottomSheet()">
       <span class="bottom-sheet-item-icon">🔑</span> PIN ändern
     </button>
@@ -244,6 +247,9 @@
         <div class="sidebar-divider"></div>
         <div class="sidebar-item" id="nav-fotos" onclick="showSection('fotos')">
           <span class="icon">📸</span> Fotos & Bilder
+        </div>
+        <div class="sidebar-item" id="nav-ss-fotos" onclick="showSection('ss-fotos')">
+          <span class="icon">🃏</span> StockSwipe Fotos
         </div>
         <div class="sidebar-item" onclick="window.location.href='scanner.html'">
           <span class="icon">📷</span> Charge-Scanner
@@ -398,6 +404,28 @@
           <div class="section-label mb-12" id="foto-grid-label">Artikel ohne Produktfoto</div>
           <div class="foto-grid" id="foto-grid"></div>
         </div>
+      </section>
+
+      <!-- ── STOCKSWIPE FOTOS ── -->
+      <section class="content-section" id="section-ss-fotos">
+        <div class="page-header">
+          <div class="page-title">StockSwipe Fotos</div>
+          <div class="page-sub">Karten-Fotos für StockSwipe separat verwalten (überschreibt nicht das allgemeine Produktfoto)</div>
+        </div>
+        <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center;">
+          <input type="text" id="ss-foto-search" class="form-input" placeholder="Artikel suchen…" oninput="renderSsFotos()" style="flex:1;min-width:160px;">
+          <select id="ss-foto-filter" class="form-input" onchange="renderSsFotos()" style="width:auto;">
+            <option value="alle">Alle Artikel</option>
+            <option value="ohne-ss">Ohne StockSwipe-Foto</option>
+            <option value="mit-ss">Mit StockSwipe-Foto</option>
+          </select>
+          <select id="ss-foto-bereich" class="form-input" onchange="renderSsFotos()" style="width:auto;">
+            <option value="">Alle Bereiche</option>
+          </select>
+        </div>
+        <div class="section-label mb-12" id="ss-foto-grid-label">Artikel</div>
+        <div class="foto-grid" id="ss-foto-grid"></div>
+        <input type="file" id="ss-foto-file-input" accept="image/*" style="display:none" onchange="uploadSsFoto()">
       </section>
 
       <!-- ── PIN ── -->
@@ -896,10 +924,11 @@
       renderFotoSection();
       populateBereichFilter();
       populateFotoArtikelSelect();
+      populateSsBereichFilter();
     }
 
     // ── Navigation ──
-    const moreSheetSections = ['bereiche','fotos','pin','backup'];
+    const moreSheetSections = ['bereiche','fotos','ss-fotos','pin','backup'];
 
     window.showSection = function(name) {
       document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
@@ -907,6 +936,7 @@
       document.querySelectorAll('.bottom-tab').forEach(s => s.classList.remove('active'));
       document.querySelectorAll('.bottom-sheet-item').forEach(s => s.classList.remove('active'));
       document.getElementById(`section-${name}`).classList.add('active');
+      if (name === 'ss-fotos') renderSsFotos();
       const navItem = document.getElementById(`nav-${name}`);
       if (navItem) navItem.classList.add('active');
       const bottomTab = document.querySelector(`.bottom-tab[data-section="${name}"]`);
@@ -930,6 +960,10 @@
       document.getElementById('bottom-sheet').classList.remove('open');
       setTimeout(() => document.getElementById('bottom-sheet-backdrop').classList.add('hidden'), 300);
     };
+
+    function esc(str) {
+      return String(str ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
 
     // ── Toast ──
     function toast(msg, type = 'success') {
@@ -1311,6 +1345,90 @@
       loadFotoPreview();
       showSection('fotos');
       document.getElementById('foto-file-input').click();
+    };
+
+    // ── STOCKSWIPE FOTOS ──
+    let ssFotoTargetId = null;
+
+    function populateSsBereichFilter() {
+      const sel = document.getElementById('ss-foto-bereich');
+      if (!sel) return;
+      while (sel.options.length > 1) sel.remove(1);
+      alleBereiche.forEach(b => {
+        const o = document.createElement('option');
+        o.value = b.id; o.textContent = b.name;
+        sel.appendChild(o);
+      });
+    }
+
+    window.renderSsFotos = function() {
+      const grid    = document.getElementById('ss-foto-grid');
+      if (!grid) return;
+      const search  = (document.getElementById('ss-foto-search')?.value || '').toLowerCase();
+      const filter  = document.getElementById('ss-foto-filter')?.value  || 'alle';
+      const bereich = document.getElementById('ss-foto-bereich')?.value || '';
+
+      let items = alleArtikel.filter(a => {
+        const matchSearch  = !search || (a.name||'').toLowerCase().includes(search) || (a.lp||'').toLowerCase().includes(search);
+        const matchFilter  = filter === 'ohne-ss' ? !a.stockswipeFotoUrl
+                           : filter === 'mit-ss'  ?  !!a.stockswipeFotoUrl
+                           : true;
+        const matchBereich = !bereich || a.bereich === bereich;
+        return matchSearch && matchFilter && matchBereich;
+      });
+      items.sort((a, b) => (a.name||'').localeCompare(b.name||''));
+
+      document.getElementById('ss-foto-grid-label').textContent = `${items.length} Artikel`;
+
+      grid.innerHTML = items.map(a => {
+        const short     = a.name.length > 26 ? a.name.substring(0,23) + '…' : a.name;
+        const hasSsFoto = !!a.stockswipeFotoUrl;
+        const photoSlot = hasSsFoto
+          ? `<img src="${esc(a.stockswipeFotoUrl)}" style="width:100%;height:120px;object-fit:cover;display:block;" loading="lazy">`
+          : (a.fotoUrl
+              ? `<div style="position:relative;"><img src="${esc(a.fotoUrl)}" style="width:100%;height:120px;object-fit:cover;display:block;filter:grayscale(0.4);opacity:0.7;" loading="lazy"><div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.35);font-size:0.6rem;color:white;font-family:'IBM Plex Mono',monospace;letter-spacing:0.05em;">STANDARD FOTO</div></div>`
+              : `<div style="width:100%;height:120px;background:var(--surface2);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;"><span style="font-size:2rem;">📦</span><span style="font-size:0.62rem;color:var(--muted);">Kein Foto</span></div>`
+            );
+        return `
+          <div class="foto-card">
+            ${photoSlot}
+            <div class="foto-name">
+              ${a.lp ? `<div style="font-size:0.6rem;color:var(--accent2);margin-bottom:2px;font-family:'IBM Plex Mono',monospace;">${esc(a.lp)}</div>` : ''}
+              ${esc(short)}
+              ${hasSsFoto ? '<div style="font-size:0.58rem;color:var(--green);margin-top:2px;">✓ StockSwipe-Foto</div>' : ''}
+            </div>
+            <button class="foto-upload-btn" onclick="triggerSsFotoUpload('${esc(a.id)}')">
+              🃏 StockSwipe-Foto ${hasSsFoto ? 'ändern' : 'hochladen'}
+            </button>
+          </div>`;
+      }).join('') || '<div class="empty-state">Keine Artikel gefunden</div>';
+    };
+
+    window.triggerSsFotoUpload = function(id) {
+      ssFotoTargetId = id;
+      const inp = document.getElementById('ss-foto-file-input');
+      inp.value = '';
+      inp.click();
+    };
+
+    window.uploadSsFoto = async function() {
+      const file = document.getElementById('ss-foto-file-input').files[0];
+      if (!file || !ssFotoTargetId) return;
+      toast('StockSwipe-Foto wird hochgeladen…');
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('upload_preset', CLOUDINARY_PRESET);
+        formData.append('folder', 'lagerapp/stockswipe');
+        const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, { method: 'POST', body: formData });
+        if (!res.ok) throw new Error('Upload fehlgeschlagen');
+        const data = await res.json();
+        await updateDoc(doc(db, 'artikel', ssFotoTargetId), { stockswipeFotoUrl: data.secure_url });
+        const idx = alleArtikel.findIndex(a => a.id === ssFotoTargetId);
+        if (idx >= 0) alleArtikel[idx].stockswipeFotoUrl = data.secure_url;
+        renderSsFotos();
+        toast('StockSwipe-Foto gespeichert ✅');
+      } catch(e) { toast(e.message, 'error'); }
     };
 
     // ── PIN ──
