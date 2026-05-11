@@ -522,6 +522,9 @@
     // Heartbeat
     let heartbeatTimer = null;
 
+    // Abandoned-Detection Timer (unabhängig von onSnapshot)
+    let abandonedCheckTimer = null;
+
     // Listener
     let sessionUnsubscribe = null;
     let joinUnsubscribe    = null;
@@ -861,6 +864,7 @@
 
         startSessionListener(sessionId);
         startHeartbeat();
+        startAbandonedCheck();
         renderCheckScreen();
         showScreen('check');
 
@@ -1126,6 +1130,43 @@
     }
 
     /* ════════════════════════════════════════
+       ABANDONED-CHECK (periodisch, unabhängig von onSnapshot)
+       Läuft auch wenn sich das Session-Dokument nicht ändert
+       (z.B. wenn jemand einfach den Tab schliesst)
+    ════════════════════════════════════════ */
+    function startAbandonedCheck() {
+      stopAbandonedCheck();
+      abandonedCheckTimer = setInterval(async () => {
+        if (!sessionId || !latestSessionData) return;
+        const now      = Date.now();
+        const STALE_MS = 90_000;
+        const updates  = {};
+
+        Object.entries(latestSessionData.heartbeats ?? {}).forEach(([name, ts]) => {
+          const lastBeat = ts?.toMillis?.() ?? 0;
+          if (lastBeat === 0) return;
+          if (now - lastBeat > STALE_MS) {
+            Object.entries(latestSessionData.bereichStatus ?? {}).forEach(([bid, bs]) => {
+              if (bs.mitarbeiter === name && bs.status === 'gesperrt') {
+                updates[`bereichStatus.${bid}.status`] = 'abgebrochen';
+              }
+            });
+          }
+        });
+
+        if (Object.keys(updates).length > 0) {
+          try {
+            await updateDoc(doc(db, 'bestellungen_session', sessionId), updates);
+          } catch(e) {}
+        }
+      }, 30_000);
+    }
+
+    function stopAbandonedCheck() {
+      if (abandonedCheckTimer) { clearInterval(abandonedCheckTimer); abandonedCheckTimer = null; }
+    }
+
+    /* ════════════════════════════════════════
        SESSION LISTENER (onSnapshot)
     ════════════════════════════════════════ */
     function startSessionListener(sid) {
@@ -1233,6 +1274,7 @@
         });
 
         stopHeartbeat();
+        // AbandonedCheck läuft weiter – erkennt Kollegen die abbrechen während wir warten
         showScreen('wait');
         if (latestSessionData) renderWaitStatus(latestSessionData);
 
@@ -1460,6 +1502,7 @@
 
         // Cleanup
         stopHeartbeat();
+        stopAbandonedCheck();
         stopSessionListener();
 
         // Session-Dokument löschen
@@ -1488,6 +1531,7 @@
 
       try {
         stopHeartbeat();
+        stopAbandonedCheck();
         if (joinUnsubscribe) { joinUnsubscribe(); joinUnsubscribe = null; }
 
         if (sessionId && currentBereichId) {
