@@ -1417,8 +1417,18 @@
           const data    = d.data();
           const startMs = data.startzeit?.toMillis?.() ?? Date.now();
           if (Date.now() - startMs < 8 * 3600 * 1000) {
-            showBlockScreen(d.id, data);
-            return true;
+            // Prüfen ob noch jemand aktiv ist (frischer Heartbeat < 90s)
+            const heartbeats = data.heartbeats ?? {};
+            const hasAliveUser = Object.values(heartbeats).some(ts => {
+              const lastBeat = ts?.toMillis?.() ?? 0;
+              return lastBeat > 0 && (Date.now() - lastBeat) < 90_000;
+            });
+            if (hasAliveUser) {
+              showBlockScreen(d.id, data);
+              return true;
+            }
+            // Zombie-Session – alle Heartbeats abgelaufen → löschen
+            try { await deleteDoc(d.ref); } catch(e2) {}
           }
         }
       } catch(e) {}
