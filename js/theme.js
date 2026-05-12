@@ -20,6 +20,9 @@ function applyTheme(theme) {
   document.documentElement.setAttribute('data-theme', theme);
   localStorage.setItem('lager-theme', theme);
   updateToggleIcon(theme);
+  document.querySelectorAll('.app-logo').forEach(img => {
+    img.src = theme === 'dark' ? img.dataset.srcDark : img.dataset.srcLight;
+  });
 }
 
 function updateToggleIcon(theme) {
