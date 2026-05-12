@@ -7,7 +7,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="LAGER//APP">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>LAGER//APP – Rettungswache Malmsheim</title>
   <link rel="stylesheet" href="css/main.css">
   <link rel="stylesheet" href="css/index.css">
@@ -67,7 +67,7 @@
   <!-- ── NAVBAR ── -->
   <nav class="navbar">
     <div class="navbar-inner">
-      <a href="index.html" class="nav-logo" style="padding:0;"><img src="LAGER_APP.png" alt="LAGER//APP" style="height:32px;width:auto;display:block;object-fit:contain;"></a>
+      <a href="index.html" class="nav-logo" style="padding:0;"><img src="LAGER_APP.png" class="app-logo" data-src-light="LAGER_APP.png" data-src-dark="LAGER_APP_DARK.PNG" alt="LAGER//APP" style="height:32px;width:auto;display:block;object-fit:contain;"></a>
       <div class="nav-right">
         <button onclick="openPinModal('mitarbeiter')" class="nav-btn primary hide-mobile">👤 Mitarbeiter</button>
         <a href="pages/login.html" class="nav-btn hide-mobile">🔐 Login</a>
@@ -80,7 +80,7 @@
   <div class="hero">
     <div class="hero-inner container">
       <div class="hero-tag mono">DRK · Rettungswache Malmsheim</div>
-      <img src="LAGER_APP.png" alt="LAGER//APP"
+      <img src="LAGER_APP.png" class="app-logo" data-src-light="LAGER_APP.png" data-src-dark="LAGER_APP_DARK.PNG" alt="LAGER//APP"
         style="height:90px;width:auto;max-width:280px;object-fit:contain;margin:0 auto 4px;">
       <p class="hero-sub">Digitale Lagerverwaltung & Bestandskontrolle</p>
       <!-- Eingeloggter User -->
@@ -175,6 +175,9 @@
     const initialTheme = savedTheme || (prefersDark ? 'dark' : 'light');
     document.documentElement.setAttribute('data-theme', initialTheme);
     document.getElementById('theme-toggle').textContent = initialTheme === 'dark' ? '☀️' : '🌙';
+    document.querySelectorAll('.app-logo').forEach(img => {
+      img.src = initialTheme === 'dark' ? img.dataset.srcDark : img.dataset.srcLight;
+    });
 
     window.toggleTheme = function() {
       const current = document.documentElement.getAttribute('data-theme');
@@ -182,6 +185,9 @@
       document.documentElement.setAttribute('data-theme', next);
       localStorage.setItem('lager-theme', next);
       document.getElementById('theme-toggle').textContent = next === 'dark' ? '☀️' : '🌙';
+      document.querySelectorAll('.app-logo').forEach(img => {
+        img.src = next === 'dark' ? img.dataset.srcDark : img.dataset.srcLight;
+      });
     };
 
     // ── Firebase ──
