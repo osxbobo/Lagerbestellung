@@ -655,33 +655,29 @@
       // Alten Join-Screen-Listener stoppen
       if (joinUnsubscribe) { joinUnsubscribe(); joinUnsubscribe = null; }
 
-      // Live-Listener auf aktive Sessions
-      const q = query(collection(db, 'bestellungen_session'), where('status', '==', 'aktiv'), limit(1));
-      joinUnsubscribe = onSnapshot(q, snap => {
+      // Collection-Query – funktioniert auch wenn User noch kein Teilnehmer ist
+      // (Firestore-Regeln erlauben list-Queries für authentifizierte User)
+      // Race-Condition-Schutz liegt allein in lockUndStart() via Transaktion auf 'current'
+      const joinQuery = query(
+        collection(db, 'bestellungen_session'),
+        where('status', '==', 'aktiv'),
+        limit(1)
+      );
+      joinUnsubscribe = onSnapshot(joinQuery, snap => {
         if (!snap.empty) {
-          const d = snap.docs[0];
-          const data = d.data();
-          const startMs = data.startzeit?.toMillis?.() ?? Date.now();
-          if (Date.now() - startMs < 8 * 3600 * 1000) {
-            // Session gefunden
-            if (sessionId !== d.id) {
-              sessionId = d.id;
-              startSessionListener(d.id);
-            }
-            const namen = (data.teilnehmer || []).map(t => t.name).join(', ');
-            document.getElementById('join-session-badge').classList.remove('hidden');
-            document.getElementById('join-session-info').textContent =
-              `${namen} macht${namen.includes(',') ? 'en' : ''} gerade die Lagerbestellung`;
-            document.getElementById('join-title').textContent = 'Lagerbestellung beitreten';
-            document.getElementById('join-sub').textContent = 'Wähle einen freien Bereich';
-            const btn = document.getElementById('btn-join-start');
-            if (!btn.textContent.includes('→')) btn.textContent = 'Beitreten & starten →';
-            renderBereichList({ id: d.id, ...data });
-            return;
-          }
-        }
-        // Keine aktive Session
-        if (!sessionId) {
+          const docSnap = snap.docs[0];
+          const data = docSnap.data();
+          const namen = (data.teilnehmer || []).map(t => t.name).join(', ');
+          document.getElementById('join-session-badge').classList.remove('hidden');
+          document.getElementById('join-session-info').textContent =
+            `${namen} macht${namen.includes(',') ? 'en' : ''} gerade die Lagerbestellung`;
+          document.getElementById('join-title').textContent = 'Lagerbestellung beitreten';
+          document.getElementById('join-sub').textContent = 'Wähle einen freien Bereich';
+          const btn = document.getElementById('btn-join-start');
+          if (!btn.textContent.includes('→')) btn.textContent = 'Beitreten & starten →';
+          renderBereichList(data);
+        } else {
+          // Keine aktive Session
           sessionId = null;
           document.getElementById('join-session-badge').classList.add('hidden');
           document.getElementById('join-title').textContent = 'Neue Lagerbestellung';
@@ -691,8 +687,7 @@
           renderBereichList(null);
         }
       }, () => {
-        // Query fehlgeschlagen – Bereiche trotzdem anzeigen
-        renderBereichList(null);
+        renderBereichList(latestSessionData || null);
       });
     }
 
@@ -789,40 +784,25 @@
         const auth = getAuth(app);
         if (!auth.currentUser) await signInAnonymously(auth);
 
-        // Race-Condition-Schutz: falls kein sessionId, nochmal prüfen ob inzwischen eine Session existiert
-        if (!sessionId) {
-          const q = query(collection(db, 'bestellungen_session'), where('status', '==', 'aktiv'), limit(1));
-          const snap = await getDocs(q);
-          if (!snap.empty) {
-            const d = snap.docs[0];
-            const startMs = d.data().startzeit?.toMillis?.() ?? Date.now();
-            if (Date.now() - startMs < 8 * 3600 * 1000) {
-              sessionId = d.id;
-            }
-          }
-        }
+        // Atomare Transaktion auf fester Document-ID 'current'
+        // Firestore serialisiert Transaktionen auf demselben Dokument →
+        // kein gleichzeitiges Erstellen zweier Sessions möglich
+        const sessionRef = doc(db, 'bestellungen_session', 'current');
+        await runTransaction(db, async tx => {
+          const snap     = await tx.get(sessionRef);
+          const isActive = snap.exists() && snap.data().status === 'aktiv';
 
-        if (sessionId) {
-          // Bestehende Session – beitreten
-          await runTransaction(db, async tx => {
-            const ref  = doc(db, 'bestellungen_session', sessionId);
-            const snap = await tx.get(ref);
-            if (!snap.exists()) throw new Error('Session nicht mehr aktiv');
+          if (isActive) {
             const data = snap.data();
             const bs   = data.bereichStatus?.[selectedBereichId];
-
-            // Nur blockieren wenn jemand anderes den Bereich gerade hat
             if (bs?.status === 'gesperrt' && bs.mitarbeiter !== userName) {
               throw new Error(`Bereich wird gerade von ${bs.mitarbeiter} bearbeitet`);
             }
             if (bs?.status === 'erledigt') {
               throw new Error('Bereich ist bereits abgeschlossen');
             }
-
-            const teilnehmer = data.teilnehmer || [];
-            const bereitsRin = teilnehmer.some(t => t.name === userName);
-
-            tx.update(ref, {
+            const bereitsRin = (data.teilnehmer || []).some(t => t.name === userName);
+            tx.update(sessionRef, {
               [`bereichStatus.${selectedBereichId}`]: {
                 status:      'gesperrt',
                 mitarbeiter: userName,
@@ -834,28 +814,26 @@
               }),
               [`heartbeats.${userName}`]: serverTimestamp(),
             });
-          });
-
-        } else {
-          // Neue Session erstellen
-          const newSessionRef = doc(collection(db, 'bestellungen_session'));
-          sessionId = newSessionRef.id;
-          await setDoc(newSessionRef, {
-            status:     'aktiv',
-            startzeit:  serverTimestamp(),
-            teilnehmer: [{ name: userName, beitritt: new Date().toISOString() }],
-            bereichStatus: {
-              [selectedBereichId]: {
-                status:      'gesperrt',
-                mitarbeiter: userName,
-                gesperrtAt:  serverTimestamp(),
-                erledigtAt:  null,
-              }
-            },
-            heartbeats:  { [userName]: serverTimestamp() },
-            alleErledigt: false,
-          });
-        }
+          } else {
+            // Neue Session anlegen
+            tx.set(sessionRef, {
+              status:       'aktiv',
+              startzeit:    serverTimestamp(),
+              teilnehmer:   [{ name: userName, beitritt: new Date().toISOString() }],
+              bereichStatus: {
+                [selectedBereichId]: {
+                  status:      'gesperrt',
+                  mitarbeiter: userName,
+                  gesperrtAt:  serverTimestamp(),
+                  erledigtAt:  null,
+                }
+              },
+              heartbeats:   { [userName]: serverTimestamp() },
+              alleErledigt: false,
+            });
+          }
+        });
+        sessionId = 'current';
 
         currentBereichId = selectedBereichId;
 
@@ -1505,6 +1483,16 @@
         stopAbandonedCheck();
         stopSessionListener();
 
+        // Warenkorb Sub-Collection leeren (feste ID 'current' → bleibt sonst erhalten)
+        try {
+          const wkSnap = await getDocs(collection(db, 'bestellungen_session', sessionId, 'warenkorb'));
+          if (!wkSnap.empty) {
+            const wkBatch = writeBatch(db);
+            wkSnap.forEach(d => wkBatch.delete(d.ref));
+            await wkBatch.commit();
+          }
+        } catch(e) {}
+
         // Session-Dokument löschen
         try { await deleteDoc(doc(db, 'bestellungen_session', sessionId)); } catch(e) {}
 
@@ -1556,7 +1544,13 @@
                 await batch.commit();
               } catch(e) {}
             } else {
-              // Letzter User → Session löschen
+              // Letzter User → Warenkorb + Session löschen
+              try {
+                const wk = await getDocs(collection(db, 'bestellungen_session', sessionId, 'warenkorb'));
+                if (!wk.empty) {
+                  const b = writeBatch(db); wk.forEach(d => b.delete(d.ref)); await b.commit();
+                }
+              } catch(e) {}
               await deleteDoc(sessionRef);
             }
           }
