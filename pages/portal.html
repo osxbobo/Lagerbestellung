@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <link rel="manifest" href="../manifest.json">
-  <meta name="theme-color" content="#f97316">
+  <meta name="theme-color" content="#F26B2E">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="LAGER//APP">
   <title>Wachenleiter – LAGER//APP</title>
@@ -598,128 +598,45 @@
       <!-- ── ANALYTICS ── -->
       <section class="content-section" id="section-analytics">
         <div class="page-header">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;">
-            <div>
-              <div class="page-title">Analytics</div>
-              <div class="page-sub">Lager-Kennzahlen &amp; Trends</div>
-            </div>
-            <div style="display:flex;gap:6px;">
-              <button class="la-btn ghost sm">Filter</button>
-              <button class="la-btn ghost sm">Export</button>
-            </div>
+          <div>
+            <div class="page-title">Analytics</div>
+            <div class="page-sub">Lager-Kennzahlen aus echten Daten</div>
           </div>
         </div>
 
-        <!-- KPI sparklines -->
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:24px;">
-          <!-- Lagerchecks -->
-          <div class="la-card outline" style="padding:16px 18px;">
-            <div style="font-size:10px;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.08em;color:var(--ink-3);margin-bottom:6px;">Lagerchecks</div>
-            <div style="font-size:28px;font-weight:700;letter-spacing:-.5px;line-height:1;font-family:var(--font-mono)">24</div>
-            <div style="font-size:11px;color:var(--ok);margin-top:4px;">↑ +3 vs. Vormonat</div>
-            <svg viewBox="0 0 80 28" style="width:100%;height:28px;margin-top:10px;display:block" fill="none" stroke="var(--brand)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="0,20 13,16 27,18 40,10 53,14 67,8 80,6"/>
-            </svg>
-          </div>
-          <!-- Bestellungen -->
-          <div class="la-card outline" style="padding:16px 18px;">
-            <div style="font-size:10px;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.08em;color:var(--ink-3);margin-bottom:6px;">Bestellungen</div>
-            <div style="font-size:28px;font-weight:700;letter-spacing:-.5px;line-height:1;font-family:var(--font-mono)">148</div>
-            <div style="font-size:11px;color:var(--ok);margin-top:4px;">↑ +12 vs. Vormonat</div>
-            <svg viewBox="0 0 80 28" style="width:100%;height:28px;margin-top:10px;display:block" fill="none" stroke="var(--brand)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="0,22 13,18 27,20 40,12 53,15 67,10 80,7"/>
-            </svg>
-          </div>
-          <!-- Kritische Artikel -->
-          <div class="la-card outline" style="padding:16px 18px;">
-            <div style="font-size:10px;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.08em;color:var(--ink-3);margin-bottom:6px;">Kritische Artikel</div>
-            <div style="font-size:28px;font-weight:700;letter-spacing:-.5px;line-height:1;font-family:var(--font-mono);color:var(--crit)">4</div>
-            <div style="font-size:11px;color:var(--crit);margin-top:4px;">↑ +2 vs. Vorwoche</div>
-            <svg viewBox="0 0 80 28" style="width:100%;height:28px;margin-top:10px;display:block" fill="none" stroke="var(--crit)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="0,14 13,16 27,12 40,18 53,10 67,20 80,8"/>
-            </svg>
-          </div>
-          <!-- Verfälle (Ø Laufzeit) -->
-          <div class="la-card outline" style="padding:16px 18px;">
-            <div style="font-size:10px;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.08em;color:var(--ink-3);margin-bottom:6px;">Ø Checkdauer</div>
-            <div style="font-size:28px;font-weight:700;letter-spacing:-.5px;line-height:1;font-family:var(--font-mono)">38<small style="font-size:14px;font-weight:500;color:var(--ink-3)"> min</small></div>
-            <div style="font-size:11px;color:var(--ok);margin-top:4px;">↓ −4 min vs. Vormonat</div>
-            <svg viewBox="0 0 80 28" style="width:100%;height:28px;margin-top:10px;display:block" fill="none" stroke="var(--brand)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="0,6 13,8 27,10 40,14 53,12 67,16 80,18"/>
-            </svg>
-          </div>
-        </div>
-
-        <!-- 12-week stacked bar chart -->
-        <div class="la-card outline" style="padding:0;margin-bottom:20px;">
-          <div style="padding:14px 18px;border-bottom:1px solid var(--hairline);display:flex;align-items:center;gap:10px;">
-            <div style="font-size:13px;font-weight:600">Bestellungen pro Woche</div>
-            <div style="flex:1"></div>
-            <div style="display:flex;align-items:center;gap:10px;font-size:11px;color:var(--ink-3)">
-              <span style="display:flex;align-items:center;gap:4px"><span style="width:8px;height:8px;border-radius:2px;background:var(--ok);display:inline-block"></span>OK</span>
-              <span style="display:flex;align-items:center;gap:4px"><span style="width:8px;height:8px;border-radius:2px;background:var(--low);display:inline-block"></span>Knapp</span>
-              <span style="display:flex;align-items:center;gap:4px"><span style="width:8px;height:8px;border-radius:2px;background:var(--crit);display:inline-block"></span>Kritisch</span>
-            </div>
-          </div>
-          <div style="padding:16px 18px 8px;overflow-x:auto;">
-            <div style="display:flex;align-items:flex-end;gap:6px;min-width:400px;height:100px;">
-              <!-- 12 bars with stacked ok/low/crit -->
-              <script>
-                (function(){
-                  const data=[{o:8,l:2,c:1},{o:10,l:3,c:0},{o:7,l:1,c:2},{o:12,l:2,c:1},{o:9,l:4,c:2},{o:11,l:1,c:0},{o:14,l:3,c:1},{o:8,l:2,c:3},{o:10,l:1,c:1},{o:13,l:2,c:2},{o:11,l:3,c:1},{o:15,l:2,c:0}];
-                  const max=Math.max(...data.map(d=>d.o+d.l+d.c));
-                  const weeks=['KW10','KW11','KW12','KW13','KW14','KW15','KW16','KW17','KW18','KW19','KW20','KW21'];
-                  let html='';
-                  data.forEach((d,i)=>{
-                    const tot=d.o+d.l+d.c;
-                    const hTotal=Math.round((tot/max)*80);
-                    const hC=Math.round((d.c/tot)*hTotal),hL=Math.round((d.l/tot)*hTotal),hO=hTotal-hC-hL;
-                    html+=`<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px">
-                      <div style="width:100%;display:flex;flex-direction:column;gap:1px">
-                        <div style="height:${hC}px;background:var(--crit);border-radius:2px 2px 0 0;min-height:${d.c>0?2:0}px"></div>
-                        <div style="height:${hL}px;background:var(--low);min-height:${d.l>0?2:0}px"></div>
-                        <div style="height:${hO}px;background:var(--ok);border-radius:0 0 2px 2px;min-height:${d.o>0?2:0}px"></div>
-                      </div>
-                      <div style="font-family:var(--font-mono);font-size:9px;color:var(--ink-3);white-space:nowrap">${weeks[i]}</div>
-                    </div>`;
-                  });
-                  document.write(html);
-                })();
-              </script>
-            </div>
-          </div>
-        </div>
+        <!-- Analytics content (JS-rendered via renderAnalytics()) -->
+        <div id="analytics-kpis" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:24px;"></div>
 
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
-          <!-- Top articles table -->
-          <div class="la-card outline" style="padding:0;">
-            <div style="padding:14px 18px;border-bottom:1px solid var(--hairline);font-size:13px;font-weight:600;">Top Artikel · KW 21</div>
-            <table style="width:100%;border-collapse:collapse;">
-              <tbody>
-                <tr class="lin-tr"><td class="lin-td" style="width:36px;"><div style="width:26px;height:26px;border-radius:6px;background:var(--crit-soft);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--crit)">S</div></td><td class="lin-td"><div style="font-size:13px;font-weight:500">SIC SAC Brechbeutel</div><div style="font-size:10px;color:var(--ink-3);font-family:var(--font-mono)">LP A14</div></td><td class="lin-td" style="width:160px;"><div style="height:5px;border-radius:3px;background:var(--surface-3)"><div style="width:100%;height:100%;border-radius:inherit;background:var(--brand)"></div></div></td><td class="lin-td" style="width:50px;text-align:right;"><span style="font-family:var(--font-mono);font-size:12px;font-weight:600">12</span></td></tr>
-                <tr class="lin-tr"><td class="lin-td"><div style="width:26px;height:26px;border-radius:6px;background:var(--brand-soft);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--brand)">M</div></td><td class="lin-td"><div style="font-size:13px;font-weight:500">Mullkompressen 10×10</div><div style="font-size:10px;color:var(--ink-3);font-family:var(--font-mono)">LP A02</div></td><td class="lin-td"><div style="height:5px;border-radius:3px;background:var(--surface-3)"><div style="width:83%;height:100%;border-radius:inherit;background:var(--brand)"></div></div></td><td class="lin-td" style="text-align:right;"><span style="font-family:var(--font-mono);font-size:12px;font-weight:600">10</span></td></tr>
-                <tr class="lin-tr"><td class="lin-td"><div style="width:26px;height:26px;border-radius:6px;background:var(--ok-soft);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--ok)">N</div></td><td class="lin-td"><div style="font-size:13px;font-weight:500">NaCl 0,9 % 500 ml</div><div style="font-size:10px;color:var(--ink-3);font-family:var(--font-mono)">LP C11</div></td><td class="lin-td"><div style="height:5px;border-radius:3px;background:var(--surface-3)"><div style="width:67%;height:100%;border-radius:inherit;background:var(--brand)"></div></div></td><td class="lin-td" style="text-align:right;"><span style="font-family:var(--font-mono);font-size:12px;font-weight:600">8</span></td></tr>
-                <tr class="lin-tr"><td class="lin-td"><div style="width:26px;height:26px;border-radius:6px;background:var(--surface-3);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--ink-2)">B</div></td><td class="lin-td"><div style="font-size:13px;font-weight:500">Beatmungsbeutel Erw.</div><div style="font-size:10px;color:var(--ink-3);font-family:var(--font-mono)">LP B03</div></td><td class="lin-td"><div style="height:5px;border-radius:3px;background:var(--surface-3)"><div style="width:58%;height:100%;border-radius:inherit;background:var(--brand)"></div></div></td><td class="lin-td" style="text-align:right;"><span style="font-family:var(--font-mono);font-size:12px;font-weight:600">7</span></td></tr>
-                <tr><td class="lin-td"><div style="width:26px;height:26px;border-radius:6px;background:var(--surface-3);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--ink-2)">P</div></td><td class="lin-td"><div style="font-size:13px;font-weight:500">Pflasterstrip 10er</div><div style="font-size:10px;color:var(--ink-3);font-family:var(--font-mono)">LP A08</div></td><td class="lin-td"><div style="height:5px;border-radius:3px;background:var(--surface-3)"><div style="width:42%;height:100%;border-radius:inherit;background:var(--brand)"></div></div></td><td class="lin-td" style="text-align:right;"><span style="font-family:var(--font-mono);font-size:12px;font-weight:600">5</span></td></tr>
-              </tbody>
-            </table>
-          </div>
-
-          <!-- Active leaderboard -->
-          <div class="la-card outline" style="padding:0;">
-            <div style="padding:14px 18px;border-bottom:1px solid var(--hairline);display:flex;align-items:center;gap:8px;">
-              <div style="font-size:13px;font-weight:600;flex:1">Aktivste Mitarbeiter</div>
-              <span style="font-size:11px;color:var(--ink-3)">Anzahl Lagerchecks</span>
+          <div>
+            <div style="font-size:11px;font-weight:600;color:var(--ink-3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;">Letzte Bestellungen</div>
+            <div class="la-card outline" style="padding:0;">
+              <table style="width:100%;border-collapse:collapse;">
+                <thead><tr>
+                  <th class="lin-th">Datum</th>
+                  <th class="lin-th">Mitarbeiter</th>
+                  <th class="lin-th" style="text-align:right;">Artikel</th>
+                </tr></thead>
+                <tbody id="analytics-bestellungen-tbody">
+                  <tr><td class="lin-td" colspan="3" style="text-align:center;color:var(--ink-3);font-size:12px;">Wird geladen…</td></tr>
+                </tbody>
+              </table>
             </div>
-            <table style="width:100%;border-collapse:collapse;">
-              <tbody>
-                <tr class="lin-tr"><td class="lin-td" style="width:36px;"><span class="la-av" style="width:26px;height:26px;font-size:10px;background:#CFE0FF;color:#163770">AS</span></td><td class="lin-td"><div style="font-size:13px;font-weight:500">Anna Schmid</div><div style="font-size:10px;color:var(--ink-3)">Sanitäter</div></td><td class="lin-td" style="width:160px;"><div style="height:5px;border-radius:3px;background:var(--surface-3)"><div style="width:100%;height:100%;border-radius:inherit;background:#6B73D8"></div></div></td><td class="lin-td" style="width:50px;text-align:right;"><span style="font-family:var(--font-mono);font-size:12px;font-weight:600">38</span></td></tr>
-                <tr class="lin-tr"><td class="lin-td"><span class="la-av" style="width:26px;height:26px;font-size:10px;background:#FFD3C1;color:#7A2D0B">MK</span></td><td class="lin-td"><div style="font-size:13px;font-weight:500">Markus Klein</div><div style="font-size:10px;color:var(--ink-3)">Rettungsass.</div></td><td class="lin-td"><div style="height:5px;border-radius:3px;background:var(--surface-3)"><div style="width:89%;height:100%;border-radius:inherit;background:#6B73D8"></div></div></td><td class="lin-td" style="text-align:right;"><span style="font-family:var(--font-mono);font-size:12px;font-weight:600">34</span></td></tr>
-                <tr class="lin-tr"><td class="lin-td"><span class="la-av" style="width:26px;height:26px;font-size:10px;background:#D6F0DA;color:#1A5630">TR</span></td><td class="lin-td"><div style="font-size:13px;font-weight:500">Tom Renz</div><div style="font-size:10px;color:var(--ink-3)">Notfallsan.</div></td><td class="lin-td"><div style="height:5px;border-radius:3px;background:var(--surface-3)"><div style="width:71%;height:100%;border-radius:inherit;background:#6B73D8"></div></div></td><td class="lin-td" style="text-align:right;"><span style="font-family:var(--font-mono);font-size:12px;font-weight:600">27</span></td></tr>
-                <tr class="lin-tr"><td class="lin-td"><span class="la-av" style="width:26px;height:26px;font-size:10px;background:#EADCFA;color:#4F3279">LB</span></td><td class="lin-td"><div style="font-size:13px;font-weight:500">Lena Berg</div><div style="font-size:10px;color:var(--ink-3)">Sanitäter</div></td><td class="lin-td"><div style="height:5px;border-radius:3px;background:var(--surface-3)"><div style="width:47%;height:100%;border-radius:inherit;background:#6B73D8"></div></div></td><td class="lin-td" style="text-align:right;"><span style="font-family:var(--font-mono);font-size:12px;font-weight:600">18</span></td></tr>
-                <tr><td class="lin-td"><span class="la-av" style="width:26px;height:26px;font-size:10px;background:#FBE3C2;color:#7A4F0E">PW</span></td><td class="lin-td"><div style="font-size:13px;font-weight:500">Paul Wenz</div><div style="font-size:10px;color:var(--ink-3)">Sanitäter</div></td><td class="lin-td"><div style="height:5px;border-radius:3px;background:var(--surface-3)"><div style="width:37%;height:100%;border-radius:inherit;background:#6B73D8"></div></div></td><td class="lin-td" style="text-align:right;"><span style="font-family:var(--font-mono);font-size:12px;font-weight:600">14</span></td></tr>
-              </tbody>
-            </table>
+          </div>
+          <div>
+            <div style="font-size:11px;font-weight:600;color:var(--ink-3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;">Kritische Artikel</div>
+            <div class="la-card outline" style="padding:0;">
+              <table style="width:100%;border-collapse:collapse;">
+                <thead><tr>
+                  <th class="lin-th">Artikel</th>
+                  <th class="lin-th">Bereich</th>
+                  <th class="lin-th" style="text-align:center;">Status</th>
+                </tr></thead>
+                <tbody id="analytics-kritisch-tbody">
+                  <tr><td class="lin-td" colspan="3" style="text-align:center;color:var(--ink-3);font-size:12px;">Wird geladen…</td></tr>
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </section>
@@ -727,85 +644,46 @@
       <!-- ── LIVE SESSIONS ── -->
       <section class="content-section" id="section-sessions">
         <div class="page-header">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;">
-            <div>
-              <div class="page-title">Live Sessions <span class="la-chip ok" style="height:20px;font-size:11px;vertical-align:middle;margin-left:6px;"><span class="dot"></span>1 aktiv</span></div>
-              <div class="page-sub">Laufende und abgeschlossene Lagerchecks</div>
-            </div>
-            <div style="display:flex;gap:6px;">
-              <button class="la-btn ghost sm">PIN anzeigen</button>
-              <button class="la-btn primary sm">+ Session starten</button>
-            </div>
+          <div>
+            <div class="page-title">Live Sessions <span id="session-live-badge" class="la-chip" style="height:20px;font-size:11px;vertical-align:middle;margin-left:6px;display:none;"><span class="dot"></span>Live</span></div>
+            <div class="page-sub">Aktuelle und vergangene Lagerchecks</div>
           </div>
         </div>
 
-        <!-- Active session card -->
-        <div class="la-card outline" style="padding:0;margin-bottom:24px;overflow:hidden;">
-          <div style="padding:20px;background:linear-gradient(180deg,var(--brand-soft),transparent);border-bottom:1px solid var(--hairline);">
-            <div style="display:flex;align-items:center;gap:12px;">
-              <div style="width:44px;height:44px;border-radius:12px;background:var(--brand);color:white;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 14px rgba(242,107,46,.35);">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4" fill="currentColor"/><circle cx="12" cy="12" r="9" opacity="0.4"/></svg>
-              </div>
-              <div style="flex:1;">
-                <div style="display:flex;align-items:center;gap:8px;">
-                  <span class="la-chip ok" style="height:20px;font-size:10px;"><span class="dot"></span>Live</span>
-                  <span style="font-size:11px;font-family:var(--font-mono);color:var(--ink-3)">SESSION #4821 · PIN ••••</span>
-                </div>
-                <div style="font-size:18px;font-weight:700;letter-spacing:-.3px;margin-top:4px;">Wochencheck KW 21</div>
-                <div style="font-size:12px;color:var(--ink-3);margin-top:2px;">gestartet 14:02 · läuft seit 28 min</div>
-              </div>
-              <div style="display:flex;gap:8px;flex-wrap:wrap;">
-                <button class="la-btn ghost sm">Beobachten</button>
-                <button class="la-btn ghost sm">Pausieren</button>
-                <button class="la-btn ghost sm" style="color:var(--crit)">Beenden</button>
-              </div>
+        <!-- Active session (echte Firestore-Daten) -->
+        <div id="sessions-active-card" style="margin-bottom:24px;display:none;">
+          <div class="la-card outline" style="padding:20px;background:linear-gradient(180deg,var(--brand-soft),transparent);">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+              <span class="la-chip ok" style="height:20px;font-size:10px;"><span class="dot"></span>Live</span>
+              <span id="sessions-active-meta" style="font-size:11px;font-family:var(--font-mono);color:var(--ink-3)"></span>
             </div>
+            <div style="font-size:11px;color:var(--ink-3);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">Teilnehmer</div>
+            <div id="sessions-active-teilnehmer" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;"></div>
+            <div style="font-size:11px;color:var(--ink-3);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">Bereiche</div>
+            <div id="sessions-active-bereiche" style="display:flex;flex-direction:column;gap:5px;"></div>
           </div>
-          <div style="display:grid;grid-template-columns:1.4fr 1fr 1.6fr;border-top:1px solid var(--hairline);">
-            <!-- Progress -->
-            <div style="padding:20px;border-right:1px solid var(--hairline);">
-              <div style="font-size:11px;color:var(--ink-3);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px">Fortschritt</div>
-              <div style="display:flex;align-items:baseline;gap:8px;">
-                <span style="font-size:36px;font-weight:700;letter-spacing:-.8px;font-family:var(--font-mono)">32%</span>
-                <span style="font-size:12px;color:var(--ink-3)">78 / 245</span>
-              </div>
-              <div class="la-prog" style="margin-top:12px;"><i style="width:32%"></i></div>
-              <div style="font-size:11px;color:var(--ink-3);margin-top:12px;"><b style="color:var(--ink-2)">Aktuell:</b> Schrank A · Verbandsmaterial · Artikel 7</div>
-            </div>
-            <!-- Members -->
-            <div style="padding:20px;border-right:1px solid var(--hairline);">
-              <div style="font-size:11px;color:var(--ink-3);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px">Teilnehmer</div>
-              <div style="display:flex;align-items:center;gap:10px;padding:6px 0;"><span class="la-av live" style="width:24px;height:24px;font-size:9px;background:#FFD3C1;color:#7A2D0B">MK</span><span style="font-size:13px;">Markus K.</span></div>
-              <div style="display:flex;align-items:center;gap:10px;padding:6px 0;"><span class="la-av live" style="width:24px;height:24px;font-size:9px;background:#CFE0FF;color:#163770">AS</span><span style="font-size:13px;">Anna S.</span></div>
-              <div style="display:flex;align-items:center;gap:10px;padding:6px 0;"><span class="la-av live" style="width:24px;height:24px;font-size:9px;background:#D6F0DA;color:#1A5630">TR</span><span style="font-size:13px;">Tom R.</span></div>
-            </div>
-            <!-- Live feed -->
-            <div style="padding:20px;">
-              <div style="font-size:11px;color:var(--ink-3);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.06em;margin-bottom:12px">Aktivität · letzte 2 min</div>
-              <div style="display:flex;align-items:center;gap:8px;padding:6px 0;"><span class="la-av" style="width:22px;height:22px;font-size:9px;background:#CFE0FF;color:#163770">AS</span><span class="la-chip low" style="height:18px;font-size:10px;"><span class="dot"></span>+2 P Mullbinden 6 cm</span><span style="flex:1"></span><span style="font-size:10px;color:var(--ink-3);font-family:var(--font-mono)">jetzt</span></div>
-              <div style="display:flex;align-items:center;gap:8px;padding:6px 0;"><span class="la-av" style="width:22px;height:22px;font-size:9px;background:#D6F0DA;color:#1A5630">TR</span><span class="la-chip ok" style="height:18px;font-size:10px;"><span class="dot"></span>NaCl LOT 24G5481 erfasst</span><span style="flex:1"></span><span style="font-size:10px;color:var(--ink-3);font-family:var(--font-mono)">8 s</span></div>
-              <div style="display:flex;align-items:center;gap:8px;padding:6px 0;"><span class="la-av" style="width:22px;height:22px;font-size:9px;background:#FFD3C1;color:#7A2D0B">MK</span><span class="la-chip crit" style="height:18px;font-size:10px;"><span class="dot"></span>SIC SAC kritisch</span><span style="flex:1"></span><span style="font-size:10px;color:var(--ink-3);font-family:var(--font-mono)">34 s</span></div>
-            </div>
+        </div>
+
+        <!-- No active session -->
+        <div id="sessions-no-active" style="margin-bottom:24px;display:none;">
+          <div class="la-card outline" style="padding:32px;text-align:center;">
+            <div style="font-size:32px;margin-bottom:10px;">💤</div>
+            <div style="font-size:15px;font-weight:600;margin-bottom:4px;">Keine aktive Session</div>
+            <div style="font-size:13px;color:var(--ink-3)">Wenn ein Mitarbeiter eine Lagerbestellung startet, erscheint sie hier live.</div>
           </div>
         </div>
 
         <!-- Recent sessions -->
-        <div style="font-size:11px;font-weight:600;color:var(--ink-3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;">Vergangene Sessions</div>
+        <div style="font-size:11px;font-weight:600;color:var(--ink-3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;">Vergangene Bestellungen</div>
         <div class="la-card outline" style="padding:0;">
           <table style="width:100%;border-collapse:collapse;">
             <thead><tr>
-              <th class="lin-th" style="width:100px;">ID</th>
-              <th class="lin-th">Titel</th>
-              <th class="lin-th" style="width:180px;">Beendet</th>
-              <th class="lin-th" style="width:80px;">Dauer</th>
-              <th class="lin-th" style="width:160px;">Abgeschlossen von</th>
-              <th class="lin-th" style="width:100px;">Artikel</th>
-              <th class="lin-th" style="width:90px;text-align:right;"></th>
+              <th class="lin-th">Datum</th>
+              <th class="lin-th">Mitarbeiter</th>
+              <th class="lin-th" style="text-align:right;">Bestellungen</th>
             </tr></thead>
-            <tbody>
-              <tr class="lin-tr"><td class="lin-td"><span style="font-family:var(--font-mono);font-size:12px;color:var(--ink-2)">#4820</span></td><td class="lin-td"><span style="font-size:13px;font-weight:500">Wochencheck KW 20</span></td><td class="lin-td"><span style="font-size:12px;color:var(--ink-2)">Vorgestern · 13:08</span></td><td class="lin-td"><span style="font-family:var(--font-mono);font-size:12px">41 m</span></td><td class="lin-td"><span style="font-size:12px">Anna S.</span></td><td class="lin-td"><span style="font-family:var(--font-mono);font-size:12px">12</span></td><td class="lin-td" style="text-align:right;"><button class="la-btn ghost sm" style="height:24px;font-size:12px;padding:0 8px;">PDF</button></td></tr>
-              <tr class="lin-tr"><td class="lin-td"><span style="font-family:var(--font-mono);font-size:12px;color:var(--ink-2)">#4819</span></td><td class="lin-td"><span style="font-size:13px;font-weight:500">Wochencheck KW 19</span></td><td class="lin-td"><span style="font-size:12px;color:var(--ink-2)">07.05.26 · 15:21</span></td><td class="lin-td"><span style="font-family:var(--font-mono);font-size:12px">38 m</span></td><td class="lin-td"><span style="font-size:12px">Tom R.</span></td><td class="lin-td"><span style="font-family:var(--font-mono);font-size:12px">22</span></td><td class="lin-td" style="text-align:right;"><button class="la-btn ghost sm" style="height:24px;font-size:12px;padding:0 8px;">PDF</button></td></tr>
-              <tr><td class="lin-td"><span style="font-family:var(--font-mono);font-size:12px;color:var(--ink-2)">#4818</span></td><td class="lin-td"><span style="font-size:13px;font-weight:500">Wochencheck KW 18</span></td><td class="lin-td"><span style="font-size:12px;color:var(--ink-2)">30.04.26 · 11:14</span></td><td class="lin-td"><span style="font-family:var(--font-mono);font-size:12px">32 m</span></td><td class="lin-td"><span style="font-size:12px">Markus K.</span></td><td class="lin-td"><span style="font-family:var(--font-mono);font-size:12px">15</span></td><td class="lin-td" style="text-align:right;"><button class="la-btn ghost sm" style="height:24px;font-size:12px;padding:0 8px;">PDF</button></td></tr>
+            <tbody id="sessions-past-tbody">
+              <tr><td class="lin-td" colspan="3" style="text-align:center;color:var(--ink-3);font-size:12px;">Wird geladen…</td></tr>
             </tbody>
           </table>
         </div>
@@ -974,111 +852,40 @@
               <div class="page-sub">Berechtigungen und Benutzerkonten verwalten</div>
             </div>
             <div style="display:flex;gap:6px;">
-              <button class="la-btn ghost sm">Filter</button>
-              <button class="la-btn primary sm">+ Konto einladen</button>
+              <a href="admin.html" class="la-btn ghost sm" style="text-decoration:none;">Konten verwalten →</a>
             </div>
           </div>
         </div>
 
-        <div style="display:grid;grid-template-columns:320px 1fr;min-height:400px;">
-          <!-- Roles sidebar -->
-          <div style="border-right:1px solid var(--hairline);overflow:auto;background:var(--surface-2);border-radius:12px 0 0 12px;">
-            <div style="padding:14px 18px 6px;font-size:11px;font-weight:600;color:var(--ink-3);text-transform:uppercase;letter-spacing:.06em">Rollen</div>
-            <!-- Active role -->
-            <div style="padding:12px 18px;background:var(--surface);border-left:2px solid var(--brand);border-bottom:.5px solid var(--hairline);">
-              <div style="display:flex;align-items:center;justify-content:space-between;"><span style="font-size:13px;font-weight:600">Notfallsan.</span><span style="font-size:11px;color:var(--ink-3);font-family:var(--font-mono)">4</span></div>
-              <div style="font-size:11px;color:var(--ink-3);margin-top:4px">Lagerchecks · Bestellungen · Chargen</div>
-              <div style="display:flex;gap:4px;margin-top:8px;flex-wrap:wrap">
-                <span style="padding:2px 7px;border-radius:4px;font-size:10px;font-weight:500;background:var(--surface-3);color:var(--ink-2)">Lesen</span>
-                <span style="padding:2px 7px;border-radius:4px;font-size:10px;font-weight:500;background:var(--surface-3);color:var(--ink-2)">Erfassen</span>
-                <span style="padding:2px 7px;border-radius:4px;font-size:10px;font-weight:500;background:var(--surface-3);color:var(--ink-2)">Freigeben</span>
-              </div>
-            </div>
-            <div style="padding:12px 18px;border-left:2px solid transparent;border-bottom:.5px solid var(--hairline);">
-              <div style="display:flex;align-items:center;justify-content:space-between;"><span style="font-size:13px;font-weight:600">Wachenleiter</span><span style="font-size:11px;color:var(--ink-3);font-family:var(--font-mono)">1</span></div>
-              <div style="font-size:11px;color:var(--ink-3);margin-top:4px">Voller Zugriff · Freigaben · Konten</div>
-              <div style="display:flex;gap:4px;margin-top:8px;flex-wrap:wrap">
-                <span style="padding:2px 7px;border-radius:4px;font-size:10px;font-weight:500;background:var(--brand-soft);color:var(--brand)">Admin</span>
-                <span style="padding:2px 7px;border-radius:4px;font-size:10px;font-weight:500;background:var(--surface-3);color:var(--ink-2)">PIN</span>
-              </div>
-            </div>
-            <div style="padding:12px 18px;border-left:2px solid transparent;border-bottom:.5px solid var(--hairline);">
-              <div style="display:flex;align-items:center;justify-content:space-between;"><span style="font-size:13px;font-weight:600">Rettungsass.</span><span style="font-size:11px;color:var(--ink-3);font-family:var(--font-mono)">3</span></div>
-              <div style="font-size:11px;color:var(--ink-3);margin-top:4px">Lagerchecks · Bestellungen</div>
-            </div>
-            <div style="padding:12px 18px;border-left:2px solid transparent;border-bottom:.5px solid var(--hairline);">
-              <div style="display:flex;align-items:center;justify-content:space-between;"><span style="font-size:13px;font-weight:600">Sanitäter</span><span style="font-size:11px;color:var(--ink-3);font-family:var(--font-mono)">3</span></div>
-              <div style="font-size:11px;color:var(--ink-3);margin-top:4px">Lagersuche · Charge-Scanner</div>
-            </div>
-            <div style="padding:12px 18px;border-left:2px solid transparent;border-bottom:.5px solid var(--hairline);">
-              <div style="display:flex;align-items:center;justify-content:space-between;"><span style="font-size:13px;font-weight:600">Praktikant</span><span style="font-size:11px;color:var(--ink-3);font-family:var(--font-mono)">1</span></div>
-              <div style="font-size:11px;color:var(--ink-3);margin-top:4px">Lesezugriff</div>
-            </div>
-            <div style="padding:14px;">
-              <button class="la-btn ghost sm" style="width:100%;justify-content:flex-start;">+ Rolle erstellen</button>
+        <!-- Such-Feld -->
+        <div style="margin-bottom:16px;">
+          <input type="text" id="rollen-search" class="l-input" placeholder="Konto suchen…" oninput="filterRollenSearch()" style="max-width:320px;">
+        </div>
+
+        <div style="display:grid;grid-template-columns:240px 1fr;min-height:300px;gap:20px;" id="rollen-layout">
+          <!-- Rollen-Panel (links) -->
+          <div class="la-card outline" style="padding:0;align-self:start;">
+            <div style="padding:12px 16px 6px;font-size:11px;font-weight:600;color:var(--ink-3);text-transform:uppercase;letter-spacing:.06em;">Rollen</div>
+            <div id="rollen-liste" style="padding-bottom:8px;">
+              <div style="padding:12px 16px;font-size:13px;color:var(--ink-3);">Wird geladen…</div>
             </div>
           </div>
 
-          <!-- Users panel -->
-          <div style="overflow:auto;">
-            <div style="padding:14px 24px;border-bottom:1px solid var(--hairline);display:flex;align-items:center;gap:12px;">
-              <div style="font-size:14px;font-weight:600">Notfallsan. · 4 Konten</div>
-              <span style="font-size:11px;color:var(--ink-3)">· bearbeitet 12.05.26</span>
-              <div style="flex:1"></div>
-              <div style="display:flex;align-items:center;gap:8px;height:28px;padding:0 10px;background:var(--surface);border-radius:6px;box-shadow:inset 0 0 0 1px var(--hairline);font-size:12px;color:var(--ink-3);">
-                Konto suchen…
-              </div>
-            </div>
-
-            <div style="padding:14px 24px 24px;">
-              <div style="font-size:11px;font-weight:600;color:var(--ink-3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;">Berechtigungen — Notfallsan.</div>
-              <div class="la-card outline" style="padding:0;margin-bottom:24px;">
-                <table style="width:100%;border-collapse:collapse;">
-                  <thead><tr>
-                    <th class="lin-th">Berechtigung</th>
-                    <th class="lin-th" style="width:80px;text-align:center">Lesen</th>
-                    <th class="lin-th" style="width:80px;text-align:center">Erfassen</th>
-                    <th class="lin-th" style="width:80px;text-align:center">Freigeben</th>
-                    <th class="lin-th" style="width:80px;text-align:center">Admin</th>
-                  </tr></thead>
-                  <tbody>
-                    <script>
-                      (function(){
-                        const rows=[
-                          {l:'Lagersuche',v:[1,0,0,0]},{l:'Lagercheck (Session)',v:[1,1,0,0]},
-                          {l:'Charge-Scanner',v:[1,1,0,0]},{l:'Bestellungen',v:[1,1,1,0]},
-                          {l:'Verfallswarnungen',v:[1,1,0,0]},{l:'Artikelverwaltung',v:[1,0,0,0]},
-                          {l:'Konten & Rollen',v:[0,0,0,0]},
-                        ];
-                        const on=`<span style="display:inline-flex;width:28px;height:18px;border-radius:9px;background:var(--brand);align-items:center;justify-content:flex-end;padding:0 3px"><span style="width:12px;height:12px;border-radius:50%;background:white;box-shadow:0 1px 2px rgba(0,0,0,.15)"></span></span>`;
-                        const off=`<span style="display:inline-flex;width:28px;height:18px;border-radius:9px;background:var(--surface-3);align-items:center;justify-content:flex-start;padding:0 3px"><span style="width:12px;height:12px;border-radius:50%;background:white;box-shadow:0 1px 2px rgba(0,0,0,.15)"></span></span>`;
-                        rows.forEach((r,i)=>{
-                          document.write(`<tr class="lin-tr"><td class="lin-td" style="font-weight:500">${r.l}</td>${r.v.map(v=>`<td class="lin-td" style="text-align:center">${v?on:off}</td>`).join('')}</tr>`);
-                        });
-                      })();
-                    </script>
-                  </tbody>
-                </table>
-              </div>
-
-              <div style="font-size:11px;font-weight:600;color:var(--ink-3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;">Konten in dieser Rolle</div>
-              <div class="la-card outline" style="padding:0;">
-                <table style="width:100%;border-collapse:collapse;">
-                  <thead><tr>
-                    <th class="lin-th">Konto</th>
-                    <th class="lin-th" style="width:100px">Status</th>
-                    <th class="lin-th" style="width:130px">Aktivität</th>
-                    <th class="lin-th" style="width:130px">Rolle</th>
-                    <th class="lin-th" style="width:80px;text-align:right"></th>
-                  </tr></thead>
-                  <tbody>
-                    <tr class="lin-tr"><td class="lin-td"><div style="display:flex;align-items:center;gap:10px;"><span class="la-av live" style="width:28px;height:28px;font-size:10px;background:#FFD3C1;color:#7A2D0B">MK</span><div><div style="font-size:13px;font-weight:500">Markus Klein</div><div style="font-size:10px;color:var(--ink-3);font-family:var(--font-mono)">markus.k@drk-malmsheim.de</div></div></div></td><td class="lin-td"><span class="la-chip neutral" style="height:20px;font-size:10px;background:var(--ok-soft);color:var(--ok)"><span style="width:6px;height:6px;border-radius:3px;background:var(--ok)"></span>Online</span></td><td class="lin-td"><span style="font-size:12px;color:var(--ink-3)">jetzt</span></td><td class="lin-td"><div style="display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:4px;background:var(--surface-3);font-size:11px;font-weight:500">Notfallsan.</div></td><td class="lin-td" style="text-align:right"><button class="la-btn ghost sm" style="height:24px;font-size:12px;padding:0 8px;">•••</button></td></tr>
-                    <tr class="lin-tr"><td class="lin-td"><div style="display:flex;align-items:center;gap:10px;"><span class="la-av live" style="width:28px;height:28px;font-size:10px;background:#CFE0FF;color:#163770">AS</span><div><div style="font-size:13px;font-weight:500">Anna Schmid</div><div style="font-size:10px;color:var(--ink-3);font-family:var(--font-mono)">anna.s@drk-malmsheim.de</div></div></div></td><td class="lin-td"><span class="la-chip ok" style="height:20px;font-size:10px;"><span class="dot"></span>In Session</span></td><td class="lin-td"><span style="font-size:12px;color:var(--ink-3)">in Session</span></td><td class="lin-td"><div style="display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:4px;background:var(--surface-3);font-size:11px;font-weight:500">Notfallsan.</div></td><td class="lin-td" style="text-align:right"><button class="la-btn ghost sm" style="height:24px;font-size:12px;padding:0 8px;">•••</button></td></tr>
-                    <tr class="lin-tr"><td class="lin-td"><div style="display:flex;align-items:center;gap:10px;"><span class="la-av" style="width:28px;height:28px;font-size:10px;background:#EADCFA;color:#4F3279">LB</span><div><div style="font-size:13px;font-weight:500">Lena Berg</div><div style="font-size:10px;color:var(--ink-3);font-family:var(--font-mono)">lena.b@drk-malmsheim.de</div></div></div></td><td class="lin-td"><span class="la-chip neutral" style="height:20px;font-size:10px;"><span style="width:6px;height:6px;border-radius:3px;background:var(--ink-4)"></span>Offline</span></td><td class="lin-td"><span style="font-size:12px;color:var(--ink-3)">gestern · 18:14</span></td><td class="lin-td"><div style="display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:4px;background:var(--surface-3);font-size:11px;font-weight:500">Notfallsan.</div></td><td class="lin-td" style="text-align:right"><button class="la-btn ghost sm" style="height:24px;font-size:12px;padding:0 8px;">•••</button></td></tr>
-                    <tr><td class="lin-td"><div style="display:flex;align-items:center;gap:10px;"><span class="la-av" style="width:28px;height:28px;font-size:10px;background:#D6F0DA;color:#1A5630">TR</span><div><div style="font-size:13px;font-weight:500">Tom Renz</div><div style="font-size:10px;color:var(--ink-3);font-family:var(--font-mono)">tom.r@drk-malmsheim.de</div></div></div></td><td class="lin-td"><span class="la-chip ok" style="height:20px;font-size:10px;"><span class="dot"></span>In Session</span></td><td class="lin-td"><span style="font-size:12px;color:var(--ink-3)">in Session</span></td><td class="lin-td"><div style="display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:4px;background:var(--surface-3);font-size:11px;font-weight:500">Notfallsan.</div></td><td class="lin-td" style="text-align:right"><button class="la-btn ghost sm" style="height:24px;font-size:12px;padding:0 8px;">•••</button></td></tr>
-                  </tbody>
-                </table>
-              </div>
+          <!-- User-Panel (rechts) -->
+          <div>
+            <div style="font-size:11px;font-weight:600;color:var(--ink-3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;" id="rollen-user-header">Konten</div>
+            <div class="la-card outline" style="padding:0;">
+              <table style="width:100%;border-collapse:collapse;">
+                <thead><tr>
+                  <th class="lin-th">Name</th>
+                  <th class="lin-th">E-Mail</th>
+                  <th class="lin-th" style="width:120px;">Rolle</th>
+                  <th class="lin-th" style="width:100px;">Erstellt</th>
+                </tr></thead>
+                <tbody id="rollen-user-tbody">
+                  <tr><td class="lin-td" colspan="4" style="text-align:center;color:var(--ink-3);font-size:12px;">Wird geladen…</td></tr>
+                </tbody>
+              </table>
             </div>
           </div>
         </div>
@@ -1203,7 +1010,7 @@
     import { initializeApp }  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getAuth, onAuthStateChanged, signOut }
                               from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-    import { getFirestore, collection, getDocs, doc, getDoc, setDoc, updateDoc, deleteDoc, addDoc, query, orderBy, limit }
+    import { getFirestore, collection, getDocs, doc, getDoc, setDoc, updateDoc, deleteDoc, addDoc, query, orderBy, limit, where, onSnapshot, Timestamp }
                               from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
     import { firebaseConfig } from "../js/firebase-config.js";
 
@@ -1266,6 +1073,7 @@
       }
 
       await loadAll();
+      setupSessionListener();
     });
 
     window.doLogout = async function() {
@@ -1320,6 +1128,8 @@
       }
       if (name === 'statistik') renderStatistik();
       if (name === 'ss-fotos') renderSsFotos();
+      if (name === 'analytics') renderAnalytics();
+      if (name === 'rollen') loadRollen();
     };
 
     window.openBottomSheet = function() {
@@ -1336,6 +1146,207 @@
 
     function esc(str) {
       return String(str ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+
+    // ── Analytics (echte Firestore-Daten) ──
+    function renderAnalytics() {
+      const now = new Date();
+      const firstOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+      const lagerchecksMonat = alleBestellungen.filter(b => {
+        const d = b.datum?.toDate ? b.datum.toDate() : new Date(b.datum);
+        return d >= firstOfMonth;
+      }).length;
+
+      const kritischeArtikel = alleArtikel.filter(a =>
+        (a.items || []).some(it => it.status === 'crit') ||
+        (a.status === 'crit')
+      );
+
+      // KPI Cards
+      document.getElementById('analytics-kpis').innerHTML = `
+        <div class="la-card outline" style="padding:16px 18px;">
+          <div style="font-size:10px;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.08em;color:var(--ink-3);margin-bottom:6px;">Lagerchecks (dieser Monat)</div>
+          <div style="font-size:32px;font-weight:700;letter-spacing:-.5px;line-height:1;font-family:var(--font-mono)">${lagerchecksMonat}</div>
+          <div style="font-size:11px;color:var(--ink-3);margin-top:4px;">${alleBestellungen.length} gesamt in den letzten 50</div>
+        </div>
+        <div class="la-card outline" style="padding:16px 18px;">
+          <div style="font-size:10px;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.08em;color:var(--ink-3);margin-bottom:6px;">Kritische Artikel</div>
+          <div style="font-size:32px;font-weight:700;letter-spacing:-.5px;line-height:1;font-family:var(--font-mono);color:var(--crit)">${kritischeArtikel.length}</div>
+          <div style="font-size:11px;color:var(--crit);margin-top:4px;">${kritischeArtikel.length > 0 ? 'Sofort nachbestellen' : 'Alles im grünen Bereich'}</div>
+        </div>`;
+
+      // Letzte Bestellungen Tabelle
+      const bestellRows = alleBestellungen.slice(0, 10).map((b, i) => {
+        const d = b.datum?.toDate ? b.datum.toDate() : new Date(b.datum);
+        const dateStr = isNaN(d) ? '–' : d.toLocaleDateString('de-DE');
+        const cnt = (b.items || b.bestellungen || []).length || '–';
+        return `<tr class="${i < alleBestellungen.slice(0,10).length - 1 ? 'lin-tr' : ''}">
+          <td class="lin-td" style="font-family:var(--font-mono);font-size:12px;">${dateStr}</td>
+          <td class="lin-td" style="font-size:13px;">${esc(b.mitarbeiter || b.name || '–')}</td>
+          <td class="lin-td" style="text-align:right;font-family:var(--font-mono);font-size:12px;">${cnt}</td>
+        </tr>`;
+      }).join('');
+      document.getElementById('analytics-bestellungen-tbody').innerHTML =
+        bestellRows || '<tr><td colspan="3" class="lin-td" style="text-align:center;color:var(--ink-3);">Keine Bestellungen</td></tr>';
+
+      // Kritische Artikel Tabelle
+      const kritRows = kritischeArtikel.slice(0, 10).map((a, i) => {
+        const bereich = alleBereiche.find(b => b.id === a.bereich)?.name || a.bereich || '–';
+        return `<tr class="${i < kritischeArtikel.slice(0,10).length - 1 ? 'lin-tr' : ''}">
+          <td class="lin-td" style="font-size:13px;font-weight:500;">${esc(a.name)}</td>
+          <td class="lin-td" style="font-size:12px;color:var(--ink-2);">${esc(bereich)}</td>
+          <td class="lin-td" style="text-align:center;"><span class="la-chip crit" style="height:18px;font-size:10px;"><span class="dot"></span>Kritisch</span></td>
+        </tr>`;
+      }).join('');
+      document.getElementById('analytics-kritisch-tbody').innerHTML =
+        kritRows || '<tr><td colspan="3" class="lin-td" style="text-align:center;color:var(--ok);">Keine kritischen Artikel</td></tr>';
+    }
+
+    // ── Live Sessions (echte Firestore-Daten via onSnapshot) ──
+    function setupSessionListener() {
+      onSnapshot(doc(db, 'bestellungen_session', 'current'), (snap) => {
+        const activeCard = document.getElementById('sessions-active-card');
+        const noActive   = document.getElementById('sessions-no-active');
+        const badge      = document.getElementById('session-live-badge');
+
+        if (snap.exists() && snap.data().status === 'aktiv') {
+          const s = snap.data();
+          badge.style.display = 'inline-flex';
+          activeCard.style.display = 'block';
+          noActive.style.display   = 'none';
+
+          // Meta info
+          document.getElementById('sessions-active-meta').textContent =
+            `PIN ···· · Gestartet ${s.startedAt?.toDate
+              ? s.startedAt.toDate().toLocaleTimeString('de-DE', {hour:'2-digit',minute:'2-digit'})
+              : 'Unbekannt'}`;
+
+          // Teilnehmer
+          const teilnehmer = (s.teilnehmer || []);
+          document.getElementById('sessions-active-teilnehmer').innerHTML = teilnehmer.length
+            ? teilnehmer.map(t => `<div style="display:flex;align-items:center;gap:8px;">
+                <span class="la-av live" style="width:28px;height:28px;font-size:10px;">${esc(t.name||'?').slice(0,2).toUpperCase()}</span>
+                <span style="font-size:13px;">${esc(t.name)}</span>
+              </div>`).join('')
+            : '<span style="font-size:13px;color:var(--ink-3);">Keine Teilnehmer</span>';
+
+          // Bereiche
+          const bereichStatus = s.bereichStatus || {};
+          const bereichRows = Object.entries(bereichStatus).map(([bid, bs]) => {
+            const bName = alleBereiche.find(b => b.id === bid)?.name || bid;
+            const dot = bs.status === 'erledigt' ? '🟢' : bs.status === 'gesperrt' ? '🟠' : bs.status === 'abgebrochen' ? '🔴' : '⚪';
+            return `<div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--ink-2);padding:3px 0;">
+              <span>${dot}</span><span>${esc(bName)}</span>
+              ${bs.mitarbeiter ? `<span style="color:var(--ink-3)">· ${esc(bs.mitarbeiter)}</span>` : ''}
+            </div>`;
+          });
+          document.getElementById('sessions-active-bereiche').innerHTML =
+            bereichRows.length ? bereichRows.join('') : '<span style="font-size:12px;color:var(--ink-3);">Noch kein Bereich gestartet</span>';
+        } else {
+          badge.style.display   = 'none';
+          activeCard.style.display = 'none';
+          noActive.style.display   = 'block';
+        }
+
+        // Vergangene Bestellungen
+        const rows = alleBestellungen.slice(0, 10).map((b, i) => {
+          const d = b.datum?.toDate ? b.datum.toDate() : new Date(b.datum);
+          const dateStr = isNaN(d) ? '–' : d.toLocaleDateString('de-DE');
+          const cnt = (b.items || b.bestellungen || []).length || '–';
+          return `<tr class="${i < 9 ? 'lin-tr' : ''}">
+            <td class="lin-td" style="font-family:var(--font-mono);font-size:12px;">${dateStr}</td>
+            <td class="lin-td" style="font-size:13px;">${esc(b.mitarbeiter || b.name || '–')}</td>
+            <td class="lin-td" style="text-align:right;font-family:var(--font-mono);font-size:12px;">${cnt}</td>
+          </tr>`;
+        }).join('');
+        document.getElementById('sessions-past-tbody').innerHTML =
+          rows || '<tr><td colspan="3" class="lin-td" style="text-align:center;color:var(--ink-3);">Keine vergangenen Bestellungen</td></tr>';
+      }, () => {
+        document.getElementById('sessions-no-active').style.display = 'block';
+      });
+    }
+
+    // ── Konten & Rollen (echte Firestore-Daten) ──
+    let alleUsers = [];
+    let aktiverRollenFilter = 'alle';
+
+    async function loadRollen() {
+      if (alleUsers.length > 0) { renderRollen(); return; }
+      try {
+        const snap = await getDocs(collection(db, 'users'));
+        alleUsers = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        renderRollen();
+      } catch(e) {
+        document.getElementById('rollen-liste').innerHTML =
+          `<div style="padding:12px 16px;font-size:13px;color:var(--crit);">Fehler: ${esc(e.message)}</div>`;
+      }
+    }
+
+    function renderRollen() {
+      const rollenMap = {};
+      alleUsers.forEach(u => {
+        const r = u.role || 'unbekannt';
+        rollenMap[r] = (rollenMap[r] || []);
+        rollenMap[r].push(u);
+      });
+
+      // Rollen-Panel
+      const alleRollenListe = [{ id: 'alle', label: 'Alle', count: alleUsers.length }];
+      Object.entries(rollenMap).forEach(([r, users]) => {
+        alleRollenListe.push({ id: r, label: r.charAt(0).toUpperCase() + r.slice(1), count: users.length });
+      });
+
+      document.getElementById('rollen-liste').innerHTML = alleRollenListe.map(r => `
+        <div onclick="setRollenFilter('${esc(r.id)}')"
+             style="padding:10px 16px;cursor:pointer;border-left:2px solid ${aktiverRollenFilter===r.id?'var(--brand)':'transparent'};
+                    background:${aktiverRollenFilter===r.id?'var(--surface)':'transparent'};
+                    display:flex;align-items:center;justify-content:space-between;">
+          <span style="font-size:13px;font-weight:${aktiverRollenFilter===r.id?'600':'400'}">${esc(r.label)}</span>
+          <span style="font-size:11px;color:var(--ink-3);font-family:var(--font-mono);">${r.count}</span>
+        </div>`).join('');
+
+      renderRollenUsers();
+    }
+
+    window.setRollenFilter = function(rolle) {
+      aktiverRollenFilter = rolle;
+      renderRollen();
+    };
+
+    window.filterRollenSearch = function() {
+      renderRollenUsers();
+    };
+
+    function renderRollenUsers() {
+      const search = (document.getElementById('rollen-search')?.value || '').toLowerCase();
+      const filtered = alleUsers.filter(u => {
+        const matchRole = aktiverRollenFilter === 'alle' || u.role === aktiverRollenFilter;
+        const matchSearch = !search ||
+          (u.name || '').toLowerCase().includes(search) ||
+          (u.email || '').toLowerCase().includes(search);
+        return matchRole && matchSearch;
+      });
+
+      const label = aktiverRollenFilter === 'alle' ? 'Alle Konten' :
+        `${aktiverRollenFilter.charAt(0).toUpperCase()}${aktiverRollenFilter.slice(1)} · ${filtered.length} Konto${filtered.length !== 1 ? 'en' : ''}`;
+      document.getElementById('rollen-user-header').textContent = label;
+
+      const rows = filtered.map((u, i) => {
+        const d = u.createdAt ? new Date(u.createdAt).toLocaleDateString('de-DE') : '–';
+        return `<tr class="${i < filtered.length - 1 ? 'lin-tr' : ''}">
+          <td class="lin-td" style="font-size:13px;font-weight:500;">${esc(u.name || '–')}</td>
+          <td class="lin-td" style="font-size:12px;color:var(--ink-2);font-family:var(--font-mono);">${esc(u.email || '–')}</td>
+          <td class="lin-td"><span style="padding:2px 8px;border-radius:4px;font-size:11px;font-weight:500;
+            background:${u.role==='admin'?'var(--crit-soft)':u.role==='wachenleiter'?'var(--brand-soft)':'var(--surface-3)'};
+            color:${u.role==='admin'?'var(--crit)':u.role==='wachenleiter'?'var(--brand)':'var(--ink-2)'}">
+            ${esc(u.role || '–')}</span></td>
+          <td class="lin-td" style="font-size:12px;color:var(--ink-3);">${d}</td>
+        </tr>`;
+      }).join('');
+
+      document.getElementById('rollen-user-tbody').innerHTML =
+        rows || '<tr><td colspan="4" class="lin-td" style="text-align:center;color:var(--ink-3);">Keine Konten gefunden</td></tr>';
     }
 
     // ── Toast ──

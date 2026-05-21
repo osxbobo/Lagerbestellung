@@ -5,13 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#F26B2E">
   <title>Verfallsscan – LAGER//APP</title>
   <link rel="manifest" href="../manifest.json">
   <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
   <!-- Firebase SDK (global, kein ES Module) -->
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
   <!-- ZXing -->
   <script src="https://unpkg.com/@zxing/library@0.19.1/umd/index.min.js"></script>
   <link rel="stylesheet" href="../css/main.css">
@@ -384,7 +386,7 @@
   <script>
     // Theme
     (function(){
-      const t = localStorage.getItem('theme') || 'dark';
+      const t = localStorage.getItem('lager-theme') || 'dark';
       document.documentElement.setAttribute('data-theme', t);
       document.addEventListener('DOMContentLoaded', () => {
         const btn = document.querySelector('.s-theme');
@@ -394,7 +396,7 @@
     function toggleTheme() {
       const t = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
       document.documentElement.setAttribute('data-theme', t);
-      localStorage.setItem('theme', t);
+      localStorage.setItem('lager-theme', t);
       document.querySelector('.s-theme').textContent = t === 'dark' ? '🌙' : '☀️';
     }
   </script>
@@ -524,7 +526,6 @@
       }
       if (navigator.vibrate) navigator.vibrate(80);
       const parsed = raw.startsWith('+') || raw.startsWith('/') ? parseHIBC(raw) : parseGS1(raw);
-      console.log('Scan raw:', raw, '→', parsed);
 
       lastParsed = parsed;
 
