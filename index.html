@@ -3,162 +3,493 @@
 <head>
   <meta charset="UTF-8">
   <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#f97316">
+  <meta name="theme-color" content="#F26B2E">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="LAGER//APP">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>LAGER//APP – Rettungswache Malmsheim</title>
   <link rel="stylesheet" href="css/main.css">
-  <link rel="stylesheet" href="css/index.css">
   <style>
-    /* ── Overrides: größere, klarere Suchergebnisse ── */
+    /* ── Page Layout ── */
+    body { min-height: 100vh; display: flex; flex-direction: column; }
+
+    /* ── Navbar ── */
+    .la-nav {
+      position: sticky; top: 0; z-index: 100;
+      background: var(--glass-bg-strong);
+      border-bottom: 0.5px solid var(--hairline);
+      backdrop-filter: blur(24px) saturate(180%);
+      -webkit-backdrop-filter: blur(24px) saturate(180%);
+      padding: 0 20px; height: 52px;
+      display: flex; align-items: center; justify-content: space-between;
+    }
+
+    /* ── Hero Header ── */
+    .la-hero {
+      padding: 32px 20px 0;
+    }
+    .la-greeting {
+      font-size: clamp(26px, 6vw, 36px);
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      margin-top: 14px;
+    }
+    .la-greeting-sub { font-size: 13px; color: var(--ink-3); margin-top: 5px; }
+
+    /* ── Search ── */
+    .la-search-wrap {
+      position: relative; display: flex; align-items: center;
+      height: 52px; margin-top: 18px;
+      background: var(--surface);
+      border-radius: 16px;
+      box-shadow: var(--sh-2), inset 0 0 0 1px var(--hairline);
+    }
+    .la-search-icon {
+      position: absolute; left: 16px;
+      color: var(--ink-3); pointer-events: none; display: flex;
+    }
+    .la-search-input {
+      width: 100%; height: 100%;
+      background: transparent; border: none; outline: none;
+      padding: 0 48px 0 46px;
+      font-family: var(--font-ui); font-size: 15px; color: var(--ink);
+    }
+    .la-search-input::placeholder { color: var(--ink-3); }
+    .la-search-scan {
+      position: absolute; right: 12px;
+      width: 30px; height: 30px; border-radius: 8px;
+      background: var(--brand-soft); color: var(--brand);
+      display: flex; align-items: center; justify-content: center;
+      border: none; cursor: pointer; flex-shrink: 0;
+    }
+    .la-search-clear {
+      position: absolute; right: 12px;
+      background: none; border: none; color: var(--ink-3);
+      font-size: 18px; cursor: pointer; padding: 4px 8px; border-radius: 6px;
+    }
+
+    /* ── Filter Chips ── */
+    .la-filters {
+      display: flex; gap: 6px;
+      margin-top: 12px; overflow-x: auto;
+      padding-bottom: 2px; -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .la-filters::-webkit-scrollbar { display: none; }
+    .la-filter-chip {
+      padding: 6px 14px; border-radius: 999px; font-size: 12px; font-weight: 500;
+      white-space: nowrap; cursor: pointer; border: none; transition: all .15s;
+      touch-action: manipulation;
+    }
+    .la-filter-chip.active {
+      background: var(--ink); color: var(--bg);
+    }
+    .la-filter-chip:not(.active) {
+      background: var(--surface); color: var(--ink-2);
+      box-shadow: inset 0 0 0 1px var(--hairline);
+    }
+
+    /* ── Status/sync bar ── */
+    .la-sync-pill {
+      display: flex; align-items: center; gap: 4px;
+      padding: 4px 10px; border-radius: 999px;
+      background: var(--ok-soft); color: var(--ok);
+      font-size: 11px; font-family: var(--font-mono); font-weight: 500;
+    }
+    .la-sync-pill .dot {
+      width: 6px; height: 6px; border-radius: 50%; background: var(--ok);
+    }
+    .la-bell-btn {
+      width: 36px; height: 36px; border-radius: 18px;
+      background: var(--surface); border: none; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: inset 0 0 0 1px var(--hairline);
+      color: var(--ink-2);
+    }
+
+    /* ── Main ── */
+    .la-main {
+      flex: 1; padding: 0 20px 100px;
+    }
+
+    /* ── Section header ── */
+    .la-sec-head {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 22px 0 10px;
+    }
+    .la-sec-label { font-size: 11px; font-weight: 600; color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.06em; }
+    .la-sec-link  { font-size: 12px; color: var(--ink-3); display: flex; align-items: center; gap: 4px; }
+
+    /* ── Bereiche Grid ── */
+    .la-bereiche-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
+    }
+    .la-bereich-card {
+      background: var(--surface); border-radius: 18px;
+      padding: 14px;
+      box-shadow: var(--sh-1), inset 0 0 0 0.5px var(--hairline);
+      display: flex; flex-direction: column; gap: 10px;
+      cursor: pointer; transition: transform .15s, box-shadow .15s;
+      -webkit-tap-highlight-color: transparent; touch-action: manipulation;
+    }
+    .la-bereich-card:active { transform: scale(0.97); }
+    .la-bereich-top { display: flex; justify-content: space-between; align-items: flex-start; }
+    .la-bereich-num { font-family: var(--font-mono); font-size: 11px; color: var(--ink-3); }
+    .la-bereich-tile {
+      width: 36px; height: 36px; border-radius: 9px;
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-mono); font-size: 13px; font-weight: 600;
+    }
+    .la-bereich-name { font-size: 14px; font-weight: 600; line-height: 1.2; }
+    .la-bereich-sub  { font-size: 11px; color: var(--ink-3); margin-top: 2px; }
+    .la-bereich-bottom { display: flex; align-items: center; justify-content: space-between; margin-top: auto; }
+    .la-bereich-count { font-family: var(--font-mono); font-size: 11px; color: var(--ink-2); }
+    .la-bereich-dots { display: flex; gap: 3px; }
+    .la-bereich-dots span { width: 6px; height: 6px; border-radius: 3px; }
+
+    /* ── Search Results ── */
+    .la-results { display: flex; flex-direction: column; gap: 10px; }
+    .la-result-card {
+      background: var(--surface); border-radius: 16px;
+      padding: 14px; display: flex; gap: 12px; align-items: flex-start;
+      box-shadow: var(--sh-1), inset 0 0 0 0.5px var(--hairline);
+      cursor: default;
+    }
+    .la-result-photo {
+      width: 56px; height: 56px; border-radius: 12px;
+      overflow: hidden; flex-shrink: 0;
+      background: var(--surface-2);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; cursor: pointer; transition: opacity .15s;
+    }
+    .la-result-photo:active { opacity: 0.8; }
+    .la-result-photo img { width: 100%; height: 100%; object-fit: cover; }
+    .la-result-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px; }
+    .la-result-name { font-size: 15px; font-weight: 600; line-height: 1.3; }
+    .la-result-name mark {
+      background: rgba(242,107,46,.18); color: var(--brand);
+      border-radius: 3px; padding: 0 2px;
+    }
+    .la-result-bereich { font-size: 12px; color: var(--ink-3); }
+    .la-result-location { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
+
+    /* ── Back button ── */
+    .la-back-btn {
+      display: flex; align-items: center; gap: 8px; margin-bottom: 14px;
+      background: var(--surface); border: none; border-radius: var(--r-sm);
+      padding: 8px 14px; cursor: pointer;
+      color: var(--ink-2); font-family: var(--font-ui); font-size: 13px; font-weight: 500;
+      box-shadow: inset 0 0 0 1px var(--hairline);
+      touch-action: manipulation;
+    }
+
+    /* ── Empty ── */
+    .la-empty {
+      text-align: center; padding: 48px 20px;
+      display: flex; flex-direction: column; align-items: center; gap: 8px;
+    }
+    .la-empty-icon { font-size: 2.5rem; opacity: 0.4; }
+    .la-empty-title { font-size: 16px; font-weight: 600; color: var(--ink-2); }
+    .la-empty-sub   { font-size: 13px; color: var(--ink-3); }
+
+    /* ── Loading ── */
+    .la-loading { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 40px; }
+
+    /* ── Footer ── */
+    .la-footer {
+      border-top: 0.5px solid var(--hairline);
+      padding: 16px 20px;
+      text-align: center;
+    }
+
+    /* ── Photo Modal ── */
+    .la-modal-backdrop {
+      position: fixed; inset: 0; z-index: 1000;
+      background: rgba(0,0,0,0.72);
+      backdrop-filter: blur(8px);
+      display: flex; align-items: center; justify-content: center; padding: 20px;
+    }
+    .la-modal-box {
+      background: var(--surface); border-radius: var(--r-xl);
+      overflow: hidden; max-width: 480px; width: 100%;
+      box-shadow: var(--sh-3);
+    }
+    .la-modal-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 14px 18px; border-bottom: 0.5px solid var(--hairline);
+    }
+    .la-modal-title { font-size: 14px; font-weight: 600; }
+    .la-modal-close {
+      background: var(--surface-3); border: none; color: var(--ink-2);
+      width: 28px; height: 28px; border-radius: 14px; font-size: 14px;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+    }
+    .la-modal-img { width: 100%; max-height: 400px; object-fit: contain; background: var(--surface-2); display: block; }
+
+    /* ── PIN Modal ── */
+    .la-pin-backdrop {
+      position: fixed; inset: 0; z-index: 2000;
+      background: rgba(0,0,0,0.65);
+      backdrop-filter: blur(8px);
+      display: flex; align-items: center; justify-content: center; padding: 20px;
+    }
+    .la-pin-box {
+      background: var(--surface); border-radius: var(--r-xl);
+      padding: 28px 24px; width: 100%; max-width: 340px;
+      box-shadow: var(--sh-3);
+    }
+    .la-pin-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 22px;
+    }
+    .la-pin-title { font-size: 17px; font-weight: 700; }
+    .la-pin-sub   { font-size: 12px; color: var(--ink-3); margin-top: 2px; }
+    .la-pin-close {
+      width: 32px; height: 32px; border-radius: 16px;
+      background: var(--surface-3); border: none; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--ink-3); font-size: 15px;
+    }
+    .la-name-field {
+      display: flex; align-items: center; gap: 10px;
+      height: 48px; padding: 0 14px;
+      background: var(--surface-2); border-radius: 14px;
+      box-shadow: inset 0 0 0 1px var(--hairline); margin-bottom: 22px;
+    }
+    .la-name-input {
+      flex: 1; background: none; border: none; outline: none;
+      font-family: var(--font-ui); font-size: 15px; font-weight: 500; color: var(--ink);
+    }
+    .la-name-input::placeholder { color: var(--ink-3); }
+    .la-pin-dots { display: flex; gap: 14px; justify-content: center; margin-bottom: 24px; }
+    .la-pin-dot {
+      width: 16px; height: 16px; border-radius: 8px;
+      border: 2px solid var(--ink-4); background: transparent;
+      transition: all .15s;
+    }
+    .la-pin-dot.filled { background: var(--brand); border-color: var(--brand); transform: scale(1.1); }
+    .la-pin-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .la-pin-key {
+      aspect-ratio: 1; border-radius: 14px;
+      background: var(--surface-2); border: none;
+      font-family: var(--font-mono); font-size: 22px; font-weight: 500;
+      color: var(--ink); cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: var(--sh-1), inset 0 0 0 0.5px var(--hairline);
+      transition: transform .1s, background .1s; touch-action: manipulation;
+    }
+    .la-pin-key:active { transform: scale(0.91); background: var(--surface-3); }
+    .la-pin-key.confirm { background: var(--brand); color: white; box-shadow: 0 6px 14px rgba(242,107,46,.3); }
+    .la-pin-key.del { color: var(--ink-3); }
+    .la-pin-error { text-align: center; font-size: 12px; color: var(--crit); min-height: 20px; margin-top: 12px; }
+
+    /* ── Desktop ── */
+    @media (min-width: 768px) {
+      .la-hero { padding: 40px 0 0; max-width: 700px; margin: 0 auto; }
+      .la-main  { max-width: 700px; margin: 0 auto; }
+      .la-bereiche-grid { grid-template-columns: repeat(3, 1fr); }
+    }
+    @media (min-width: 1024px) {
+      .la-bereiche-grid { grid-template-columns: repeat(4, 1fr); }
+    }
+
+    /* Legacy compat for JS-generated result cards */
     .result-card {
-      padding: 16px !important;
-      gap: 16px !important;
+      background: var(--surface); border-radius: 16px;
+      padding: 14px; display: flex; gap: 14px; align-items: flex-start;
+      box-shadow: var(--sh-1), inset 0 0 0 0.5px var(--hairline);
     }
-
     .result-photo {
-      width: 64px !important;
-      height: 64px !important;
+      width: 56px; height: 56px; border-radius: 12px;
+      overflow: hidden; flex-shrink: 0;
+      background: var(--surface-2);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px; cursor: pointer;
     }
-
-    .result-name {
-      font-size: 1rem !important;
-      font-weight: 700 !important;
-      line-height: 1.3;
-      margin-bottom: 6px;
-    }
-
-    .result-location-big {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-
-    .result-bereich-big {
-      font-size: 0.78rem;
-      color: var(--text2);
-      font-weight: 500;
-    }
-
-    .result-lp-big {
-      font-size: 0.82rem;
-      color: var(--accent);
-      font-weight: 600;
-      letter-spacing: 0.02em;
-    }
-
-    .result-name mark {
-      background: rgba(249,115,22,0.2);
-      color: var(--accent);
-      border-radius: 2px;
-      padding: 0 2px;
-    }
-
-    @media (max-width: 640px) {
-      .result-name { font-size: 1rem !important; }
-      .result-lp-big { font-size: 0.85rem; }
-    }
+    .result-photo img { width: 100%; height: 100%; object-fit: cover; }
+    .result-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+    .result-name { font-size: 15px; font-weight: 600; line-height: 1.3; }
+    .result-name mark { background: rgba(242,107,46,.18); color: var(--brand); border-radius: 3px; padding: 0 2px; }
+    .result-location-big { display: flex; flex-direction: column; gap: 3px; }
+    .result-bereich-big { font-size: 12px; color: var(--ink-3); }
+    .result-lp-big { font-size: 13px; color: var(--brand); font-weight: 600; letter-spacing: 0.02em; font-family: var(--font-mono); }
+    .result-photo-placeholder { font-size: 22px; }
+    .result-info { flex: 1; min-width: 0; }
+    .result-location { display: flex; flex-direction: column; gap: 2px; margin-top: 4px; }
+    .result-bereich { font-size: 12px; color: var(--ink-3); }
+    .result-lp { font-size: 12px; color: var(--brand); font-family: var(--font-mono); }
+    .photo-placeholder { font-size: 22px; }
   </style>
 </head>
 <body>
 
   <!-- ── NAVBAR ── -->
-  <nav class="navbar">
-    <div class="navbar-inner">
-      <a href="index.html" class="nav-logo" style="padding:0;"><img src="LAGER_APP.png" class="app-logo" data-src-light="LAGER_APP.png" data-src-dark="LAGER_APP_DARK.PNG" alt="LAGER//APP" style="height:32px;width:auto;display:block;object-fit:contain;"></a>
-      <div class="nav-right">
-        <button onclick="openPinModal('mitarbeiter')" class="nav-btn primary hide-mobile">👤 Mitarbeiter</button>
-        <a href="pages/login.html" class="nav-btn hide-mobile">🔐 Login</a>
-        <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" title="Hell/Dunkel" aria-label="Hell/Dunkel-Modus umschalten">☀️</button>
-      </div>
+  <header class="la-nav">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <span class="la-wordmark" style="font-size:15px;">
+        LAGER<span class="slash">//</span>APP
+        <span class="dot" id="sync-dot" title="Live"></span>
+      </span>
     </div>
-  </nav>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <div class="la-sync-pill hide-mobile" id="sync-pill" style="display:none;">
+        <span class="dot"></span>
+        <span>Synchron</span>
+      </div>
+      <button class="la-bell-btn hide-mobile" title="Benachrichtigungen">
+        <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8a5 5 0 0 1 10 0v4l1.5 2h-13L5 12V8z"/><path d="M8.5 17a1.5 1.5 0 0 0 3 0"/></svg>
+      </button>
+      <button class="la-bell-btn" id="theme-toggle" onclick="toggleTheme()" title="Hell/Dunkel">☀️</button>
+      <a href="pages/login.html" class="nav-btn hide-mobile" style="font-size:12px;">Wachenleiter</a>
+    </div>
+  </header>
 
   <!-- ── HERO ── -->
-  <div class="hero">
-    <div class="hero-inner container">
-      <div class="hero-tag mono">DRK · Rettungswache Malmsheim</div>
-      <img src="LAGER_APP.png" class="app-logo" data-src-light="LAGER_APP.png" data-src-dark="LAGER_APP_DARK.PNG" alt="LAGER//APP"
-        style="height:90px;width:auto;max-width:280px;object-fit:contain;margin:0 auto 4px;">
-      <p class="hero-sub">Digitale Lagerverwaltung & Bestandskontrolle</p>
-      <!-- Eingeloggter User -->
-      <div id="saved-user-bar" style="display:none;align-items:center;gap:10px;
-        background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.25);
-        border-radius:12px;padding:10px 16px;margin-bottom:12px;font-size:0.82rem;">
-        <span>👤 Eingeloggt als <strong id="saved-user-name"></strong></span>
-        <button onclick="logoutPin()" style="margin-left:auto;background:none;border:1px solid rgba(249,115,22,0.4);
-          border-radius:6px;padding:4px 10px;color:#f97316;font-size:0.72rem;cursor:pointer;">
-          Abmelden
-        </button>
-      </div>
+  <div class="la-hero">
+    <div class="la-greeting">
+      Was suchst du,
+      <span style="color:var(--ink-3);" id="greeting-name">Markus?</span>
+    </div>
+    <div class="la-greeting-sub" id="status-text">Datenbank wird geladen…</div>
 
-      <div class="hero-actions">
-        <button onclick="openPinModal('mitarbeiter')" class="btn btn-primary">👤 Mitarbeiter (PIN)</button>
-        <a href="pages/login.html" class="btn btn-ghost">🔐 Wachenleiter / Admin</a>
-      </div>
+    <!-- Search -->
+    <div class="la-search-wrap">
+      <span class="la-search-icon">
+        <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><circle cx="9" cy="9" r="6"/><path d="m17 17-3.5-3.5"/></svg>
+      </span>
+      <input type="text" id="search-input" class="la-search-input"
+        placeholder="Artikel, LP, Alias…"
+        autocomplete="off" autocorrect="off" spellcheck="false">
+      <button class="la-search-scan hidden" id="search-clear" onclick="clearSearch()">✕</button>
+      <button class="la-search-scan" id="scan-btn" title="QR/Barcode scannen">
+        <svg viewBox="0 0 20 20" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><path d="M3 7V4h3M17 7V4h-3M3 13v3h3M17 13v3h-3"/><path d="M3 10h14"/></svg>
+      </button>
+    </div>
+
+    <!-- Filters -->
+    <div class="la-filters" id="filter-chips">
+      <button class="la-filter-chip active" data-filter="all" onclick="filterChip(this,'all')">Alle</button>
+      <button class="la-filter-chip" data-filter="Schrank" onclick="filterChip(this,'Schrank')">Schrank</button>
+      <button class="la-filter-chip" data-filter="Tasche" onclick="filterChip(this,'Tasche')">Tasche</button>
+      <button class="la-filter-chip" data-filter="Sauerstoff" onclick="filterChip(this,'Sauerstoff')">O₂</button>
+      <button class="la-filter-chip" data-filter="Medikament" onclick="filterChip(this,'Medikament')">Medikamente</button>
     </div>
   </div>
 
   <!-- ── MAIN ── -->
-  <main class="main-content container">
-    <div class="search-section">
-      <div class="section-label">Artikelsuche</div>
-      <div class="search-wrap">
-        <div class="search-icon">🔍</div>
-        <input
-          type="text"
-          id="search-input"
-          class="search-input"
-          placeholder="Artikel suchen... z.B. Tubus, Viggo, Adrenalin"
-          autocomplete="off"
-          autocorrect="off"
-          spellcheck="false"
-        >
-        <button class="search-clear hidden" id="search-clear" onclick="clearSearch()">✕</button>
-      </div>
-      <div class="search-status">
-        <span class="mono text-muted text-xs" id="status-text">Datenbank wird geladen...</span>
-      </div>
-      <div id="loading-state" class="loading-state">
-        <div class="spinner"></div>
-        <span class="text-muted text-sm">Verbinde mit Firebase...</span>
-      </div>
-      <div id="back-to-bereiche" class="hidden" style="margin-bottom:10px;">
-        <button onclick="showBereiche()" style="display:flex;align-items:center;gap:6px;background:none;border:1.5px solid var(--border);border-radius:10px;padding:8px 14px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:0.82rem;font-weight:600;color:var(--text2);touch-action:manipulation;">
-          ← Alle Bereiche
-        </button>
-      </div>
-      <div id="search-results" class="search-results hidden"></div>
-      <div id="empty-state" class="empty-state hidden">
-        <div class="empty-icon">🔍</div>
-        <div class="empty-title">Kein Artikel gefunden</div>
-        <div class="empty-sub">Versuche einen anderen Suchbegriff oder Alias</div>
-      </div>
+  <main class="la-main">
+
+    <!-- Loading -->
+    <div id="loading-state" class="la-loading">
+      <div class="spinner"></div>
+      <span style="font-size:13px;color:var(--ink-3);">Verbinde mit Firebase…</span>
     </div>
 
-    <div class="bereiche-section hidden" id="bereiche-section">
-      <div class="section-label">Bereiche</div>
-      <div class="bereiche-grid" id="bereiche-grid"></div>
+    <!-- Back to bereiche button -->
+    <button id="back-to-bereiche" class="la-back-btn hidden" onclick="showBereiche()">
+      <svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5l-5 5 5 5"/></svg>
+      Alle Bereiche
+    </button>
+
+    <!-- Results -->
+    <div id="search-results" class="la-results hidden"></div>
+
+    <!-- Empty -->
+    <div id="empty-state" class="la-empty hidden">
+      <div class="la-empty-icon">🔍</div>
+      <div class="la-empty-title">Kein Artikel gefunden</div>
+      <div class="la-empty-sub">Versuche einen anderen Begriff oder Alias</div>
+    </div>
+
+    <!-- Bereiche -->
+    <div id="bereiche-section" class="hidden">
+      <div class="la-sec-head">
+        <span class="la-sec-label">Bereiche</span>
+        <span class="la-sec-link" id="bereiche-count-label">
+          <span id="bereiche-total">–</span> gesamt
+          <svg viewBox="0 0 20 20" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 5l5 5-5 5"/></svg>
+        </span>
+      </div>
+      <div class="la-bereiche-grid" id="bereiche-grid"></div>
+    </div>
+
+    <!-- Mitarbeiter CTA -->
+    <div id="cta-section" class="hidden" style="margin-top:28px;">
+      <div style="background:var(--surface);border-radius:var(--r-xl);padding:20px;box-shadow:var(--sh-1),inset 0 0 0 0.5px var(--hairline);" class="la-mesh">
+        <div style="font-size:12px;color:var(--ink-3);font-family:var(--font-mono);letter-spacing:0.06em;margin-bottom:8px;">LAGERCHECK STARTEN</div>
+        <div style="font-size:17px;font-weight:600;margin-bottom:14px;">Bestand prüfen &amp; Bestellung aufgeben</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;">
+          <button onclick="openPinModal()" class="la-btn primary" style="flex:1;min-width:160px;">
+            Lagercheck starten
+          </button>
+          <a href="pages/login.html" class="la-btn ghost" style="flex:0 0 auto;">
+            Wachenleiter
+          </a>
+        </div>
+      </div>
     </div>
   </main>
 
   <!-- ── FOOTER ── -->
-  <footer class="footer">
-    <div class="container">
-      <span class="mono text-xs text-muted">LAGER//APP · DRK Rettungswache Malmsheim · 2026</span>
-    </div>
+  <footer class="la-footer">
+    <span style="font-size:11px;color:var(--ink-3);font-family:var(--font-mono);">
+      LAGER//APP · DRK Rettungswache Malmsheim · 2026
+    </span>
   </footer>
 
-  <!-- Foto Modal -->
-  <div id="photo-modal" class="modal hidden" onclick="if(event.target===this)closeModal()">
-    <div class="modal-box">
-      <div class="modal-header">
-        <span id="modal-title" class="modal-title"></span>
-        <button class="modal-close" onclick="closeModal()">✕</button>
+  <!-- ── PHOTO MODAL ── -->
+  <div id="photo-modal" class="la-modal-backdrop hidden" onclick="if(event.target===this)closeModal()">
+    <div class="la-modal-box">
+      <div class="la-modal-header">
+        <span id="modal-title" class="la-modal-title"></span>
+        <button class="la-modal-close" onclick="closeModal()">✕</button>
       </div>
-      <img id="modal-img" class="modal-img" src="" alt="">
+      <img id="modal-img" class="la-modal-img" src="" alt="">
+      <div style="padding:10px 18px 14px;font-size:11px;color:var(--ink-3);font-family:var(--font-mono);text-align:center;">Soll-Zustand Lagerort</div>
+    </div>
+  </div>
+
+  <!-- ── PIN MODAL ── -->
+  <div id="pin-modal" class="la-pin-backdrop hidden">
+    <div class="la-pin-box">
+      <div class="la-pin-header">
+        <div>
+          <div class="la-pin-title">Lagercheck starten</div>
+          <div class="la-pin-sub">PIN vom Schichtleiter eingeben</div>
+        </div>
+        <button class="la-pin-close" onclick="closePinModal()">✕</button>
+      </div>
+
+      <div class="la-name-field">
+        <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" style="color:var(--ink-3);flex-shrink:0;"><circle cx="10" cy="7" r="3"/><path d="M4 17c1-3 3.5-4 6-4s5 1 6 4"/></svg>
+        <input type="text" id="modal-name" class="la-name-input" placeholder="Dein Name…" maxlength="40" autocomplete="off">
+      </div>
+
+      <div class="la-pin-dots">
+        <div class="la-pin-dot" id="mpd-0"></div>
+        <div class="la-pin-dot" id="mpd-1"></div>
+        <div class="la-pin-dot" id="mpd-2"></div>
+        <div class="la-pin-dot" id="mpd-3"></div>
+      </div>
+
+      <div class="la-pin-grid">
+        <button class="la-pin-key" onclick="modalPinKey('1')">1</button>
+        <button class="la-pin-key" onclick="modalPinKey('2')">2</button>
+        <button class="la-pin-key" onclick="modalPinKey('3')">3</button>
+        <button class="la-pin-key" onclick="modalPinKey('4')">4</button>
+        <button class="la-pin-key" onclick="modalPinKey('5')">5</button>
+        <button class="la-pin-key" onclick="modalPinKey('6')">6</button>
+        <button class="la-pin-key" onclick="modalPinKey('7')">7</button>
+        <button class="la-pin-key" onclick="modalPinKey('8')">8</button>
+        <button class="la-pin-key" onclick="modalPinKey('9')">9</button>
+        <button class="la-pin-key del" onclick="modalPinDel()">⌫</button>
+        <button class="la-pin-key" onclick="modalPinKey('0')">0</button>
+        <button class="la-pin-key confirm" onclick="modalPinConfirm()">✓</button>
+      </div>
+
+      <div class="la-pin-error" id="pin-modal-error"></div>
     </div>
   </div>
 
@@ -175,9 +506,6 @@
     const initialTheme = savedTheme || (prefersDark ? 'dark' : 'light');
     document.documentElement.setAttribute('data-theme', initialTheme);
     document.getElementById('theme-toggle').textContent = initialTheme === 'dark' ? '☀️' : '🌙';
-    document.querySelectorAll('.app-logo').forEach(img => {
-      img.src = initialTheme === 'dark' ? img.dataset.srcDark : img.dataset.srcLight;
-    });
 
     window.toggleTheme = function() {
       const current = document.documentElement.getAttribute('data-theme');
@@ -185,18 +513,26 @@
       document.documentElement.setAttribute('data-theme', next);
       localStorage.setItem('lager-theme', next);
       document.getElementById('theme-toggle').textContent = next === 'dark' ? '☀️' : '🌙';
-      document.querySelectorAll('.app-logo').forEach(img => {
-        img.src = next === 'dark' ? img.dataset.srcDark : img.dataset.srcLight;
-      });
     };
+
+    // ── Greeting ──
+    const savedName = localStorage.getItem('lager-saved-name');
+    if (savedName) {
+      document.getElementById('greeting-name').textContent = savedName + '?';
+    }
 
     // ── Firebase ──
     const app = initializeApp(firebaseConfig);
     const db  = getFirestore(app);
 
-    let alleArtikel  = [];
-    let alleBereiche = [];
-    let searchTimer  = null;
+    let alleArtikel    = [];
+    let alleBereiche   = [];
+    let searchTimer    = null;
+    let activeFilter   = 'all';
+    let bereichFilter  = null;
+
+    // Tint colors for bereiche
+    const TINTS = ['tint-rose','tint-blue','tint-violet','tint-green','tint-slate','tint-amber'];
 
     // ── Daten laden ──
     async function loadData() {
@@ -211,47 +547,84 @@
 
         document.getElementById('loading-state').classList.add('hidden');
         document.getElementById('bereiche-section').classList.remove('hidden');
+        document.getElementById('cta-section').classList.remove('hidden');
         document.getElementById('status-text').textContent =
-          `${alleArtikel.length} Artikel · ${alleBereiche.length} Bereiche`;
+          `Rettungswache Malmsheim · ${alleArtikel.length} Artikel`;
+        document.getElementById('bereiche-total').textContent = alleBereiche.length;
+        document.getElementById('sync-pill').style.display = 'flex';
+        document.getElementById('sync-dot').style.display = 'inline-block';
 
         renderBereiche();
 
       } catch (e) {
         document.getElementById('loading-state').innerHTML =
-          `<div class="alert alert-error text-xs">Fehler: ${e.message}</div>`;
+          `<div style="color:var(--crit);font-size:13px;padding:20px;">Fehler: ${e.message}</div>`;
       }
     }
 
     // ── Bereiche ──
     function renderBereiche() {
-      const icons = {
-        schrank: '🗄️', regal: '📦', sauer: '🫧',
-        buero: '📋', kueche: '🍽️', wasch: '🚿',
-        mpg: '🔋', medika: '💊',
-      };
-
-      function getIcon(name) {
-        const n = name.toLowerCase();
-        for (const [key, icon] of Object.entries(icons)) {
-          if (n.includes(key)) return icon;
-        }
-        return '📁';
-      }
-
-      document.getElementById('bereiche-grid').innerHTML = alleBereiche.map(b => {
-        const count = alleArtikel.filter(a => a.bereich === b.id).length;
+      document.getElementById('bereiche-grid').innerHTML = alleBereiche.map((b, i) => {
+        const count  = alleArtikel.filter(a => a.bereich === b.id).length;
+        const letter = (b.name || '?').charAt(0).toUpperCase();
+        const tint   = TINTS[i % TINTS.length];
+        const num    = String(i + 1).padStart(2, '0');
         return `
-          <div class="bereich-card" onclick="filterByBereich('${b.id}','${b.name}')">
-            <div class="bereich-icon">${getIcon(b.name)}</div>
-            <div class="bereich-info">
-              <div class="bereich-name">${b.name}</div>
-              <div class="bereich-count mono">${count} Artikel</div>
+          <div class="la-bereich-card" onclick="filterByBereich('${b.id}','${b.name.replace(/'/g,"\\'")}')"
+               data-bereich-name="${b.name}">
+            <div class="la-bereich-top">
+              <div class="la-photo ${tint} la-bereich-tile">${letter}</div>
+              <div class="la-bereich-num">${num}</div>
+            </div>
+            <div>
+              <div class="la-bereich-name">${b.name}</div>
+              ${b.sub ? `<div class="la-bereich-sub">${b.sub}</div>` : ''}
+            </div>
+            <div class="la-bereich-bottom">
+              <div class="la-bereich-count">${count} Artikel</div>
+              <div class="la-bereich-dots">
+                <span style="background:var(--ok)"></span>
+                <span style="background:var(--low)"></span>
+              </div>
             </div>
           </div>`;
       }).join('');
     }
 
-    // ── Suche ──
+    // ── Filter chips ──
+    window.filterChip = function(el, filter) {
+      document.querySelectorAll('.la-filter-chip').forEach(c => c.classList.remove('active'));
+      el.classList.add('active');
+      activeFilter = filter;
+
+      if (filter === 'all') {
+        showBereiche();
+        return;
+      }
+
+      const matching = alleBereiche.filter(b =>
+        b.name?.toLowerCase().includes(filter.toLowerCase()) ||
+        b.sub?.toLowerCase().includes(filter.toLowerCase())
+      );
+
+      const filtered = alleArtikel.filter(a =>
+        matching.some(b => b.id === a.bereich)
+      );
+
+      if (filtered.length === 0) {
+        // Show all bereiche but highlight matching
+        showBereiche();
+      } else {
+        document.getElementById('bereiche-section').classList.remove('hidden');
+        document.getElementById('search-results').classList.add('hidden');
+        document.getElementById('empty-state').classList.add('hidden');
+        document.getElementById('back-to-bereiche').classList.add('hidden');
+        document.getElementById('status-text').textContent =
+          `${filtered.length} Artikel in Kategorie „${filter}"`;
+      }
+    };
+
+    // ── Search ──
     function doSearch(q) {
       const lower = q.toLowerCase().trim();
       if (!lower) { clearSearch(); return; }
@@ -266,25 +639,24 @@
     }
 
     function naturalSort(a, b) {
-      const sa = (a||'').split(/[.\-]/).map(x => isNaN(x) ? x : parseInt(x,10));
-      const sb = (b||'').split(/[.\-]/).map(x => isNaN(x) ? x : parseInt(x,10));
-      for (let i = 0; i < Math.max(sa.length, sb.length); i++) {
-        const va = sa[i] ?? '', vb = sb[i] ?? '';
+      const seg = s => (s||'').split(/[.\-]/).map(x => isNaN(x) ? x : parseInt(x,10));
+      const A = seg(a), B = seg(b);
+      for (let i = 0; i < Math.max(A.length, B.length); i++) {
+        const va = A[i] ?? '', vb = B[i] ?? '';
         if (va < vb) return -1;
         if (va > vb) return  1;
       }
       return 0;
     }
 
-        function renderResults(results, q) {
-      // Bereiche nur bei echter Suche ausblenden
-      if (q) document.getElementById('bereiche-section').classList.add('hidden');
-      document.getElementById('back-to-bereiche')?.classList.add('hidden');
+    function renderResults(results, q) {
+      document.getElementById('bereiche-section').classList.add('hidden');
+      document.getElementById('back-to-bereiche').classList.add('hidden');
       document.getElementById('empty-state').classList.add('hidden');
       document.getElementById('search-results').classList.add('hidden');
 
       document.getElementById('status-text').textContent =
-        q ? `${results.length} Treffer für „${q}"` : `${results.length} Artikel`;
+        `${results.length} Treffer für „${q}"`;
 
       if (results.length === 0) {
         document.getElementById('empty-state').classList.remove('hidden');
@@ -292,24 +664,18 @@
       }
 
       function hl(text, q) {
-        if (!q) return text;
+        if (!q || !text) return text || '';
         return text.replace(new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})`, 'gi'),
           '<mark>$1</mark>');
       }
 
-      function fmtLoc(loc) {
-        return (loc || '–').replace(/\./g, ' · ');
-      }
-
-      // LP-Nummer sortieren
       const sorted = [...results].sort((a,b) => naturalSort(a.lp||'', b.lp||''));
-
       const container = document.getElementById('search-results');
       container.innerHTML = sorted.map(a => {
         const b = alleBereiche.find(x => x.id === a.bereich);
         return `
           <div class="result-card fade-in">
-            <div class="result-photo" onclick="openPhoto('${a.fotoUrl||''}','${a.name.replace(/'/g,"\\'")}')">
+            <div class="result-photo" onclick="openPhoto('${(a.fotoUrl||'').replace(/'/g,"\\'")}','${a.name.replace(/'/g,"\\'")}')">
               ${a.fotoUrl
                 ? `<img src="${a.fotoUrl}" alt="${a.name}" loading="lazy">`
                 : `<div class="result-photo-placeholder">📦</div>`}
@@ -318,8 +684,9 @@
               <div class="result-name">${hl(a.name, q)}</div>
               <div class="result-location-big">
                 ${b ? `<span class="result-bereich-big">${b.name}</span>` : ''}
-                <span class="result-lp-big mono">📍 ${a.lp || fmtLoc(a.location)}</span>
+                <span class="result-lp-big">📍 ${a.lp || (a.location||'').replace(/\./g,' · ')}</span>
               </div>
+              ${a.aliases?.length ? `<div style="font-size:11px;color:var(--ink-3);margin-top:2px;">${a.aliases.slice(0,3).join(' · ')}</div>` : ''}
             </div>
           </div>`;
       }).join('');
@@ -329,53 +696,53 @@
 
     // ── Public functions ──
     window.filterByBereich = function(id, name) {
-      document.getElementById('search-input').value = '';
-      document.getElementById('search-clear').classList.remove('hidden');
-      const bereichArtikel = alleArtikel.filter(a => a.bereich === id)
+      const bereichArtikel = alleArtikel
+        .filter(a => a.bereich === id)
         .sort((a,b) => naturalSort(a.lp||'', b.lp||''));
-      // Bereiche NICHT verstecken – nur Artikel darunter anzeigen
-      document.getElementById('back-to-bereiche')?.classList.remove('hidden');
+
+      document.getElementById('bereiche-section').classList.add('hidden');
       document.getElementById('search-results').classList.remove('hidden');
       document.getElementById('empty-state').classList.add('hidden');
+      document.getElementById('back-to-bereiche').classList.remove('hidden');
       document.getElementById('status-text').textContent =
-        `${bereichArtikel.length} Artikel in „${name}"`;
+        `${bereichArtikel.length} Artikel · ${name}`;
+
       const container = document.getElementById('search-results');
-      container.innerHTML = bereichArtikel.map(a => {
-        const b = alleBereiche.find(x => x.id === a.bereich);
-        const loc = a.location || a.lp || '';
-        return `
-          <div class="result-card fade-in">
-            <div class="result-photo" onclick="openPhoto('${a.fotoUrl||''}','${a.name}')">
-              ${a.fotoUrl ? `<img src="${a.fotoUrl}" alt="${a.name}" loading="lazy">` : '<div class="photo-placeholder">📦</div>'}
+      container.innerHTML = bereichArtikel.map(a => `
+        <div class="result-card fade-in">
+          <div class="result-photo" onclick="openPhoto('${(a.fotoUrl||'').replace(/'/g,"\\'")}','${a.name.replace(/'/g,"\\'")}')">
+            ${a.fotoUrl ? `<img src="${a.fotoUrl}" alt="${a.name}" loading="lazy">` : '<div class="result-photo-placeholder">📦</div>'}
+          </div>
+          <div class="result-body">
+            <div class="result-name">${a.name}</div>
+            <div class="result-location-big">
+              <span class="result-bereich-big">${name}</span>
+              <span class="result-lp-big">📍 ${a.lp || (a.location||'').replace(/\./g,' · ')}</span>
             </div>
-            <div class="result-info">
-              <div class="result-name">${a.name}</div>
-              <div class="result-location">
-                <span class="result-bereich">${b?.name||''}</span>
-                ${loc ? `<span class="result-lp">📍 ${loc.replace(/\./g,' · ')}</span>` : ''}
-              </div>
-            </div>
-          </div>`;
-      }).join('');
+          </div>
+        </div>`).join('');
     };
 
-    // Zurück zu Bereichen
     window.showBereiche = function() {
-      document.getElementById('back-to-bereiche')?.classList.add('hidden');
+      document.getElementById('back-to-bereiche').classList.add('hidden');
       document.getElementById('search-results').classList.add('hidden');
+      document.getElementById('empty-state').classList.add('hidden');
       document.getElementById('bereiche-section').classList.remove('hidden');
       document.getElementById('status-text').textContent =
-        `${alleArtikel.length} Artikel · ${alleBereiche.length} Bereiche`;
+        `Rettungswache Malmsheim · ${alleArtikel.length} Artikel`;
     };
 
     window.clearSearch = function() {
       document.getElementById('search-input').value = '';
       document.getElementById('search-results').classList.add('hidden');
       document.getElementById('empty-state').classList.add('hidden');
-      document.getElementById('search-clear').classList.add('hidden');
+      document.getElementById('back-to-bereiche').classList.add('hidden');
       document.getElementById('bereiche-section').classList.remove('hidden');
       document.getElementById('status-text').textContent =
-        `${alleArtikel.length} Artikel · ${alleBereiche.length} Bereiche`;
+        `Rettungswache Malmsheim · ${alleArtikel.length} Artikel`;
+      document.getElementById('search-clear').classList.add('hidden');
+      // Show scan btn again
+      document.getElementById('scan-btn').classList.remove('hidden');
     };
 
     window.openPhoto = function(url, name) {
@@ -392,7 +759,9 @@
     // ── Search input ──
     document.getElementById('search-input').addEventListener('input', e => {
       const val = e.target.value;
-      document.getElementById('search-clear').classList.toggle('hidden', !val);
+      const hasTxt = !!val;
+      document.getElementById('search-clear').classList.toggle('hidden', !hasTxt);
+      document.getElementById('scan-btn').classList.toggle('hidden', hasTxt);
       clearTimeout(searchTimer);
       searchTimer = setTimeout(() => doSearch(val), 200);
     });
@@ -401,120 +770,27 @@
     loadData();
   </script>
 
-  <!-- ── PIN MODAL ── -->
-  <div id="pin-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);
-    backdrop-filter:blur(4px);z-index:1000;align-items:center;justify-content:center;padding:20px;">
-    <div style="background:var(--surface,#111827);border:1px solid var(--border,#1f2937);
-      border-radius:20px;padding:28px 24px;width:100%;max-width:360px;
-      box-shadow:0 25px 50px rgba(0,0,0,0.5);">
-
-      <!-- Header -->
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;">
-        <div>
-          <div style="font-size:1rem;font-weight:700;" id="pin-modal-title">PIN eingeben</div>
-          <div style="font-size:0.72rem;color:#6b7280;margin-top:2px;" id="pin-modal-sub">Lagerbestellung</div>
-        </div>
-        <button onclick="closePinModal()" style="background:none;border:none;color:#6b7280;
-          font-size:1.2rem;cursor:pointer;padding:4px 8px;border-radius:6px;">✕</button>
-      </div>
-
-      <!-- Name -->
-      <div style="margin-bottom:16px;">
-        <input type="text" id="modal-name" placeholder="Dein Name"
-          style="width:100%;padding:14px 16px;border-radius:12px;
-            border:1.5px solid var(--border,#1f2937);background:var(--surface2,#1f2937);
-            color:var(--text,#f9fafb);font-size:1rem;font-family:'DM Sans',sans-serif;
-            outline:none;box-sizing:border-box;"
-          inputmode="text" enterkeyhint="done"
-          onkeydown="if(event.key==='Enter')this.blur()">
-      </div>
-
-      <!-- PIN Dots -->
-      <div style="display:flex;gap:10px;justify-content:center;margin-bottom:16px;">
-        <div class="modal-pin-dot" id="mpd-0"></div>
-        <div class="modal-pin-dot" id="mpd-1"></div>
-        <div class="modal-pin-dot" id="mpd-2"></div>
-        <div class="modal-pin-dot" id="mpd-3"></div>
-      </div>
-
-      <!-- Numpad -->
-      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px;">
-        <button class="modal-pin-key" onclick="modalPinKey('1')">1</button>
-        <button class="modal-pin-key" onclick="modalPinKey('2')">2</button>
-        <button class="modal-pin-key" onclick="modalPinKey('3')">3</button>
-        <button class="modal-pin-key" onclick="modalPinKey('4')">4</button>
-        <button class="modal-pin-key" onclick="modalPinKey('5')">5</button>
-        <button class="modal-pin-key" onclick="modalPinKey('6')">6</button>
-        <button class="modal-pin-key" onclick="modalPinKey('7')">7</button>
-        <button class="modal-pin-key" onclick="modalPinKey('8')">8</button>
-        <button class="modal-pin-key" onclick="modalPinKey('9')">9</button>
-        <button class="modal-pin-key" onclick="modalPinDel()" style="color:#9ca3af;">⌫</button>
-        <button class="modal-pin-key" onclick="modalPinKey('0')">0</button>
-        <button class="modal-pin-key" style="background:#f97316;color:white;" onclick="modalPinConfirm()">✓</button>
-      </div>
-
-      <div id="pin-modal-error" style="font-size:0.75rem;color:#ef4444;text-align:center;min-height:18px;"></div>
-    </div>
-  </div>
-
-  <style>
-    .btn-secondary {
-      background: rgba(14,165,233,0.15);
-      color: #0ea5e9;
-      border: 1.5px solid rgba(14,165,233,0.3);
-    }
-    .btn-secondary:hover { background: rgba(14,165,233,0.25); }
-
-    .modal-pin-dot {
-      width: 14px; height: 14px; border-radius: 50%;
-      border: 2px solid #374151; transition: all 0.15s;
-    }
-    .modal-pin-dot.filled { background: #f97316; border-color: #f97316; }
-
-    .modal-pin-key {
-      aspect-ratio: 1; border-radius: 10px;
-      border: 1px solid var(--border, #1f2937);
-      background: var(--surface2, #1f2937);
-      color: var(--text, #f9fafb);
-      font-family: 'IBM Plex Mono', monospace;
-      font-size: 1.1rem; font-weight: 600;
-      cursor: pointer; transition: all 0.15s;
-      touch-action: manipulation;
-    }
-    .modal-pin-key:active { transform: scale(0.93); }
-  </style>
-
+  <!-- PIN Modal JS -->
   <script>
     let _modalPin       = '';
-    let _modalTarget    = 'check';
     let _pinAttempts    = 0;
     let _pinLockedUntil = 0;
 
-    window.openPinModal = async function(target) {
-      _modalTarget = target;
-      _modalPin    = '';
+    window.openPinModal = function() {
+      _modalPin = '';
       document.getElementById('pin-modal-error').textContent = '';
       updateModalDots();
-
-      // Gespeicherten Namen vorausfüllen
       const savedName = localStorage.getItem('lager-saved-name') || '';
       document.getElementById('modal-name').value = savedName;
-
-      document.getElementById('pin-modal-title').textContent = '👤 PIN eingeben';
-      document.getElementById('pin-modal-sub').textContent   = 'Mitarbeiter-Bereich betreten';
-
-      document.getElementById('pin-modal').style.display = 'flex';
-
-      // Wenn Name schon da → direkt zum PIN-Pad springen
-      if (savedName) {
-        setTimeout(() => document.querySelector('.modal-pin-key').focus(), 100);
-      } else {
-        setTimeout(() => document.getElementById('modal-name').focus(), 100);
-      }
+      document.getElementById('pin-modal').classList.remove('hidden');
+      setTimeout(() => {
+        if (savedName) document.querySelector('.la-pin-key').focus();
+        else document.getElementById('modal-name').focus();
+      }, 100);
     };
 
     window.closePinModal = function() {
-      document.getElementById('pin-modal').style.display = 'none';
+      document.getElementById('pin-modal').classList.add('hidden');
     };
 
     window.modalPinKey = function(d) {
@@ -536,13 +812,12 @@
     }
 
     window.modalPinConfirm = async function() {
-      const name = document.getElementById('modal-name').value.trim();
+      const name  = document.getElementById('modal-name').value.trim();
       const errEl = document.getElementById('pin-modal-error');
 
-      if (!name) { errEl.textContent = 'Bitte deinen Namen eingeben'; return; }
+      if (!name)             { errEl.textContent = 'Bitte deinen Namen eingeben'; return; }
       if (_modalPin.length < 4) { errEl.textContent = 'Bitte 4-stelligen PIN eingeben'; return; }
 
-      // PIN aus Firestore prüfen
       try {
         const { initializeApp, getApps } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
         const { getFirestore, doc, getDoc } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
@@ -564,7 +839,7 @@
           _pinAttempts++;
           if (_pinAttempts >= 5) {
             _pinLockedUntil = Date.now() + 60000;
-            _pinAttempts = 0;
+            _pinAttempts    = 0;
             errEl.textContent = 'Zu viele Versuche – bitte 60s warten';
           } else {
             errEl.textContent = `Falscher PIN – noch ${5 - _pinAttempts} Versuch(e)`;
@@ -573,19 +848,14 @@
         }
         _pinAttempts = 0;
 
-        // Anonym in Firebase einloggen – ermöglicht sichere Firestore-Rules
         const auth = getAuth(app);
         if (!auth.currentUser) await signInAnonymously(auth);
 
-        // PIN korrekt – Session speichern (PIN wird NICHT in localStorage abgelegt)
         sessionStorage.setItem('lager-pin-auth', 'true');
         sessionStorage.setItem('lager-pin-name', name);
-
-        // Nur Namen speichern (kein PIN), um beim nächsten Besuch das Namensfeld vorzufüllen
         localStorage.setItem('lager-saved-name', name);
 
         closePinModal();
-
         window.location.href = 'pages/mitarbeiter.html';
 
       } catch(e) {
@@ -593,28 +863,10 @@
       }
     };
 
-    // Modal schließen bei Klick außerhalb
+    // Close on backdrop click
     document.getElementById('pin-modal').addEventListener('click', function(e) {
       if (e.target === this) closePinModal();
     });
-
-    // Abmelden
-    window.logoutPin = function() {
-      localStorage.removeItem('lager-saved-name');
-      sessionStorage.removeItem('lager-pin-auth');
-      sessionStorage.removeItem('lager-pin-name');
-      document.getElementById('saved-user-bar').style.display = 'none';
-    };
-
-    // Beim Laden: gespeicherten User anzeigen
-    (function() {
-      const savedName = localStorage.getItem('lager-saved-name');
-      if (savedName) {
-        const bar = document.getElementById('saved-user-bar');
-        document.getElementById('saved-user-name').textContent = savedName;
-        bar.style.display = 'flex';
-      }
-    })();
   </script>
 
   <script src="js/pwa.js"></script>
