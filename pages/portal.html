@@ -8,48 +8,97 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="LAGER//APP">
   <title>Wachenleiter – LAGER//APP</title>
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="../css/main.css">
   <style>
-    .portal-page { min-height: 100vh; display: flex; flex-direction: column; }
+    * { box-sizing: border-box; }
+    body { font-family: var(--font-ui); background: var(--bg); color: var(--ink); }
+    .portal-page { min-height: 100dvh; display: flex; flex-direction: column; }
 
-    /* ── LAYOUT (gleich wie Admin) ── */
+    /* ── NAV ── */
+    .p-nav {
+      position: sticky; top: 0; z-index: 200;
+      display: flex; align-items: center; gap: 10px; padding: 10px 16px;
+      background: var(--glass-bg-strong);
+      backdrop-filter: blur(24px) saturate(180%);
+      -webkit-backdrop-filter: blur(24px) saturate(180%);
+      border-bottom: 1px solid var(--hairline);
+      height: 52px;
+    }
+    .p-wordmark { font-family: var(--font-mono); font-weight: 600; font-size: 0.9rem; color: var(--brand); letter-spacing: -0.01em; }
+    .p-wordmark .slash { color: var(--ink-3); }
+    .p-nav-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+    .p-nav-user { font-size: 0.72rem; color: var(--ink-3); font-family: var(--font-mono); }
+    .p-badge {
+      display: none; padding: 3px 8px; border-radius: var(--r-pill);
+      background: var(--brand-soft); color: var(--brand);
+      font-size: 0.6rem; font-weight: 700; font-family: var(--font-mono);
+      letter-spacing: 0.06em;
+    }
+    @media (min-width: 640px) { .p-badge { display: inline-flex; } }
+    .p-btn-logout {
+      height: 32px; padding: 0 12px; border-radius: 8px;
+      border: 1px solid var(--hairline-2); background: var(--surface-2);
+      color: var(--ink-2); font-family: var(--font-ui); font-size: 0.78rem; font-weight: 500;
+      cursor: pointer; transition: border-color 0.15s, color 0.15s;
+    }
+    .p-btn-logout:hover { border-color: var(--crit); color: var(--crit); }
+    .p-theme {
+      width: 32px; height: 32px; border-radius: 8px;
+      border: 1px solid var(--hairline-2); background: var(--surface-2);
+      cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; justify-content: center;
+    }
+
+    /* ── LAYOUT ── */
     .portal-layout { display: flex; flex: 1; }
 
+    /* ── SIDEBAR ── */
     .portal-sidebar {
-      width: 220px;
-      background: var(--surface);
-      border-right: 1px solid var(--border);
-      display: flex;
-      flex-direction: column;
-      flex-shrink: 0;
-      position: sticky;
-      top: 56px;
-      height: calc(100vh - 56px);
+      width: 220px; flex-shrink: 0;
+      background: var(--surface-2);
+      border-right: 0.5px solid var(--hairline);
+      display: flex; flex-direction: column;
+      position: sticky; top: 52px;
+      height: calc(100dvh - 52px);
       overflow-y: auto;
     }
+    .sidebar-workspace {
+      display: flex; align-items: center; gap: 8px;
+      padding: 14px 12px 8px;
+    }
+    .sidebar-ws-icon {
+      width: 22px; height: 22px; border-radius: 6px;
+      background: var(--brand); color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-mono); font-size: 11px; font-weight: 700;
+      flex-shrink: 0;
+    }
+    .sidebar-ws-name { font-size: 12px; font-weight: 600; color: var(--ink); }
+    .sidebar-ws-sub  { font-size: 10px; color: var(--ink-3); font-family: var(--font-mono); }
 
-    .sidebar-nav { padding: 12px 8px; display: flex; flex-direction: column; gap: 2px; flex: 1; }
+    .sidebar-nav { padding: 4px 8px; display: flex; flex-direction: column; flex: 1; }
 
     .sidebar-item {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 9px 12px;
-      border-radius: 8px;
-      font-size: 0.82rem;
-      font-weight: 500;
-      color: var(--text2);
-      cursor: pointer;
-      transition: all 0.15s;
-      border: 1px solid transparent;
-      text-decoration: none;
+      display: flex; align-items: center; gap: 9px;
+      height: 30px; padding: 0 8px;
+      border-radius: 6px; border: 1px solid transparent;
+      font-size: 13px; font-weight: 500; color: var(--ink-2);
+      cursor: pointer; text-decoration: none;
+      transition: background 0.12s, color 0.12s;
     }
+    .sidebar-item:hover  { background: var(--surface-3); color: var(--ink); }
+    .sidebar-item.active { background: var(--surface-3); color: var(--ink); }
+    .sidebar-item.active .s-ico { color: var(--brand); }
+    .sidebar-item .icon  { font-size: 0.88rem; flex-shrink: 0; }
+    .sidebar-item .s-ico { width: 14px; height: 14px; flex-shrink: 0; color: var(--ink-3); }
 
-    .sidebar-item:hover { background: var(--surface2); color: var(--text); }
-    .sidebar-item.active { background: var(--surface2); color: var(--accent); border-color: var(--border); }
-    .sidebar-item .icon { font-size: 1rem; flex-shrink: 0; }
-    .sidebar-divider { height: 1px; background: var(--border); margin: 8px 12px; }
-    .sidebar-bottom { padding: 12px 8px; border-top: 1px solid var(--border); }
+    .sidebar-section-label {
+      font-size: 11px; font-weight: 500; color: var(--ink-3);
+      text-transform: uppercase; letter-spacing: 0.06em;
+      padding: 12px 8px 4px;
+    }
+    .sidebar-divider { height: 0.5px; background: var(--hairline); margin: 6px 8px; }
+    .sidebar-bottom  { padding: 8px; border-top: 0.5px solid var(--hairline); }
 
     /* ── CONTENT ── */
     .portal-content { flex: 1; padding: 24px; overflow-x: hidden; min-width: 0; }
@@ -58,123 +107,124 @@
 
     /* ── PAGE HEADER ── */
     .page-header { margin-bottom: 24px; }
-    .page-title { font-size: 1.2rem; font-weight: 700; margin-bottom: 4px; }
-    .page-sub   { font-size: 0.82rem; color: var(--text2); }
+    .page-title  { font-size: 1.2rem; font-weight: 700; margin-bottom: 4px; }
+    .page-sub    { font-size: 0.82rem; color: var(--ink-2); }
 
     /* ── KPI ROW ── */
     .kpi-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin-bottom: 24px; }
-    .kpi-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
-    .kpi-label { font-size: 0.6rem; color: var(--muted); font-family: 'IBM Plex Mono', monospace; text-transform: uppercase; letter-spacing: 0.15em; margin-bottom: 4px; }
-    .kpi-value { font-size: 1.6rem; font-weight: 700; font-family: 'IBM Plex Mono', monospace; line-height: 1; }
-    .kpi-sub   { font-size: 0.68rem; color: var(--text2); margin-top: 3px; }
+    .kpi-card { background: var(--surface); border: 1px solid var(--hairline); border-radius: 14px; padding: 16px; }
+    .kpi-label { font-size: 0.6rem; color: var(--ink-3); font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 4px; }
+    .kpi-value { font-size: 1.6rem; font-weight: 700; font-family: var(--font-mono); line-height: 1; }
+    .kpi-sub   { font-size: 0.68rem; color: var(--ink-2); margin-top: 3px; }
 
     /* ── TABLE ── */
-    .table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
-    .table-header { padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+    .table-wrap   { background: var(--surface); border: 1px solid var(--hairline); border-radius: 14px; overflow: hidden; }
+    .table-header { padding: 12px 16px; border-bottom: 1px solid var(--hairline); display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
 
     table { width: 100%; border-collapse: collapse; }
-    th { padding: 10px 14px; text-align: left; font-size: 0.65rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.12em; font-family: 'IBM Plex Mono', monospace; border-bottom: 1px solid var(--border); background: var(--surface2); }
-    td { padding: 10px 14px; font-size: 0.82rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    th { padding: 10px 14px; text-align: left; font-size: 0.65rem; color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.10em; font-family: var(--font-mono); border-bottom: 1px solid var(--hairline); background: var(--surface-2); }
+    td { padding: 10px 14px; font-size: 0.82rem; border-bottom: 1px solid var(--hairline); vertical-align: middle; color: var(--ink); }
     tr:last-child td { border-bottom: none; }
-    tr:hover td { background: var(--surface2); }
+    tr:hover td { background: var(--surface-2); }
 
     /* ── BESTELLUNGEN ── */
-    .bestellung-item { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; display: flex; align-items: center; gap: 14px; cursor: pointer; transition: border-color 0.2s; }
-    .bestellung-item:hover { border-color: var(--border2); }
-    .bestellung-icon { width: 36px; height: 36px; border-radius: 8px; background: var(--surface2); display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0; }
+    .bestellung-item { background: var(--surface); border: 1px solid var(--hairline); border-radius: 12px; padding: 14px 16px; display: flex; align-items: center; gap: 14px; cursor: pointer; transition: border-color 0.15s; }
+    .bestellung-item:hover { border-color: var(--hairline-2); }
+    .bestellung-icon { width: 36px; height: 36px; border-radius: 9px; background: var(--surface-2); display: flex; align-items: center; justify-content: center; font-size: 1rem; flex-shrink: 0; }
     .bestellung-info { flex: 1; min-width: 0; }
     .bestellung-name { font-size: 0.85rem; font-weight: 600; }
-    .bestellung-meta { font-size: 0.68rem; color: var(--muted); font-family: 'IBM Plex Mono', monospace; margin-top: 2px; }
-    .bestellung-warn { font-size: 0.68rem; color: var(--red); margin-top: 2px; }
+    .bestellung-meta { font-size: 0.68rem; color: var(--ink-3); font-family: var(--font-mono); margin-top: 2px; }
+    .bestellung-warn { font-size: 0.68rem; color: var(--crit); margin-top: 2px; }
 
     /* ── VERFALL / CHARGEN ── */
     .bereich-group { margin-bottom: 20px; }
-    .bereich-group-header { font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.15em; font-family: 'IBM Plex Mono', monospace; padding: 8px 0 6px; border-bottom: 1px solid var(--border); margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+    .bereich-group-header { font-size: 0.65rem; color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.12em; font-family: var(--font-mono); padding: 8px 0 6px; border-bottom: 1px solid var(--hairline); margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
     .bereich-group-icon { font-size: 0.9rem; }
 
-    .charge-row { display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 6px; }
-    .charge-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .charge-row { display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: var(--surface); border: 1px solid var(--hairline); border-radius: 12px; margin-bottom: 6px; }
+    .charge-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
     .charge-info { flex: 1; min-width: 0; }
     .charge-name { font-size: 0.82rem; font-weight: 600; }
-    .charge-lot  { font-size: 0.65rem; color: var(--muted); font-family: 'IBM Plex Mono', monospace; margin-top: 2px; }
-    .charge-days { font-size: 0.72rem; font-weight: 700; font-family: 'IBM Plex Mono', monospace; flex-shrink: 0; }
-    .charge-del  { width: 30px; height: 30px; border-radius: 7px; border: 1px solid var(--border); background: none; color: var(--muted); font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; justify-content: center; touch-action: manipulation; flex-shrink: 0; transition: all 0.15s; }
-    .charge-del:active { color: var(--red); border-color: var(--red); }
+    .charge-lot  { font-size: 0.65rem; color: var(--ink-3); font-family: var(--font-mono); margin-top: 2px; }
+    .charge-days { font-size: 0.72rem; font-weight: 700; font-family: var(--font-mono); flex-shrink: 0; }
+    .charge-del  { width: 28px; height: 28px; border-radius: 7px; border: 1px solid var(--hairline-2); background: none; color: var(--ink-3); font-size: 0.8rem; cursor: pointer; display: flex; align-items: center; justify-content: center; touch-action: manipulation; flex-shrink: 0; transition: all 0.15s; }
+    .charge-del:active { color: var(--crit); border-color: var(--crit); }
 
     /* Filter Buttons */
     .filter-row { display: flex; gap: 6px; flex-wrap: wrap; }
-    .filter-btn { padding: 5px 12px; border-radius: 20px; border: 1px solid var(--border); background: var(--surface2); color: var(--text2); font-size: 0.72rem; font-weight: 600; cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent; transition: all 0.15s; font-family: 'DM Sans', sans-serif; }
-    .filter-btn.active { background: var(--accent); border-color: var(--accent); color: white; }
+    .filter-btn { padding: 5px 12px; border-radius: var(--r-pill); border: 1px solid var(--hairline-2); background: var(--surface-2); color: var(--ink-2); font-size: 0.72rem; font-weight: 600; cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent; transition: all 0.15s; font-family: var(--font-ui); }
+    .filter-btn.active { background: var(--brand); border-color: var(--brand); color: #fff; }
 
-    /* ── ARTIKEL / BEREICHE (gleich wie Admin) ── */
+    /* ── ARTIKEL / BEREICHE ── */
     .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 24px; }
-    .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px; }
-    .stat-num  { font-size: 1.5rem; font-weight: 700; font-family: 'IBM Plex Mono', monospace; }
-    .stat-lbl  { font-size: 0.62rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.12em; font-family: 'IBM Plex Mono', monospace; margin-top: 3px; }
+    .stat-card { background: var(--surface); border: 1px solid var(--hairline); border-radius: 12px; padding: 14px; }
+    .stat-num  { font-size: 1.5rem; font-weight: 700; font-family: var(--font-mono); }
+    .stat-lbl  { font-size: 0.62rem; color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.10em; font-family: var(--font-mono); margin-top: 3px; }
 
-    .tbl-btn { padding: 4px 10px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface2); color: var(--text2); font-size: 0.68rem; cursor: pointer; transition: all 0.15s; font-family: 'IBM Plex Mono', monospace; }
-    .tbl-btn:hover { border-color: var(--accent2); color: var(--accent2); }
-    .tbl-btn.del:hover { border-color: var(--red); color: var(--red); }
+    .tbl-btn { padding: 4px 10px; border-radius: 6px; border: 1px solid var(--hairline-2); background: var(--surface-2); color: var(--ink-2); font-size: 0.68rem; cursor: pointer; transition: all 0.15s; font-family: var(--font-mono); }
+    .tbl-btn:hover { border-color: var(--brand); color: var(--brand); }
+    .tbl-btn.del:hover { border-color: var(--crit); color: var(--crit); }
 
     /* ── BEREICHE ── */
     .bereich-list { display: flex; flex-direction: column; gap: 8px; }
-    .bereich-item { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px 16px; display: flex; align-items: center; gap: 12px; }
-    .bereich-item-icon { font-size: 1.2rem; }
+    .bereich-item { background: var(--surface); border: 1px solid var(--hairline); border-radius: 12px; padding: 12px 16px; display: flex; align-items: center; gap: 12px; }
+    .bereich-item-icon { font-size: 1.1rem; }
     .bereich-item-name { flex: 1; font-size: 0.85rem; font-weight: 600; }
-    .bereich-item-count { font-size: 0.68rem; color: var(--muted); font-family: 'IBM Plex Mono', monospace; }
+    .bereich-item-count { font-size: 0.65rem; color: var(--ink-3); font-family: var(--font-mono); }
 
     /* ── PIN ── */
-    .pin-section { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 24px; max-width: 400px; display: flex; flex-direction: column; gap: 16px; }
+    .pin-section { background: var(--surface); border: 1px solid var(--hairline); border-radius: 16px; padding: 24px; max-width: 400px; display: flex; flex-direction: column; gap: 16px; }
     .pin-dots-row { display: flex; gap: 12px; justify-content: center; padding: 8px 0; }
-    .pin-dot { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--border); transition: all 0.15s; }
-    .pin-dot.filled { background: var(--accent); border-color: var(--accent); }
+    .pin-dot { width: 13px; height: 13px; border-radius: 50%; border: 2px solid var(--hairline-2); transition: all 0.15s; }
+    .pin-dot.filled { background: var(--brand); border-color: var(--brand); }
     .pin-grid-wrap { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-    .pin-key { aspect-ratio: 1; border-radius: 9px; border: 1px solid var(--border); background: var(--surface2); color: var(--text); font-family: 'IBM Plex Mono', monospace; font-size: 1.1rem; font-weight: 600; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; justify-content: center; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
-    .pin-key:hover { border-color: var(--accent); color: var(--accent); }
+    .pin-key { aspect-ratio: 1; border-radius: 10px; border: 1px solid var(--hairline-2); background: var(--surface-2); color: var(--ink); font-family: var(--font-mono); font-size: 1.1rem; font-weight: 600; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; justify-content: center; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+    .pin-key:hover { border-color: var(--brand); color: var(--brand); }
     .pin-key:active { transform: scale(0.94); }
-    .pin-key.confirm { background: var(--accent); border-color: var(--accent); color: white; }
-    .pin-key.del { color: var(--muted); }
+    .pin-key.confirm { background: var(--brand); border-color: var(--brand); color: #fff; }
+    .pin-key.del { color: var(--ink-3); }
 
     /* ── FOTO ── */
     .foto-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; }
-    .foto-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
+    .foto-card { background: var(--surface); border: 1px solid var(--hairline); border-radius: 12px; overflow: hidden; }
     .foto-card img { width: 100%; height: 120px; object-fit: cover; }
-    .foto-placeholder { width: 100%; height: 120px; background: var(--surface2); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; }
+    .foto-placeholder { width: 100%; height: 120px; background: var(--surface-2); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; }
     .foto-name { padding: 8px 10px; font-size: 0.72rem; font-weight: 600; }
-    .foto-upload-btn { width: 100%; padding: 6px; background: var(--surface2); border: none; border-top: 1px solid var(--border); color: var(--accent2); font-size: 0.68rem; cursor: pointer; font-family: 'IBM Plex Mono', monospace; touch-action: manipulation; }
+    .foto-upload-btn { width: 100%; padding: 6px; background: var(--surface-2); border: none; border-top: 1px solid var(--hairline); color: var(--brand); font-size: 0.68rem; cursor: pointer; font-family: var(--font-mono); touch-action: manipulation; }
 
     /* ── MODAL ── */
-    .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.75); backdrop-filter: blur(4px); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 20px; }
-    .modal-box { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; width: 100%; max-width: 520px; max-height: 90vh; display: flex; flex-direction: column; box-shadow: var(--shadow-lg); }
-    .modal-head { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+    .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.72); backdrop-filter: blur(8px); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 20px; }
+    .modal-box { background: var(--surface); border: 1px solid var(--hairline); border-radius: 20px; width: 100%; max-width: 520px; max-height: 90vh; display: flex; flex-direction: column; box-shadow: var(--sh-3); }
+    .modal-head { padding: 16px 20px; border-bottom: 1px solid var(--hairline); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
     .modal-title { font-size: 0.95rem; font-weight: 700; }
-    .modal-close { background: none; border: none; color: var(--muted); font-size: 1.1rem; cursor: pointer; padding: 4px 8px; border-radius: 6px; }
+    .modal-close { background: none; border: none; color: var(--ink-3); font-size: 1.1rem; cursor: pointer; padding: 4px 8px; border-radius: 6px; }
     .modal-body { padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; }
-    .modal-foot { padding: 14px 20px; border-top: 1px solid var(--border); display: flex; gap: 8px; flex-shrink: 0; }
+    .modal-foot { padding: 14px 20px; border-top: 1px solid var(--hairline); display: flex; gap: 8px; flex-shrink: 0; }
 
     /* ── FORM ── */
     .form-group { display: flex; flex-direction: column; gap: 6px; }
-    .form-label { font-size: 0.75rem; font-weight: 600; color: var(--text2); }
-    .form-input { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 9px 12px; font-family: 'DM Sans', sans-serif; font-size: 0.88rem; color: var(--text); outline: none; transition: border-color 0.2s; width: 100%; }
-    .form-input:focus { border-color: var(--accent2); }
-    .form-input::placeholder { color: var(--muted); }
+    .form-label { font-size: 0.72rem; font-weight: 600; color: var(--ink-2); }
+    .form-input { background: var(--surface-2); border: 1.5px solid var(--hairline-2); border-radius: 9px; padding: 9px 12px; font-family: var(--font-ui); font-size: 0.88rem; color: var(--ink); outline: none; transition: border-color 0.15s; width: 100%; }
+    .form-input:focus { border-color: var(--brand); }
+    .form-input::placeholder { color: var(--ink-4); }
     .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    .form-hint { font-size: 0.65rem; color: var(--muted); font-family: 'IBM Plex Mono', monospace; }
+    .form-hint { font-size: 0.65rem; color: var(--ink-3); font-family: var(--font-mono); }
 
     /* ── TOAST ── */
-    .toast-msg { position: fixed; bottom: 24px; right: 24px; background: var(--surface); border-radius: 10px; padding: 12px 16px; font-size: 0.82rem; box-shadow: var(--shadow-lg); z-index: 3000; animation: fadeIn 0.3s ease; }
-    .toast-msg.success { border: 1px solid var(--green); color: var(--green); }
-    .toast-msg.error   { border: 1px solid var(--red);   color: var(--red); }
+    .toast-msg { position: fixed; bottom: 24px; right: 24px; background: var(--surface); border-radius: 12px; padding: 12px 16px; font-size: 0.82rem; box-shadow: var(--sh-3); z-index: 3000; animation: fadeIn 0.3s ease; border: 1px solid var(--hairline); }
+    .toast-msg.success { border-color: var(--ok); color: var(--ok); }
+    .toast-msg.error   { border-color: var(--crit); color: var(--crit); }
 
     /* ── LOADING ── */
-    .loading-state { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 40px; color: var(--muted); }
-    .empty-state   { text-align: center; padding: 40px; color: var(--muted); font-size: 0.85rem; }
+    .loading-state { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 40px; color: var(--ink-3); }
+    .empty-state   { text-align: center; padding: 40px; color: var(--ink-3); font-size: 0.85rem; }
 
-    /* ── LOGOUT / NAV BTNS ── */
-    .nav-action-btn { padding: 7px 14px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface2); color: var(--text2); font-size: 0.82rem; cursor: pointer; transition: all 0.2s; text-decoration: none; display: inline-flex; align-items: center; }
-    .nav-action-btn:hover { border-color: var(--accent2); color: var(--accent2); }
-    .nav-action-btn.logout:hover { border-color: var(--red); color: var(--red); }
+    /* ── LEGACY BTN ALIASES (used in JS-generated HTML) ── */
+    .nav-action-btn { padding: 6px 12px; border-radius: 8px; border: 1px solid var(--hairline-2); background: var(--surface-2); color: var(--ink-2); font-size: 0.8rem; cursor: pointer; transition: all 0.15s; text-decoration: none; display: inline-flex; align-items: center; font-family: var(--font-ui); }
+    .nav-action-btn:hover { border-color: var(--brand); color: var(--brand); }
+    .nav-action-btn.logout:hover { border-color: var(--crit); color: var(--crit); }
 
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } }
     .hidden { display: none !important; }
 
     @media (max-width: 768px) {
@@ -187,17 +237,14 @@
 <body class="portal-page">
 
   <!-- NAVBAR -->
-  <nav class="navbar">
-    <div class="navbar-inner">
-      <a href="../index.html" class="nav-logo" style="padding:0;"><img src="../LAGER_APP.png" class="app-logo" data-src-light="../LAGER_APP.png" data-src-dark="../LAGER_APP_DARK.PNG" alt="LAGER//APP" style="height:32px;width:auto;display:block;object-fit:contain;"></a>
-      <div class="nav-right">
-        <span id="nav-user" class="mono text-xs text-muted hide-mobile"></span>
-        <span class="badge badge-blue hide-mobile">WACHENLEITER</span>
-        <div id="notif-btn-wrap"></div>
-        <!-- Admin Button nur wenn von Admin-Seite weitergeleitet -->
-        <button class="nav-action-btn logout" onclick="doLogout()">Abmelden</button>
-        <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()">☀️</button>
-      </div>
+  <nav class="p-nav">
+    <div class="p-wordmark">LAGER<span class="slash">//</span>APP</div>
+    <div class="p-nav-right">
+      <span id="nav-user" class="p-nav-user"></span>
+      <span class="p-badge">WACHENLEITER</span>
+      <div id="notif-btn-wrap"></div>
+      <button class="p-btn-logout" onclick="doLogout()">Abmelden</button>
+      <button class="p-theme" id="theme-toggle" onclick="toggleTheme()">☀️</button>
     </div>
   </nav>
 
@@ -257,24 +304,67 @@
 
     <!-- SIDEBAR -->
     <aside class="portal-sidebar">
+
+      <!-- Workspace switcher -->
+      <div class="sidebar-workspace">
+        <div class="sidebar-ws-icon">L</div>
+        <div>
+          <div class="sidebar-ws-name">Rettungswache</div>
+          <div class="sidebar-ws-sub">Malmsheim</div>
+        </div>
+      </div>
+
       <nav class="sidebar-nav">
-        <div class="sidebar-item active" id="nav-dashboard" onclick="showSection('dashboard')"><span class="icon">📊</span> Dashboard</div>
-        <div class="sidebar-item" id="nav-bestellungen" onclick="showSection('bestellungen')"><span class="icon">📋</span> Bestellungen</div>
-        <div class="sidebar-divider"></div>
-        <div class="sidebar-item" id="nav-chargen" onclick="showSection('chargen')"><span class="icon">🗄️</span> Chargen & Verfall</div>
-        <div class="sidebar-divider"></div>
-        <div class="sidebar-item" id="nav-artikel" onclick="showSection('artikel')"><span class="icon">📦</span> Artikelverwaltung</div>
-        <div class="sidebar-item" id="nav-bereiche" onclick="showSection('bereiche')"><span class="icon">🏠</span> Bereiche</div>
-        <div class="sidebar-divider"></div>
-        <div class="sidebar-item" id="nav-fotos" onclick="showSection('fotos')"><span class="icon">📸</span> Fotos & Bilder</div>
-        <div class="sidebar-item" id="nav-ss-fotos" onclick="showSection('ss-fotos')"><span class="icon">🃏</span> StockSwipe Fotos</div>
-        <div class="sidebar-divider"></div>
-        <div class="sidebar-item" id="nav-pin" onclick="showSection('pin')"><span class="icon">🔑</span> PIN ändern</div>
-        <div class="sidebar-divider"></div>
-        <div class="sidebar-item" id="nav-statistik" onclick="showSection('statistik')"><span class="icon">📊</span> Statistik</div>
+        <div class="sidebar-section-label">Übersicht</div>
+        <div class="sidebar-item active" id="nav-dashboard" onclick="showSection('dashboard')">
+          <svg class="s-ico" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="1" width="5" height="5" rx="1"/><rect x="8" y="1" width="5" height="5" rx="1"/><rect x="1" y="8" width="5" height="5" rx="1"/><rect x="8" y="8" width="5" height="5" rx="1"/></svg>
+          Dashboard
+        </div>
+        <div class="sidebar-item" id="nav-bestellungen" onclick="showSection('bestellungen')">
+          <svg class="s-ico" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 2h6l3 3v7a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1z"/><path d="M9 2v3h3M5 8h4M5 10.5h3"/></svg>
+          Bestellungen
+        </div>
+
+        <div class="sidebar-section-label">Lager</div>
+        <div class="sidebar-item" id="nav-chargen" onclick="showSection('chargen')">
+          <svg class="s-ico" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="10" height="8.5" rx="1.2"/><path d="M3 6h10M5 2v3M9 2v3"/></svg>
+          Chargen &amp; Verfall
+        </div>
+        <div class="sidebar-item" id="nav-artikel" onclick="showSection('artikel')">
+          <svg class="s-ico" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 1.5l5 3v5l-5 3-5-3v-5l5-3z"/><path d="M2 4.5l5 3 5-3M7 7.5V13"/></svg>
+          Artikelverwaltung
+        </div>
+        <div class="sidebar-item" id="nav-bereiche" onclick="showSection('bereiche')">
+          <svg class="s-ico" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6.5 7 2.5l5 4V12a1 1 0 0 1-1 1H8.5v-3h-3v3H3a1 1 0 0 1-1-1V6.5z"/></svg>
+          Bereiche
+        </div>
+
+        <div class="sidebar-section-label">Medien</div>
+        <div class="sidebar-item" id="nav-fotos" onclick="showSection('fotos')">
+          <svg class="s-ico" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V4z"/><circle cx="7" cy="7" r="2"/><path d="M10 4h.01"/></svg>
+          Fotos &amp; Bilder
+        </div>
+        <div class="sidebar-item" id="nav-ss-fotos" onclick="showSection('ss-fotos')">
+          <svg class="s-ico" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1.5" y="2.5" width="8" height="11" rx="1"/><rect x="4.5" y="0.5" width="8" height="11" rx="1"/></svg>
+          StockSwipe Fotos
+        </div>
+
+        <div class="sidebar-section-label">Verwaltung</div>
+        <div class="sidebar-item" id="nav-statistik" onclick="showSection('statistik')">
+          <svg class="s-ico" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 11V6M5 11V3M8 11V7M11 11V5"/></svg>
+          Statistik
+        </div>
+        <div class="sidebar-item" id="nav-pin" onclick="showSection('pin')">
+          <svg class="s-ico" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="6.5" width="7" height="5.5" rx="1"/><path d="M5 6.5V5a2 2 0 0 1 4 0v1.5"/></svg>
+          PIN ändern
+        </div>
       </nav>
+
       <div class="sidebar-bottom">
-        <a href="scanner.html" class="sidebar-item" style="text-decoration:none;"><span class="icon">📷</span> Charge-Scanner</a>
+        <a href="scanner.html" class="sidebar-item" style="text-decoration:none;">
+          <svg class="s-ico" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4.5V3a1 1 0 0 1 1-1h1.5M8.5 2H11a1 1 0 0 1 1 1v1.5M12 9.5V11a1 1 0 0 1-1 1H9.5M5.5 12H4a1 1 0 0 1-1-1V9.5M4 7h6"/></svg>
+          Charge-Scanner
+        </a>
       </div>
     </aside>
 

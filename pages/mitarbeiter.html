@@ -1,208 +1,235 @@
 <!DOCTYPE html>
-<html lang="de" data-theme="light">
+<html lang="de" data-theme="dark">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#F26B2E">
   <title>Mitarbeiter – LAGER//APP</title>
   <link rel="manifest" href="../manifest.json">
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <link rel="stylesheet" href="../css/main.css">
 
   <style>
-    :root {
-      --bg: #f9fafb; --surface: #fff; --surface2: #f3f4f6;
-      --border: #e5e7eb; --text: #111827; --text2: #374151;
-      --muted: #9ca3af; --accent: #f97316; --accent-hover: #ea6c0a;
-      --green: #22c55e; --red: #ef4444;
-    }
-    [data-theme="dark"] {
-      --bg: #0a0f1a; --surface: #111827; --surface2: #1f2937;
-      --border: #374151; --text: #f9fafb; --text2: #e5e7eb; --muted: #6b7280;
-    }
-    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-    body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; }
+    body { min-height: 100vh; display: flex; flex-direction: column; }
 
     /* ── Navbar ── */
-    nav {
+    .m-nav {
       position: sticky; top: 0; z-index: 100;
-      background: var(--surface); border-bottom: 1px solid var(--border);
-      padding: 10px 16px; display: flex; align-items: center; gap: 10px;
+      background: var(--glass-bg-strong);
+      border-bottom: 0.5px solid var(--hairline);
+      backdrop-filter: blur(24px) saturate(180%);
+      -webkit-backdrop-filter: blur(24px) saturate(180%);
+      padding: 0 16px; height: 52px;
+      display: flex; align-items: center; gap: 10px;
     }
-    .nav-back {
-      background: none; border: 1px solid var(--border); border-radius: 8px;
-      padding: 6px 12px; cursor: pointer; color: var(--text2);
-      font-family: 'DM Sans', sans-serif; font-size: 0.82rem; font-weight: 600;
+    .m-back {
+      width: 34px; height: 34px; border-radius: 17px;
+      background: var(--surface); border: none; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      color: var(--ink-2); box-shadow: inset 0 0 0 1px var(--hairline);
       touch-action: manipulation;
     }
-    .nav-logo img { height: 28px; width: auto; display: block; }
-    .nav-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
-    .theme-btn {
-      background: none; border: 1px solid var(--border); border-radius: 8px;
-      padding: 5px 9px; cursor: pointer; font-size: 0.9rem;
-    }
-    .logout-btn {
-      background: none; border: 1px solid rgba(249,115,22,0.35); border-radius: 8px;
-      padding: 5px 12px; cursor: pointer; color: var(--accent);
-      font-family: 'DM Sans', sans-serif; font-size: 0.78rem; font-weight: 600;
+    .m-nav-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+    .m-logout {
+      border: none; border-radius: var(--r-sm);
+      background: var(--brand-soft); color: var(--brand);
+      padding: 5px 12px; cursor: pointer;
+      font-family: var(--font-ui); font-size: 12px; font-weight: 600;
       touch-action: manipulation;
+    }
+    .m-theme {
+      width: 34px; height: 34px; border-radius: 17px;
+      background: var(--surface-3); border: none; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 15px;
     }
 
-    /* ── Content ── */
-    .page {
+    /* ── Page ── */
+    .m-page {
       flex: 1; display: flex; flex-direction: column;
-      padding: 28px 20px 40px; max-width: 500px; width: 100%; margin: 0 auto; gap: 28px;
+      padding: 28px 20px 60px;
+      max-width: 500px; width: 100%; margin: 0 auto; gap: 24px;
     }
 
     /* ── Greeting ── */
-    .greeting { text-align: center; }
-    .greeting-tag {
-      font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem;
-      font-weight: 600; color: var(--accent); letter-spacing: 0.06em;
-      text-transform: uppercase; margin-bottom: 6px;
+    .m-greeting {
+      display: flex; flex-direction: column; gap: 4px;
     }
-    .greeting-title {
-      font-size: 1.5rem; font-weight: 700; color: var(--text);
-      line-height: 1.25;
+    .m-tag {
+      font-family: var(--font-mono); font-size: 11px;
+      font-weight: 500; color: var(--brand); letter-spacing: 0.06em;
+      text-transform: uppercase;
     }
-    .greeting-sub {
-      font-size: 0.85rem; color: var(--muted); margin-top: 4px;
-    }
+    .m-title { font-size: 28px; font-weight: 700; letter-spacing: -0.03em; line-height: 1.2; }
+    .m-sub   { font-size: 13px; color: var(--ink-3); margin-top: 2px; }
 
-    /* ── Action Buttons ── */
-    .action-list { display: flex; flex-direction: column; gap: 14px; }
-
-    .action-btn {
-      display: flex; align-items: center; gap: 18px;
-      background: var(--surface); border: 1.5px solid var(--border);
-      border-radius: 16px; padding: 20px 22px;
-      cursor: pointer; text-decoration: none; color: var(--text);
-      transition: border-color 0.15s, background 0.15s, box-shadow 0.15s;
-      touch-action: manipulation; width: 100%;
-      font-family: 'DM Sans', sans-serif; text-align: left;
+    /* ── Session Banner ── */
+    .m-banner {
+      background: var(--surface);
+      border-radius: var(--r-xl);
+      padding: 16px;
+      box-shadow: var(--sh-1), inset 0 0 0 1px var(--brand-soft-2);
+      display: flex; flex-direction: column; gap: 12px;
     }
-    .action-btn:active { background: var(--surface2); transform: scale(0.985); }
-
-    .action-btn.primary {
-      background: var(--accent); border-color: var(--accent); color: #fff;
+    .m-banner-head { display: flex; align-items: center; gap: 10px; }
+    .m-banner-dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: var(--brand); box-shadow: 0 0 0 4px var(--brand-soft);
+      flex-shrink: 0;
     }
-    .action-btn.primary:active { background: var(--accent-hover); }
-
-    .action-btn.secondary {
-      background: rgba(14,165,233,0.08); border-color: rgba(14,165,233,0.3); color: var(--text);
+    .m-banner-title { font-size: 13px; font-weight: 600; color: var(--brand); }
+    .m-banner-sub   { font-size: 12px; color: var(--ink-3); margin-top: 2px; }
+    .m-banner-join {
+      margin-left: auto; flex-shrink: 0;
+      background: var(--brand); color: white; border: none;
+      border-radius: var(--r-sm); padding: 7px 14px;
+      font-family: var(--font-ui); font-size: 12px; font-weight: 600;
+      cursor: pointer; text-decoration: none;
     }
+    .m-banner-bereiche { display: flex; flex-direction: column; gap: 5px; border-top: 0.5px solid var(--hairline); padding-top: 10px; }
+    .m-banner-bereich-row { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--ink-2); }
 
-    .action-btn.tertiary {
-      background: rgba(34,197,94,0.07); border-color: rgba(34,197,94,0.3); color: var(--text);
+    /* ── Last order ── */
+    .m-last {
+      background: var(--surface); border-radius: var(--r-md);
+      padding: 12px 16px; display: flex; align-items: center; gap: 12px;
+      box-shadow: var(--sh-1), inset 0 0 0 0.5px var(--hairline);
     }
+    .m-last-icon { font-size: 20px; flex-shrink: 0; }
+    .m-last-label { font-family: var(--font-mono); font-size: 10px; color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.08em; }
+    .m-last-val   { font-size: 13px; font-weight: 600; margin-top: 2px; }
 
-    .btn-icon {
-      font-size: 2rem; line-height: 1; flex-shrink: 0;
+    /* ── Action list ── */
+    .m-actions { display: flex; flex-direction: column; gap: 12px; }
+
+    .m-action {
+      display: flex; align-items: center; gap: 16px;
+      background: var(--surface); border-radius: var(--r-xl);
+      padding: 18px 20px;
+      box-shadow: var(--sh-1), inset 0 0 0 0.5px var(--hairline);
+      cursor: pointer; text-decoration: none; color: var(--ink);
+      transition: transform .12s; touch-action: manipulation;
+      width: 100%; border: none; text-align: left; font-family: var(--font-ui);
     }
-    .btn-text { display: flex; flex-direction: column; gap: 2px; }
-    .btn-title { font-size: 1.1rem; font-weight: 700; line-height: 1.2; }
-    .btn-sub { font-size: 0.78rem; opacity: 0.75; font-weight: 400; }
+    .m-action:active { transform: scale(0.98); }
 
-    .action-btn.primary .btn-sub { opacity: 0.85; }
-
-    .btn-arrow {
-      margin-left: auto; font-size: 1.1rem; opacity: 0.4; flex-shrink: 0;
+    .m-action.primary {
+      background: var(--brand); color: white;
+      box-shadow: 0 6px 20px rgba(242,107,46,.35), inset 0 1px 0 rgba(255,255,255,.2);
     }
+    .m-action.swipe {
+      background: linear-gradient(135deg, var(--crit-soft), var(--ok-soft));
+      box-shadow: var(--sh-1), inset 0 0 0 0.5px var(--hairline);
+    }
+    .m-action.scan  { box-shadow: var(--sh-1), inset 0 0 0 0.5px rgba(34,197,94,.35); }
+    .m-action.verfall { box-shadow: var(--sh-1), inset 0 0 0 0.5px rgba(217,119,6,.35); }
+
+    .m-action-icon { font-size: 28px; line-height: 1; flex-shrink: 0; }
+    .m-action-body { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
+    .m-action-title { font-size: 17px; font-weight: 700; line-height: 1.2; letter-spacing: -0.01em; }
+    .m-action-sub   { font-size: 12px; opacity: 0.7; font-weight: 400; }
+    .m-action.primary .m-action-sub { opacity: 0.85; }
+    .m-action-arrow { margin-left: auto; color: inherit; opacity: 0.4; flex-shrink: 0; }
 
     /* ── Footer ── */
-    .footer {
+    .m-footer {
       text-align: center; padding: 16px;
-      font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; color: var(--muted);
+      font-family: var(--font-mono); font-size: 11px; color: var(--ink-4);
     }
   </style>
 </head>
 <body>
 
-  <nav>
-    <button class="nav-back" onclick="window.location.href='../index.html'">← Start</button>
-    <a href="../index.html" style="padding:0; margin-left:4px;">
-      <img src="../LAGER_APP.png" class="app-logo" data-src-light="../LAGER_APP.png" data-src-dark="../LAGER_APP_DARK.PNG" alt="LAGER//APP" style="height:28px;width:auto;display:block;">
-    </a>
-    <div class="nav-right">
-      <button class="logout-btn" onclick="doLogout()">Abmelden</button>
-      <button class="theme-btn" id="theme-btn" onclick="toggleTheme()">☀️</button>
+  <header class="m-nav">
+    <button class="m-back" onclick="window.location.href='../index.html'" title="Zurück">
+      <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5l-5 5 5 5"/></svg>
+    </button>
+    <span class="la-wordmark" style="font-size:14px;">LAGER<span class="slash">//</span>APP</span>
+    <div class="m-nav-right">
+      <button class="m-logout" onclick="doLogout()">Abmelden</button>
+      <button class="m-theme" id="theme-btn" onclick="toggleTheme()">☀️</button>
     </div>
-  </nav>
+  </header>
 
-  <div class="page">
-    <div class="greeting">
-      <div class="greeting-tag">DRK · Rettungswache Malmsheim</div>
-      <div class="greeting-title">Hallo, <span id="user-name">Mitarbeiter</span> 👋</div>
-      <div class="greeting-sub">Was möchtest du heute tun?</div>
+  <div class="m-page">
+
+    <!-- Greeting -->
+    <div class="m-greeting">
+      <div class="m-tag">DRK · Rettungswache Malmsheim</div>
+      <div class="m-title">Hallo, <span id="user-name">Mitarbeiter</span> 👋</div>
+      <div class="m-sub">Was möchtest du heute tun?</div>
     </div>
 
     <!-- Live Session Banner -->
-    <div id="laufende-session-banner" class="hidden" style="background:rgba(14,165,233,0.08);border:1px solid rgba(14,165,233,0.3);border-radius:14px;padding:14px 18px;gap:10px;flex-direction:column;display:none;">
-      <div style="display:flex;align-items:center;gap:10px;">
-        <span style="font-size:1.3rem;">🔒</span>
-        <div style="flex:1;">
-          <div style="font-size:0.82rem;font-weight:700;color:#0ea5e9;">Laufende Lagerbestellung</div>
-          <div id="session-banner-text" style="font-size:0.78rem;color:var(--text2);margin-top:2px;"></div>
+    <div id="laufende-session-banner" class="m-banner hidden">
+      <div class="m-banner-head">
+        <div class="m-banner-dot"></div>
+        <div>
+          <div class="m-banner-title">Laufende Lagerbestellung</div>
+          <div class="m-banner-sub" id="session-banner-text"></div>
         </div>
-        <a href="check.html" style="background:#0ea5e9;color:#fff;border:none;border-radius:10px;padding:8px 14px;font-size:0.78rem;font-weight:700;text-decoration:none;white-space:nowrap;flex-shrink:0;">Mitmachen →</a>
+        <a href="check.html" class="m-banner-join">Mitmachen →</a>
       </div>
-      <div id="session-banner-bereiche" style="display:flex;flex-direction:column;gap:5px;padding-top:4px;border-top:1px solid rgba(14,165,233,0.2);"></div>
+      <div id="session-banner-bereiche" class="m-banner-bereiche hidden"></div>
     </div>
 
     <!-- Letzte Bestellung -->
-    <div id="letzte-bestellung-info" style="background:var(--surface2);border:1px solid var(--border);border-radius:14px;padding:12px 18px;display:none;align-items:center;gap:10px;">
-      <span style="font-size:1.1rem;">📋</span>
+    <div id="letzte-bestellung-info" class="m-last hidden">
+      <div class="m-last-icon">📋</div>
       <div>
-        <div style="font-size:0.75rem;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.05em;font-family:'IBM Plex Mono',monospace;">Letzte Bestellung</div>
-        <div id="letzte-bestellung-text" style="font-size:0.85rem;font-weight:600;margin-top:2px;"></div>
+        <div class="m-last-label">Letzte Bestellung</div>
+        <div class="m-last-val" id="letzte-bestellung-text"></div>
       </div>
     </div>
 
-    <div class="action-list">
-      <a href="check.html" class="action-btn primary">
-        <span class="btn-icon">📋</span>
-        <span class="btn-text">
-          <span class="btn-title">Lagerbestellung</span>
-          <span class="btn-sub">Bestände prüfen &amp; melden</span>
+    <!-- Actions -->
+    <div class="m-actions">
+
+      <a href="check.html" class="m-action primary">
+        <span class="m-action-icon">📋</span>
+        <span class="m-action-body">
+          <span class="m-action-title">Lagerbestellung</span>
+          <span class="m-action-sub">Bestände prüfen &amp; melden</span>
         </span>
-        <span class="btn-arrow">›</span>
+        <svg class="m-action-arrow" viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 10h10M11 5l4 5-4 5"/></svg>
       </a>
 
-      <a href="stockswipe.html" class="action-btn" style="background:linear-gradient(135deg,rgba(239,68,68,0.12),rgba(34,197,94,0.12));border-color:rgba(239,68,68,0.35);">
-        <span class="btn-icon">🃏</span>
-        <span class="btn-text">
-          <span class="btn-title">StockSwipe</span>
-          <span class="btn-sub">Wischen statt tippen – neu!</span>
+      <a href="stockswipe.html" class="m-action swipe">
+        <span class="m-action-icon">🃏</span>
+        <span class="m-action-body">
+          <span class="m-action-title">StockSwipe</span>
+          <span class="m-action-sub">Wischen statt tippen – neu!</span>
         </span>
-        <span class="btn-arrow">›</span>
+        <svg class="m-action-arrow" viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 10h10M11 5l4 5-4 5"/></svg>
       </a>
 
-      <a href="scanner.html" class="action-btn secondary">
-        <span class="btn-icon">📷</span>
-        <span class="btn-text">
-          <span class="btn-title">Verfallsscan</span>
-          <span class="btn-sub">Chargen scannen &amp; erfassen</span>
+      <a href="scanner.html" class="m-action scan">
+        <span class="m-action-icon">📷</span>
+        <span class="m-action-body">
+          <span class="m-action-title">Verfallsscan</span>
+          <span class="m-action-sub">Chargen scannen &amp; erfassen</span>
         </span>
-        <span class="btn-arrow">›</span>
+        <svg class="m-action-arrow" viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 10h10M11 5l4 5-4 5"/></svg>
       </a>
 
-      <a href="verfallmonitor.html" class="action-btn tertiary">
-        <span class="btn-icon">📅</span>
-        <span class="btn-text">
-          <span class="btn-title">Verfallmonitor</span>
-          <span class="btn-sub">Was läuft diesen Monat ab?</span>
+      <a href="verfallmonitor.html" class="m-action verfall">
+        <span class="m-action-icon">📅</span>
+        <span class="m-action-body">
+          <span class="m-action-title">Verfallmonitor</span>
+          <span class="m-action-sub">Was läuft diesen Monat ab?</span>
         </span>
-        <span class="btn-arrow">›</span>
+        <svg class="m-action-arrow" viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 10h10M11 5l4 5-4 5"/></svg>
       </a>
+
     </div>
   </div>
 
-  <footer class="footer">LAGER//APP · DRK Rettungswache Malmsheim · 2026</footer>
+  <footer class="m-footer">LAGER//APP · DRK Rettungswache Malmsheim · 2026</footer>
 
+  <!-- Theme -->
   <script>
-    // ── Theme ──
     const savedTheme  = localStorage.getItem('lager-theme');
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     const initTheme   = savedTheme || (prefersDark ? 'dark' : 'light');
@@ -215,25 +242,53 @@
       localStorage.setItem('lager-theme', t);
       document.getElementById('theme-btn').textContent = t === 'dark' ? '🌙' : '☀️';
     }
+
+    function doLogout() {
+      sessionStorage.removeItem('lager-pin-auth');
+      sessionStorage.removeItem('lager-pin-name');
+      localStorage.removeItem('lager-saved-name');
+      window.location.href = '../index.html';
+    }
   </script>
 
+  <!-- Firebase compat (auth guard) -->
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+  <script>
+    const _fc = {
+      apiKey:"AIzaSyD1YY-cFQxyykfYQYPORwulzuF8t6Wgid4",
+      authDomain:"lagerbestellung-19970.firebaseapp.com",
+      projectId:"lagerbestellung-19970",
+      storageBucket:"lagerbestellung-19970.firebasestorage.app",
+      messagingSenderId:"939056339904",
+      appId:"1:939056339904:web:6f33ca2f5a4cebd2780625"
+    };
+    firebase.initializeApp(_fc);
+    firebase.auth().onAuthStateChanged(user => {
+      const pinOk = sessionStorage.getItem('lager-pin-auth');
+      if (!user && !pinOk) { window.location.href = '../index.html'; return; }
+      const name = sessionStorage.getItem('lager-pin-name') || '';
+      if (name) document.getElementById('user-name').textContent = name;
+    });
+  </script>
+
+  <!-- Live session listener -->
   <script type="module">
     import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-    import { getFirestore, collection, query, where, orderBy, limit, onSnapshot, getDocs } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+    import { getFirestore, collection, query, orderBy, limit, onSnapshot, getDocs, doc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
     import { getAuth, signInAnonymously } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 
     const firebaseConfig = {
-      apiKey:            "AIzaSyD1YY-cFQxyykfYQYPORwulzuF8t6Wgid4",
-      authDomain:        "lagerbestellung-19970.firebaseapp.com",
-      projectId:         "lagerbestellung-19970",
-      storageBucket:     "lagerbestellung-19970.firebasestorage.app",
-      messagingSenderId: "939056339904",
-      appId:             "1:939056339904:web:6f33ca2f5a4cebd2780625"
+      apiKey:"AIzaSyD1YY-cFQxyykfYQYPORwulzuF8t6Wgid4",
+      authDomain:"lagerbestellung-19970.firebaseapp.com",
+      projectId:"lagerbestellung-19970",
+      storageBucket:"lagerbestellung-19970.firebasestorage.app",
+      messagingSenderId:"939056339904",
+      appId:"1:939056339904:web:6f33ca2f5a4cebd2780625"
     };
     const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
     const db  = getFirestore(app);
 
-    // Anonym einloggen damit bestellungen_session gelesen werden darf
     try {
       const auth = getAuth(app);
       if (!auth.currentUser) await signInAnonymously(auth);
@@ -245,85 +300,52 @@
     const letzteEl      = document.getElementById('letzte-bestellung-info');
     const letzteText    = document.getElementById('letzte-bestellung-text');
 
-    // Bereiche laden für Namen-Zuordnung
     let bereiche = [];
     try {
       const bs = await getDocs(collection(db, 'bereiche'));
       bs.forEach(d => bereiche.push({ id: d.id, ...d.data() }));
     } catch(e) {}
 
-    // Live-Listener: aktive Session
-    const qSession = query(collection(db, 'bestellungen_session'), where('status', '==', 'aktiv'), limit(1));
-    onSnapshot(qSession, async (snap) => {
-      if (!snap.empty) {
-        const s = snap.docs[0].data();
-        const startMs = s.startzeit?.toMillis?.() ?? 0;
-        if (Date.now() - startMs < 8 * 3600 * 1000) {
-          const namen = (s.teilnehmer || []).map(t => t.name).join(', ');
-          bannerText.textContent = `${namen} ${namen.includes(',') ? 'machen' : 'macht'} gerade die Lagerbestellung`;
+    function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
-          // Bereiche pro Person
-          const bereichStatus = s.bereichStatus || {};
-          const zeilen = Object.entries(bereichStatus).map(([bid, bs]) => {
-            const bName = bereiche.find(b => b.id === bid)?.name || bid;
-            const dot = bs.status === 'erledigt' ? '🟢' : bs.status === 'gesperrt' ? '🔒' : bs.status === 'abgebrochen' ? '🔴' : '🟠';
-            const info = bs.status === 'gesperrt' ? `${bs.mitarbeiter} – ${bName}`
-                       : bs.status === 'erledigt' ? `${bName} ✓ (${bs.mitarbeiter})`
-                       : bName;
-            return `<div style="font-size:0.75rem;color:var(--text2);display:flex;gap:6px;align-items:center;">${dot} ${info}</div>`;
-          });
-          bannerBereiche.innerHTML = zeilen.join('') || '';
-          bannerBereiche.style.display = zeilen.length ? '' : 'none';
+    onSnapshot(doc(db, 'bestellungen_session', 'current'), async (snap) => {
+      if (snap.exists() && snap.data().status === 'aktiv') {
+        const s = snap.data();
+        const namen = (s.teilnehmer || []).map(t => t.name).join(', ');
+        bannerText.textContent = `${namen} ${namen.includes(',') ? 'machen' : 'macht'} gerade die Lagerbestellung`;
 
-          banner.style.display = 'flex';
-          letzteEl.classList.add('hidden');
-          return;
+        const bereichStatus = s.bereichStatus || {};
+        const zeilen = Object.entries(bereichStatus).map(([bid, bs]) => {
+          const bName = bereiche.find(b => b.id === bid)?.name || bid;
+          const dot = bs.status === 'erledigt' ? '🟢' : bs.status === 'gesperrt' ? '🔒' : bs.status === 'abgebrochen' ? '🔴' : '🟠';
+          const info = bs.status === 'gesperrt' ? `${esc(bs.mitarbeiter)} – ${esc(bName)}`
+                     : bs.status === 'erledigt' ? `${esc(bName)} ✓ (${esc(bs.mitarbeiter)})`
+                     : esc(bName);
+          return `<div class="m-banner-bereich-row">${dot} ${info}</div>`;
+        });
+        if (zeilen.length) {
+          bannerBereiche.innerHTML = zeilen.join('');
+          bannerBereiche.classList.remove('hidden');
+        } else {
+          bannerBereiche.classList.add('hidden');
         }
+        banner.classList.remove('hidden');
+        letzteEl.classList.add('hidden');
+        return;
       }
-      // Keine aktive Session → "Letzte Bestellung" laden
-      banner.style.display = 'none';
+
+      banner.classList.add('hidden');
       try {
         const qLast = query(collection(db, 'bestellungen'), orderBy('datum', 'desc'), limit(1));
         const lastSnap = await getDocs(qLast);
         if (!lastSnap.empty) {
           const b = lastSnap.docs[0].data();
           const d = b.datum?.toDate ? b.datum.toDate() : new Date(b.datum);
-          const wer = b.mitarbeiter || '–';
-          letzteText.textContent = `${d.toLocaleDateString('de-DE')} · ${wer}`;
-          letzteEl.style.display = 'flex';
-        } else {
-          letzteEl.style.display = 'none';
+          letzteText.textContent = `${d.toLocaleDateString('de-DE')} · ${b.mitarbeiter || '–'}`;
+          letzteEl.classList.remove('hidden');
         }
-      } catch(e) { letzteEl.style.display = 'none'; }
+      } catch(e) {}
     }, () => {});
-  </script>
-
-  <script>
-    const firebaseConfig = {
-      apiKey:            "AIzaSyD1YY-cFQxyykfYQYPORwulzuF8t6Wgid4",
-      authDomain:        "lagerbestellung-19970.firebaseapp.com",
-      projectId:         "lagerbestellung-19970",
-      storageBucket:     "lagerbestellung-19970.firebasestorage.app",
-      messagingSenderId: "939056339904",
-      appId:             "1:939056339904:web:6f33ca2f5a4cebd2780625"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const auth = firebase.auth();
-
-    auth.onAuthStateChanged(user => {
-      const pinOk = sessionStorage.getItem('lager-pin-auth');
-      if (!user && !pinOk) { window.location.href = '../index.html'; return; }
-      const name = sessionStorage.getItem('lager-pin-name') || '';
-      if (name) document.getElementById('user-name').textContent = name;
-    });
-
-    function doLogout() {
-      sessionStorage.removeItem('lager-pin-auth');
-      sessionStorage.removeItem('lager-pin-name');
-      localStorage.removeItem('lager-saved-name');
-      auth.signOut().catch(() => {});
-      window.location.href = '../index.html';
-    }
   </script>
 </body>
 </html>
