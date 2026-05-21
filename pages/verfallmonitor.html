@@ -2,181 +2,185 @@
 <html lang="de" data-theme="light">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#F26B2E">
   <title>Verfallmonitor – LAGER//APP</title>
   <link rel="manifest" href="../manifest.json">
-  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../css/main.css">
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 
   <style>
-    :root {
-      --bg: #f9fafb; --surface: #fff; --surface2: #f3f4f6;
-      --border: #e5e7eb; --text: #111827; --text2: #374151;
-      --muted: #9ca3af; --accent: #f97316;
-      --red: #ef4444; --orange: #f97316; --green: #22c55e;
-    }
-    [data-theme="dark"] {
-      --bg: #0a0f1a; --surface: #111827; --surface2: #1f2937;
-      --border: #374151; --text: #f9fafb; --text2: #e5e7eb; --muted: #6b7280;
-    }
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-    body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; display: flex; flex-direction: column; }
+    html, body { min-height: 100dvh; background: var(--bg); color: var(--ink); font-family: var(--font-ui); }
 
-    /* ── Navbar ── */
-    nav {
+    /* ── Nav ── */
+    .vm-nav {
       position: sticky; top: 0; z-index: 100;
-      background: var(--surface); border-bottom: 1px solid var(--border);
-      padding: 10px 16px; display: flex; align-items: center; gap: 10px;
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 20px;
+      padding-top: calc(12px + env(safe-area-inset-top));
+      background: var(--glass-bg-strong);
+      border-bottom: 0.5px solid var(--hairline);
+      backdrop-filter: blur(24px) saturate(180%);
+      -webkit-backdrop-filter: blur(24px) saturate(180%);
     }
-    .nav-back {
-      background: none; border: 1px solid var(--border); border-radius: 8px;
-      padding: 6px 12px; cursor: pointer; color: var(--text2);
-      font-family: 'DM Sans', sans-serif; font-size: 0.82rem; font-weight: 600;
-      touch-action: manipulation;
+    .vm-nav-back {
+      width: 36px; height: 36px; border-radius: 50%;
+      background: var(--surface); border: none;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; box-shadow: inset 0 0 0 1px var(--hairline);
+      color: var(--ink-2); flex-shrink: 0;
     }
-    .nav-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
-    .theme-btn {
-      background: none; border: 1px solid var(--border); border-radius: 8px;
-      padding: 5px 9px; cursor: pointer; font-size: 0.9rem;
+    .vm-wordmark {
+      font-family: var(--font-mono); font-size: 14px; font-weight: 700;
+      color: var(--ink); text-decoration: none; flex: 1;
+    }
+    .vm-wordmark .slash { color: var(--brand); }
+    .vm-theme {
+      width: 34px; height: 34px; border-radius: 50%;
+      background: var(--surface); border: none;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer; box-shadow: inset 0 0 0 1px var(--hairline);
+      font-size: 15px;
     }
 
     /* ── Page ── */
-    .page { flex: 1; padding: 20px 16px 40px; max-width: 600px; width: 100%; margin: 0 auto; display: flex; flex-direction: column; gap: 20px; }
+    .vm-page { padding-bottom: 120px; }
+    .vm-header { padding: 24px 20px 0; }
 
-    /* ── Header ── */
-    .page-header { }
-    .page-tag {
-      font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; font-weight: 600;
-      color: var(--accent); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 4px;
-    }
-    .page-title { font-size: 1.4rem; font-weight: 700; }
-    .page-sub { font-size: 0.82rem; color: var(--muted); margin-top: 2px; }
-
-    /* ── KPI Row ── */
-    .kpi-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    .kpi-card {
-      background: var(--surface); border: 1.5px solid var(--border);
-      border-radius: 14px; padding: 18px 16px; text-align: center;
-    }
-    .kpi-card.red  { border-color: rgba(239,68,68,0.4);  background: rgba(239,68,68,0.06); }
-    .kpi-card.orange { border-color: rgba(249,115,22,0.4); background: rgba(249,115,22,0.06); }
-    .kpi-value { font-size: 2.4rem; font-weight: 700; line-height: 1; font-family: 'IBM Plex Mono', monospace; }
-    .kpi-card.red    .kpi-value { color: var(--red); }
-    .kpi-card.orange .kpi-value { color: var(--orange); }
-    .kpi-label { font-size: 0.78rem; color: var(--text2); margin-top: 4px; font-weight: 600; }
-
-    /* ── Loading / Empty ── */
-    .loading-state {
-      display: flex; flex-direction: column; align-items: center;
-      gap: 12px; padding: 48px 0; color: var(--muted); font-size: 0.85rem;
-    }
-    .spinner {
-      width: 28px; height: 28px; border: 3px solid var(--border);
-      border-top-color: var(--accent); border-radius: 50%;
-      animation: spin 0.7s linear infinite;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    .empty-state {
-      text-align: center; padding: 48px 16px; display: flex;
-      flex-direction: column; align-items: center; gap: 10px;
-    }
-    .empty-icon { font-size: 2.8rem; }
-    .empty-title { font-size: 1.05rem; font-weight: 700; color: var(--green); }
-    .empty-sub { font-size: 0.82rem; color: var(--muted); }
-
-    /* ── List ── */
-    .section-label {
-      font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; font-weight: 600;
-      color: var(--muted); letter-spacing: 0.05em; text-transform: uppercase;
-      margin-bottom: 8px;
+    /* ── Heatmap card ── */
+    .vm-heatmap-card {
+      background: var(--surface); border-radius: 18px; padding: 14px;
+      box-shadow: var(--sh-1), inset 0 0 0 0.5px var(--hairline);
     }
 
-    .verfall-list { display: flex; flex-direction: column; gap: 10px; }
+    /* ── List item (verfall) ── */
+    .verfall-item {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 14px; min-height: 64px; position: relative;
+    }
+    .verfall-item + .verfall-item { border-top: 0.5px solid var(--hairline); }
+    .verfall-accent {
+      position: absolute; left: 0; top: 8px; bottom: 8px;
+      width: 3px; border-radius: 0 3px 3px 0;
+    }
+    .verfall-accent.crit { background: var(--crit); }
+    .verfall-accent.low  { background: var(--low); }
 
-    .verfall-card {
-      display: flex; align-items: stretch; background: var(--surface);
-      border: 1px solid var(--border); border-radius: 14px; overflow: hidden;
+    /* ── Group header ── */
+    .vm-group-header {
+      display: flex; align-items: center; gap: 8px;
+      padding: 16px 4px 10px;
     }
-    .verfall-strip {
-      width: 5px; flex-shrink: 0;
-    }
-    .verfall-strip.red    { background: var(--red); }
-    .verfall-strip.orange { background: var(--orange); }
 
-    .verfall-body {
-      flex: 1; padding: 14px 16px; display: flex; flex-direction: column; gap: 4px;
+    /* ── FAB ── */
+    .vm-fab {
+      position: fixed; bottom: calc(42px + env(safe-area-inset-bottom)); right: 18px;
+      height: 56px; padding: 0 18px; border-radius: 28px;
+      background: var(--brand); color: white;
+      display: flex; align-items: center; gap: 8px;
+      box-shadow: 0 12px 28px rgba(242,107,46,.4);
+      font-size: 15px; font-weight: 600;
+      border: none; cursor: pointer;
+      font-family: var(--font-ui);
+      z-index: 50; text-decoration: none;
     }
-    .verfall-top {
-      display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
-    }
-    .verfall-name { font-size: 1rem; font-weight: 700; line-height: 1.2; }
-    .verfall-bereich {
-      font-size: 0.7rem; font-weight: 600; padding: 2px 8px;
-      border-radius: 20px; background: var(--surface2); color: var(--muted);
-      white-space: nowrap;
-    }
-    .verfall-bottom {
-      font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; color: var(--muted);
-    }
-    .verfall-status {
-      font-size: 0.72rem; font-weight: 600; margin-top: 2px;
-    }
-    .verfall-status.red    { color: var(--red); }
-    .verfall-status.orange { color: var(--orange); }
 
-    /* ── Footer ── */
-    .footer {
-      text-align: center; padding: 16px;
-      font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; color: var(--muted);
+    /* ── Empty ── */
+    .vm-empty {
+      text-align: center; padding: 60px 24px;
+      display: flex; flex-direction: column; align-items: center; gap: 12px;
+    }
+
+    /* ── Spinner ── */
+    @keyframes vm-spin { to { transform: rotate(360deg); } }
+    .vm-spinner {
+      width: 28px; height: 28px;
+      border: 2px solid var(--surface-3);
+      border-top-color: var(--brand);
+      border-radius: 50%;
+      animation: vm-spin 0.7s linear infinite;
     }
   </style>
 </head>
 <body>
 
-  <nav>
-    <button class="nav-back" onclick="history.back()">← Zurück</button>
-    <a href="../index.html" style="padding:0; margin-left:4px;">
-      <img src="../LAGER_APP.png" class="app-logo" data-src-light="../LAGER_APP.png" data-src-dark="../LAGER_APP_DARK.PNG" alt="LAGER//APP" style="height:28px;width:auto;display:block;">
-    </a>
-    <div class="nav-right">
-      <button class="theme-btn" id="theme-btn" onclick="toggleTheme()">☀️</button>
-    </div>
+  <!-- Nav -->
+  <nav class="vm-nav">
+    <button class="vm-nav-back" onclick="history.back()">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+    </button>
+    <a href="../index.html" class="vm-wordmark">LAGER<span class="slash">//</span>APP</a>
+    <button class="vm-theme" id="theme-btn" onclick="toggleTheme()">☀️</button>
   </nav>
 
-  <div class="page">
-    <div class="page-header">
-      <div class="page-tag">Verfallmonitor</div>
-      <div class="page-title">📅 Ablaufende Chargen</div>
-      <div class="page-sub" id="page-sub">Wird geladen…</div>
+  <!-- Page -->
+  <div class="vm-page">
+
+    <!-- Header -->
+    <div class="vm-header">
+
+      <!-- Title -->
+      <div style="font-size:28px;font-weight:700;letter-spacing:-0.6px;line-height:1.1;margin-bottom:14px;">
+        Verfälle<span style="color:var(--ink-3);font-weight:600;" id="page-month-label"> · Mai 26</span>
+      </div>
+
+      <!-- KPI counter cards -->
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:20px;">
+        <div style="background:var(--crit-soft);border-radius:14px;padding:10px 12px;">
+          <div class="la-stat">
+            <span class="lbl" style="color:var(--crit)">Akut</span>
+            <span class="val" style="color:var(--crit);font-size:24px;" id="kpi-ueberfaellig">–</span>
+          </div>
+        </div>
+        <div style="background:var(--low-soft);border-radius:14px;padding:10px 12px;">
+          <div class="la-stat">
+            <span class="lbl" style="color:var(--low)">≤30 T</span>
+            <span class="val" style="color:var(--low);font-size:24px;" id="kpi-diesen-monat">–</span>
+          </div>
+        </div>
+        <div style="background:var(--surface);border-radius:14px;padding:10px 12px;box-shadow:inset 0 0 0 0.5px var(--hairline);">
+          <div class="la-stat">
+            <span class="lbl" style="color:var(--ink-2)">Folge</span>
+            <span class="val" style="color:var(--ink-2);font-size:24px;" id="kpi-folge">–</span>
+          </div>
+        </div>
+      </div>
     </div>
 
-    <!-- KPI -->
-    <div class="kpi-row">
-      <div class="kpi-card red">
-        <div class="kpi-value" id="kpi-ueberfaellig">–</div>
-        <div class="kpi-label">🔴 Überfällig</div>
-      </div>
-      <div class="kpi-card orange">
-        <div class="kpi-value" id="kpi-diesen-monat">–</div>
-        <div class="kpi-label">🟠 Dieser Monat</div>
-      </div>
-    </div>
+    <!-- Body -->
+    <div style="padding:0 16px;">
 
-    <!-- Content -->
-    <div id="content">
-      <div class="loading-state">
-        <div class="spinner"></div>
-        <span>Verbinde mit Firebase…</span>
+      <!-- Heatmap -->
+      <div style="font-size:11px;font-weight:600;color:var(--ink-3);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px;padding-left:4px;">
+        Verfallskalender — 6 Monate
       </div>
+      <div class="vm-heatmap-card" id="heatmap-card">
+        <!-- rendered by JS -->
+      </div>
+
+      <!-- Dynamic groups -->
+      <div id="content" style="margin-top:4px;">
+        <div style="display:flex;align-items:center;gap:12px;padding:60px 0;justify-content:center;">
+          <div class="vm-spinner"></div>
+          <span style="color:var(--ink-3);font-size:14px;">Verbinde mit Firebase…</span>
+        </div>
+      </div>
+
     </div>
   </div>
 
-  <footer class="footer">LAGER//APP · DRK Rettungswache Malmsheim · 2026</footer>
+  <!-- FAB -->
+  <a href="./scanner.html" class="vm-fab">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5V3h2M13 5V3h2M3 11V9M3 19v-2M3 14H1M21 14h-2M5 3H3v2M21 3h-2v2M21 9V7M21 19v-2M19 21h2v-2M3 21h2v-2M14 21h-2v-2"/></svg>
+    Charge scannen
+  </a>
 
   <script>
     // ── Theme ──
@@ -192,6 +196,60 @@
       localStorage.setItem('lager-theme', t);
       document.getElementById('theme-btn').textContent = t === 'dark' ? '🌙' : '☀️';
     }
+
+    // ── Build heatmap (dynamic, updated after data loads) ──
+    let heatmapData = [];
+
+    function initHeatmap() {
+      const now = new Date();
+      const mNames = ['JAN','FEB','MRZ','APR','MAI','JUN','JUL','AUG','SEP','OKT','NOV','DEZ'];
+      heatmapData = [];
+      for (let i = 0; i < 6; i++) {
+        const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
+        heatmapData.push({
+          lbl: mNames[d.getMonth()] + ' ' + String(d.getFullYear()).slice(2),
+          year: d.getFullYear(),
+          month: d.getMonth(),
+          cells: [0, 0, 0, 0, 0]
+        });
+      }
+      renderHeatmap();
+    }
+
+    function updateHeatmap(entries) {
+      entries.forEach(e => {
+        const d = new Date(e.verfall);
+        const bucket = heatmapData.find(h => h.year === d.getFullYear() && h.month === d.getMonth());
+        if (bucket) {
+          const weekIdx = Math.min(Math.floor((d.getDate() - 1) / 7), 4);
+          bucket.cells[weekIdx]++;
+        }
+      });
+      renderHeatmap();
+    }
+
+    function renderHeatmap() {
+      const cellColor = v => v >= 3 ? 'var(--crit)' : v >= 2 ? 'var(--low)' : v >= 1 ? 'var(--brand)' : 'var(--surface-3)';
+      let html = '';
+      heatmapData.forEach((r, i) => {
+        html += `<div style="display:flex;align-items:center;gap:10px;margin-bottom:${i === heatmapData.length-1 ? '0' : '6px'}">`;
+        html += `<div style="font-family:var(--font-mono);font-size:10px;color:var(--ink-3);width:52px;flex-shrink:0">${r.lbl}</div>`;
+        html += `<div style="display:flex;gap:4px;flex:1">`;
+        r.cells.forEach(v => {
+          html += `<div style="flex:1;height:22px;border-radius:5px;background:${cellColor(v)};display:flex;align-items:center;justify-content:center;color:${v>=1?'white':'var(--ink-4)'};font-family:var(--font-mono);font-size:10px;font-weight:600">${v>0?v:''}</div>`;
+        });
+        html += `</div></div>`;
+      });
+      html += `<div style="display:flex;align-items:center;gap:8px;margin-top:12px;font-size:10px;color:var(--ink-3);font-family:var(--font-mono)">`;
+      html += `<span>weniger</span>`;
+      ['var(--surface-3)','var(--brand)','var(--low)','var(--crit)'].forEach(c => {
+        html += `<span style="width:14px;height:10px;border-radius:2px;background:${c};display:inline-block;flex-shrink:0"></span>`;
+      });
+      html += `<span>mehr</span></div>`;
+      document.getElementById('heatmap-card').innerHTML = html;
+    }
+
+    initHeatmap();
   </script>
 
   <script>
@@ -216,125 +274,154 @@
 
     // ── Load & Render ──
     async function loadData() {
-      const now       = new Date();
-      const thisYear  = now.getFullYear();
-      const thisMonth = now.getMonth(); // 0-based
+      const now        = new Date();
+      const thisYear   = now.getFullYear();
+      const thisMonth  = now.getMonth();
       const monthPrefix = `${thisYear}-${String(thisMonth + 1).padStart(2, '0')}`;
       const monthStart  = new Date(thisYear, thisMonth, 1);
+      // next 6 months end
+      const sixMonthsEnd = new Date(thisYear, thisMonth + 6, 0);
 
-      // Update subtitle
-      const monthNames = ['Januar','Februar','März','April','Mai','Juni','Juli','August','September','Oktober','November','Dezember'];
-      document.getElementById('page-sub').textContent = `${monthNames[thisMonth]} ${thisYear}`;
+      // Update month label
+      const mNames = ['Jan','Feb','Mär','Apr','Mai','Jun','Jul','Aug','Sep','Okt','Nov','Dez'];
+      document.getElementById('page-month-label').textContent = ` · ${mNames[thisMonth]} ${String(thisYear).slice(2)}`;
 
       try {
         const snap = await db.collection('artikel').get();
-        const entries = []; // { name, bereich, lot, verfall, status: 'ueberfaellig'|'diesen-monat' }
+        const entries = [];
 
         snap.forEach(doc => {
           const a = doc.data();
-          const chargen = a.chargen || [];
-          chargen.forEach(c => {
+          (a.chargen || []).forEach(c => {
             if (!c.verfall) return;
             const verfallDate = new Date(c.verfall);
             const isUeberfaellig = verfallDate < monthStart;
             const isDiesenMonat  = c.verfall.startsWith(monthPrefix);
-            if (!isUeberfaellig && !isDiesenMonat) return;
+            const isFolge = verfallDate > new Date(thisYear, thisMonth + 1, 0) && verfallDate <= sixMonthsEnd;
+
+            if (!isUeberfaellig && !isDiesenMonat && !isFolge) return;
 
             entries.push({
               name:    a.name || '–',
               bereich: a.bereich || '–',
               lot:     c.lot || '–',
               verfall: c.verfall,
-              status:  isUeberfaellig ? 'ueberfaellig' : 'diesen-monat'
+              status:  isUeberfaellig ? 'ueberfaellig' : isDiesenMonat ? 'diesen-monat' : 'folge'
             });
           });
         });
 
-        // Sort: überfällig first, then by date ascending
         entries.sort((a, b) => {
-          if (a.status !== b.status) return a.status === 'ueberfaellig' ? -1 : 1;
+          const ord = { ueberfaellig: 0, 'diesen-monat': 1, folge: 2 };
+          if (ord[a.status] !== ord[b.status]) return ord[a.status] - ord[b.status];
           return a.verfall.localeCompare(b.verfall);
         });
 
-        const countUeberfaellig  = entries.filter(e => e.status === 'ueberfaellig').length;
-        const countDiesenMonat   = entries.filter(e => e.status === 'diesen-monat').length;
+        const countUeberfaellig = entries.filter(e => e.status === 'ueberfaellig').length;
+        const countDiesenMonat  = entries.filter(e => e.status === 'diesen-monat').length;
+        const countFolge        = entries.filter(e => e.status === 'folge').length;
 
-        document.getElementById('kpi-ueberfaellig').textContent  = countUeberfaellig;
-        document.getElementById('kpi-diesen-monat').textContent  = countDiesenMonat;
+        document.getElementById('kpi-ueberfaellig').textContent = countUeberfaellig;
+        document.getElementById('kpi-diesen-monat').textContent = countDiesenMonat;
+        document.getElementById('kpi-folge').textContent        = countFolge;
+
+        // Update heatmap with real data
+        updateHeatmap(entries);
 
         renderEntries(entries);
       } catch (e) {
         document.getElementById('content').innerHTML =
-          `<div class="loading-state" style="color:var(--red)">⚠️ Fehler: ${e.message}</div>`;
+          `<div style="color:var(--crit);padding:20px;text-align:center;font-size:14px;">⚠️ Fehler: ${e.message}</div>`;
       }
     }
 
     function formatVerfall(iso) {
-      // 'YYYY-MM-DD' → 'MM/YYYY'
       const parts = iso.split('-');
       if (parts.length < 2) return iso;
       return `${parts[1]}/${parts[0]}`;
     }
 
-    function renderEntries(entries) {
-      const container = document.getElementById('content');
-      if (entries.length === 0) {
-        container.innerHTML = `
-          <div class="empty-state">
-            <div class="empty-icon">✅</div>
-            <div class="empty-title">Alles in Ordnung</div>
-            <div class="empty-sub">Keine Chargen laufen diesen Monat ab</div>
-          </div>`;
-        return;
-      }
-
-      let html = '<div class="verfall-list">';
-
-      // Section: Überfällig
-      const ueberfaellig = entries.filter(e => e.status === 'ueberfaellig');
-      if (ueberfaellig.length > 0) {
-        html += `<div class="section-label">🔴 Überfällig (${ueberfaellig.length})</div>`;
-        ueberfaellig.forEach(e => { html += buildCard(e); });
-      }
-
-      // Section: Dieser Monat
-      const diesenMonat = entries.filter(e => e.status === 'diesen-monat');
-      if (diesenMonat.length > 0) {
-        if (ueberfaellig.length > 0) html += '<div style="height:8px"></div>';
-        html += `<div class="section-label">🟠 Läuft diesen Monat ab (${diesenMonat.length})</div>`;
-        diesenMonat.forEach(e => { html += buildCard(e); });
-      }
-
-      html += '</div>';
-      container.innerHTML = html;
+    function daysLabel(verfallIso) {
+      const today = new Date(); today.setHours(0,0,0,0);
+      const end   = new Date(verfallIso); end.setHours(0,0,0,0);
+      const diff  = Math.round((end - today) / 86400000);
+      if (diff < 0)  return `−${Math.abs(diff)} Tag${Math.abs(diff) === 1 ? '' : 'e'}`;
+      if (diff === 0) return 'Heute';
+      return `${diff} Tag${diff === 1 ? '' : 'e'}`;
     }
 
-    function daysLabel(verfallIso) {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const end = new Date(verfallIso);
-      end.setHours(0, 0, 0, 0);
-      const diff = Math.round((end - today) / (1000 * 60 * 60 * 24));
-      if (diff < 0)  return `Seit ${Math.abs(diff)} Tag${Math.abs(diff) === 1 ? '' : 'en'} abgelaufen`;
-      if (diff === 0) return 'Läuft heute ab';
-      return `Noch ${diff} Tag${diff === 1 ? '' : 'e'}`;
+    function groupHeader(lbl, sub, tone, count) {
+      const color = tone === 'crit' ? 'var(--crit)' : tone === 'low' ? 'var(--low)' : 'var(--ink-4)';
+      return `<div class="vm-group-header">
+        <span style="width:4px;height:12px;border-radius:2px;background:${color};display:inline-block;flex-shrink:0"></span>
+        <span style="font-size:11px;font-weight:600;color:var(--ink-3);text-transform:uppercase;letter-spacing:0.06em">${lbl}</span>
+        <span style="font-size:11px;color:var(--ink-3)">· ${sub}</span>
+        <span style="flex:1"></span>
+        <span style="font-size:11px;color:var(--ink-2);font-family:var(--font-mono)">${count}</span>
+      </div>`;
     }
 
     function buildCard(e) {
-      const color = e.status === 'ueberfaellig' ? 'red' : 'orange';
-      const statusText = daysLabel(e.verfall);
-      return `
-        <div class="verfall-card">
-          <div class="verfall-strip ${color}"></div>
-          <div class="verfall-body">
-            <div class="verfall-top">
-              <span class="verfall-name">${e.name}</span>
-              <span class="verfall-bereich">${e.bereich}</span>
-            </div>
-            <div class="verfall-bottom">LOT: ${e.lot} &nbsp;·&nbsp; ${formatVerfall(e.verfall)}</div>
-            <div class="verfall-status ${color}">${statusText}</div>
-          </div>
+      const isCrit = e.status === 'ueberfaellig';
+      const isLow  = e.status === 'diesen-monat';
+      const tone   = isCrit ? 'crit' : isLow ? 'low' : 'neutral';
+      const chipCls = isCrit ? 'crit' : isLow ? 'low' : 'neutral';
+      const diff   = daysLabel(e.verfall);
+      return `<div class="verfall-item">
+        <div class="verfall-accent ${tone}"></div>
+        <div style="flex:1;min-width:0;padding-left:4px">
+          <div style="font-size:14px;font-weight:600;line-height:1.3">${esc(e.name)}</div>
+          <div style="font-size:11px;color:var(--ink-3);margin-top:2px;font-family:var(--font-mono)">LOT ${esc(e.lot)} · ${formatVerfall(e.verfall)}</div>
+        </div>
+        <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0">
+          <span class="la-chip ${chipCls}" style="height:20px"><span class="dot"></span>${diff}</span>
+          <span style="font-size:10px;color:var(--ink-3)">${esc(e.bereich)}</span>
+        </div>
+      </div>`;
+    }
+
+    function esc(str) {
+      return String(str ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    function renderEntries(entries) {
+      const container = document.getElementById('content');
+      if (entries.length === 0) {
+        container.innerHTML = `<div class="vm-empty">
+          <div style="font-size:3rem">✅</div>
+          <div style="font-size:16px;font-weight:700;color:var(--ok)">Alles in Ordnung</div>
+          <div style="font-size:13px;color:var(--ink-3)">Keine Chargen laufen diesen Monat ab</div>
         </div>`;
+        return;
+      }
+
+      let html = '';
+
+      const ueberfaellig = entries.filter(e => e.status === 'ueberfaellig');
+      if (ueberfaellig.length > 0) {
+        html += groupHeader('Diese Woche', 'Abgelaufen oder ≤ 7 Tage', 'crit', ueberfaellig.length);
+        html += `<div class="la-list" style="box-shadow:inset 0 0 0 0.5px var(--hairline)">`;
+        ueberfaellig.forEach(e => { html += buildCard(e); });
+        html += `</div>`;
+      }
+
+      const diesenMonat = entries.filter(e => e.status === 'diesen-monat');
+      if (diesenMonat.length > 0) {
+        html += groupHeader('Diesen Monat', '≤ 30 Tage', 'low', diesenMonat.length);
+        html += `<div class="la-list" style="box-shadow:inset 0 0 0 0.5px var(--hairline)">`;
+        diesenMonat.forEach(e => { html += buildCard(e); });
+        html += `</div>`;
+      }
+
+      const folge = entries.filter(e => e.status === 'folge');
+      if (folge.length > 0) {
+        html += groupHeader('Folgemonate', '> 30 Tage', 'neutral', folge.length);
+        html += `<div class="la-list" style="box-shadow:inset 0 0 0 0.5px var(--hairline)">`;
+        folge.forEach(e => { html += buildCard(e); });
+        html += `</div>`;
+      }
+
+      container.innerHTML = html;
     }
   </script>
 </body>

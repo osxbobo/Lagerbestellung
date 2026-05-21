@@ -132,18 +132,21 @@
       min-height: 0;
     }
 
+    /* ── SWIPE CARD (new design: rounded 28px, upper photo / lower info) ── */
     .swipe-card {
       position: absolute;
       inset: 0;
-      border-radius: 20px;
+      border-radius: 28px;
       overflow: hidden;
-      background: var(--surface2);
-      box-shadow: 0 10px 40px rgba(0,0,0,0.4);
+      background: var(--surface);
+      box-shadow: 0 24px 56px rgba(0,0,0,.18), 0 2px 6px rgba(0,0,0,.08), inset 0 0 0 0.5px var(--hairline);
       will-change: transform;
       cursor: grab;
       -webkit-user-select: none;
       user-select: none;
       touch-action: none;
+      display: flex;
+      flex-direction: column;
     }
 
     .swipe-card:active { cursor: grabbing; }
@@ -151,10 +154,16 @@
     .swipe-card.back-card {
       z-index: 1;
       transform: scale(0.94) translateY(24px);
+      box-shadow: 0 8px 20px rgba(0,0,0,.10), inset 0 0 0 0.5px var(--hairline);
     }
 
-    .swipe-card.top-card {
-      z-index: 2;
+    .swipe-card.top-card { z-index: 2; }
+
+    /* Upper 60%: product photo area */
+    .card-photo-area {
+      flex: 1 1 58%;
+      position: relative;
+      overflow: hidden;
     }
 
     .card-photo {
@@ -163,37 +172,55 @@
       object-fit: cover;
       display: block;
       pointer-events: none;
-      position: absolute;
-      inset: 0;
     }
 
     .card-photo-placeholder {
-      position: absolute;
-      inset: 0;
+      width: 100%; height: 100%;
       display: flex;
       align-items: center;
       justify-content: center;
-      background: var(--surface2);
-      font-size: 5rem;
+      background: linear-gradient(135deg, #E7E2DA 0%, #D9D2C5 100%);
+      color: rgba(60,50,35,.45);
+      font-family: var(--font-mono, 'IBM Plex Mono', monospace);
+      font-size: 2.8rem; font-weight: 600; letter-spacing: 0.04em;
+    }
+    [data-theme="dark"] .card-photo-placeholder {
+      background: linear-gradient(135deg, #2E2A24 0%, #221E18 100%);
+      color: rgba(255,235,210,.45);
     }
 
-    .card-footer-gradient {
-      position: absolute;
-      bottom: 0; left: 0; right: 0;
-      padding: 80px 20px 24px;
-      background: linear-gradient(to bottom, transparent 0%, rgba(0,0,0,0.7) 50%, rgba(0,0,0,0.93) 100%);
-      pointer-events: none;
+    /* Overlay badges on photo */
+    .card-photo-badges {
+      position: absolute; top: 14px; left: 14px;
+      display: flex; gap: 8px; align-items: center;
     }
+    .card-lp-badge {
+      height: 22px; padding: 0 8px;
+      border-radius: 6px;
+      background: var(--surface); box-shadow: var(--sh-1, 0 1px 4px rgba(0,0,0,.12));
+      font-family: var(--font-mono, 'IBM Plex Mono', monospace);
+      font-size: 11px; font-weight: 700; color: var(--ink, #111);
+      display: flex; align-items: center;
+    }
+    .card-state-badge {
+      height: 22px; padding: 0 8px; border-radius: 11px;
+      font-size: 11px; font-weight: 600;
+      display: flex; align-items: center; gap: 4px;
+    }
+    .card-state-badge.crit { background: var(--crit-soft, rgba(239,68,68,.12)); color: var(--crit, #ef4444); }
+    .card-state-badge.low  { background: var(--low-soft,  rgba(234,179,8,.12)); color: var(--low,  #ca8a04); }
+    .card-state-badge.ok   { background: var(--ok-soft,   rgba(34,197,94,.12)); color: var(--ok,   #16a34a); }
+    .card-state-dot { width:6px;height:6px;border-radius:50%;background:currentColor; }
 
     .card-info-btn {
       position: absolute;
       top: 14px; right: 14px;
-      width: 40px; height: 40px;
+      width: 36px; height: 36px;
       border-radius: 50%;
       background: rgba(0,0,0,0.45);
       border: 1.5px solid rgba(255,255,255,0.4);
       color: white;
-      font-size: 1rem;
+      font-size: 0.9rem;
       cursor: pointer;
       display: flex;
       align-items: center;
@@ -205,101 +232,130 @@
       -webkit-backdrop-filter: blur(6px);
       transition: transform 0.15s;
     }
-
     .card-info-btn:active { transform: scale(0.88); }
 
-    .card-name {
-      font-size: 1.55rem;
-      font-weight: 800;
-      color: white;
-      line-height: 1.2;
-      text-shadow: 0 2px 8px rgba(0,0,0,0.5);
-      margin-bottom: 5px;
+    /* Swipe direction glow */
+    .card-swipe-glow {
+      position: absolute; inset: 0; pointer-events: none; opacity: 0;
+      transition: opacity 0.15s;
     }
+    .card-swipe-glow.right { background: linear-gradient(90deg, transparent 50%, rgba(22,163,74,.18) 100%); }
+    .card-swipe-glow.left  { background: linear-gradient(270deg, transparent 50%, rgba(242,107,46,.18) 100%); }
 
-    .card-meta {
-      font-family: 'IBM Plex Mono', monospace;
-      font-size: 0.73rem;
-      color: rgba(255,255,255,0.72);
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      margin-bottom: 8px;
-    }
-
-    .card-minmax {
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-
-    .card-badge {
-      font-family: 'IBM Plex Mono', monospace;
-      font-size: 0.78rem;
-      font-weight: 700;
-      padding: 4px 10px;
-      border-radius: 6px;
-      letter-spacing: 0.03em;
-    }
-
-    .card-badge-min {
-      background: rgba(234,179,8,0.25);
-      border: 1.5px solid rgba(234,179,8,0.6);
-      color: #fde047;
-    }
-
-    .card-badge-max {
-      background: rgba(34,197,94,0.2);
-      border: 1.5px solid rgba(34,197,94,0.5);
-      color: #86efac;
-    }
-
-    /* Tinder-style stamp overlays */
+    /* Stamp overlays */
     .swipe-overlay {
       position: absolute;
-      top: 44px;
+      top: 22px;
       z-index: 10;
       pointer-events: none;
       opacity: 0;
-      padding: 10px 18px;
-      border-radius: 10px;
-      font-size: 2.8rem;
-      font-weight: 900;
-      letter-spacing: 0.07em;
-      border: 5px solid;
+      padding: 6px 14px;
+      border-radius: 8px;
+      font-family: var(--font-mono, 'IBM Plex Mono', monospace);
+      font-size: 1.1rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      border: 3px solid;
       text-transform: uppercase;
       line-height: 1;
     }
 
+    /* GENUG (Bestand OK) — left side, swiping right */
     .swipe-overlay-right {
-      left: 20px;
-      color: #22c55e;
-      border-color: #22c55e;
-      transform: rotate(-15deg);
-      text-shadow: 0 0 8px rgba(34,197,94,0.4);
+      left: 18px;
+      color: var(--ok, #16a34a);
+      border-color: var(--ok, #16a34a);
+      transform: rotate(-8deg);
+      background: rgba(22,163,74,.06);
     }
 
+    /* BESTELLEN — right side, swiping left  */
     .swipe-overlay-left {
-      right: 20px;
-      color: #ef4444;
-      border-color: #ef4444;
-      transform: rotate(15deg);
-      text-shadow: 0 0 8px rgba(239,68,68,0.4);
+      right: 18px;
+      color: var(--brand, #F26B2E);
+      border-color: var(--brand, #F26B2E);
+      transform: rotate(8deg);
+      background: rgba(242,107,46,.06);
     }
 
-    /* ── ACTION BUTTONS (Tinder style) ── */
+    /* Lower 40%: data panel */
+    .card-data-area {
+      flex: 0 0 auto;
+      padding: 16px 18px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .card-name {
+      font-size: 19px;
+      font-weight: 700;
+      color: var(--ink);
+      line-height: 1.15;
+      letter-spacing: -0.3px;
+    }
+
+    .card-bereich {
+      font-size: 12px;
+      color: var(--ink-3, #9ca3af);
+      margin-top: 2px;
+    }
+
+    /* MIN / MAX / IST grid */
+    .card-minmax-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+    }
+
+    .card-minmax-cell {
+      border-radius: 12px;
+      padding: 8px 10px;
+    }
+
+    .card-minmax-lbl {
+      font-family: var(--font-mono, 'IBM Plex Mono', monospace);
+      font-size: 10px; text-transform: uppercase;
+      letter-spacing: 0.08em; color: var(--ink-3);
+    }
+
+    .card-minmax-val {
+      font-family: var(--font-mono, 'IBM Plex Mono', monospace);
+      font-size: 22px; font-weight: 600;
+      line-height: 1; display: flex; align-items: baseline; gap: 3px;
+    }
+    .card-minmax-unit { font-size: 11px; font-weight: 500; color: var(--ink-3); }
+
+    /* Stock bar */
+    .card-stock-bar {
+      height: 10px; border-radius: 99px;
+      background: var(--surface-3, #e5e7eb);
+      position: relative; overflow: hidden;
+    }
+    .card-stock-fill { height: 100%; border-radius: inherit; transition: width .4s; }
+    .card-stock-fill.ok   { background: var(--ok, #16a34a); }
+    .card-stock-fill.low  { background: var(--low, #ca8a04); }
+    .card-stock-fill.crit { background: var(--crit, #ef4444); }
+
+    /* Gesture hints */
+    .card-gesture-hints {
+      display: flex; justify-content: space-between;
+      font-size: 10px; font-family: var(--font-mono, 'IBM Plex Mono', monospace);
+      color: var(--ink-3); letter-spacing: 0.04em;
+    }
+
+    /* ── ACTION BUTTONS (new circular design) ── */
     .swipe-actions {
       display: flex;
       align-items: center;
-      justify-content: center;
-      gap: 20px;
-      padding: 10px 20px max(6px, env(safe-area-inset-bottom));
+      justify-content: space-between;
+      gap: 10px;
+      padding: 16px 16px max(30px, calc(6px + env(safe-area-inset-bottom)));
       flex-shrink: 0;
     }
 
     .action-circle {
       border-radius: 50%;
-      border: 2px solid;
       background: var(--surface);
       display: flex;
       align-items: center;
@@ -307,42 +363,70 @@
       cursor: pointer;
       touch-action: manipulation;
       -webkit-tap-highlight-color: transparent;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.25);
       transition: transform 0.12s, box-shadow 0.12s;
       flex-shrink: 0;
-      font-weight: 700;
+      border: none;
+    }
+    .action-circle:active { transform: scale(0.88); }
+
+    /* small (40px): ok-check / scan */
+    .action-circle.ok-small {
+      width: 40px; height: 40px;
+      box-shadow: var(--sh-1, 0 1px 4px rgba(0,0,0,.1)), inset 0 0 0 1px var(--hairline);
+      color: var(--ink-2);
     }
 
-    .action-circle:active {
-      transform: scale(0.88);
-      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    /* medium (48px): undo / bookmark */
+    .action-circle.undo {
+      width: 48px; height: 48px;
+      box-shadow: var(--sh-1, 0 1px 4px rgba(0,0,0,.1)), inset 0 0 0 1px var(--hairline);
+      color: var(--low, #ca8a04);
+    }
+
+    /* big (64px): Genug / Bestellen */
+    .action-circle.big-ok {
+      width: 64px; height: 64px;
+      box-shadow: 0 8px 22px rgba(0,0,0,.14), inset 0 0 0 2.5px var(--ok, #16a34a);
+      color: var(--ok, #16a34a);
+    }
+
+    .action-circle.big-reorder {
+      width: 64px; height: 64px;
+      background: var(--brand, #F26B2E);
+      box-shadow: 0 8px 22px rgba(0,0,0,.14), 0 8px 18px rgba(242,107,46,.4);
+      color: white;
     }
 
     .action-circle.nein {
-      width: 70px; height: 70px;
-      border-color: #ef4444;
-      color: #ef4444;
-      font-size: 1.7rem;
-    }
-
-    .action-circle.undo {
-      width: 50px; height: 50px;
-      border-color: var(--border);
-      color: var(--muted);
-      font-size: 1.1rem;
+      /* alias for big-ok (Bestand OK = genug) */
+      width: 64px; height: 64px;
+      box-shadow: 0 8px 22px rgba(0,0,0,.14), inset 0 0 0 2.5px var(--ok, #16a34a);
+      color: var(--ok, #16a34a);
     }
 
     .action-circle.ja {
-      width: 70px; height: 70px;
-      border-color: #22c55e;
-      color: #22c55e;
-      font-size: 1.7rem;
+      /* alias for big-reorder (Bestellen) */
+      width: 64px; height: 64px;
+      background: var(--brand, #F26B2E);
+      box-shadow: 0 8px 22px rgba(0,0,0,.14), 0 8px 18px rgba(242,107,46,.4);
+      color: white;
+    }
+
+    .action-label {
+      font-size: 11px; font-weight: 600;
+      color: var(--ink-3); text-transform: uppercase;
+      letter-spacing: 0.04em; text-align: center;
+      margin-top: 2px;
+    }
+
+    .action-btn-wrap {
+      display: flex; flex-direction: column; align-items: center; gap: 4px;
     }
 
     .cancel-text-btn {
       background: none; border: none;
-      color: var(--muted); font-size: 0.72rem;
-      cursor: pointer; font-family: 'DM Sans', sans-serif;
+      color: var(--ink-3); font-size: 0.72rem;
+      cursor: pointer; font-family: var(--font-ui, 'DM Sans', sans-serif);
       text-decoration: underline; touch-action: manipulation;
       padding: 4px 12px;
     }
@@ -550,9 +634,43 @@
     <div class="swipe-stack" id="swipe-stack"></div>
 
     <div class="swipe-actions">
-      <button class="action-circle nein" onclick="triggerSwipeLeft()" title="Bestand OK">✗</button>
-      <button class="action-circle undo" onclick="undoLastSwipe()" title="Rückgängig">↩</button>
-      <button class="action-circle ja" onclick="triggerSwipeRight()" title="Bestellen">✓</button>
+      <!-- small: ok check -->
+      <div class="action-btn-wrap">
+        <button class="action-circle ok-small" onclick="triggerSwipeLeft()" title="Bestand OK">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-11"/></svg>
+        </button>
+      </div>
+      <!-- medium: undo -->
+      <div class="action-btn-wrap">
+        <button class="action-circle undo" onclick="undoLastSwipe()" title="Rückgängig">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 14L4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/></svg>
+        </button>
+      </div>
+      <!-- big pair: Genug / Bestellen -->
+      <div class="action-btn-wrap">
+        <button class="action-circle nein" onclick="triggerSwipeLeft()" title="Bestand Genug">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-11"/></svg>
+        </button>
+        <div class="action-label">Genug</div>
+      </div>
+      <div class="action-btn-wrap">
+        <button class="action-circle ja" onclick="triggerSwipeRight()" title="Bestellen">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
+        </button>
+        <div class="action-label">Bestellen</div>
+      </div>
+      <!-- medium: bookmark -->
+      <div class="action-btn-wrap">
+        <button class="action-circle undo" style="color:var(--ink-2)" onclick="" title="Merken">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4h12v17l-6-4-6 4V4z"/></svg>
+        </button>
+      </div>
+      <!-- small: scan -->
+      <div class="action-btn-wrap">
+        <button class="action-circle ok-small" onclick="window.location.href='scanner.html'" title="Scanner">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9V6a1 1 0 0 1 1-1h3M3 15v3a1 1 0 0 0 1 1h3M15 4h3a1 1 0 0 1 1 1v3M15 20h3a1 1 0 0 0 1-1v-3M7 12h10"/></svg>
+        </button>
+      </div>
     </div>
 
     <div style="text-align:center;padding-bottom:10px;">
@@ -1069,29 +1187,74 @@
       const bereichName = bereichObj ? bereichObj.name : '';
 
       const cardFoto  = artikel.stockswipeFotoUrl || artikel.fotoUrl;
+      // Use la-photo tints for items without a real photo
+      const tints = ['tint-rose','tint-blue','tint-amber','tint-violet','tint-slate','tint-green'];
+      const tint  = tints[(artikel.lp || artikel.name || '').charCodeAt(0) % tints.length];
+      const photoLabel = (artikel.lp || artikel.name || '?').charAt(0).toUpperCase();
       const photoHtml = cardFoto
         ? `<img class="card-photo" src="${esc(cardFoto)}" alt="${esc(artikel.name)}">`
-        : `<div class="card-photo-placeholder">📦</div>`;
+        : `<div class="card-photo-placeholder la-photo ${tint}" style="font-size:3rem">${photoLabel}</div>`;
 
-      const minMaxHtml = (artikel.min != null || artikel.max != null) ? `
-        <div class="card-minmax">
-          ${artikel.min != null ? `<span class="card-badge card-badge-min">MIN ${artikel.min} ${esc(artikel.minEinheit||'Stk')}</span>` : ''}
-          ${artikel.max != null ? `<span class="card-badge card-badge-max">MAX ${artikel.max} ${esc(artikel.maxEinheit||'Stk')}</span>` : ''}
-        </div>` : '';
+      // minMaxHtml replaced by new card-data-area below
+
+      // Determine stock state
+      const ist   = typeof artikel.ist === 'number' ? artikel.ist : null;
+      const min   = artikel.min  ?? null;
+      const max   = artikel.max  ?? null;
+      const unit  = artikel.minEinheit || artikel.maxEinheit || 'Stk';
+      let stockState = 'ok';
+      if (ist != null && min != null) {
+        if (ist < min) stockState = 'crit';
+        else if (ist < min * 1.5) stockState = 'low';
+      }
+      const stockPct = (ist != null && max != null && max > 0) ? Math.round((ist / max) * 100) : 0;
+
+      // Build MIN/MAX/IST cells
+      const bgOk   = 'var(--surface-2)';
+      const bgCrit = 'var(--crit-soft,rgba(239,68,68,.08))';
+      const bgLow  = 'var(--low-soft,rgba(234,179,8,.08))';
+      const dataArea = `
+        <div class="card-data-area">
+          <div>
+            <div class="card-name">${esc(artikel.name)}</div>
+            <div class="card-bereich">${bereichName ? esc(bereichName) : ''}${bereichName && artikel.lp ? ' · ' : ''}${artikel.lp ? esc(artikel.lp) : ''}</div>
+          </div>
+          <div class="card-minmax-grid">
+            <div class="card-minmax-cell" style="background:${bgOk}">
+              <div class="card-minmax-lbl">MIN</div>
+              <div class="card-minmax-val">${min ?? '–'}<span class="card-minmax-unit">${min != null ? unit : ''}</span></div>
+            </div>
+            <div class="card-minmax-cell" style="background:${bgOk}">
+              <div class="card-minmax-lbl">MAX</div>
+              <div class="card-minmax-val">${max ?? '–'}<span class="card-minmax-unit">${max != null ? unit : ''}</span></div>
+            </div>
+            <div class="card-minmax-cell" style="background:${stockState === 'crit' ? bgCrit : stockState === 'low' ? bgLow : bgOk}">
+              <div class="card-minmax-lbl" style="color:${stockState === 'crit' ? 'var(--crit)' : stockState === 'low' ? 'var(--low)' : 'var(--ink-3)'}">IST</div>
+              <div class="card-minmax-val" style="color:${stockState === 'crit' ? 'var(--crit)' : stockState === 'low' ? 'var(--low)' : 'var(--ok)'}">
+                ${ist ?? '–'}<span class="card-minmax-unit">${ist != null ? unit : ''}</span>
+              </div>
+            </div>
+          </div>
+          <div class="card-stock-bar">
+            <div class="card-stock-fill ${stockState}" style="width:${stockPct}%"></div>
+          </div>
+          <div class="card-gesture-hints"><span>← GENUG</span><span>BESTELLEN →</span></div>
+        </div>`;
 
       card.innerHTML = `
-        ${photoHtml}
-        <div class="swipe-overlay swipe-overlay-right">BESTELLEN ✓</div>
-        <div class="swipe-overlay swipe-overlay-left">OK ✗</div>
-        <button class="card-info-btn">ⓘ</button>
-        <div class="card-footer-gradient">
-          <div class="card-name">${esc(artikel.name)}</div>
-          <div class="card-meta">
-            ${artikel.lp ? `<span>📍 ${esc(artikel.lp)}</span>` : ''}
-            ${bereichName ? `<span>· ${esc(bereichName)}</span>` : ''}
+        <div class="card-photo-area">
+          ${photoHtml}
+          <div class="card-photo-badges">
+            ${artikel.lp ? `<span class="card-lp-badge">${esc(artikel.lp)}</span>` : ''}
+            <span class="card-state-badge ${stockState}"><span class="card-state-dot"></span>${stockState === 'crit' ? 'Kritisch' : stockState === 'low' ? 'Knapp' : 'OK'}</span>
           </div>
-          ${minMaxHtml}
-        </div>`;
+          <div class="card-swipe-glow right" id="glow-right-${artikel.id}"></div>
+          <div class="card-swipe-glow left"  id="glow-left-${artikel.id}"></div>
+          <div class="swipe-overlay swipe-overlay-right">GENUG</div>
+          <div class="swipe-overlay swipe-overlay-left">BESTELLEN</div>
+          <button class="card-info-btn">ⓘ</button>
+        </div>
+        ${dataArea}`;
 
       card.querySelector('.card-info-btn').addEventListener('click', (e) => {
         e.stopPropagation();
@@ -1410,26 +1573,21 @@
 
     async function checkForActiveCheckSession() {
       try {
-        const q    = query(collection(db, 'bestellungen_session'), where('status', '==', 'aktiv'), limit(1));
-        const snap = await getDocs(q);
-        if (!snap.empty) {
-          const d       = snap.docs[0];
-          const data    = d.data();
-          const startMs = data.startzeit?.toMillis?.() ?? Date.now();
-          if (Date.now() - startMs < 8 * 3600 * 1000) {
-            // Prüfen ob noch jemand aktiv ist (frischer Heartbeat < 90s)
-            const heartbeats = data.heartbeats ?? {};
-            const hasAliveUser = Object.values(heartbeats).some(ts => {
-              const lastBeat = ts?.toMillis?.() ?? 0;
-              return lastBeat > 0 && (Date.now() - lastBeat) < 90_000;
-            });
-            if (hasAliveUser) {
-              showBlockScreen(d.id, data);
-              return true;
-            }
-            // Zombie-Session – alle Heartbeats abgelaufen → löschen
-            try { await deleteDoc(d.ref); } catch(e2) {}
+        const snap = await getDoc(doc(db, 'bestellungen_session', 'current'));
+        if (snap.exists() && snap.data().status === 'aktiv') {
+          const data = snap.data();
+          // Prüfen ob noch jemand aktiv ist (frischer Heartbeat < 90s)
+          const heartbeats = data.heartbeats ?? {};
+          const hasAliveUser = Object.values(heartbeats).some(ts => {
+            const lastBeat = ts?.toMillis?.() ?? 0;
+            return lastBeat > 0 && (Date.now() - lastBeat) < 90_000;
+          });
+          if (hasAliveUser) {
+            showBlockScreen('current', data);
+            return true;
           }
+          // Zombie-Session – alle Heartbeats abgelaufen → löschen
+          try { await deleteDoc(snap.ref); } catch(e2) {}
         }
       } catch(e) {}
       return false;
