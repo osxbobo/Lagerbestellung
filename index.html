@@ -368,13 +368,9 @@
       </button>
     </div>
 
-    <!-- Filters -->
+    <!-- Filters (dynamisch aus Firestore Bereichen generiert) -->
     <div class="la-filters" id="filter-chips">
       <button class="la-filter-chip active" data-filter="all" onclick="filterChip(this,'all')">Alle</button>
-      <button class="la-filter-chip" data-filter="Schrank" onclick="filterChip(this,'Schrank')">Schrank</button>
-      <button class="la-filter-chip" data-filter="Tasche" onclick="filterChip(this,'Tasche')">Tasche</button>
-      <button class="la-filter-chip" data-filter="Sauerstoff" onclick="filterChip(this,'Sauerstoff')">O₂</button>
-      <button class="la-filter-chip" data-filter="Medikament" onclick="filterChip(this,'Medikament')">Medikamente</button>
     </div>
   </div>
 
@@ -424,6 +420,9 @@
           <button onclick="openPinModal()" class="la-btn primary" style="flex:1;min-width:160px;">
             Lagercheck starten
           </button>
+          <a href="pages/mitarbeiter.html" class="la-btn ghost" style="flex:1;min-width:130px;">
+            Mitarbeiter
+          </a>
           <a href="pages/login.html" class="la-btn ghost" style="flex:0 0 auto;">
             Wachenleiter
           </a>
@@ -555,6 +554,7 @@
         document.getElementById('sync-dot').style.display = 'inline-block';
 
         renderBereiche();
+        renderFilterChips();
 
       } catch (e) {
         document.getElementById('loading-state').innerHTML =
@@ -591,7 +591,20 @@
       }).join('');
     }
 
-    // ── Filter chips ──
+    // ── Filter chips (dynamisch aus Bereichen generiert) ──
+    function renderFilterChips() {
+      const chipContainer = document.getElementById('filter-chips');
+      chipContainer.innerHTML = '<button class="la-filter-chip active" data-filter="all" onclick="filterChip(this,\'all\')">Alle</button>';
+      alleBereiche.slice(0, 6).forEach(b => {
+        const btn = document.createElement('button');
+        btn.className = 'la-filter-chip';
+        btn.dataset.filter = b.name;
+        btn.textContent = b.name;
+        btn.onclick = () => filterChip(btn, b.name);
+        chipContainer.appendChild(btn);
+      });
+    }
+
     window.filterChip = function(el, filter) {
       document.querySelectorAll('.la-filter-chip').forEach(c => c.classList.remove('active'));
       el.classList.add('active');
@@ -602,25 +615,9 @@
         return;
       }
 
-      const matching = alleBereiche.filter(b =>
-        b.name?.toLowerCase().includes(filter.toLowerCase()) ||
-        b.sub?.toLowerCase().includes(filter.toLowerCase())
-      );
-
-      const filtered = alleArtikel.filter(a =>
-        matching.some(b => b.id === a.bereich)
-      );
-
-      if (filtered.length === 0) {
-        // Show all bereiche but highlight matching
-        showBereiche();
-      } else {
-        document.getElementById('bereiche-section').classList.remove('hidden');
-        document.getElementById('search-results').classList.add('hidden');
-        document.getElementById('empty-state').classList.add('hidden');
-        document.getElementById('back-to-bereiche').classList.add('hidden');
-        document.getElementById('status-text').textContent =
-          `${filtered.length} Artikel in Kategorie „${filter}"`;
+      const bereich = alleBereiche.find(b => b.name === filter);
+      if (bereich) {
+        filterByBereich(bereich.id, bereich.name);
       }
     };
 
