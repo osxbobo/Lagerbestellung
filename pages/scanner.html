@@ -80,77 +80,138 @@
       background: rgba(22, 163, 74, 0.12); border-color: var(--ok); color: var(--ok);
     }
 
-    /* Camera viewport */
-    .cam-wrap { display: none; position: relative; aspect-ratio: 4/3; background: #000; }
-    .cam-wrap.show { display: block; }
+    /* ── Full-screen camera overlay ── */
+    .cam-fs {
+      position: fixed; inset: 0; z-index: 200;
+      background: #000;
+      display: flex; flex-direction: column;
+    }
+    .cam-video-area { flex: 1; position: relative; overflow: hidden; min-height: 0; }
     #video { width: 100%; height: 100%; object-fit: cover; display: block; }
 
-    /* Scan reticle overlay */
-    .cam-overlay {
+    /* Status pill */
+    .cam-status-row {
+      position: absolute;
+      top: max(14px, env(safe-area-inset-top));
+      left: 14px; right: 14px;
+      display: flex; align-items: center; gap: 8px;
+      pointer-events: none; z-index: 10;
+    }
+    .cam-pill {
+      flex: 1; height: 36px; padding: 0 14px; border-radius: 999px;
+      display: flex; align-items: center; gap: 8px;
+      background: rgba(14,14,18,.72);
+      backdrop-filter: blur(24px) saturate(160%);
+      -webkit-backdrop-filter: blur(24px) saturate(160%);
+      border: 0.5px solid rgba(255,255,255,.10);
+      color: rgba(255,255,255,.9); font-size: 12px; font-weight: 500;
+    }
+    .cam-dot {
+      width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
+      background: var(--brand); box-shadow: 0 0 7px var(--brand);
+      animation: pulse 1.8s ease infinite;
+    }
+    @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
+    .cam-close-btn {
+      pointer-events: all; flex-shrink: 0;
+      width: 36px; height: 36px; border-radius: 50%; border: none;
+      background: rgba(14,14,18,.72);
+      backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+      border: 0.5px solid rgba(255,255,255,.10);
+      color: rgba(255,255,255,.85); font-size: 16px;
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+    }
+
+    /* Reticle 240×240 */
+    .cam-reticle-wrap {
       position: absolute; inset: 0;
-      display: flex; align-items: center; justify-content: center;
-      pointer-events: none;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 18px; pointer-events: none;
     }
-    .cam-reticle { position: relative; width: 200px; height: 200px; }
-    .cam-reticle .corner {
-      position: absolute; width: 28px; height: 28px;
-    }
+    .cam-reticle { position: relative; width: 240px; height: 240px; }
+    .cam-reticle .corner { position: absolute; width: 32px; height: 32px; }
     .cam-reticle .corner.tl { top: 0; left: 0; }
     .cam-reticle .corner.tr { top: 0; right: 0; }
     .cam-reticle .corner.bl { bottom: 0; left: 0; }
     .cam-reticle .corner.br { bottom: 0; right: 0; }
     .scan-line {
-      position: absolute; left: 10px; right: 10px; top: 50%;
-      height: 2px; background: var(--brand);
-      box-shadow: 0 0 20px 5px rgba(242, 107, 46, 0.55);
+      position: absolute; left: 10px; right: 10px; height: 2px;
+      background: var(--brand);
+      box-shadow: 0 0 24px 6px rgba(242,107,46,.6);
       border-radius: 1px;
       animation: scanline 2s ease-in-out infinite;
     }
-    @keyframes scanline {
-      0%, 100% { top: 15%; }
-      50% { top: 85%; }
+    @keyframes scanline { 0%,100%{top:10%;} 50%{top:84%;} }
+    .cam-hint-text {
+      font-family: var(--font-mono); font-size: 11px; font-weight: 600;
+      color: rgba(255,255,255,.45); letter-spacing: 0.08em; text-transform: uppercase;
     }
 
-    /* Status pill */
-    .cam-status-row {
-      position: absolute; top: 12px; left: 12px; right: 12px;
-      display: flex; align-items: center; gap: 8px;
-      pointer-events: none;
+    /* Glass bottom sheet */
+    .scan-sheet {
+      background: rgba(12,14,18,.82);
+      backdrop-filter: blur(28px) saturate(160%);
+      -webkit-backdrop-filter: blur(28px) saturate(160%);
+      border-top: 0.5px solid rgba(255,255,255,.10);
+      border-radius: 26px 26px 0 0;
+      padding: 10px 16px;
+      padding-bottom: max(16px, env(safe-area-inset-bottom));
     }
-    .cam-pill {
-      height: 32px; padding: 0 12px; border-radius: 999px;
-      display: flex; align-items: center; gap: 7px;
-      background: rgba(14,14,18,.65);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      color: rgba(255,255,255,.9); font-size: 12px; font-weight: 500;
-      font-family: var(--font-ui);
+    .sheet-drag {
+      width: 36px; height: 4px; border-radius: 2px;
+      background: rgba(255,255,255,.22); margin: 0 auto 14px;
     }
-    .cam-dot {
-      width: 7px; height: 7px; border-radius: 50%;
-      background: var(--brand); box-shadow: 0 0 7px var(--brand);
-      animation: pulse 1.8s ease infinite;
+    .sheet-result {
+      display: none; gap: 12px; align-items: flex-start; margin-bottom: 14px;
     }
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.4; }
+    .sheet-result.show { display: flex; }
+    .sheet-art-photo {
+      width: 52px; height: 52px; border-radius: 10px; flex-shrink: 0;
+      background: rgba(255,255,255,.08);
+      display: flex; align-items: center; justify-content: center; font-size: 1.3rem;
+      overflow: hidden;
     }
+    .sheet-art-photo img { width: 100%; height: 100%; object-fit: cover; }
+    .sheet-gtin { font-family: var(--font-mono); font-size: 10px; color: rgba(255,255,255,.45); margin-bottom: 3px; }
+    .sheet-artname { font-size: 14px; font-weight: 700; color: rgba(255,255,255,.92); }
+    .sheet-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+    .sheet-field label {
+      display: block; font-size: 9px; font-weight: 600; color: rgba(255,255,255,.4);
+      font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 4px;
+    }
+    .sheet-field input {
+      width: 100%; height: 42px; padding: 0 12px;
+      background: rgba(255,255,255,.09);
+      border: 1px solid rgba(255,255,255,.12); border-radius: 10px;
+      color: rgba(255,255,255,.9); font-family: var(--font-mono); font-size: 13px;
+      outline: none;
+    }
+    .sheet-field input.filled { border-color: var(--ok); background: rgba(22,163,74,.12); }
+    .sheet-field input:focus  { border-color: var(--brand); }
+    .sheet-verfall-info { font-size: 10px; font-family: var(--font-mono); margin-top: 3px; min-height: 14px; }
+    .sheet-actions { display: flex; gap: 8px; }
+    .sheet-ctrl {
+      width: 44px; height: 44px; border-radius: 10px; border: none;
+      background: rgba(255,255,255,.10); color: rgba(255,255,255,.8);
+      cursor: pointer; display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; transition: background .15s;
+    }
+    .sheet-ctrl.on { background: var(--brand); }
+    .sheet-ctrl:active { opacity: 0.7; }
+    .sheet-save {
+      flex: 1; height: 44px; border-radius: 10px; border: none;
+      background: var(--ok); color: #fff;
+      font-family: var(--font-ui); font-size: 14px; font-weight: 700;
+      cursor: pointer; touch-action: manipulation;
+      display: flex; align-items: center; justify-content: center; gap: 6px;
+      box-shadow: 0 4px 12px rgba(22,163,74,.3);
+    }
+    .sheet-save.unknown { background: var(--brand); box-shadow: 0 4px 12px rgba(242,107,46,.3); }
+    .sheet-save:active { opacity: 0.85; }
 
-    /* Camera controls row */
-    .cam-ctrl-row {
-      display: none; gap: 6px; padding: 8px;
-      background: rgba(0,0,0,.6); backdrop-filter: blur(12px);
-      -webkit-backdrop-filter: blur(12px);
-    }
-    .cam-ctrl-row.show { display: flex; }
-    .cam-ctrl {
-      flex: 1; height: 36px; border-radius: 10px;
-      border: 1px solid rgba(255,255,255,.12);
-      background: rgba(255,255,255,.08); color: rgba(255,255,255,.8);
-      font-family: var(--font-ui); font-size: 0.72rem; font-weight: 500;
-      cursor: pointer; touch-action: manipulation; display: flex; align-items: center; justify-content: center; gap: 5px;
-    }
-    .cam-ctrl.on { background: var(--brand); border-color: var(--brand); color: #fff; }
+    /* Camera controls row (legacy, keep for compat) */
+    .cam-ctrl-row { display: none; }
+    .cam-ctrl { display: none; }
 
     /* BT hint */
     .bt-hint {
@@ -253,6 +314,72 @@
 </head>
 <body>
 
+  <!-- ── Full-screen camera overlay ── -->
+  <div id="cam-overlay" class="cam-fs hidden">
+    <div class="cam-video-area">
+      <video id="video" playsinline autoplay muted></video>
+      <!-- Status pill -->
+      <div class="cam-status-row">
+        <div class="cam-pill">
+          <span class="cam-dot"></span>
+          <span id="cam-status-text">Scanne GS1-DataMatrix</span>
+        </div>
+        <button class="cam-close-btn" onclick="stopCam()">✕</button>
+      </div>
+      <!-- Reticle 240×240 -->
+      <div class="cam-reticle-wrap">
+        <div class="cam-reticle">
+          <svg class="corner tl" viewBox="0 0 32 32" fill="none"><path d="M0 24V0h24" stroke="#F26B2E" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <svg class="corner tr" viewBox="0 0 32 32" fill="none"><path d="M32 24V0H8"  stroke="#F26B2E" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <svg class="corner bl" viewBox="0 0 32 32" fill="none"><path d="M0 8v24h24"  stroke="#F26B2E" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <svg class="corner br" viewBox="0 0 32 32" fill="none"><path d="M32 8v24H8"  stroke="#F26B2E" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <div class="scan-line"></div>
+        </div>
+        <div class="cam-hint-text">Code zentrieren · Halten</div>
+      </div>
+    </div>
+
+    <!-- Glass bottom sheet -->
+    <div class="scan-sheet">
+      <div class="sheet-drag"></div>
+      <!-- Scan result (shown after scan) -->
+      <div class="sheet-result" id="sheet-result">
+        <div class="sheet-art-photo" id="sheet-art-photo">📦</div>
+        <div style="flex:1;min-width:0;">
+          <div class="sheet-gtin" id="sheet-gtin"></div>
+          <div class="sheet-artname" id="sheet-artname">Artikel suchen…</div>
+          <div style="margin-top:5px;" id="sheet-art-chip"></div>
+        </div>
+      </div>
+      <!-- Fields -->
+      <div class="sheet-fields">
+        <div class="sheet-field">
+          <label>Charge / LOT</label>
+          <input type="text" id="sheet-lot" autocomplete="off" maxlength="50" placeholder="z.B. 140211">
+        </div>
+        <div class="sheet-field">
+          <label>Verfallsdatum</label>
+          <input type="text" id="sheet-verfall" inputmode="numeric" maxlength="10" placeholder="JJJJ-MM-TT"
+            oninput="formatVerfallInput(this); showSheetVerfallInfo()">
+          <div class="sheet-verfall-info" id="sheet-verfall-info"></div>
+        </div>
+      </div>
+      <!-- Actions -->
+      <div class="sheet-actions">
+        <button class="sheet-ctrl" id="sheet-flip" onclick="flipCam()" title="Kamera wechseln">
+          <svg viewBox="0 0 20 20" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h5v5M16 16h-5v-5M4 4l4 4M16 16l-4-4M4 12a8 8 0 0 1 8-8M16 8a8 8 0 0 1-8 8"/></svg>
+        </button>
+        <button class="sheet-ctrl" id="sheet-light" onclick="toggleLight()" title="Licht">
+          <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 4 14h7l-1 8 9-12h-7l1-8z"/></svg>
+        </button>
+        <button class="sheet-save" id="sheet-save-btn" onclick="saveFromSheet()">
+          <svg viewBox="0 0 20 20" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 10l4 4 6-6"/></svg>
+          Charge speichern
+        </button>
+      </div>
+    </div>
+  </div>
+
   <nav class="s-nav">
     <button class="s-back" onclick="history.back()">
       <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5l-5 5 5 5"/></svg>
@@ -271,55 +398,12 @@
     <div class="s-toggle-row">
       <button class="s-toggle" id="btn-cam" onclick="toggleCam()">
         <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M2 7a2 2 0 0 1 2-2h1l2-2h6l2 2h1a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7z"/><circle cx="10" cy="10.5" r="2.5"/></svg>
-        Kamera
+        Kamera öffnen
       </button>
       <button class="s-toggle" id="btn-bt" onclick="toggleBT()">
         <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M7 6l6 6-3 3V4l3 3-6 6"/></svg>
         Bluetooth
       </button>
-    </div>
-
-    <!-- Camera view -->
-    <div class="s-cam-section" id="cam-section" style="display:none;">
-      <div class="cam-wrap show" id="cam-wrap">
-        <video id="video" playsinline autoplay muted></video>
-
-        <!-- Status pill -->
-        <div class="cam-status-row">
-          <div class="cam-pill">
-            <span class="cam-dot"></span>
-            Scanne GS1-DataMatrix
-          </div>
-        </div>
-
-        <!-- Reticle -->
-        <div class="cam-overlay">
-          <div class="cam-reticle">
-            <!-- corners -->
-            <svg class="corner tl" viewBox="0 0 28 28" fill="none"><path d="M0 20V0h20" stroke="#F26B2E" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            <svg class="corner tr" viewBox="0 0 28 28" fill="none"><path d="M28 20V0H8" stroke="#F26B2E" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            <svg class="corner bl" viewBox="0 0 28 28" fill="none"><path d="M0 8v20h20" stroke="#F26B2E" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            <svg class="corner br" viewBox="0 0 28 28" fill="none"><path d="M28 8v20H8" stroke="#F26B2E" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-            <div class="scan-line"></div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Camera controls -->
-      <div class="cam-ctrl-row hidden" id="cam-btns">
-        <button class="cam-ctrl on" id="cb-back" onclick="switchCam('back')">
-          <svg viewBox="0 0 20 20" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><rect x="2" y="6" width="16" height="11" rx="2"/><path d="M7 6V5a3 3 0 0 1 6 0v1"/></svg>
-          Rückseite
-        </button>
-        <button class="cam-ctrl" id="cb-front" onclick="switchCam('front')">
-          <svg viewBox="0 0 20 20" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><circle cx="10" cy="10" r="4"/><circle cx="10" cy="10" r="7.5"/></svg>
-          Vorderseite
-        </button>
-        <button class="cam-ctrl" id="cb-light" onclick="toggleLight()">
-          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 4 14h7l-1 8 9-12h-7l1-8z"/></svg>
-          Licht
-        </button>
-      </div>
     </div>
 
     <!-- BT hint -->
@@ -428,7 +512,11 @@
     // ── Auth ──
     auth.onAuthStateChanged(async user => {
       const pinOk = sessionStorage.getItem('lager-pin-auth');
-      if (!user && !pinOk) { window.location.href = '../index.html'; return; }
+      if (!user && !pinOk) {
+        const ret = encodeURIComponent(window.location.pathname + window.location.search);
+        window.location.replace(`login.html?tab=mitarbeiter&return=${ret}`);
+        return;
+      }
       const name = user?.displayName || user?.email
         || sessionStorage.getItem('lager-pin-name')
         || localStorage.getItem('lager-saved-name') || '';
@@ -543,26 +631,58 @@
       document.getElementById('suggestions').innerHTML = '';
 
       // 2. Artikel automatisch finden
+      let foundArtikel = null;
       if (parsed.gtin) {
-        const a = artikel.find(x =>
+        foundArtikel = artikel.find(x =>
           x.gtin === parsed.gtin ||
           (Array.isArray(x.gtins) && x.gtins.includes(parsed.gtin)) ||
           (x.chargen||[]).some(c => c.gtin === parsed.gtin)
         );
-        if (a) selectArtikel(a);
+        if (foundArtikel) selectArtikel(foundArtikel);
       }
 
       // 3. LOT + Verfall NACH dem Reset einfüllen
       if (parsed.lot) {
-        const el = document.getElementById('inp-lot');
-        el.value = parsed.lot;
-        el.classList.add('filled');
+        document.getElementById('inp-lot').value = parsed.lot;
+        document.getElementById('inp-lot').classList.add('filled');
+        document.getElementById('sheet-lot').value = parsed.lot;
+        document.getElementById('sheet-lot').classList.add('filled');
       }
       if (parsed.verfall) {
-        const el = document.getElementById('inp-verfall');
-        el.value = parsed.verfall;
-        el.classList.add('filled');
+        document.getElementById('inp-verfall').value = parsed.verfall;
+        document.getElementById('inp-verfall').classList.add('filled');
+        document.getElementById('sheet-verfall').value = parsed.verfall;
+        document.getElementById('sheet-verfall').classList.add('filled');
         showVerfallInfo();
+        showSheetVerfallInfo();
+      }
+
+      // 4. Sheet-Result befüllen (nur bei Kamera-Scan)
+      if (source === 'cam') {
+        const resultEl  = document.getElementById('sheet-result');
+        const photoEl   = document.getElementById('sheet-art-photo');
+        const gtinEl    = document.getElementById('sheet-gtin');
+        const nameEl    = document.getElementById('sheet-artname');
+        const chipEl    = document.getElementById('sheet-art-chip');
+        const saveBtn   = document.getElementById('sheet-save-btn');
+
+        resultEl.classList.add('show');
+        gtinEl.textContent  = parsed.gtin ? `GTIN ${parsed.gtin}` : '';
+
+        if (foundArtikel) {
+          nameEl.textContent = foundArtikel.name;
+          photoEl.innerHTML  = foundArtikel.fotoUrl
+            ? `<img src="${foundArtikel.fotoUrl}" alt="">` : '📦';
+          chipEl.innerHTML   = `<span class="la-chip ok" style="height:18px;font-size:10px;"><span class="dot"></span>Bekannt</span>`;
+          saveBtn.classList.remove('unknown');
+          saveBtn.innerHTML  = `<svg viewBox="0 0 20 20" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 10l4 4 6-6"/></svg> Charge speichern`;
+        } else {
+          nameEl.textContent = parsed.gtin ? 'Unbekannter Artikel' : 'Code erkannt';
+          photoEl.innerHTML  = '❓';
+          chipEl.innerHTML   = `<span class="la-chip low" style="height:18px;font-size:10px;"><span class="dot"></span>Unbekannt</span>`;
+          saveBtn.classList.add('unknown');
+          saveBtn.innerHTML  = `<svg viewBox="0 0 20 20" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 5v10M5 10h10"/></svg> Artikel zuordnen`;
+        }
       }
 
       toast('✅ Code erkannt');
@@ -729,8 +849,8 @@
     async function startCam() {
       camOn = true;
       document.getElementById('btn-cam').classList.add('on');
-      document.getElementById('cam-section').style.display = 'block';
-      document.getElementById('cam-btns').classList.remove('hidden');
+      document.getElementById('cam-overlay').classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
       try {
         const hints = new Map();
         hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, [
@@ -752,21 +872,70 @@
     }
 
     function stopCam() {
-      camOn=false;
+      camOn = false;
       document.getElementById('btn-cam').classList.remove('on');
-      document.getElementById('cam-section').style.display = 'none';
-      document.getElementById('cam-btns').classList.add('hidden');
+      document.getElementById('cam-overlay').classList.add('hidden');
+      document.body.style.overflow = '';
       if (reader) { try{reader.reset();}catch(e){} reader=null; }
-      const v=document.getElementById('video');
+      const v = document.getElementById('video');
       if (v.srcObject) { v.srcObject.getTracks().forEach(t=>t.stop()); v.srcObject=null; }
     }
 
-    function switchCam(side) {
-      camSide=side;
-      document.getElementById('cb-back').classList.toggle('on',side==='back');
-      document.getElementById('cb-front').classList.toggle('on',side==='front');
+    function flipCam() {
+      camSide = camSide === 'back' ? 'front' : 'back';
       stopCam();
       setTimeout(startCam, 300);
+    }
+
+    // ── Sheet Verfall Info ──
+    function showSheetVerfallInfo() {
+      const val  = document.getElementById('sheet-verfall').value;
+      const info = document.getElementById('sheet-verfall-info');
+      if (!val || val.length < 10) { info.textContent=''; return; }
+      const p    = val.split('-');
+      const d    = new Date(+p[0],+p[1]-1,+p[2]);
+      const heute= new Date(); heute.setHours(0,0,0,0);
+      const days = Math.round((d-heute)/86400000);
+      if      (days<=0)  info.innerHTML='<span style="color:var(--crit)">Abgelaufen</span>';
+      else if (days<=7)  info.innerHTML=`<span style="color:var(--crit)">${days} Tage – Kritisch</span>`;
+      else if (days<=30) info.innerHTML=`<span style="color:var(--low)">${days} Tage</span>`;
+      else               info.innerHTML=`<span style="color:var(--ok)">OK</span>`;
+    }
+
+    // ── Save from Sheet ──
+    async function saveFromSheet() {
+      const lot    = document.getElementById('sheet-lot').value.trim();
+      const verfall= document.getElementById('sheet-verfall').value;
+      if (!selected) { toast('Artikel nicht erkannt – bitte manuell zuordnen','err'); return; }
+      if (!lot && !verfall) { toast('Charge oder Datum eingeben','err'); return; }
+      const btn = document.getElementById('sheet-save-btn');
+      if (btn.disabled) return;
+      btn.disabled = true;
+      try {
+        const ref  = db.collection('artikel').doc(selected.id);
+        const snap = await ref.get();
+        const data = snap.data() || {};
+        const ch   = [...(data.chargen||[])];
+        const idx  = ch.findIndex(c => c.lot && c.lot === lot);
+        const updateData = {chargen: ch};
+        if (lastParsed?.gtin) {
+          const existingGtins = Array.isArray(data.gtins)?[...data.gtins]:(data.gtin?[data.gtin]:[]);
+          if (!existingGtins.includes(lastParsed.gtin)) existingGtins.push(lastParsed.gtin);
+          updateData.gtin = lastParsed.gtin; updateData.gtins = existingGtins;
+        }
+        if (idx>=0) { ch[idx]={...ch[idx],verfall:verfall||ch[idx].verfall}; toast('Charge aktualisiert ✅'); }
+        else { ch.push({lot:lot||'?',verfall:verfall||null,gtin:lastParsed?.gtin||null,erfasst:new Date().toISOString()}); toast('Charge gespeichert ✅'); }
+        await ref.update(updateData);
+        const artIdx = artikel.findIndex(a=>a.id===selected.id);
+        if (artIdx>=0) artikel[artIdx] = {...artikel[artIdx],...updateData};
+        // sync back to page form
+        document.getElementById('inp-lot').value = lot;
+        document.getElementById('inp-verfall').value = verfall;
+        stopCam();
+        resetForm();
+      } catch(e) {
+        toast('Fehler beim Speichern','err');
+      } finally { btn.disabled = false; }
     }
 
     async function toggleLight() {

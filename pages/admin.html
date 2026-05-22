@@ -11,155 +11,227 @@
   <title>Admin – LAGER//APP</title>
   <link rel="stylesheet" href="../css/main.css">
   <style>
-    .admin-page { min-height: 100vh; display: flex; flex-direction: column; }
+    * { box-sizing: border-box; }
+    body { font-family: var(--font-ui); background: var(--bg); color: var(--ink); }
+    .admin-page { min-height: 100dvh; display: flex; flex-direction: column; }
+
+    /* ── NAV ── */
+    .a-nav {
+      position: sticky; top: 0; z-index: 200;
+      display: flex; align-items: center; gap: 10px; padding: 10px 16px;
+      background: var(--glass-bg-strong);
+      backdrop-filter: blur(24px) saturate(180%);
+      -webkit-backdrop-filter: blur(24px) saturate(180%);
+      border-bottom: 1px solid var(--hairline);
+      height: 52px;
+    }
+    .a-wordmark { font-family: var(--font-mono); font-weight: 600; font-size: 0.9rem; color: var(--brand); letter-spacing: -0.01em; }
+    .a-wordmark .slash { color: var(--ink-3); }
+    .a-nav-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+    .a-nav-user  { font-size: 0.72rem; color: var(--ink-3); font-family: var(--font-mono); }
+    .a-badge {
+      display: none; padding: 3px 8px; border-radius: var(--r-pill);
+      background: var(--crit); color: #fff;
+      font-size: 0.6rem; font-weight: 700; font-family: var(--font-mono);
+      letter-spacing: 0.06em;
+    }
+    @media (min-width: 640px) { .a-badge { display: inline-flex; } }
+    .a-btn {
+      height: 32px; padding: 0 12px; border-radius: 8px;
+      border: 1px solid var(--hairline-2); background: var(--surface-2);
+      color: var(--ink-2); font-family: var(--font-ui); font-size: 0.78rem; font-weight: 500;
+      cursor: pointer; transition: border-color 0.15s, color 0.15s; text-decoration: none;
+      display: inline-flex; align-items: center;
+    }
+    .a-btn:hover { border-color: var(--brand); color: var(--brand); }
+    .a-btn.logout:hover { border-color: var(--crit); color: var(--crit); }
+    .a-theme {
+      width: 32px; height: 32px; border-radius: 8px;
+      border: 1px solid var(--hairline-2); background: var(--surface-2);
+      cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; justify-content: center;
+    }
+    .a-menu-btn {
+      display: none; width: 34px; height: 34px; border-radius: 8px;
+      border: 1px solid var(--hairline-2); background: var(--surface-2);
+      color: var(--ink-2); cursor: pointer; font-size: 1rem;
+      align-items: center; justify-content: center; flex-shrink: 0;
+    }
+    @media (max-width: 768px) { .a-menu-btn { display: flex; } }
 
     /* ── LAYOUT ── */
     .admin-layout { display: flex; flex: 1; }
 
+    /* ── SIDEBAR ── */
     .admin-sidebar {
-      width: 220px;
+      width: 232px; flex-shrink: 0;
       background: var(--surface-2);
       border-right: 0.5px solid var(--hairline);
-      display: flex;
-      flex-direction: column;
-      flex-shrink: 0;
-      position: sticky;
-      top: 56px;
-      height: calc(100vh - 56px);
+      display: flex; flex-direction: column;
+      position: sticky; top: 52px;
+      height: calc(100dvh - 52px);
       overflow-y: auto;
     }
+    .sidebar-workspace {
+      display: flex; align-items: center; gap: 8px;
+      padding: 14px 12px 8px;
+    }
+    .sidebar-ws-icon {
+      width: 22px; height: 22px; border-radius: 6px;
+      background: var(--crit); color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-mono); font-size: 11px; font-weight: 700;
+      flex-shrink: 0;
+    }
+    .sidebar-ws-name { font-size: 12px; font-weight: 600; color: var(--ink); }
+    .sidebar-ws-sub  { font-size: 10px; color: var(--ink-3); font-family: var(--font-mono); }
 
-    .sidebar-nav { padding: 12px 8px; display: flex; flex-direction: column; gap: 2px; flex: 1; }
+    .sidebar-nav { padding: 4px 8px; display: flex; flex-direction: column; flex: 1; }
 
     .sidebar-item {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 8px 10px;
-      border-radius: var(--r-sm);
-      font-size: 13px;
-      font-weight: 500;
-      color: var(--ink-2);
-      cursor: pointer;
-      transition: all 0.15s;
-      border: none;
-      text-decoration: none;
+      display: flex; align-items: center; gap: 9px;
+      height: 30px; padding: 0 8px;
+      border-radius: 6px; border: 1px solid transparent;
+      font-size: 13px; font-weight: 500; color: var(--ink-2);
+      cursor: pointer; text-decoration: none;
+      transition: background 0.12s, color 0.12s;
     }
-
-    .sidebar-item:hover { background: var(--surface-3); color: var(--ink); }
+    .sidebar-item:hover  { background: var(--surface-3); color: var(--ink); }
     .sidebar-item.active { background: var(--surface-3); color: var(--ink); }
     .sidebar-item.active .s-ico { color: var(--brand); }
-    .sidebar-item .s-ico { color: var(--ink-3); flex-shrink: 0; }
+    .sidebar-item .s-ico { width: 14px; height: 14px; flex-shrink: 0; color: var(--ink-3); }
 
-    .sidebar-divider { height: 0.5px; background: var(--hairline); margin: 6px 10px; }
-
-    .sidebar-bottom { padding: 12px 8px; border-top: 0.5px solid var(--hairline); }
+    .sidebar-section-label {
+      font-size: 11px; font-weight: 500; color: var(--ink-3);
+      text-transform: uppercase; letter-spacing: 0.06em;
+      padding: 12px 8px 4px;
+    }
+    .sidebar-bottom { padding: 8px; border-top: 0.5px solid var(--hairline); }
+    .sidebar-user-pill {
+      display: flex; align-items: center; gap: 8px;
+      padding: 7px 8px; border-radius: 8px;
+      background: var(--surface-3); border: 1px solid var(--hairline);
+    }
+    .sidebar-user-avatar {
+      width: 22px; height: 22px; border-radius: 50%;
+      background: var(--crit); color: #fff;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px; font-weight: 700; flex-shrink: 0;
+    }
+    .sidebar-user-name { font-size: 12px; font-weight: 600; color: var(--ink); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .sidebar-user-role { font-size: 10px; color: var(--ink-3); font-family: var(--font-mono); }
+    .sidebar-logout-btn {
+      width: 24px; height: 24px; border-radius: 6px; border: 1px solid var(--hairline-2);
+      background: none; color: var(--ink-3); cursor: pointer; font-size: 0.75rem;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+      transition: border-color 0.15s, color 0.15s;
+    }
+    .sidebar-logout-btn:hover { border-color: var(--crit); color: var(--crit); }
 
     /* ── CONTENT ── */
-    .admin-content { flex: 1; padding: 24px; overflow-x: hidden; }
+    .admin-content { flex: 1; padding: 24px; overflow-x: hidden; min-width: 0; }
     .content-section { display: none; }
     .content-section.active { display: block; }
 
     /* ── PAGE HEADER ── */
     .page-header { margin-bottom: 24px; }
     .page-title { font-size: 1.2rem; font-weight: 700; margin-bottom: 4px; }
-    .page-sub   { font-size: 0.82rem; color: var(--text2); }
+    .page-sub   { font-size: 0.82rem; color: var(--ink-2); }
 
     /* ── STATS ROW ── */
     .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 24px; }
-    .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px; }
-    .stat-num  { font-size: 1.5rem; font-weight: 700; font-family: 'IBM Plex Mono', monospace; }
-    .stat-lbl  { font-size: 0.62rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.12em; font-family: 'IBM Plex Mono', monospace; margin-top: 3px; }
+    .stat-card { background: var(--surface); border: 1px solid var(--hairline); border-radius: 10px; padding: 14px; }
+    .stat-num  { font-size: 1.5rem; font-weight: 700; font-family: var(--font-mono); }
+    .stat-lbl  { font-size: 0.62rem; color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.12em; font-family: var(--font-mono); margin-top: 3px; }
 
     /* ── TABLE ── */
-    .table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
-    .table-header { padding: 12px 16px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+    .table-wrap { background: var(--surface); border: 1px solid var(--hairline); border-radius: 14px; overflow: hidden; }
+    .table-header { padding: 12px 16px; border-bottom: 1px solid var(--hairline); display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
     .table-search { flex: 1; min-width: 200px; }
 
     table { width: 100%; border-collapse: collapse; }
-    th { padding: 10px 14px; text-align: left; font-size: 0.65rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.12em; font-family: 'IBM Plex Mono', monospace; border-bottom: 1px solid var(--border); background: var(--surface2); }
-    td { padding: 10px 14px; font-size: 0.82rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    th { padding: 10px 14px; text-align: left; font-size: 0.65rem; color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.10em; font-family: var(--font-mono); border-bottom: 1px solid var(--hairline); background: var(--surface-2); }
+    td { padding: 10px 14px; font-size: 0.82rem; border-bottom: 1px solid var(--hairline); vertical-align: middle; color: var(--ink); }
     tr:last-child td { border-bottom: none; }
-    tr:hover td { background: var(--surface2); }
+    tr:hover td { background: var(--surface-2); }
 
     .td-name { font-weight: 600; max-width: 200px; }
-    .td-loc  { font-family: 'IBM Plex Mono', monospace; font-size: 0.72rem; color: var(--accent); }
-    .td-minmax { font-family: 'IBM Plex Mono', monospace; font-size: 0.7rem; }
+    .td-loc  { font-family: var(--font-mono); font-size: 0.72rem; color: var(--brand); }
+    .td-minmax { font-family: var(--font-mono); font-size: 0.7rem; }
     .td-actions { display: flex; gap: 6px; }
 
-    .tbl-btn { padding: 4px 10px; border-radius: 6px; border: 1px solid var(--border); background: var(--surface2); color: var(--text2); font-size: 0.68rem; cursor: pointer; transition: all 0.15s; font-family: 'IBM Plex Mono', monospace; }
-    .tbl-btn:hover { border-color: var(--accent2); color: var(--accent2); }
-    .tbl-btn.del:hover { border-color: var(--red); color: var(--red); }
+    .tbl-btn { padding: 4px 10px; border-radius: 6px; border: 1px solid var(--hairline-2); background: var(--surface-2); color: var(--ink-2); font-size: 0.68rem; cursor: pointer; transition: all 0.15s; font-family: var(--font-mono); }
+    .tbl-btn:hover { border-color: var(--brand); color: var(--brand); }
+    .tbl-btn.del:hover { border-color: var(--crit); color: var(--crit); }
 
     /* ── MODAL ── */
-    .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.75); backdrop-filter: blur(4px); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 20px; }
-    .modal-box { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; width: 100%; max-width: 520px; max-height: 90vh; display: flex; flex-direction: column; box-shadow: var(--shadow-lg); }
-    .modal-head { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+    .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.72); backdrop-filter: blur(8px); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 20px; }
+    .modal-box { background: var(--surface); border: 1px solid var(--hairline); border-radius: 20px; width: 100%; max-width: 520px; max-height: 90vh; display: flex; flex-direction: column; box-shadow: var(--sh-3); }
+    .modal-head { padding: 16px 20px; border-bottom: 1px solid var(--hairline); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
     .modal-title { font-size: 0.95rem; font-weight: 700; }
-    .modal-close { background: none; border: none; color: var(--muted); font-size: 1.1rem; cursor: pointer; padding: 4px 8px; border-radius: 6px; }
-    .modal-close:hover { color: var(--text); }
+    .modal-close { background: none; border: none; color: var(--ink-3); font-size: 1.1rem; cursor: pointer; padding: 4px 8px; border-radius: 6px; }
+    .modal-close:hover { color: var(--ink); }
     .modal-body { padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; }
-    .modal-foot { padding: 14px 20px; border-top: 1px solid var(--border); display: flex; gap: 8px; flex-shrink: 0; }
+    .modal-foot { padding: 14px 20px; border-top: 1px solid var(--hairline); display: flex; gap: 8px; flex-shrink: 0; }
 
     /* ── FORM ── */
     .form-group { display: flex; flex-direction: column; gap: 6px; }
-    .form-label { font-size: 0.75rem; font-weight: 600; color: var(--text2); }
-    .form-input { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 9px 12px; font-family: 'DM Sans', sans-serif; font-size: 0.88rem; color: var(--text); outline: none; transition: border-color 0.2s; width: 100%; }
-    .form-input:focus { border-color: var(--accent2); }
-    .form-input::placeholder { color: var(--muted); }
+    .form-label { font-size: 0.72rem; font-weight: 600; color: var(--ink-2); }
+    .form-input { background: var(--surface-2); border: 1.5px solid var(--hairline-2); border-radius: 9px; padding: 9px 12px; font-family: var(--font-ui); font-size: 0.88rem; color: var(--ink); outline: none; transition: border-color 0.15s; width: 100%; }
+    .form-input:focus { border-color: var(--brand); }
+    .form-input::placeholder { color: var(--ink-4); }
     .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    .form-hint { font-size: 0.65rem; color: var(--muted); font-family: 'IBM Plex Mono', monospace; }
+    .form-hint { font-size: 0.65rem; color: var(--ink-3); font-family: var(--font-mono); }
 
     /* ── BEREICHE ── */
     .bereich-list { display: flex; flex-direction: column; gap: 8px; }
-    .bereich-item { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px 16px; display: flex; align-items: center; gap: 12px; }
+    .bereich-item { background: var(--surface); border: 1px solid var(--hairline); border-radius: 12px; padding: 12px 16px; display: flex; align-items: center; gap: 12px; }
     .bereich-icon { font-size: 1.2rem; }
     .bereich-name { flex: 1; font-size: 0.85rem; font-weight: 600; }
-    .bereich-count { font-size: 0.68rem; color: var(--muted); font-family: 'IBM Plex Mono', monospace; }
+    .bereich-count { font-size: 0.68rem; color: var(--ink-3); font-family: var(--font-mono); }
 
     /* ── PIN ── */
-    .pin-section { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 24px; max-width: 400px; display: flex; flex-direction: column; gap: 16px; }
+    .pin-section { background: var(--surface); border: 1px solid var(--hairline); border-radius: 16px; padding: 24px; max-width: 400px; display: flex; flex-direction: column; gap: 16px; }
     .pin-dots-row { display: flex; gap: 12px; justify-content: center; padding: 8px 0; }
-    .pin-dot { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--border); transition: all 0.15s; }
-    .pin-dot.filled { background: var(--accent); border-color: var(--accent); }
+    .pin-dot { width: 13px; height: 13px; border-radius: 50%; border: 2px solid var(--hairline-2); transition: all 0.15s; }
+    .pin-dot.filled { background: var(--brand); border-color: var(--brand); }
     .pin-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-    .pin-key { aspect-ratio: 1; border-radius: 9px; border: 1px solid var(--border); background: var(--surface2); color: var(--text); font-family: 'IBM Plex Mono', monospace; font-size: 1.1rem; font-weight: 600; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; justify-content: center; }
-    .pin-key:hover { border-color: var(--accent); color: var(--accent); }
+    .pin-key { aspect-ratio: 1; border-radius: 10px; border: 1px solid var(--hairline-2); background: var(--surface-2); color: var(--ink); font-family: var(--font-mono); font-size: 1.1rem; font-weight: 600; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; justify-content: center; touch-action: manipulation; }
+    .pin-key:hover { border-color: var(--brand); color: var(--brand); }
     .pin-key:active { transform: scale(0.94); }
-    .pin-key.confirm { background: var(--accent); border-color: var(--accent); color: white; }
-    .pin-key.del { color: var(--muted); }
+    .pin-key.confirm { background: var(--brand); border-color: var(--brand); color: #fff; }
+    .pin-key.del { color: var(--ink-3); }
 
     /* ── USERS ── */
     .user-list { display: flex; flex-direction: column; gap: 8px; }
-    .user-item { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; display: flex; align-items: center; gap: 12px; }
-    .user-avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--surface2); border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 0.9rem; flex-shrink: 0; }
+    .user-item { background: var(--surface); border: 1px solid var(--hairline); border-radius: 12px; padding: 14px 16px; display: flex; align-items: center; gap: 12px; }
+    .user-avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--surface-2); border: 1px solid var(--hairline); display: flex; align-items: center; justify-content: center; font-size: 0.9rem; font-weight: 600; flex-shrink: 0; font-family: var(--font-mono); color: var(--brand); }
     .user-info { flex: 1; min-width: 0; }
     .user-email { font-size: 0.82rem; font-weight: 600; }
-    .user-name  { font-size: 0.7rem; color: var(--muted); margin-top: 1px; }
+    .user-name  { font-size: 0.7rem; color: var(--ink-3); margin-top: 1px; }
 
     /* ── FOTO UPLOAD ── */
     .foto-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; }
-    .foto-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; position: relative; }
+    .foto-card { background: var(--surface); border: 1px solid var(--hairline); border-radius: 12px; overflow: hidden; position: relative; }
     .foto-card img { width: 100%; height: 120px; object-fit: cover; }
-    .foto-placeholder { width: 100%; height: 120px; background: var(--surface2); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; }
+    .foto-placeholder { width: 100%; height: 120px; background: var(--surface-2); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; }
     .foto-name { padding: 8px 10px; font-size: 0.72rem; font-weight: 600; }
-    .foto-upload-btn { width: 100%; padding: 6px; background: var(--surface2); border: none; border-top: 1px solid var(--border); color: var(--accent2); font-size: 0.68rem; cursor: pointer; font-family: 'IBM Plex Mono', monospace; }
-    .foto-upload-btn:hover { background: var(--surface3); }
+    .foto-upload-btn { width: 100%; padding: 6px; background: var(--surface-2); border: none; border-top: 1px solid var(--hairline); color: var(--brand); font-size: 0.68rem; cursor: pointer; font-family: var(--font-mono); }
+    .foto-upload-btn:hover { background: var(--surface-3); }
 
-    /* ── SUCCESS/ERROR ── */
-    .toast { position: fixed; bottom: 24px; right: 24px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px 16px; font-size: 0.82rem; box-shadow: var(--shadow-lg); z-index: 2000; display: flex; align-items: center; gap: 8px; animation: slideUp 0.3s ease; }
-    .toast.success { border-color: var(--green); color: var(--green); }
-    .toast.error   { border-color: var(--red);   color: var(--red); }
+    /* ── TOAST ── */
+    .toast { position: fixed; bottom: 24px; right: 24px; background: var(--surface); border: 1px solid var(--hairline); border-radius: 12px; padding: 12px 16px; font-size: 0.82rem; box-shadow: var(--sh-3); z-index: 2000; display: flex; align-items: center; gap: 8px; animation: slideUp 0.3s ease; }
+    .toast.success { border-color: var(--ok); color: var(--ok); }
+    .toast.error   { border-color: var(--crit); color: var(--crit); }
     @media (max-width: 768px) { .toast { bottom: 76px; } }
 
     @keyframes slideUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes fadeIn  { from { opacity: 0; transform: translateY(4px); } }
 
     /* ── LOADING ── */
-    .loading-state { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 40px; color: var(--muted); }
+    .loading-state { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 40px; color: var(--ink-3); }
+    .empty-state   { text-align: center; padding: 40px; color: var(--ink-3); font-size: 0.85rem; }
 
     .hidden { display: none !important; }
-    .logout-btn { padding: 7px 14px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface2); color: var(--text2); font-size: 0.82rem; cursor: pointer; transition: all 0.2s; }
-    .logout-btn:hover { border-color: var(--red); color: var(--red); }
 
     @media (max-width: 768px) {
       .admin-sidebar { display: none; }
@@ -170,16 +242,15 @@
 <body class="admin-page">
 
   <!-- NAVBAR -->
-  <nav class="navbar">
-    <div class="navbar-inner">
-      <a href="../index.html" class="nav-logo" style="padding:0;"><img src="../LAGER_APP.png" class="app-logo" data-src-light="../LAGER_APP.png" data-src-dark="../LAGER_APP_DARK.PNG" alt="LAGER//APP" style="height:32px;width:auto;display:block;object-fit:contain;"></a>
-      <div class="nav-right">
-        <span id="nav-user" class="mono text-xs text-muted hide-mobile"></span>
-        <span class="badge badge-orange hide-mobile" id="role-badge">ADMIN</span>
-        <a href="portal.html" class="logout-btn" style="text-decoration:none;">🖥️ Portal</a>
-        <button class="logout-btn" onclick="doLogout()">Abmelden</button>
-        <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()">☀️</button>
-      </div>
+  <nav class="a-nav">
+    <button class="a-menu-btn" onclick="openBottomSheet()" aria-label="Menü">☰</button>
+    <div class="a-wordmark">LAGER<span class="slash">//</span>APP</div>
+    <div class="a-nav-right">
+      <span id="nav-user" class="a-nav-user"></span>
+      <span class="a-badge">ADMIN</span>
+      <a href="portal.html" class="a-btn" style="text-decoration:none;">Portal</a>
+      <button class="a-btn logout" onclick="doLogout()">Abmelden</button>
+      <button class="a-theme" id="theme-toggle" onclick="toggleTheme()">☀️</button>
     </div>
   </nav>
 
@@ -236,52 +307,72 @@
 
     <!-- SIDEBAR -->
     <aside class="admin-sidebar">
+
+      <div class="sidebar-workspace">
+        <div class="sidebar-ws-icon">A</div>
+        <div>
+          <div class="sidebar-ws-name">Admin</div>
+          <div class="sidebar-ws-sub">Systemverwaltung</div>
+        </div>
+      </div>
+
       <nav class="sidebar-nav">
+        <div class="sidebar-section-label">Übersicht</div>
         <div class="sidebar-item active" id="nav-dashboard" onclick="showSection('dashboard')">
-          <svg class="s-ico" viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="7" height="7" rx="1.5"/><rect x="11" y="2" width="7" height="7" rx="1.5"/><rect x="2" y="11" width="7" height="7" rx="1.5"/><rect x="11" y="11" width="7" height="7" rx="1.5"/></svg>
+          <svg class="s-ico" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="1" width="5" height="5" rx="1"/><rect x="8" y="1" width="5" height="5" rx="1"/><rect x="1" y="8" width="5" height="5" rx="1"/><rect x="8" y="8" width="5" height="5" rx="1"/></svg>
           Dashboard
         </div>
+
+        <div class="sidebar-section-label">Lager</div>
         <div class="sidebar-item" id="nav-artikel" onclick="showSection('artikel')">
-          <svg class="s-ico" viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6l7-3 7 3v8l-7 3-7-3V6z"/><path d="M10 3v14M3 6l7 3 7-3"/></svg>
+          <svg class="s-ico" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 1.5l5 3v5l-5 3-5-3v-5l5-3z"/><path d="M2 4.5l5 3 5-3M7 7.5V13"/></svg>
           Artikelverwaltung
         </div>
         <div class="sidebar-item" id="nav-bereiche" onclick="showSection('bereiche')">
-          <svg class="s-ico" viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l7-6 7 6v8a1 1 0 01-1 1H4a1 1 0 01-1-1V9z"/><path d="M7 18V11h6v7"/></svg>
+          <svg class="s-ico" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6.5 7 2.5l5 4V12a1 1 0 0 1-1 1H8.5v-3h-3v3H3a1 1 0 0 1-1-1V6.5z"/></svg>
           Bereiche
         </div>
-        <div class="sidebar-divider"></div>
         <div class="sidebar-item" id="nav-fotos" onclick="showSection('fotos')">
-          <svg class="s-ico" viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="16" height="12" rx="2"/><circle cx="10" cy="11" r="3"/><path d="M7 5l1.5-2h3L13 5"/></svg>
+          <svg class="s-ico" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V4z"/><circle cx="7" cy="7" r="2"/><path d="M10 4h.01"/></svg>
           Fotos &amp; Bilder
         </div>
         <div class="sidebar-item" id="nav-ss-fotos" onclick="showSection('ss-fotos')">
-          <svg class="s-ico" viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="10" height="13" rx="1.5"/><rect x="7" y="4" width="10" height="13" rx="1.5"/></svg>
+          <svg class="s-ico" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1.5" y="2.5" width="8" height="11" rx="1"/><rect x="4.5" y="0.5" width="8" height="11" rx="1"/></svg>
           StockSwipe Fotos
         </div>
-        <div class="sidebar-item" onclick="window.location.href='scanner.html'">
-          <svg class="s-ico" viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="14" height="11" rx="2"/><circle cx="10" cy="9.5" r="2.5"/><path d="M3 15l14-1"/></svg>
-          Charge-Scanner
-        </div>
-        <div class="sidebar-divider"></div>
-        <div class="sidebar-item" id="nav-backup" onclick="showSection('backup')">
-          <svg class="s-ico" viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 14v2a1 1 0 001 1h12a1 1 0 001-1v-2"/><path d="M10 3v10M7 10l3 3 3-3"/></svg>
-          Backup &amp; Import
-        </div>
-        <div class="sidebar-divider"></div>
-        <div class="sidebar-item" id="nav-pin" onclick="showSection('pin')">
-          <svg class="s-ico" viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="9" width="10" height="8" rx="1.5"/><path d="M7 9V6a3 3 0 016 0v3"/><circle cx="10" cy="13" r="1"/></svg>
-          PIN ändern
-        </div>
+
+        <div class="sidebar-section-label">System</div>
         <div class="sidebar-item" id="nav-users" onclick="showSection('users')">
-          <svg class="s-ico" viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="7" r="3"/><path d="M2 17c1-3 3-4 6-4s5 1 6 4"/><path d="M14 4a3 3 0 010 6M17 17c1-3-1-5-3-5"/></svg>
+          <svg class="s-ico" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="5.5" cy="4.5" r="2.5"/><path d="M1 12c.5-2.5 2-3.5 4.5-3.5s4 1 4.5 3.5"/><path d="M10 2a2.5 2.5 0 0 1 0 5M12.5 12c-.3-2-1.5-3-2.5-3.5"/></svg>
           Accounts
         </div>
-      </nav>
-      <div class="sidebar-bottom">
-        <a href="portal.html" class="sidebar-item">
-          <svg class="s-ico" viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="16" height="13" rx="2"/><path d="M2 8h16M8 8v9"/></svg>
+        <div class="sidebar-item" id="nav-backup" onclick="showSection('backup')">
+          <svg class="s-ico" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 10v1.5a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V10"/><path d="M7 2v8M5 8l2 2 2-2"/></svg>
+          Backup &amp; Import
+        </div>
+        <div class="sidebar-item" id="nav-pin" onclick="showSection('pin')">
+          <svg class="s-ico" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="6.5" width="7" height="5.5" rx="1"/><path d="M5 6.5V5a2 2 0 0 1 4 0v1.5"/></svg>
+          PIN ändern
+        </div>
+        <div class="sidebar-item" onclick="window.location.href='scanner.html'">
+          <svg class="s-ico" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4.5V3a1 1 0 0 1 1-1h1.5M8.5 2H11a1 1 0 0 1 1 1v1.5M12 9.5V11a1 1 0 0 1-1 1H9.5M5.5 12H4a1 1 0 0 1-1-1V9.5M4 7h6"/></svg>
+          Charge-Scanner
+        </div>
+        <div class="sidebar-item" onclick="window.location.href='portal.html'">
+          <svg class="s-ico" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="12" height="9" rx="1.5"/><path d="M1 6h12M5 6v6"/></svg>
           Wachenleiter-Portal
-        </a>
+        </div>
+      </nav>
+
+      <div class="sidebar-bottom">
+        <div class="sidebar-user-pill">
+          <div class="sidebar-user-avatar" id="sidebar-user-avatar">A</div>
+          <div style="flex:1;min-width:0;">
+            <div class="sidebar-user-name" id="sidebar-user-name">Admin</div>
+            <div class="sidebar-user-role">Administrator</div>
+          </div>
+          <button class="sidebar-logout-btn" onclick="doLogout()" title="Abmelden">↪</button>
+        </div>
       </div>
     </aside>
 
@@ -799,15 +890,16 @@
       if (!user) { window.location.href = 'login.html'; return; }
       const userSnap = await getDoc(doc(db, 'users', user.uid));
       const role     = userSnap.exists() ? userSnap.data().role : null;
-      if (role !== 'admin' && role !== 'wachenleiter') { window.location.href = '../index.html'; return; }
+      if (role !== 'admin' && role !== 'wachenleiter') { window.location.href = 'login.html?tab=wachenleiter'; return; }
+      const displayName = userSnap.data()?.name || user.email;
       document.getElementById('nav-user').textContent = user.email;
       document.getElementById('auth-loading').classList.add('hidden');
       document.getElementById('admin-layout').classList.remove('hidden');
       document.getElementById('bottom-nav').classList.remove('hidden');
-
-      // Rolle anzeigen
-      const badge = document.getElementById('role-badge');
-      if (badge) badge.textContent = role === 'admin' ? 'ADMIN' : 'WACHENLEITER';
+      const sidebarName = document.getElementById('sidebar-user-name');
+      if (sidebarName) sidebarName.textContent = displayName;
+      const sidebarAvatar = document.getElementById('sidebar-user-avatar');
+      if (sidebarAvatar) sidebarAvatar.textContent = (displayName[0] || 'A').toUpperCase();
 
       // Benutzer-Bereich nur für Admin sichtbar
       if (role !== 'admin') {

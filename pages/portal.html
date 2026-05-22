@@ -54,7 +54,7 @@
 
     /* ── SIDEBAR ── */
     .portal-sidebar {
-      width: 220px; flex-shrink: 0;
+      width: 232px; flex-shrink: 0;
       background: var(--surface-2);
       border-right: 0.5px solid var(--hairline);
       display: flex; flex-direction: column;
@@ -99,6 +99,37 @@
     }
     .sidebar-divider { height: 0.5px; background: var(--hairline); margin: 6px 8px; }
     .sidebar-bottom  { padding: 8px; border-top: 0.5px solid var(--hairline); }
+    .sidebar-user-pill {
+      display: flex; align-items: center; gap: 8px;
+      padding: 7px 8px; border-radius: 8px;
+      background: var(--surface-3); border: 1px solid var(--hairline);
+    }
+    .sidebar-user-avatar {
+      width: 22px; height: 22px; border-radius: 50%;
+      background: var(--brand-soft); color: var(--brand);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 10px; font-weight: 700; flex-shrink: 0;
+    }
+    .sidebar-user-name { font-size: 12px; font-weight: 600; color: var(--ink); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .sidebar-user-role { font-size: 10px; color: var(--ink-3); font-family: var(--font-mono); }
+    .sidebar-logout-btn {
+      width: 24px; height: 24px; border-radius: 6px; border: 1px solid var(--hairline-2);
+      background: none; color: var(--ink-3); cursor: pointer; font-size: 0.75rem;
+      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+      transition: border-color 0.15s, color 0.15s;
+    }
+    .sidebar-logout-btn:hover { border-color: var(--crit); color: var(--crit); }
+
+    /* ── HAMBURGER ── */
+    .p-menu-btn {
+      display: none; width: 34px; height: 34px; border-radius: 8px;
+      border: 1px solid var(--hairline-2); background: var(--surface-2);
+      color: var(--ink-2); cursor: pointer; font-size: 1rem;
+      align-items: center; justify-content: center; flex-shrink: 0;
+      transition: border-color 0.15s, color 0.15s;
+    }
+    .p-menu-btn:hover { border-color: var(--brand); color: var(--brand); }
+    @media (max-width: 768px) { .p-menu-btn { display: flex; } }
 
     /* ── CONTENT ── */
     .portal-content { flex: 1; padding: 24px; overflow-x: hidden; min-width: 0; }
@@ -238,6 +269,7 @@
 
   <!-- NAVBAR -->
   <nav class="p-nav">
+    <button class="p-menu-btn" id="hamburger-btn" onclick="toggleMobileNav()" aria-label="Menü">☰</button>
     <div class="p-wordmark">LAGER<span class="slash">//</span>APP</div>
     <div class="p-nav-right">
       <span id="nav-user" class="p-nav-user"></span>
@@ -350,39 +382,12 @@
           <svg class="s-ico" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6.5 7 2.5l5 4V12a1 1 0 0 1-1 1H8.5v-3h-3v3H3a1 1 0 0 1-1-1V6.5z"/></svg>
           Bereiche
         </div>
-
-        <div class="sidebar-section-label">Medien</div>
         <div class="sidebar-item" id="nav-fotos" onclick="showSection('fotos')">
           <svg class="s-ico" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V4z"/><circle cx="7" cy="7" r="2"/><path d="M10 4h.01"/></svg>
           Fotos &amp; Bilder
         </div>
-        <div class="sidebar-item" id="nav-ss-fotos" onclick="showSection('ss-fotos')">
-          <svg class="s-ico" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1.5" y="2.5" width="8" height="11" rx="1"/><rect x="4.5" y="0.5" width="8" height="11" rx="1"/></svg>
-          StockSwipe Fotos
-        </div>
 
-        <div class="sidebar-section-label">Verwaltung</div>
-        <div class="sidebar-item" id="nav-statistik" onclick="showSection('statistik')">
-          <svg class="s-ico" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 11V6M5 11V3M8 11V7M11 11V5"/></svg>
-          Statistik
-        </div>
-        <div class="sidebar-item" id="nav-analytics" onclick="showSection('analytics')">
-          <svg class="s-ico" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1.5" y="7.5" width="3" height="5" rx="0.5"/><rect x="5.5" y="4.5" width="3" height="8" rx="0.5"/><rect x="9.5" y="2" width="3" height="10.5" rx="0.5"/><path d="M1 1.5l4 4 3-2.5 4-3"/></svg>
-          Analytics
-        </div>
-        <div class="sidebar-section-label">Workflow</div>
-        <div class="sidebar-item" id="nav-sessions" onclick="showSection('sessions')">
-          <svg class="s-ico" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="4.5" cy="5" r="2"/><circle cx="9.5" cy="5" r="2"/><path d="M1 12c.4-2 1.6-3 3.5-3 1 0 2.2.5 2.5 1M7 12c.4-2 1.6-3 3.5-3s3.1 1 3.5 3"/></svg>
-          Live Sessions
-        </div>
-        <div class="sidebar-item" id="nav-verfallskalender" onclick="showSection('verfallskalender')">
-          <svg class="s-ico" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3.5" width="10" height="9" rx="1"/><path d="M2 6.5h10M4.5 2v3M9.5 2v3"/></svg>
-          Verfallskalender
-        </div>
-        <div class="sidebar-item" id="nav-rollen" onclick="showSection('rollen')">
-          <svg class="s-ico" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 2l5 2v4c0 3-2.5 5-5 6-2.5-1-5-3-5-6V4l5-2z"/></svg>
-          Konten &amp; Rollen
-        </div>
+        <div class="sidebar-section-label">System</div>
         <div class="sidebar-item" id="nav-pin" onclick="showSection('pin')">
           <svg class="s-ico" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="6.5" width="7" height="5.5" rx="1"/><path d="M5 6.5V5a2 2 0 0 1 4 0v1.5"/></svg>
           PIN ändern
@@ -390,10 +395,14 @@
       </nav>
 
       <div class="sidebar-bottom">
-        <a href="scanner.html" class="sidebar-item" style="text-decoration:none;">
-          <svg class="s-ico" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4.5V3a1 1 0 0 1 1-1h1.5M8.5 2H11a1 1 0 0 1 1 1v1.5M12 9.5V11a1 1 0 0 1-1 1H9.5M5.5 12H4a1 1 0 0 1-1-1V9.5M4 7h6"/></svg>
-          Charge-Scanner
-        </a>
+        <div class="sidebar-user-pill">
+          <div class="sidebar-user-avatar" id="sidebar-user-avatar">W</div>
+          <div style="flex:1;min-width:0;">
+            <div class="sidebar-user-name" id="sidebar-user-name">Wachenleiter</div>
+            <div class="sidebar-user-role">Wachenleiter</div>
+          </div>
+          <button class="sidebar-logout-btn" onclick="doLogout()" title="Abmelden">↪</button>
+        </div>
       </div>
     </aside>
 
@@ -1054,14 +1063,18 @@
       const snap = await getDoc(doc(db, 'users', user.uid));
       const role = snap.exists() ? snap.data().role : null;
       if (role !== 'wachenleiter' && role !== 'admin') {
-        window.location.href = '../index.html'; return;
+        window.location.href = 'login.html?tab=wachenleiter'; return;
       }
+      const displayName = snap.data()?.name || user.email;
       document.getElementById('nav-user').textContent = user.email;
       document.getElementById('auth-loading').classList.add('hidden');
       document.getElementById('portal-layout').classList.remove('hidden');
       document.getElementById('bottom-nav').classList.remove('hidden');
-      document.getElementById('dashboard-greeting').textContent =
-        `Willkommen, ${snap.data()?.name || user.email}`;
+      document.getElementById('dashboard-greeting').textContent = `Willkommen, ${displayName}`;
+      const sidebarName = document.getElementById('sidebar-user-name');
+      if (sidebarName) sidebarName.textContent = displayName;
+      const sidebarAvatar = document.getElementById('sidebar-user-avatar');
+      if (sidebarAvatar) sidebarAvatar.textContent = (displayName[0] || 'W').toUpperCase();
 
       // Admin-Button nur für Admins anzeigen
       if (role === 'admin') {
@@ -1079,6 +1092,10 @@
     window.doLogout = async function() {
       await signOut(auth);
       window.location.href = 'login.html';
+    };
+
+    window.toggleMobileNav = function() {
+      openBottomSheet();
     };
 
     // ── Load All ──

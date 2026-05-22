@@ -434,6 +434,72 @@
 
     .hidden { display: none !important; }
 
+    /* ── MinMaxIst 3-cell block ── */
+    .mmi-row {
+      display: flex; gap: 1px; border-radius: var(--r-sm); overflow: hidden;
+      box-shadow: inset 0 0 0 0.5px var(--hairline); margin-top: 10px;
+    }
+    .mmi-cell {
+      flex: 1; display: flex; flex-direction: column; align-items: center;
+      padding: 7px 10px; background: var(--surface-2);
+      border-right: 0.5px solid var(--hairline);
+    }
+    .mmi-cell:last-child { border-right: none; }
+    .mmi-lbl { font-size: 9px; color: var(--ink-3); font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 2px; }
+    .mmi-val { font-size: 20px; font-weight: 700; font-family: var(--font-mono); line-height: 1.1; color: var(--ink); font-variant-numeric: tabular-nums; }
+    .mmi-unit { font-size: 9px; color: var(--ink-3); font-family: var(--font-mono); margin-top: 1px; }
+    .mmi-cell.mmi-min .mmi-val { color: var(--low); }
+    .mmi-cell.mmi-max .mmi-val { color: var(--ok); }
+    .mmi-cell.mmi-ist-ok   .mmi-val { color: var(--ok); }
+    .mmi-cell.mmi-ist-low  .mmi-val { color: var(--low); }
+    .mmi-cell.mmi-ist-crit .mmi-val { color: var(--crit); }
+
+    /* ── Stock Bar ── */
+    .stock-bar-wrap {
+      position: relative; height: 8px; border-radius: 4px;
+      background: var(--surface-3); overflow: visible; margin-top: 10px;
+    }
+    .stock-bar-fill {
+      height: 100%; border-radius: 4px; transition: width .3s;
+      background: var(--ok);
+    }
+    .stock-bar-fill.low  { background: var(--low); }
+    .stock-bar-fill.crit { background: var(--crit); }
+    .stock-bar-min {
+      position: absolute; top: -3px; bottom: -3px; width: 2px;
+      background: var(--ink-3); border-radius: 1px; transform: translateX(-50%);
+    }
+
+    /* ── Member Pills (Bereichsauswahl) ── */
+    .member-pills {
+      display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px;
+      scrollbar-width: none;
+    }
+    .member-pills::-webkit-scrollbar { display: none; }
+    .member-pill {
+      display: flex; align-items: center; gap: 7px; flex-shrink: 0;
+      padding: 5px 10px 5px 6px; border-radius: var(--r-pill);
+      background: var(--surface); box-shadow: inset 0 0 0 1px var(--hairline);
+    }
+    .mpill-avatar {
+      width: 22px; height: 22px; border-radius: 50%;
+      background: var(--brand-soft); color: var(--brand);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 9px; font-weight: 700; font-family: var(--font-mono); flex-shrink: 0;
+    }
+    .mpill-name { font-size: 12px; font-weight: 600; }
+    .mpill-area { font-size: 10px; color: var(--ink-3); font-family: var(--font-mono); }
+
+    /* ── Bereich row right side ── */
+    .bereich-row-right { margin-left: auto; flex-shrink: 0; display: flex; align-items: center; }
+    .bereich-take-btn {
+      height: 30px; padding: 0 12px; border-radius: var(--r-sm);
+      border: 1px solid var(--hairline-2); background: var(--surface-2);
+      color: var(--ink-2); font-family: var(--font-ui); font-size: 12px; font-weight: 600;
+      cursor: pointer;
+    }
+    .bereich-row.selected .bereich-take-btn { border-color: var(--brand); color: var(--brand); background: var(--brand-soft); }
+
     /* ── Progress ── */
     .la-prog-text {
       display: flex; justify-content: space-between;
@@ -503,6 +569,8 @@
         <div class="session-badge-title">👥 Laufende Bestellung</div>
         <div id="join-session-info" style="font-size:12px;color:var(--ink-2);margin-top:2px;"></div>
       </div>
+
+      <div id="member-pills" class="member-pills" style="display:none;"></div>
 
       <div style="font-size:11px;font-weight:600;color:var(--ink-3);text-transform:uppercase;letter-spacing:0.06em;">Bereich wählen</div>
 
@@ -625,6 +693,48 @@
       return String(str ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     }
 
+    function prettyBereich(name) {
+      return String(name ?? '').replace(/^Lager\s*[-–]\s*/i, '').trim();
+    }
+
+    function getStockState(stock, min) {
+      if (stock == null) return null;
+      if (stock === 0 || stock < min) return 'crit';
+      if (stock < min * 1.5) return 'low';
+      return 'ok';
+    }
+
+    function buildMmiHtml(a) {
+      const unit = a.minEinheit || a.maxEinheit || 'Stk';
+      const state = getStockState(a.stock, a.min);
+      const minCell = a.min != null
+        ? `<div class="mmi-cell mmi-min"><span class="mmi-lbl">MIN</span><span class="mmi-val">${a.min}</span><span class="mmi-unit">${unit}</span></div>` : '';
+      const istCell = a.stock != null
+        ? `<div class="mmi-cell mmi-ist-${state || 'ok'}"><span class="mmi-lbl">IST</span><span class="mmi-val">${a.stock}</span><span class="mmi-unit">${unit}</span></div>` : '';
+      const maxCell = a.max != null
+        ? `<div class="mmi-cell mmi-max"><span class="mmi-lbl">MAX</span><span class="mmi-val">${a.max}</span><span class="mmi-unit">${unit}</span></div>` : '';
+      if (!minCell && !istCell && !maxCell) return '';
+      return `<div class="mmi-row">${minCell}${istCell}${maxCell}</div>`;
+    }
+
+    function buildStockBarHtml(a) {
+      if (a.max == null) return '';
+      const stock = a.stock ?? 0;
+      const max   = a.max;
+      const fillPct = max > 0 ? Math.min(100, Math.round((stock / max) * 100)) : 0;
+      const minPct  = (a.min != null && max > 0) ? Math.min(100, Math.round((a.min / max) * 100)) : null;
+      const state   = getStockState(stock, a.min) || 'ok';
+      const marker  = minPct != null ? `<div class="stock-bar-min" style="left:${minPct}%"></div>` : '';
+      return `<div class="stock-bar-wrap"><div class="stock-bar-fill ${state}" style="width:${fillPct}%"></div>${marker}</div>`;
+    }
+
+    function buildStockChipHtml(stock, min) {
+      const state = getStockState(stock, min);
+      if (!state) return '';
+      const labels = { ok: 'OK', low: 'Niedrig', crit: 'Kritisch' };
+      return `<span class="la-chip ${state}" style="height:18px;font-size:10px;margin-left:6px;"><span class="dot"></span>${labels[state]}</span>`;
+    }
+
     function naturalSort(a, b) {
       const seg = s => s.split(/[\.\-]/).map(x => isNaN(x) ? x : parseInt(x, 10));
       const A = seg(a), B = seg(b);
@@ -686,6 +796,9 @@
         document.getElementById('nav-user').textContent = userName;
         await loadCheckData();
         showJoinScreen();
+      } else {
+        const ret = encodeURIComponent(window.location.pathname + window.location.search);
+        window.location.replace(`../pages/login.html?tab=mitarbeiter&return=${ret}`);
       }
     })();
 
@@ -817,8 +930,27 @@
     }
 
     function renderBereichList(sessionData) {
-      const listEl = document.getElementById('bereich-list');
+      const listEl       = document.getElementById('bereich-list');
+      const pillsEl      = document.getElementById('member-pills');
       const bereichStatus = sessionData?.bereichStatus || {};
+
+      // Member pills — who's working where
+      const active = Object.entries(bereichStatus)
+        .filter(([, bs]) => bs.status === 'gesperrt' && bs.mitarbeiter);
+      if (active.length > 0 && pillsEl) {
+        pillsEl.style.display = 'flex';
+        pillsEl.innerHTML = active.map(([bid, bs]) => {
+          const initials = bs.mitarbeiter.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
+          const area     = prettyBereich(alleBereiche.find(b => b.id === bid)?.name || bid);
+          return `<div class="member-pill">
+            <div class="mpill-avatar">${esc(initials)}</div>
+            <div><div class="mpill-name">${esc(bs.mitarbeiter)}</div><div class="mpill-area">${esc(area)}</div></div>
+          </div>`;
+        }).join('');
+      } else if (pillsEl) {
+        pillsEl.style.display = 'none';
+        pillsEl.innerHTML = '';
+      }
 
       listEl.innerHTML = '';
       alleBereiche.forEach(b => {
@@ -827,31 +959,39 @@
         const count  = alleArtikel.filter(a => a.bereich === b.id).length;
 
         const div = document.createElement('div');
-        div.className = 'bereich-row';
         div.dataset.bereichId = b.id;
 
         let indicatorHtml = '';
-        let subText = `${count} Artikel`;
-        let rowClass = '';
-        let canSelect = false;
+        let subText       = `${count} Artikel`;
+        let rowClass      = '';
+        let canSelect     = false;
+        let rightHtml     = '';
 
         if (status === 'erledigt') {
           indicatorHtml = '<div class="status-dot dot-erledigt"></div>';
-          subText += ` · Erledigt von ${esc(bs.mitarbeiter || '')}`;
-          rowClass = 'erledigt';
+          subText      += bs.mitarbeiter ? ` · Erledigt von ${esc(bs.mitarbeiter)}` : ' · Erledigt';
+          rowClass      = 'erledigt';
+          rightHtml     = `<span class="la-chip ok" style="height:20px;font-size:10px;"><span class="dot"></span>Fertig</span>`;
         } else if (status === 'gesperrt') {
-          indicatorHtml = '<span style="font-size:0.95rem;line-height:1;">🔒</span>';
-          subText += ` · ${esc(bs.mitarbeiter || '')} ist gerade hier`;
-          rowClass = 'blocked';
+          const initials = (bs.mitarbeiter || '?').split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
+          indicatorHtml  = '<span style="font-size:0.95rem;line-height:1;">🔒</span>';
+          subText       += bs.mitarbeiter ? ` · ${esc(bs.mitarbeiter)}` : '';
+          rowClass       = 'blocked';
+          rightHtml      = `<div style="display:flex;align-items:center;gap:6px;">
+            <div style="width:22px;height:22px;border-radius:50%;background:var(--brand-soft);color:var(--brand);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;font-family:var(--font-mono);">${esc(initials)}</div>
+            <span style="font-size:11px;color:var(--ink-3);">läuft</span>
+          </div>`;
         } else if (status === 'abgebrochen') {
           indicatorHtml = '<div class="status-dot dot-abgebrochen"></div>';
-          subText += ` · Abgebrochen (fortführen?)`;
-          rowClass = 'abgebrochen selectable';
-          canSelect = true;
+          subText      += ' · Abgebrochen';
+          rowClass      = 'abgebrochen selectable';
+          canSelect     = true;
+          rightHtml     = `<button class="bereich-take-btn">Fortführen</button>`;
         } else {
           indicatorHtml = '<div class="status-dot dot-frei"></div>';
-          rowClass = 'selectable';
-          canSelect = true;
+          rowClass      = 'selectable';
+          canSelect     = true;
+          rightHtml     = `<button class="bereich-take-btn">Übernehmen</button>`;
         }
 
         const isSelected = selectedBereichId === b.id;
@@ -861,10 +1001,10 @@
         div.innerHTML = `
           <div class="status-indicator">${indicatorHtml}</div>
           <div class="bereich-row-info">
-            <div class="bereich-row-name">${esc(b.name)}</div>
+            <div class="bereich-row-name">${esc(prettyBereich(b.name))}</div>
             <div class="bereich-row-sub">${subText}</div>
           </div>
-          ${canSelect ? '<div class="bereich-radio"></div>' : ''}
+          <div class="bereich-row-right">${rightHtml}</div>
         `;
 
         if (canSelect) div.addEventListener('click', () => selectBereich(b.id));
@@ -880,7 +1020,7 @@
       const bereich = alleBereiche.find(b => b.id === id);
       document.getElementById('btn-join-start').disabled = false;
       document.getElementById('btn-join-start').textContent =
-        sessionId ? `Beitreten: ${bereich?.name} →` : `Starten: ${bereich?.name} →`;
+        sessionId ? `Beitreten: ${prettyBereich(bereich?.name)} →` : `Starten: ${prettyBereich(bereich?.name)} →`;
     }
 
     /* ── Lock & Start ── */
@@ -953,7 +1093,7 @@
     /* ── Check Screen ── */
     function renderCheckScreen() {
       const bereich = alleBereiche.find(b => b.id === currentBereichId);
-      document.getElementById('check-bereich-name').textContent = bereich?.name || '–';
+      document.getElementById('check-bereich-name').textContent = prettyBereich(bereich?.name) || '–';
       bereichArtikel = alleArtikel
         .filter(a => a.bereich === currentBereichId)
         .sort((a, b) => naturalSort(a.lp || '', b.lp || ''));
@@ -968,38 +1108,28 @@
           const bestell = state.bestellen;
           const menge   = state.menge ?? 1;
 
-          const minHtml = a.min != null ? `
-            <div class="minmax-badge min">
-              <span class="minmax-label">MIN</span>
-              <span class="minmax-value">${a.min}</span>
-              <span class="minmax-unit">${a.minEinheit || 'Stk'}</span>
-            </div>` : '';
-
-          const maxHtml = a.max != null ? `
-            <div class="minmax-badge max">
-              <span class="minmax-label">MAX</span>
-              <span class="minmax-value">${a.max}</span>
-              <span class="minmax-unit">${a.maxEinheit || 'Stk'}</span>
-            </div>` : '';
+          const mmiHtml      = buildMmiHtml(a);
+          const stockBarHtml = buildStockBarHtml(a);
+          const stockChipHtml = buildStockChipHtml(a.stock, a.min);
 
           const fotoHtml = (a.fotoUrl || a.lagerFotoUrl)
             ? `<div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0;">
                  ${a.fotoUrl ? `
                    <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
-                     <div class="artikel-foto-btn" data-foto="${esc(a.fotoUrl)}" data-name="${esc(a.name)}">
+                     <div class="artikel-foto-btn" style="width:64px;height:64px;" data-foto="${esc(a.fotoUrl)}" data-name="${esc(a.name)}">
                        <img src="${esc(a.fotoUrl)}" alt="${esc(a.name)}" loading="lazy">
                      </div>
                      <div style="font-size:9px;color:var(--ink-3);font-family:var(--font-mono);letter-spacing:0.03em;">PRODUKT</div>
                    </div>` : ''}
                  ${a.lagerFotoUrl ? `
                    <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
-                     <div class="artikel-foto-btn" data-foto="${esc(a.lagerFotoUrl)}" data-name="Lagerort: ${esc(a.name)}" style="background:var(--surface-3);">
+                     <div class="artikel-foto-btn" style="width:64px;height:64px;" data-foto="${esc(a.lagerFotoUrl)}" data-name="Lagerort: ${esc(a.name)}" style="background:var(--surface-3);">
                        <img src="${esc(a.lagerFotoUrl)}" alt="Lagerort" loading="lazy">
                      </div>
                      <div style="font-size:9px;color:var(--ink-3);font-family:var(--font-mono);letter-spacing:0.03em;">LAGERORT</div>
                    </div>` : ''}
                </div>`
-            : `<div class="artikel-foto-btn" style="cursor:default;opacity:0.4;">📦</div>`;
+            : `<div class="artikel-foto-btn" style="width:64px;height:64px;cursor:default;opacity:0.4;">📦</div>`;
 
           const chipsHtml = QUICK_VALUES.map(v =>
             `<div class="chip ${menge === v && bestell ? 'selected' : ''}" data-id="${a.id}" data-val="${v}">${v}</div>`
@@ -1010,13 +1140,16 @@
               <div class="artikel-header">
                 ${fotoHtml}
                 <div class="artikel-info">
-                  <div class="artikel-name">${esc(a.name)}</div>
-                  <div class="artikel-lp">
-                    <span class="la-lp">${esc(a.lp)}</span>
-                    <span style="color:var(--ink-3);">·</span>
-                    <span style="color:var(--ink-3);">${esc(a.location)}</span>
+                  <div style="display:flex;align-items:center;gap:0;flex-wrap:wrap;">
+                    <span class="artikel-name" style="margin-bottom:0;">${esc(a.name)}</span>
+                    ${stockChipHtml}
                   </div>
-                  <div class="minmax-row">${minHtml}${maxHtml}</div>
+                  <div class="artikel-lp" style="margin-top:5px;">
+                    <span class="la-lp">${esc(a.lp)}</span>
+                    ${a.location ? `<span style="color:var(--ink-3);">·</span><span style="color:var(--ink-3);">${esc(a.location)}</span>` : ''}
+                  </div>
+                  ${mmiHtml}
+                  ${stockBarHtml}
                 </div>
               </div>
               ${a.hinweis ? `<div class="artikel-hinweis">💡 ${esc(a.hinweis)}</div>` : ''}
@@ -1024,8 +1157,8 @@
               <div class="bestell-section">
                 <div class="bestell-frage">Muss bestellt werden?</div>
                 <div class="ja-nein-row">
-                  <button class="ja-nein-btn nein ${bestell === false ? 'selected' : ''}" data-id="${a.id}" data-val="nein">✅ Nein</button>
-                  <button class="ja-nein-btn ja   ${bestell === true  ? 'selected' : ''}" data-id="${a.id}" data-val="ja">⚠️ Ja</button>
+                  <button class="ja-nein-btn nein ${bestell === false ? 'selected' : ''}" data-id="${a.id}" data-val="nein">✓ Ausreichend</button>
+                  <button class="ja-nein-btn ja   ${bestell === true  ? 'selected' : ''}" data-id="${a.id}" data-val="ja">Bestellen${a.max != null && a.stock != null ? ` +${Math.max(1, a.max - (a.stock ?? 0))}` : ''}</button>
                 </div>
                 <div class="menge-wrap ${bestell === true ? 'visible' : ''}" id="menge-${a.id}">
                   <div class="menge-label">Wie viel soll bestellt werden?</div>
@@ -1278,7 +1411,7 @@
           <div class="wait-bereich-row ${rowClass}">
             ${dotHtml}
             <div style="flex:1;min-width:0;">
-              <div style="font-size:14px;font-weight:600;">${esc(b.name)}</div>
+              <div style="font-size:14px;font-weight:600;">${esc(prettyBereich(b.name))}</div>
               <div style="font-size:11px;color:var(--ink-3);font-family:var(--font-mono);margin-top:2px;">${esc(infoText)}</div>
             </div>
           </div>`;

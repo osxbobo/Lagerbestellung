@@ -2,7 +2,7 @@
 <html lang="de" data-theme="dark">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -10,11 +10,12 @@
   <title>Mitarbeiter – LAGER//APP</title>
   <link rel="manifest" href="../manifest.json">
   <link rel="stylesheet" href="../css/main.css">
-
   <style>
-    body { min-height: 100vh; display: flex; flex-direction: column; }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { min-height: 100dvh; display: flex; flex-direction: column; background: var(--bg); color: var(--ink); font-family: var(--font-ui); }
+    .hidden { display: none !important; }
 
-    /* ── Navbar ── */
+    /* ── Nav ── */
     .m-nav {
       position: sticky; top: 0; z-index: 100;
       background: var(--glass-bg-strong);
@@ -25,130 +26,167 @@
       display: flex; align-items: center; gap: 10px;
     }
     .m-back {
-      width: 34px; height: 34px; border-radius: 17px;
+      width: 36px; height: 36px; border-radius: 18px;
       background: var(--surface); border: none; cursor: pointer;
       display: flex; align-items: center; justify-content: center;
       color: var(--ink-2); box-shadow: inset 0 0 0 1px var(--hairline);
-      touch-action: manipulation;
+      touch-action: manipulation; flex-shrink: 0;
     }
     .m-nav-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
-    .m-logout {
-      border: none; border-radius: var(--r-sm);
-      background: var(--brand-soft); color: var(--brand);
-      padding: 5px 12px; cursor: pointer;
-      font-family: var(--font-ui); font-size: 12px; font-weight: 600;
-      touch-action: manipulation;
-    }
     .m-theme {
-      width: 34px; height: 34px; border-radius: 17px;
+      width: 36px; height: 36px; border-radius: 18px;
       background: var(--surface-3); border: none; cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 15px;
+      display: flex; align-items: center; justify-content: center; font-size: 15px;
     }
 
     /* ── Page ── */
     .m-page {
-      flex: 1; display: flex; flex-direction: column;
-      padding: 28px 20px 60px;
-      max-width: 500px; width: 100%; margin: 0 auto; gap: 24px;
+      flex: 1; padding: 24px 16px calc(40px + env(safe-area-inset-bottom,0px));
+      max-width: 500px; width: 100%; margin: 0 auto;
+      display: flex; flex-direction: column; gap: 20px;
     }
 
     /* ── Greeting ── */
-    .m-greeting {
-      display: flex; flex-direction: column; gap: 4px;
-    }
     .m-tag {
-      font-family: var(--font-mono); font-size: 11px;
-      font-weight: 500; color: var(--brand); letter-spacing: 0.06em;
-      text-transform: uppercase;
+      font-family: var(--font-mono); font-size: 11px; font-weight: 600;
+      color: var(--brand); letter-spacing: 0.06em; text-transform: uppercase;
+      margin-bottom: 6px;
     }
-    .m-title { font-size: 28px; font-weight: 700; letter-spacing: -0.03em; line-height: 1.2; }
-    .m-sub   { font-size: 13px; color: var(--ink-3); margin-top: 2px; }
+    .m-title {
+      font-size: 30px; font-weight: 700; letter-spacing: -0.7px; line-height: 1.05;
+    }
+    .m-title-sub { color: var(--ink-3); }
+    .m-sub { font-size: 13px; color: var(--ink-3); margin-top: 6px; display: flex; align-items: center; gap: 8px; }
+    .m-sub-dot { color: var(--ink-4); }
 
-    /* ── Session Banner ── */
-    .m-banner {
-      background: var(--surface);
-      border-radius: var(--r-xl);
-      padding: 16px;
-      box-shadow: var(--sh-1), inset 0 0 0 1px var(--brand-soft-2);
-      display: flex; flex-direction: column; gap: 12px;
+    /* ── Resume-Draft Banner ── */
+    .m-draft-banner {
+      background: var(--surface); border-radius: 18px; padding: 14px;
+      box-shadow: inset 0 0 0 1px var(--brand-soft-2), 0 6px 18px rgba(242,107,46,.08);
+      display: flex; align-items: center; gap: 12px;
+      position: relative; overflow: hidden; cursor: pointer;
+      touch-action: manipulation;
     }
-    .m-banner-head { display: flex; align-items: center; gap: 10px; }
-    .m-banner-dot {
-      width: 8px; height: 8px; border-radius: 50%;
-      background: var(--brand); box-shadow: 0 0 0 4px var(--brand-soft);
+    .m-draft-banner::before {
+      content: ''; position: absolute; inset: 0;
+      background: linear-gradient(135deg, var(--brand-soft) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .m-draft-icon {
+      width: 40px; height: 40px; border-radius: 12px;
+      background: var(--brand); color: white; flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 6px 12px rgba(242,107,46,.35); position: relative;
+    }
+    .m-draft-body { flex: 1; min-width: 0; position: relative; }
+    .m-draft-label {
+      font-family: var(--font-mono); font-size: 11px; color: var(--brand);
+      font-weight: 600; letter-spacing: 0.06em;
+    }
+    .m-draft-text { font-size: 14px; font-weight: 600; margin-top: 2px; }
+
+    /* ── Live Session Pill ── */
+    .m-session-pill {
+      background: var(--surface); border-radius: 14px; padding: 10px 12px;
+      box-shadow: inset 0 0 0 0.5px var(--hairline);
+      display: flex; align-items: center; gap: 10px;
+    }
+
+    /* ── 2×2 Action Grid ── */
+    .m-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .m-tile {
+      background: var(--surface); border-radius: 20px; padding: 16px 14px;
+      box-shadow: var(--sh-1), inset 0 0 0 0.5px var(--hairline);
+      display: flex; flex-direction: column; gap: 24px;
+      min-height: 140px; position: relative; cursor: pointer;
+      touch-action: manipulation; border: none; text-align: left;
+      font-family: var(--font-ui); color: var(--ink);
+      transition: transform .12s;
+      text-decoration: none;
+    }
+    .m-tile:active { transform: scale(0.97); }
+    .m-tile-top { display: flex; justify-content: space-between; align-items: flex-start; }
+    .m-tile-icon {
+      width: 44px; height: 44px; border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .m-tile-chip {
+      display: inline-flex; align-items: center; gap: 3px;
+      height: 18px; padding: 0 7px; border-radius: 999px;
+      font-family: var(--font-mono); font-size: 9px; font-weight: 600;
+      background: var(--ok-soft); color: var(--ok);
+    }
+    .m-tile-chip svg { flex-shrink: 0; }
+    .m-tile-bottom {}
+    .m-tile-name { font-size: 15px; font-weight: 600; letter-spacing: -0.2px; line-height: 1.2; }
+    .m-tile-sub  { font-size: 11px; color: var(--ink-3); margin-top: 2px; }
+
+    /* ── Auth State Row ── */
+    .m-auth-row {
+      background: var(--surface); border-radius: 16px; padding: 12px 14px;
+      box-shadow: inset 0 0 0 0.5px var(--hairline);
+      display: flex; align-items: center; gap: 12px;
+    }
+    .m-auth-avatar {
+      width: 32px; height: 32px; border-radius: 16px;
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-mono); font-size: 11px; font-weight: 700;
       flex-shrink: 0;
     }
-    .m-banner-title { font-size: 13px; font-weight: 600; color: var(--brand); }
-    .m-banner-sub   { font-size: 12px; color: var(--ink-3); margin-top: 2px; }
-    .m-banner-join {
-      margin-left: auto; flex-shrink: 0;
-      background: var(--brand); color: white; border: none;
-      border-radius: var(--r-sm); padding: 7px 14px;
+    .m-auth-avatar.guest {
+      background: var(--surface-3); color: var(--ink-3);
+      box-shadow: inset 0 0 0 1px var(--hairline);
+    }
+    .m-auth-body { flex: 1; min-width: 0; }
+    .m-auth-name  { font-size: 13px; font-weight: 600; }
+    .m-auth-status { font-size: 11px; color: var(--ink-3); display: flex; align-items: center; gap: 6px; margin-top: 2px; }
+    .m-auth-dot { width: 5px; height: 5px; border-radius: 3px; background: var(--ok); flex-shrink: 0; }
+    .m-auth-btn {
+      border: none; border-radius: var(--r-sm);
       font-family: var(--font-ui); font-size: 12px; font-weight: 600;
-      cursor: pointer; text-decoration: none;
+      padding: 6px 12px; cursor: pointer; height: 30px;
+      touch-action: manipulation; flex-shrink: 0;
     }
-    .m-banner-bereiche { display: flex; flex-direction: column; gap: 5px; border-top: 0.5px solid var(--hairline); padding-top: 10px; }
-    .m-banner-bereich-row { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--ink-2); }
+    .m-auth-btn.primary { background: var(--brand); color: white; box-shadow: 0 4px 10px rgba(242,107,46,.25); }
+    .m-auth-btn.ghost   { background: var(--surface-3); color: var(--ink-2); }
 
-    /* ── Last order ── */
-    .m-last {
-      background: var(--surface); border-radius: var(--r-md);
-      padding: 12px 16px; display: flex; align-items: center; gap: 12px;
-      box-shadow: var(--sh-1), inset 0 0 0 0.5px var(--hairline);
+    /* ── Letzte Aktivität ── */
+    .m-section-label {
+      font-size: 11px; font-weight: 600; color: var(--ink-3);
+      text-transform: uppercase; letter-spacing: 0.06em;
+      margin-bottom: 8px;
     }
-    .m-last-icon { font-size: 20px; flex-shrink: 0; }
-    .m-last-label { font-family: var(--font-mono); font-size: 10px; color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.08em; }
-    .m-last-val   { font-size: 13px; font-weight: 600; margin-top: 2px; }
-
-    /* ── Action list ── */
-    .m-actions { display: flex; flex-direction: column; gap: 12px; }
-
-    .m-action {
-      display: flex; align-items: center; gap: 16px;
-      background: var(--surface); border-radius: var(--r-xl);
-      padding: 18px 20px;
-      box-shadow: var(--sh-1), inset 0 0 0 0.5px var(--hairline);
-      cursor: pointer; text-decoration: none; color: var(--ink);
-      transition: transform .12s; touch-action: manipulation;
-      width: 100%; border: none; text-align: left; font-family: var(--font-ui);
+    .m-activity-list {
+      background: var(--surface); border-radius: 14px;
+      box-shadow: inset 0 0 0 0.5px var(--hairline);
+      overflow: hidden;
     }
-    .m-action:active { transform: scale(0.98); }
-
-    .m-action.primary {
-      background: var(--brand); color: white;
-      box-shadow: 0 6px 20px rgba(242,107,46,.35), inset 0 1px 0 rgba(255,255,255,.2);
+    .m-activity-row {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 14px; border-bottom: 0.5px solid var(--hairline);
     }
-    .m-action.swipe {
-      background: linear-gradient(135deg, var(--crit-soft), var(--ok-soft));
-      box-shadow: var(--sh-1), inset 0 0 0 0.5px var(--hairline);
+    .m-activity-row:last-child { border-bottom: none; }
+    .m-activity-chip {
+      width: 22px; height: 22px; border-radius: 11px;
+      display: flex; align-items: center; justify-content: center;
+      font-family: var(--font-mono); font-size: 10px; font-weight: 700;
+      flex-shrink: 0;
     }
-    .m-action.scan  { box-shadow: var(--sh-1), inset 0 0 0 0.5px rgba(34,197,94,.35); }
-    .m-action.verfall { box-shadow: var(--sh-1), inset 0 0 0 0.5px rgba(217,119,6,.35); }
-
-    .m-action-icon { font-size: 28px; line-height: 1; flex-shrink: 0; }
-    .m-action-body { display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0; }
-    .m-action-title { font-size: 17px; font-weight: 700; line-height: 1.2; letter-spacing: -0.01em; }
-    .m-action-sub   { font-size: 12px; opacity: 0.7; font-weight: 400; }
-    .m-action.primary .m-action-sub { opacity: 0.85; }
-    .m-action-arrow { margin-left: auto; color: inherit; opacity: 0.4; flex-shrink: 0; }
-
-    /* ── Footer ── */
-    .m-footer {
-      text-align: center; padding: 16px;
-      font-family: var(--font-mono); font-size: 11px; color: var(--ink-4);
-    }
+    .m-activity-chip.ok   { background: var(--ok-soft);   color: var(--ok); }
+    .m-activity-chip.crit { background: var(--crit-soft); color: var(--crit); }
+    .m-activity-chip.low  { background: var(--low-soft);  color: var(--low); }
+    .m-activity-text { font-size: 13px; flex: 1; min-width: 0; }
+    .m-activity-meta { font-size: 10px; color: var(--ink-3); font-family: var(--font-mono); margin-top: 2px; }
   </style>
 </head>
 <body>
 
   <header class="m-nav">
-    <button class="m-back" onclick="window.location.href='../index.html'" title="Zurück">
+    <button class="m-back" onclick="window.location.href='../index.html'" title="Lagersuche">
       <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5l-5 5 5 5"/></svg>
     </button>
     <span class="la-wordmark" style="font-size:14px;">LAGER<span class="slash">//</span>APP</span>
     <div class="m-nav-right">
-      <button class="m-logout" onclick="doLogout()">Abmelden</button>
       <button class="m-theme" id="theme-btn" onclick="toggleTheme()">☀️</button>
     </div>
   </header>
@@ -156,196 +194,345 @@
   <div class="m-page">
 
     <!-- Greeting -->
-    <div class="m-greeting">
+    <div>
       <div class="m-tag">DRK · Rettungswache Malmsheim</div>
-      <div class="m-title">Hallo, <span id="user-name">Mitarbeiter</span> 👋</div>
-      <div class="m-sub">Was möchtest du heute tun?</div>
+      <div class="m-title">
+        Hallo,
+        <div class="m-title-sub" id="user-name">Gast.</div>
+      </div>
+      <div class="m-sub">
+        <span>Rettungswache Malmsheim</span>
+        <span class="m-sub-dot">·</span>
+        <span id="kw-label">KW –</span>
+      </div>
     </div>
 
-    <!-- Live Session Banner -->
-    <div id="laufende-session-banner" class="m-banner hidden">
-      <div class="m-banner-head">
-        <div class="m-banner-dot"></div>
-        <div>
-          <div class="m-banner-title">Laufende Lagerbestellung</div>
-          <div class="m-banner-sub" id="session-banner-text"></div>
+    <!-- Resume-Draft Banner (shown when unfinished draft exists) -->
+    <div id="draft-banner" class="m-draft-banner hidden" onclick="resumeDraft()">
+      <div class="m-draft-icon">
+        <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="7"/><path d="M10 6v4l3 2"/></svg>
+      </div>
+      <div class="m-draft-body">
+        <div class="m-draft-label" id="draft-label">OFFENE BESTELLUNG · –</div>
+        <div class="m-draft-text"  id="draft-text">–</div>
+      </div>
+      <button style="
+        height:32px;padding:0 14px;border-radius:var(--r-sm);border:none;
+        background:var(--brand);color:white;font-family:var(--font-ui);
+        font-size:12px;font-weight:600;cursor:pointer;position:relative;
+        flex-shrink:0;">Fortführen</button>
+    </div>
+
+    <!-- Live Session Pill (when bestellungen_session is active) -->
+    <div id="session-pill" class="m-session-pill hidden">
+      <span class="la-chip ok" style="height:20px;flex-shrink:0;"><span class="dot"></span>Live</span>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:12px;font-weight:500;" id="session-text"></div>
+        <div style="font-size:10px;color:var(--ink-3);font-family:var(--font-mono);margin-top:1px;" id="session-sub"></div>
+      </div>
+      <a href="check.html" style="
+        font-size:12px;font-weight:600;color:var(--brand);
+        text-decoration:none;flex-shrink:0;">Mitmachen →</a>
+    </div>
+
+    <!-- 2×2 Action Tiles -->
+    <div class="m-grid">
+
+      <!-- Lagersuche — always open -->
+      <a href="../index.html" class="m-tile">
+        <div class="m-tile-top">
+          <div class="m-tile-icon la-photo tint-blue">
+            <svg width="22" height="22" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><circle cx="9" cy="9" r="6"/><path d="m17 17-3.5-3.5"/></svg>
+          </div>
+          <span class="m-tile-chip" style="background:var(--ok-soft);color:var(--ok);">OFFEN</span>
         </div>
-        <a href="check.html" class="m-banner-join">Mitmachen →</a>
+        <div class="m-tile-bottom">
+          <div class="m-tile-name">Lagersuche</div>
+          <div class="m-tile-sub">Artikel &amp; LP finden</div>
+        </div>
+      </a>
+
+      <!-- Lagerbestellung — protected -->
+      <div class="m-tile" id="tile-check" onclick="guardedNav('check.html','für die Lagerbestellung')">
+        <div class="m-tile-top">
+          <div class="m-tile-icon la-photo tint-rose">
+            <svg width="22" height="22" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="12" height="14" rx="2"/><path d="M7 8.5l2 2 4-4M7 14h6"/></svg>
+          </div>
+          <span class="m-tile-chip lock-chip">
+            <svg width="9" height="9" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="6" width="5" height="4" rx="1"/><path d="M4.5 6V4.5a1.5 1.5 0 0 1 3 0V6"/></svg>
+            Aktiv
+          </span>
+        </div>
+        <div class="m-tile-bottom">
+          <div class="m-tile-name">Lagerbestellung</div>
+          <div class="m-tile-sub">13 Bereiche · ~38 min</div>
+        </div>
       </div>
-      <div id="session-banner-bereiche" class="m-banner-bereiche hidden"></div>
+
+      <!-- Verfallsscan — protected -->
+      <div class="m-tile" id="tile-scan" onclick="guardedNav('scanner.html','für den Verfallsscan')">
+        <div class="m-tile-top">
+          <div class="m-tile-icon la-photo tint-amber">
+            <svg width="22" height="22" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><path d="M3 7V4h3M17 7V4h-3M3 13v3h3M17 13v3h-3"/><path d="M3 10h14"/></svg>
+          </div>
+          <span class="m-tile-chip lock-chip">
+            <svg width="9" height="9" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="6" width="5" height="4" rx="1"/><path d="M4.5 6V4.5a1.5 1.5 0 0 1 3 0V6"/></svg>
+            Aktiv
+          </span>
+        </div>
+        <div class="m-tile-bottom">
+          <div class="m-tile-name">Verfallsscan</div>
+          <div class="m-tile-sub">Charge · LOT · GTIN</div>
+        </div>
+      </div>
+
+      <!-- StockSwipe — protected -->
+      <div class="m-tile" id="tile-swipe" onclick="guardedNav('stockswipe.html','für StockSwipe')">
+        <div class="m-tile-top">
+          <div class="m-tile-icon la-photo tint-violet">
+            <svg width="22" height="22" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="14" height="14" rx="3" transform="rotate(-6 10 10)"/><rect x="5" y="5" width="14" height="14" rx="3" transform="rotate(4 12 12)" opacity="0.4"/></svg>
+          </div>
+          <span class="m-tile-chip lock-chip">
+            <svg width="9" height="9" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="6" width="5" height="4" rx="1"/><path d="M4.5 6V4.5a1.5 1.5 0 0 1 3 0V6"/></svg>
+            Aktiv
+          </span>
+        </div>
+        <div class="m-tile-bottom">
+          <div class="m-tile-name">StockSwipe</div>
+          <div class="m-tile-sub">Schnellcheck · Wischen</div>
+        </div>
+      </div>
+
     </div>
 
-    <!-- Letzte Bestellung -->
-    <div id="letzte-bestellung-info" class="m-last hidden">
-      <div class="m-last-icon">📋</div>
-      <div>
-        <div class="m-last-label">Letzte Bestellung</div>
-        <div class="m-last-val" id="letzte-bestellung-text"></div>
+    <!-- Auth State Row -->
+    <div class="m-auth-row">
+      <!-- Signed in state -->
+      <div id="auth-signed-in" style="display:contents;">
+        <div class="m-auth-avatar" id="auth-avatar" style="background:#FFD3C1;color:#7A2D0B;">MK</div>
+        <div class="m-auth-body">
+          <div class="m-auth-name" id="auth-name-label">Angemeldet</div>
+          <div class="m-auth-status">
+            <span class="m-auth-dot"></span>
+            <span id="auth-status-text">PIN aktiv</span>
+          </div>
+        </div>
+        <button class="m-auth-btn ghost" onclick="doLogout()">Abmelden</button>
+      </div>
+      <!-- Guest state (shown when not signed in) -->
+      <div id="auth-guest" class="hidden" style="display:contents;">
+        <div class="m-auth-avatar guest">
+          <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><circle cx="10" cy="7" r="3"/><path d="M4 17c1-3 3.5-4 6-4s5 1 6 4"/></svg>
+        </div>
+        <div class="m-auth-body">
+          <div class="m-auth-name">Nicht angemeldet</div>
+          <div class="m-auth-status" style="color:var(--ink-4);">Bestellungen erfordern PIN</div>
+        </div>
+        <a href="login.html?tab=mitarbeiter" class="m-auth-btn primary">Anmelden</a>
       </div>
     </div>
 
-    <!-- Actions -->
-    <div class="m-actions">
+    <!-- Letzte Aktivität -->
+    <div>
+      <div class="m-section-label">Letzte Aktivität</div>
+      <div class="m-activity-list" id="activity-list">
+        <!-- filled by JS or static fallback -->
+        <div class="m-activity-row">
+          <div class="m-activity-chip ok">✓</div>
+          <div>
+            <div class="m-activity-text">Wird geladen…</div>
+            <div class="m-activity-meta"></div>
+          </div>
+        </div>
+      </div>
+    </div>
 
-      <a href="check.html" class="m-action primary">
-        <span class="m-action-icon">📋</span>
-        <span class="m-action-body">
-          <span class="m-action-title">Lagerbestellung</span>
-          <span class="m-action-sub">Bestände prüfen &amp; melden</span>
-        </span>
-        <svg class="m-action-arrow" viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 10h10M11 5l4 5-4 5"/></svg>
-      </a>
+  </div>
 
-      <a href="stockswipe.html" class="m-action swipe">
-        <span class="m-action-icon">🃏</span>
-        <span class="m-action-body">
-          <span class="m-action-title">StockSwipe</span>
-          <span class="m-action-sub">Wischen statt tippen – neu!</span>
-        </span>
-        <svg class="m-action-arrow" viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 10h10M11 5l4 5-4 5"/></svg>
-      </a>
-
-      <a href="scanner.html" class="m-action scan">
-        <span class="m-action-icon">📷</span>
-        <span class="m-action-body">
-          <span class="m-action-title">Verfallsscan</span>
-          <span class="m-action-sub">Chargen scannen &amp; erfassen</span>
-        </span>
-        <svg class="m-action-arrow" viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 10h10M11 5l4 5-4 5"/></svg>
-      </a>
-
-      <a href="verfallmonitor.html" class="m-action verfall">
-        <span class="m-action-icon">📅</span>
-        <span class="m-action-body">
-          <span class="m-action-title">Verfallmonitor</span>
-          <span class="m-action-sub">Was läuft diesen Monat ab?</span>
-        </span>
-        <svg class="m-action-arrow" viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 10h10M11 5l4 5-4 5"/></svg>
-      </a>
-
+  <!-- Login Wall (same component as index.html) -->
+  <div id="login-wall" onclick="if(event.target===this)closeLoginWall()" style="
+    display:none; position:fixed; inset:0; z-index:2000;
+    background:rgba(8,8,12,0.55);
+    backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);">
+    <div style="
+      position:absolute; left:0; right:0; bottom:0;
+      background:var(--surface); border-radius:26px 26px 0 0;
+      padding:14px 20px calc(28px + env(safe-area-inset-bottom,0px));
+      box-shadow:0 -8px 32px rgba(0,0,0,.2);"
+      onclick="event.stopPropagation()">
+      <div style="width:40px;height:4px;background:var(--ink-4);border-radius:2px;margin:0 auto 20px;"></div>
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+        <div style="width:48px;height:48px;border-radius:14px;flex-shrink:0;background:var(--brand-soft);color:var(--brand);display:flex;align-items:center;justify-content:center;box-shadow:inset 0 0 0 1px var(--brand-soft-2);">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+        </div>
+        <div>
+          <div style="font-size:18px;font-weight:700;letter-spacing:-0.3px;">Anmelden erforderlich</div>
+          <div style="font-size:13px;color:var(--ink-3);margin-top:2px;" id="lw-context">für diese Aktion</div>
+        </div>
+      </div>
+      <div style="padding:10px 12px;border-radius:12px;margin-bottom:18px;background:var(--surface-2);box-shadow:inset 0 0 0 1px var(--hairline);font-size:12px;color:var(--ink-2);line-height:1.5;">
+        Lagersuche bleibt für alle offen. Anmeldung mit <strong>Name + PIN</strong> nur für Bestellungen, Verfallsscan und Bestand-Bearbeitung.
+      </div>
+      <div style="display:flex;gap:10px;">
+        <button onclick="closeLoginWall()" style="flex:0 0 110px;height:48px;border-radius:var(--r-md);border:none;background:var(--surface);color:var(--ink-2);cursor:pointer;font-family:var(--font-ui);font-size:14px;font-weight:500;box-shadow:inset 0 0 0 1px var(--hairline-2);">Abbrechen</button>
+        <a id="lw-btn" href="login.html?tab=mitarbeiter" style="flex:1;height:48px;border-radius:var(--r-md);background:var(--brand);color:white;text-decoration:none;font-family:var(--font-ui);font-size:14px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 1px 0 rgba(255,255,255,.2) inset,0 6px 14px rgba(242,107,46,.28);">
+          <svg viewBox="0 0 20 20" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="14" height="10" rx="2"/><path d="M7 8V6a3 3 0 0 1 6 0v2"/></svg>
+          Mit Name &amp; PIN anmelden
+        </a>
+      </div>
+      <div style="text-align:center;margin-top:14px;font-size:12px;color:var(--ink-3);">
+        Kein PIN? <strong style="color:var(--brand);">Wachenleiter fragen</strong>
+      </div>
     </div>
   </div>
 
-  <footer class="m-footer">LAGER//APP · DRK Rettungswache Malmsheim · 2026</footer>
-
-  <!-- Theme -->
   <script>
-    const savedTheme  = localStorage.getItem('lager-theme');
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const initTheme   = savedTheme || (prefersDark ? 'dark' : 'light');
-    document.documentElement.setAttribute('data-theme', initTheme);
-    document.getElementById('theme-btn').textContent = initTheme === 'dark' ? '🌙' : '☀️';
+    // ── Theme ──
+    (function() {
+      const t = localStorage.getItem('lager-theme') ||
+        (window.matchMedia('(prefers-color-scheme:dark)').matches ? 'dark' : 'light');
+      document.documentElement.setAttribute('data-theme', t);
+      const btn = document.getElementById('theme-btn');
+      if (btn) btn.textContent = t === 'dark' ? '🌙' : '☀️';
+    })();
 
-    function toggleTheme() {
+    window.toggleTheme = function() {
       const t = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
       document.documentElement.setAttribute('data-theme', t);
       localStorage.setItem('lager-theme', t);
       document.getElementById('theme-btn').textContent = t === 'dark' ? '🌙' : '☀️';
+    };
+
+    // ── KW ──
+    (function() {
+      const now = new Date();
+      const start = new Date(now.getFullYear(), 0, 1);
+      const kw = Math.ceil(((now - start) / 86400000 + start.getDay() + 1) / 7);
+      document.getElementById('kw-label').textContent = 'KW ' + kw;
+    })();
+
+    // ── Auth state ──
+    const pinAuth = sessionStorage.getItem('lager-pin-auth');
+    const pinName = sessionStorage.getItem('lager-pin-name') || '';
+
+    if (pinAuth === 'true' && pinName) {
+      document.getElementById('user-name').textContent = pinName + '.';
+      const initials = pinName.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
+      document.getElementById('auth-avatar').textContent = initials;
+      document.getElementById('auth-name-label').textContent = 'Angemeldet als ' + pinName;
+      document.getElementById('auth-status-text').textContent = 'PIN aktiv';
+      document.getElementById('auth-signed-in').style.display = 'contents';
+      document.getElementById('auth-guest').classList.add('hidden');
+    } else {
+      document.getElementById('user-name').textContent = 'Gast.';
+      document.getElementById('auth-signed-in').style.display = 'none';
+      document.getElementById('auth-guest').classList.remove('hidden');
     }
 
-    function doLogout() {
+    // ── Logout ──
+    window.doLogout = function() {
       sessionStorage.removeItem('lager-pin-auth');
       sessionStorage.removeItem('lager-pin-name');
       localStorage.removeItem('lager-saved-name');
       window.location.href = '../index.html';
-    }
-  </script>
-
-  <!-- Firebase compat (auth guard) -->
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
-  <script>
-    const _fc = {
-      apiKey:"AIzaSyD1YY-cFQxyykfYQYPORwulzuF8t6Wgid4",
-      authDomain:"lagerbestellung-19970.firebaseapp.com",
-      projectId:"lagerbestellung-19970",
-      storageBucket:"lagerbestellung-19970.firebasestorage.app",
-      messagingSenderId:"939056339904",
-      appId:"1:939056339904:web:6f33ca2f5a4cebd2780625"
     };
-    firebase.initializeApp(_fc);
-    firebase.auth().onAuthStateChanged(user => {
-      const pinOk = sessionStorage.getItem('lager-pin-auth');
-      if (!user && !pinOk) { window.location.href = '../index.html'; return; }
-      const name = sessionStorage.getItem('lager-pin-name') || '';
-      if (name) document.getElementById('user-name').textContent = name;
-    });
+
+    // ── Protected nav ──
+    window.guardedNav = function(href, context) {
+      if (sessionStorage.getItem('lager-pin-auth') === 'true') {
+        window.location.href = href;
+      } else {
+        openLoginWall(context, href);
+      }
+    };
+
+    window.openLoginWall = function(context, returnUrl) {
+      document.getElementById('lw-context').textContent = context || 'für diese Aktion';
+      const ret = returnUrl ? encodeURIComponent(returnUrl) : '';
+      document.getElementById('lw-btn').href =
+        'login.html?tab=mitarbeiter' + (ret ? '&return=' + ret : '');
+      document.getElementById('login-wall').style.display = 'block';
+      document.body.style.overflow = 'hidden';
+    };
+
+    window.closeLoginWall = function() {
+      document.getElementById('login-wall').style.display = 'none';
+      document.body.style.overflow = '';
+    };
+
+    window.resumeDraft = function() {
+      const id = document.getElementById('draft-banner').dataset.draftId;
+      if (id) window.location.href = 'check.html?resumeDraft=' + id;
+    };
   </script>
 
-  <!-- Live session listener -->
   <script type="module">
     import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
     import { getFirestore, collection, query, orderBy, limit, onSnapshot, getDocs, doc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
     import { getAuth, signInAnonymously } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+    import { firebaseConfig } from '../js/firebase-config.js';
 
-    const firebaseConfig = {
-      apiKey:"AIzaSyD1YY-cFQxyykfYQYPORwulzuF8t6Wgid4",
-      authDomain:"lagerbestellung-19970.firebaseapp.com",
-      projectId:"lagerbestellung-19970",
-      storageBucket:"lagerbestellung-19970.firebasestorage.app",
-      messagingSenderId:"939056339904",
-      appId:"1:939056339904:web:6f33ca2f5a4cebd2780625"
-    };
     const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
     const db  = getFirestore(app);
+    const auth = getAuth(app);
+    if (!auth.currentUser) signInAnonymously(auth).catch(() => {});
 
-    try {
-      const auth = getAuth(app);
-      if (!auth.currentUser) await signInAnonymously(auth);
-    } catch(e) {}
-
-    const banner         = document.getElementById('laufende-session-banner');
-    const bannerText     = document.getElementById('session-banner-text');
-    const bannerBereiche = document.getElementById('session-banner-bereiche');
-    const letzteEl      = document.getElementById('letzte-bestellung-info');
-    const letzteText    = document.getElementById('letzte-bestellung-text');
-
-    let bereiche = [];
-    try {
-      const bs = await getDocs(collection(db, 'bereiche'));
-      bs.forEach(d => bereiche.push({ id: d.id, ...d.data() }));
-    } catch(e) {}
-
-    function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
-
-    onSnapshot(doc(db, 'bestellungen_session', 'current'), async (snap) => {
+    // ── Live session ──
+    onSnapshot(doc(db, 'bestellungen_session', 'current'), snap => {
+      const pill    = document.getElementById('session-pill');
+      const textEl  = document.getElementById('session-text');
+      const subEl   = document.getElementById('session-sub');
       if (snap.exists() && snap.data().status === 'aktiv') {
         const s = snap.data();
         const namen = (s.teilnehmer || []).map(t => t.name).join(', ');
-        bannerText.textContent = `${namen} ${namen.includes(',') ? 'machen' : 'macht'} gerade die Lagerbestellung`;
-
-        const bereichStatus = s.bereichStatus || {};
-        const zeilen = Object.entries(bereichStatus).map(([bid, bs]) => {
-          const bName = bereiche.find(b => b.id === bid)?.name || bid;
-          const dot = bs.status === 'erledigt' ? '🟢' : bs.status === 'gesperrt' ? '🔒' : bs.status === 'abgebrochen' ? '🔴' : '🟠';
-          const info = bs.status === 'gesperrt' ? `${esc(bs.mitarbeiter)} – ${esc(bName)}`
-                     : bs.status === 'erledigt' ? `${esc(bName)} ✓ (${esc(bs.mitarbeiter)})`
-                     : esc(bName);
-          return `<div class="m-banner-bereich-row">${dot} ${info}</div>`;
-        });
-        if (zeilen.length) {
-          bannerBereiche.innerHTML = zeilen.join('');
-          bannerBereiche.classList.remove('hidden');
-        } else {
-          bannerBereiche.classList.add('hidden');
-        }
-        banner.classList.remove('hidden');
-        letzteEl.classList.add('hidden');
-        return;
+        textEl.textContent = namen ? namen + ' mach' + (namen.includes(',') ? 'en' : 't') + ' gerade die Lagerbestellung' : 'Lagerbestellung läuft';
+        const free = Object.values(s.bereichStatus || {}).filter(b => b.status === 'frei').length;
+        subEl.textContent = free > 0 ? free + ' Bereiche frei' : 'Alle Bereiche vergeben';
+        pill.classList.remove('hidden');
+      } else {
+        pill.classList.add('hidden');
       }
-
-      banner.classList.add('hidden');
-      try {
-        const qLast = query(collection(db, 'bestellungen'), orderBy('datum', 'desc'), limit(1));
-        const lastSnap = await getDocs(qLast);
-        if (!lastSnap.empty) {
-          const b = lastSnap.docs[0].data();
-          const d = b.datum?.toDate ? b.datum.toDate() : new Date(b.datum);
-          letzteText.textContent = `${d.toLocaleDateString('de-DE')} · ${b.mitarbeiter || '–'}`;
-          letzteEl.classList.remove('hidden');
-        }
-      } catch(e) {}
     }, () => {});
+
+    // ── Letzte Aktivität (last 3 Bestellungen) ──
+    try {
+      const q = query(collection(db, 'bestellungen'), orderBy('datum', 'desc'), limit(3));
+      const snap = await getDocs(q);
+      const list = document.getElementById('activity-list');
+      if (!snap.empty) {
+        list.innerHTML = snap.docs.map((d, i, all) => {
+          const b = d.data();
+          const dt = b.datum?.toDate ? b.datum.toDate() : new Date(b.datum || 0);
+          const rel = relTime(dt);
+          const hasLow  = (b.artikelNiedrig  || 0) > 0;
+          const hasCrit = (b.artikelKritisch || 0) > 0;
+          const tone = hasCrit ? 'crit' : hasLow ? 'low' : 'ok';
+          const icon = hasCrit ? '!' : hasLow ? '↑' : '✓';
+          return `<div class="m-activity-row">
+            <div class="m-activity-chip ${tone}">${icon}</div>
+            <div>
+              <div class="m-activity-text">Bestellung #${d.id.slice(-4)} · ${b.mitarbeiter || '–'}</div>
+              <div class="m-activity-meta">${b.mitarbeiter || '–'} · ${rel}</div>
+            </div>
+          </div>`;
+        }).join('');
+      } else {
+        list.innerHTML = '<div class="m-activity-row"><div class="m-activity-text" style="color:var(--ink-3);font-size:12px;">Noch keine Aktivität</div></div>';
+      }
+    } catch(e) {
+      document.getElementById('activity-list').innerHTML =
+        '<div class="m-activity-row"><div class="m-activity-text" style="color:var(--ink-3);font-size:12px;">Aktivität nicht verfügbar</div></div>';
+    }
+
+    function relTime(d) {
+      const diff = Date.now() - d.getTime();
+      if (diff < 60000)    return 'gerade eben';
+      if (diff < 3600000)  return Math.round(diff/60000) + ' min';
+      if (diff < 86400000) return Math.round(diff/3600000) + ' h';
+      return d.toLocaleDateString('de-DE');
+    }
   </script>
+
+  <script src="../js/pwa.js"></script>
 </body>
 </html>
