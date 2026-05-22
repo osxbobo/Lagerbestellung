@@ -338,11 +338,37 @@
         <span class="dot"></span>
         <span>Synchron</span>
       </div>
-      <button class="la-bell-btn hide-mobile" title="Benachrichtigungen">
-        <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8a5 5 0 0 1 10 0v4l1.5 2h-13L5 12V8z"/><path d="M8.5 17a1.5 1.5 0 0 0 3 0"/></svg>
-      </button>
       <button class="la-bell-btn" id="theme-toggle" onclick="toggleTheme()" title="Hell/Dunkel">☀️</button>
-      <a href="pages/login.html" class="nav-btn hide-mobile" style="font-size:12px;">Wachenleiter</a>
+      <!-- AuthPill -->
+      <div id="auth-pill-guest" style="display:none;">
+        <a href="pages/login.html" style="
+          display:inline-flex;align-items:center;gap:6px;
+          height:34px;padding:0 12px;border-radius:999px;
+          background:var(--surface);color:var(--ink-2);
+          box-shadow:inset 0 0 0 1px var(--hairline);
+          font-size:12px;font-weight:600;text-decoration:none;
+          font-family:var(--font-ui);">
+          <svg viewBox="0 0 20 20" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="8" width="14" height="10" rx="2"/><path d="M7 8V6a3 3 0 0 1 6 0v2"/></svg>
+          Anmelden
+        </a>
+      </div>
+      <div id="auth-pill-user" style="display:none;">
+        <a id="auth-pill-link" href="pages/mitarbeiter.html" style="
+          display:inline-flex;align-items:center;gap:7px;
+          height:34px;padding:0 10px 0 6px;border-radius:999px;
+          background:var(--surface);color:var(--ink);
+          box-shadow:inset 0 0 0 1px var(--hairline);
+          font-size:12px;font-weight:600;text-decoration:none;
+          font-family:var(--font-ui);">
+          <span id="auth-pill-avatar" style="
+            width:22px;height:22px;border-radius:11px;
+            background:var(--brand-soft);color:var(--brand);
+            display:flex;align-items:center;justify-content:center;
+            font-size:9px;font-weight:700;font-family:var(--font-mono);
+            flex-shrink:0;"></span>
+          <span id="auth-pill-label">Hub</span>
+        </a>
+      </div>
     </div>
   </header>
 
@@ -413,17 +439,15 @@
 
     <!-- Mitarbeiter CTA -->
     <div id="cta-section" class="hidden" style="margin-top:28px;">
-      <div style="background:var(--surface);border-radius:var(--r-xl);padding:20px;box-shadow:var(--sh-1),inset 0 0 0 0.5px var(--hairline);" class="la-mesh">
-        <div style="font-size:12px;color:var(--ink-3);font-family:var(--font-mono);letter-spacing:0.06em;margin-bottom:8px;">LAGERCHECK STARTEN</div>
+      <div style="background:var(--surface);border-radius:var(--r-xl);padding:20px;box-shadow:var(--sh-1),inset 0 0 0 0.5px var(--hairline);">
+        <div style="font-size:12px;color:var(--ink-3);font-family:var(--font-mono);letter-spacing:0.06em;margin-bottom:8px;">MITARBEITER</div>
         <div style="font-size:17px;font-weight:600;margin-bottom:14px;">Bestand prüfen &amp; Bestellung aufgeben</div>
         <div style="display:flex;gap:10px;flex-wrap:wrap;">
-          <button onclick="openPinModal()" class="la-btn primary" style="flex:1;min-width:160px;">
-            Lagercheck starten
-          </button>
-          <a href="pages/mitarbeiter.html" class="la-btn ghost" style="flex:1;min-width:130px;">
-            Mitarbeiter
+          <a id="cta-primary-btn" href="pages/login.html?tab=mitarbeiter" class="la-btn primary" style="flex:1;min-width:160px;">
+            <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="14" height="10" rx="2"/><path d="M7 8V6a3 3 0 0 1 6 0v2"/></svg>
+            Anmelden &amp; starten
           </a>
-          <a href="pages/login.html" class="la-btn ghost" style="flex:0 0 auto;">
+          <a href="pages/login.html?tab=wachenleiter" class="la-btn ghost" style="flex:0 0 auto;">
             Wachenleiter
           </a>
         </div>
@@ -450,45 +474,57 @@
     </div>
   </div>
 
-  <!-- ── PIN MODAL ── -->
-  <div id="pin-modal" class="la-pin-backdrop hidden">
-    <div class="la-pin-box">
-      <div class="la-pin-header">
-        <div>
-          <div class="la-pin-title">Lagercheck starten</div>
-          <div class="la-pin-sub">PIN vom Schichtleiter eingeben</div>
+  <!-- ── LOGIN WALL (bottom-sheet, shown when guest taps protected action) ── -->
+  <div id="login-wall" onclick="if(event.target===this)closeLoginWall()" style="
+    display:none; position:fixed; inset:0; z-index:2000;
+    background:rgba(8,8,12,0.55);
+    backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);">
+    <div style="
+      position:absolute; left:0; right:0; bottom:0;
+      background:var(--surface); border-radius:26px 26px 0 0;
+      padding:14px 20px calc(28px + env(safe-area-inset-bottom,0px));
+      box-shadow:0 -8px 32px rgba(0,0,0,.2);"
+      onclick="event.stopPropagation()">
+      <div style="width:40px;height:4px;background:var(--ink-4);border-radius:2px;margin:0 auto 20px;"></div>
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+        <div style="
+          width:48px;height:48px;border-radius:14px;flex-shrink:0;
+          background:var(--brand-soft);color:var(--brand);
+          display:flex;align-items:center;justify-content:center;
+          box-shadow:inset 0 0 0 1px var(--brand-soft-2);">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
         </div>
-        <button class="la-pin-close" onclick="closePinModal()">✕</button>
+        <div>
+          <div style="font-size:18px;font-weight:700;letter-spacing:-0.3px;">Anmelden erforderlich</div>
+          <div style="font-size:13px;color:var(--ink-3);margin-top:2px;" id="login-wall-context">für diese Aktion</div>
+        </div>
       </div>
-
-      <div class="la-name-field">
-        <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" style="color:var(--ink-3);flex-shrink:0;"><circle cx="10" cy="7" r="3"/><path d="M4 17c1-3 3.5-4 6-4s5 1 6 4"/></svg>
-        <input type="text" id="modal-name" class="la-name-input" placeholder="Dein Name…" maxlength="40" autocomplete="off">
+      <div style="
+        padding:10px 12px;border-radius:12px;margin-bottom:18px;
+        background:var(--surface-2);box-shadow:inset 0 0 0 1px var(--hairline);
+        font-size:12px;color:var(--ink-2);line-height:1.5;">
+        Lagersuche bleibt für alle offen. Anmeldung mit <strong>Name + PIN</strong> nur für
+        Bestellungen, Verfallsscan und Bestand-Bearbeitung.
       </div>
-
-      <div class="la-pin-dots">
-        <div class="la-pin-dot" id="mpd-0"></div>
-        <div class="la-pin-dot" id="mpd-1"></div>
-        <div class="la-pin-dot" id="mpd-2"></div>
-        <div class="la-pin-dot" id="mpd-3"></div>
+      <div style="display:flex;gap:10px;">
+        <button onclick="closeLoginWall()" style="
+          flex:0 0 110px;height:48px;border-radius:var(--r-md);border:none;
+          background:var(--surface);color:var(--ink-2);cursor:pointer;
+          font-family:var(--font-ui);font-size:14px;font-weight:500;
+          box-shadow:inset 0 0 0 1px var(--hairline-2);">Abbrechen</button>
+        <a id="login-wall-btn" href="pages/login.html?tab=mitarbeiter" style="
+          flex:1;height:48px;border-radius:var(--r-md);
+          background:var(--brand);color:white;text-decoration:none;
+          font-family:var(--font-ui);font-size:14px;font-weight:600;
+          display:flex;align-items:center;justify-content:center;gap:8px;
+          box-shadow:0 1px 0 rgba(255,255,255,.2) inset,0 6px 14px rgba(242,107,46,.28);">
+          <svg viewBox="0 0 20 20" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="14" height="10" rx="2"/><path d="M7 8V6a3 3 0 0 1 6 0v2"/></svg>
+          Mit Name &amp; PIN anmelden
+        </a>
       </div>
-
-      <div class="la-pin-grid">
-        <button class="la-pin-key" onclick="modalPinKey('1')">1</button>
-        <button class="la-pin-key" onclick="modalPinKey('2')">2</button>
-        <button class="la-pin-key" onclick="modalPinKey('3')">3</button>
-        <button class="la-pin-key" onclick="modalPinKey('4')">4</button>
-        <button class="la-pin-key" onclick="modalPinKey('5')">5</button>
-        <button class="la-pin-key" onclick="modalPinKey('6')">6</button>
-        <button class="la-pin-key" onclick="modalPinKey('7')">7</button>
-        <button class="la-pin-key" onclick="modalPinKey('8')">8</button>
-        <button class="la-pin-key" onclick="modalPinKey('9')">9</button>
-        <button class="la-pin-key del" onclick="modalPinDel()">⌫</button>
-        <button class="la-pin-key" onclick="modalPinKey('0')">0</button>
-        <button class="la-pin-key confirm" onclick="modalPinConfirm()">✓</button>
+      <div style="text-align:center;margin-top:14px;font-size:12px;color:var(--ink-3);">
+        Kein PIN? <strong style="color:var(--brand);">Wachenleiter fragen</strong>
       </div>
-
-      <div class="la-pin-error" id="pin-modal-error"></div>
     </div>
   </div>
 
@@ -767,103 +803,93 @@
     loadData();
   </script>
 
-  <!-- PIN Modal JS -->
-  <script>
-    let _modalPin       = '';
-    let _pinAttempts    = 0;
-    let _pinLockedUntil = 0;
+  <!-- Auth + Login Wall JS -->
+  <script type="module">
+    import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+    import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+    import { getFirestore, doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+    import { firebaseConfig } from './js/firebase-config.js';
 
-    window.openPinModal = function() {
-      _modalPin = '';
-      document.getElementById('pin-modal-error').textContent = '';
-      updateModalDots();
-      const savedName = localStorage.getItem('lager-saved-name') || '';
-      document.getElementById('modal-name').value = savedName;
-      document.getElementById('pin-modal').classList.remove('hidden');
-      setTimeout(() => {
-        if (savedName) document.querySelector('.la-pin-key').focus();
-        else document.getElementById('modal-name').focus();
-      }, 100);
-    };
+    const app  = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db   = getFirestore(app);
 
-    window.closePinModal = function() {
-      document.getElementById('pin-modal').classList.add('hidden');
-    };
+    // ── AuthPill ──
+    function updateAuthPill() {
+      const pinAuth  = sessionStorage.getItem('lager-pin-auth');
+      const pinName  = sessionStorage.getItem('lager-pin-name') || '';
+      const fbUser   = auth.currentUser;
+      const isWl     = fbUser && !fbUser.isAnonymous;
+      const isMa     = pinAuth === 'true';
 
-    window.modalPinKey = function(d) {
-      if (_modalPin.length >= 4) return;
-      _modalPin += d;
-      updateModalDots();
-      if (_modalPin.length === 4) setTimeout(modalPinConfirm, 150);
-    };
+      const guestEl  = document.getElementById('auth-pill-guest');
+      const userEl   = document.getElementById('auth-pill-user');
+      const avatarEl = document.getElementById('auth-pill-avatar');
+      const labelEl  = document.getElementById('auth-pill-label');
+      const linkEl   = document.getElementById('auth-pill-link');
 
-    window.modalPinDel = function() {
-      _modalPin = _modalPin.slice(0, -1);
-      updateModalDots();
-    };
-
-    function updateModalDots() {
-      for (let i = 0; i < 4; i++) {
-        document.getElementById(`mpd-${i}`).classList.toggle('filled', i < _modalPin.length);
+      if (isWl) {
+        guestEl.style.display = 'none';
+        userEl.style.display  = 'block';
+        avatarEl.textContent  = (fbUser.email || 'W').charAt(0).toUpperCase();
+        labelEl.textContent   = 'Portal öffnen';
+        linkEl.href           = 'pages/portal.html';
+      } else if (isMa) {
+        guestEl.style.display = 'none';
+        userEl.style.display  = 'block';
+        const initials = pinName.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase() || 'MA';
+        avatarEl.textContent  = initials;
+        labelEl.textContent   = 'Mitarbeiter-Hub';
+        linkEl.href           = 'pages/mitarbeiter.html';
+        // Also update greeting
+        const greetEl = document.getElementById('greeting-name');
+        if (greetEl && pinName) greetEl.textContent = pinName + '?';
+      } else {
+        guestEl.style.display = 'block';
+        userEl.style.display  = 'none';
+        // CTA: point to login
+        const ctaBtn = document.getElementById('cta-primary-btn');
+        if (ctaBtn) {
+          ctaBtn.href = 'pages/login.html?tab=mitarbeiter&return=' +
+            encodeURIComponent(window.location.pathname + 'pages/mitarbeiter.html');
+        }
       }
     }
 
-    window.modalPinConfirm = async function() {
-      const name  = document.getElementById('modal-name').value.trim();
-      const errEl = document.getElementById('pin-modal-error');
+    onAuthStateChanged(auth, () => updateAuthPill());
+    updateAuthPill();
 
-      if (!name)             { errEl.textContent = 'Bitte deinen Namen eingeben'; return; }
-      if (_modalPin.length < 4) { errEl.textContent = 'Bitte 4-stelligen PIN eingeben'; return; }
-
-      try {
-        const { initializeApp, getApps } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js');
-        const { getFirestore, doc, getDoc } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js');
-        const { getAuth, signInAnonymously } = await import('https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js');
-        const { firebaseConfig } = await import('./js/firebase-config.js');
-
-        const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
-        const db  = getFirestore(app);
-        const cfg = await getDoc(doc(db, 'config', 'app'));
-        const correctPin = cfg.exists() ? cfg.data().pin : '1234';
-
-        if (Date.now() < _pinLockedUntil) {
-          const secs = Math.ceil((_pinLockedUntil - Date.now()) / 1000);
-          errEl.textContent = `Zu viele Versuche – bitte ${secs}s warten`;
-          _modalPin = ''; updateModalDots(); return;
-        }
-
-        if (_modalPin !== correctPin) {
-          _pinAttempts++;
-          if (_pinAttempts >= 5) {
-            _pinLockedUntil = Date.now() + 60000;
-            _pinAttempts    = 0;
-            errEl.textContent = 'Zu viele Versuche – bitte 60s warten';
-          } else {
-            errEl.textContent = `Falscher PIN – noch ${5 - _pinAttempts} Versuch(e)`;
-          }
-          _modalPin = ''; updateModalDots(); return;
-        }
-        _pinAttempts = 0;
-
-        const auth = getAuth(app);
-        if (!auth.currentUser) await signInAnonymously(auth);
-
-        sessionStorage.setItem('lager-pin-auth', 'true');
-        sessionStorage.setItem('lager-pin-name', name);
-        localStorage.setItem('lager-saved-name', name);
-
-        closePinModal();
-        window.location.href = 'pages/mitarbeiter.html';
-
-      } catch(e) {
-        errEl.textContent = 'Fehler: ' + e.message;
+    // Scan-button: guard if guest
+    document.getElementById('scan-btn').addEventListener('click', () => {
+      const pinAuth = sessionStorage.getItem('lager-pin-auth');
+      const fbUser  = auth.currentUser;
+      if (pinAuth === 'true' || (fbUser && !fbUser.isAnonymous)) {
+        window.location.href = 'pages/scanner.html';
+      } else {
+        window.openLoginWall('für den Verfallsscan', 'pages/scanner.html');
       }
+    });
+
+    // ── Login Wall ──
+    window.openLoginWall = function(context, returnUrl) {
+      const ctxEl = document.getElementById('login-wall-context');
+      const btn   = document.getElementById('login-wall-btn');
+      if (ctxEl) ctxEl.textContent = context || 'für diese Aktion';
+      const ret = returnUrl ? encodeURIComponent(returnUrl) : '';
+      if (btn) btn.href = 'pages/login.html?tab=mitarbeiter' + (ret ? '&return=' + ret : '');
+      document.getElementById('login-wall').style.display = 'block';
+      document.body.style.overflow = 'hidden';
     };
 
-    // Close on backdrop click
-    document.getElementById('pin-modal').addEventListener('click', function(e) {
-      if (e.target === this) closePinModal();
-    });
+    window.closeLoginWall = function() {
+      document.getElementById('login-wall').style.display = 'none';
+      document.body.style.overflow = '';
+    };
+
+    // Keep openPinModal as an alias for backwards-compat with any remaining calls
+    window.openPinModal = function() {
+      window.openLoginWall('für die Lagerbestellung', 'pages/mitarbeiter.html');
+    };
   </script>
 
   <script src="js/pwa.js"></script>
