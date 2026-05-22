@@ -7,7 +7,7 @@
 // Diese Nummer bei jedem GitHub Upload um 1 erhöhen
 // z.B. v2, v3, v4 ...
 // → Browser erkennt automatisch die neue Version und lädt alles neu
-const CACHE_VERSION = 'v95';
+const CACHE_VERSION = 'v89';
 const CACHE_NAME    = `lagerapp-${CACHE_VERSION}`;
 const BASE_PATH     = '/Lagerbestellung';
 
@@ -66,7 +66,7 @@ self.addEventListener('activate', event => {
 
 // ── FETCH (Offline Support) ──
 self.addEventListener('fetch', event => {
-  // Firebase & Cloudinary Requests immer online
+  // Firebase & externe Requests immer online durchlassen
   if (event.request.url.includes('firebase') ||
       event.request.url.includes('cloudinary') ||
       event.request.url.includes('googleapis') ||
@@ -74,25 +74,40 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  event.respondWith(
-    caches.match(event.request)
-      .then(cached => cached || fetch(event.request)
+  const isHtml = event.request.mode === 'navigate' ||
+                 event.request.destination === 'document' ||
+                 event.request.url.endsWith('.html');
+
+  if (isHtml) {
+    // Network-first für HTML-Seiten → immer aktuelle Version laden
+    event.respondWith(
+      fetch(event.request)
         .then(response => {
-          // Neue Seiten im Cache speichern
-          if (response.status === 200 && event.request.method === 'GET') {
+          if (response.ok) {
             const clone = response.clone();
             caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
           }
           return response;
         })
-        .catch(() => {
-          // Offline Fallback
-          if (event.request.destination === 'document') {
-            return caches.match(`${BASE_PATH}/index.html`);
-          }
-        })
-      )
-  );
+        .catch(() => caches.match(event.request)
+          .then(cached => cached || caches.match(`${BASE_PATH}/index.html`))
+        )
+    );
+  } else {
+    // Cache-first für Assets (CSS, JS, Bilder)
+    event.respondWith(
+      caches.match(event.request)
+        .then(cached => cached || fetch(event.request)
+          .then(response => {
+            if (response.status === 200 && event.request.method === 'GET') {
+              const clone = response.clone();
+              caches.open(CACHE_NAME).then(cache => cache.put(event.request, clone));
+            }
+            return response;
+          })
+        )
+    );
+  }
 });
 
 // ── PUSH NOTIFICATIONS ──
