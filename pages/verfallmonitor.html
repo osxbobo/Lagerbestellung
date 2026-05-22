@@ -287,7 +287,14 @@
       document.getElementById('page-month-label').textContent = ` · ${mNames[thisMonth]} ${String(thisYear).slice(2)}`;
 
       try {
-        const snap = await db.collection('artikel').get();
+        const [snapArtikel, snapBereiche] = await Promise.all([
+          db.collection('artikel').get(),
+          db.collection('bereiche').get()
+        ]);
+        const bereiche = {};
+        snapBereiche.forEach(d => { bereiche[d.id] = d.data().name || d.id; });
+
+        const snap = snapArtikel;
         const entries = [];
 
         snap.forEach(doc => {
@@ -303,7 +310,7 @@
 
             entries.push({
               name:    a.name || '–',
-              bereich: a.bereich || '–',
+              bereich: prettyBereich(bereiche[a.bereich] || a.bereich || '–'),
               lot:     c.lot || '–',
               verfall: c.verfall,
               status:  isUeberfaellig ? 'ueberfaellig' : isDiesenMonat ? 'diesen-monat' : 'folge'
@@ -378,6 +385,10 @@
           <span style="font-size:10px;color:var(--ink-3)">${esc(e.bereich)}</span>
         </div>
       </div>`;
+    }
+
+    function prettyBereich(name) {
+      return String(name ?? '').replace(/^Lager\s*[-–]\s*/i, '').trim();
     }
 
     function esc(str) {

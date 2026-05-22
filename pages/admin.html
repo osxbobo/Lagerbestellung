@@ -1061,6 +1061,9 @@
     function esc(str) {
       return String(str ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     }
+    function prettyBereich(name) {
+      return String(name ?? '').replace(/^Lager\s*[-–]\s*/i, '').trim();
+    }
 
     // ── Toast ──
     function toast(msg, type = 'success') {
@@ -1133,7 +1136,7 @@
       const sel = document.getElementById('bereich-filter');
       alleBereiche.forEach(b => {
         const opt = document.createElement('option');
-        opt.value = b.id; opt.textContent = b.name;
+        opt.value = b.id; opt.textContent = prettyBereich(b.name);
         sel.appendChild(opt);
       });
     }
@@ -1144,7 +1147,7 @@
       const sel   = document.getElementById('edit-bereich');
       sel.innerHTML = '';
       alleBereiche.forEach(b => {
-        const o = document.createElement('option'); o.value = b.id; o.textContent = b.name;
+        const o = document.createElement('option'); o.value = b.id; o.textContent = prettyBereich(b.name);
         sel.appendChild(o);
       });
 
@@ -1226,7 +1229,7 @@
           <div class="bereich-item">
             <div class="bereich-icon">${getBereichIcon(b.name)}</div>
             <div style="flex:1;">
-              <div class="bereich-name">${b.name}</div>
+              <div class="bereich-name">${esc(prettyBereich(b.name))}</div>
               <div class="bereich-count">${count} Artikel · Reihenfolge: ${b.reihenfolge}</div>
             </div>
             <button class="tbl-btn" onclick="openBereichModal('${b.id}')">✏️ Edit</button>
@@ -1324,7 +1327,7 @@
       while (sel.options.length > 1) sel.remove(1);
       alleBereiche.forEach(b => {
         const o = document.createElement('option');
-        o.value = b.id; o.textContent = b.name;
+        o.value = b.id; o.textContent = prettyBereich(b.name);
         sel.appendChild(o);
       });
     }
@@ -1458,7 +1461,7 @@
       while (sel.options.length > 1) sel.remove(1);
       alleBereiche.forEach(b => {
         const o = document.createElement('option');
-        o.value = b.id; o.textContent = b.name;
+        o.value = b.id; o.textContent = prettyBereich(b.name);
         sel.appendChild(o);
       });
     }

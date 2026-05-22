@@ -1209,6 +1209,10 @@
       return String(str ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     }
 
+    function prettyBereich(name) {
+      return String(name ?? '').replace(/^Lager\s*[-–]\s*/i, '').trim();
+    }
+
     // ── Analytics (echte Firestore-Daten) ──
     function renderAnalytics() {
       const now = new Date();
@@ -1572,7 +1576,7 @@
             html += `<div class="bereich-group">
               <div class="bereich-group-header">
                 <span class="bereich-group-icon">${icon}</span>
-                ${bereich?.name||'Unbekannt'}
+                ${esc(prettyBereich(bereich?.name||'Unbekannt'))}
               </div>`;
             lastKey = groupKey;
           }
@@ -1715,7 +1719,7 @@
         const b = alleBereiche.find(x => x.id === a.bereich);
         return `<tr>
           <td data-label="Artikel" style="font-weight:600;max-width:200px;">${a.name}</td>
-          <td data-label="Standort" style="font-family:'IBM Plex Mono',monospace;font-size:0.72rem;color:var(--accent);">${a.location||'–'}<br><span style="color:var(--muted);font-size:0.62rem;">${b?.name||'–'}</span></td>
+          <td data-label="Standort" style="font-family:'IBM Plex Mono',monospace;font-size:0.72rem;color:var(--accent);">${a.location||'–'}<br><span style="color:var(--muted);font-size:0.62rem;">${prettyBereich(b?.name||'–')}</span></td>
           <td data-label="MIN / MAX" style="font-family:'IBM Plex Mono',monospace;font-size:0.7rem;">${a.min??'–'} ${a.minEinheit||''} / ${a.max??'–'} ${a.maxEinheit||''}</td>
           <td data-label="Aktionen" style="display:flex;gap:6px;">
             <button class="tbl-btn" onclick="openArtikelModal('${a.id}')">✏️</button>
@@ -1740,7 +1744,7 @@
       const def = document.createElement('option'); def.value = ''; def.textContent = 'Alle Bereiche';
       sel.appendChild(def);
       alleBereiche.forEach(b => {
-        const o = document.createElement('option'); o.value = b.id; o.textContent = b.name;
+        const o = document.createElement('option'); o.value = b.id; o.textContent = prettyBereich(b.name);
         sel.appendChild(o);
       });
     }
@@ -1749,7 +1753,7 @@
       const sel = document.getElementById('edit-bereich');
       sel.innerHTML = '';
       alleBereiche.forEach(b => {
-        const o = document.createElement('option'); o.value = b.id; o.textContent = b.name;
+        const o = document.createElement('option'); o.value = b.id; o.textContent = prettyBereich(b.name);
         sel.appendChild(o);
       });
       if (id) {
@@ -1823,7 +1827,7 @@
           <div class="bereich-item">
             <div class="bereich-item-icon">${getBereichIcon(b.name)}</div>
             <div style="flex:1;">
-              <div class="bereich-item-name">${b.name}</div>
+              <div class="bereich-item-name">${esc(prettyBereich(b.name))}</div>
               <div class="bereich-item-count">${count} Artikel · Reihenfolge: ${b.reihenfolge}</div>
             </div>
             <button class="tbl-btn" onclick="openBereichModal('${b.id}')">✏️</button>
@@ -1895,7 +1899,7 @@
       while (sel.options.length > 1) sel.remove(1);
       alleBereiche.forEach(b => {
         const o = document.createElement('option');
-        o.value = b.id; o.textContent = b.name;
+        o.value = b.id; o.textContent = prettyBereich(b.name);
         sel.appendChild(o);
       });
     }
@@ -2029,7 +2033,7 @@
       while (sel.options.length > 1) sel.remove(1);
       alleBereiche.forEach(b => {
         const o = document.createElement('option');
-        o.value = b.id; o.textContent = b.name;
+        o.value = b.id; o.textContent = prettyBereich(b.name);
         sel.appendChild(o);
       });
     }
@@ -2257,7 +2261,7 @@
         pdf.rect(14, y, 182, ROW_H);
         pdf.setFont('helvetica','bold');
         pdf.setFontSize(8.5);
-        pdf.text(bereichObj.name, COL.lp+1, y+5);
+        pdf.text(prettyBereich(bereichObj.name), COL.lp+1, y+5);
         y += ROW_H;
 
         for (const a of bereichArtikel) {
