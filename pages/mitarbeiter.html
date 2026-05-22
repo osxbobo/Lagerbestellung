@@ -238,19 +238,22 @@
     <!-- 2×2 Action Tiles -->
     <div class="m-grid">
 
-      <!-- Lagersuche — always open -->
-      <a href="../index.html" class="m-tile">
+      <!-- Verfallsmonitor — protected -->
+      <div class="m-tile" id="tile-verfall" onclick="guardedNav('verfallmonitor.html','für den Verfallsmonitor')">
         <div class="m-tile-top">
-          <div class="m-tile-icon la-photo tint-blue">
-            <svg width="22" height="22" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><circle cx="9" cy="9" r="6"/><path d="m17 17-3.5-3.5"/></svg>
+          <div class="m-tile-icon la-photo tint-green">
+            <svg width="22" height="22" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="14" height="13" rx="2"/><path d="M3 8h14M7 2v3M13 2v3"/><circle cx="10" cy="13" r="2.5"/><path d="M10 11.5V13l1 1"/></svg>
           </div>
-          <span class="m-tile-chip" style="background:var(--ok-soft);color:var(--ok);">OFFEN</span>
+          <span class="m-tile-chip lock-chip">
+            <svg width="9" height="9" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="6" width="5" height="4" rx="1"/><path d="M4.5 6V4.5a1.5 1.5 0 0 1 3 0V6"/></svg>
+            Aktiv
+          </span>
         </div>
         <div class="m-tile-bottom">
-          <div class="m-tile-name">Lagersuche</div>
-          <div class="m-tile-sub">Artikel &amp; LP finden</div>
+          <div class="m-tile-name">Verfallsmonitor</div>
+          <div class="m-tile-sub">Chargen &amp; Verfall prüfen</div>
         </div>
-      </a>
+      </div>
 
       <!-- Lagerbestellung — protected -->
       <div class="m-tile" id="tile-check" onclick="guardedNav('check.html','für die Lagerbestellung')">
