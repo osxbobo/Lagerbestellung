@@ -485,6 +485,13 @@
         LAGER<span class="slash">//</span>APP
       </div>
       <div class="ln-desktop-sub">Rettungswache Malmsheim</div>
+      <a href="../index.html" style="
+        margin-top:8px; display:inline-flex; align-items:center; gap:6px;
+        font-size:12px; color:var(--ink-3); text-decoration:none;
+        transition:color .15s;">
+        <svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5l-5 5 5 5"/></svg>
+        Zur Lagersuche
+      </a>
     </div>
 
     <div class="ln-desktop-card">
@@ -675,6 +682,9 @@
     const auth = getAuth(app);
     const db   = getFirestore(app);
 
+    // Anonymous sign-in sofort → damit Firestore-Abfragen auf mitarbeiter-Collection funktionieren
+    signInAnonymously(auth).catch(() => {});
+
     // Already logged in as non-anonymous → redirect
     onAuthStateChanged(auth, async user => {
       if (user && !user.isAnonymous) {
@@ -706,8 +716,7 @@
 
     // ── Back button ──
     window.goBack = function() {
-      if (history.length > 1) history.back();
-      else window.location.href = '../index.html';
+      window.location.href = '../index.html';
     };
     document.getElementById('back-btn').onclick = goBack;
 
@@ -752,33 +761,52 @@
       }
 
       try {
+        if (!auth.currentUser) await signInAnonymously(auth);
+
         const nameKey = normalizeName(name);
         const pinHash = await sha256(_pin);
         const snap = await getDocs(query(collection(db, 'mitarbeiter'), where('nameKey', '==', nameKey)));
 
-        if (snap.empty) {
-          errEl.textContent = 'Name nicht gefunden – Wachenleiter fragen';
-          _pin = ''; updateDots(); return;
-        }
+        let loginName = name;
+        let employeeId = null;
 
-        const empDoc = snap.docs[0];
-        if (empDoc.data().pinHash !== pinHash) {
-          _attempts++;
-          if (_attempts >= 5) {
-            _lockedUntil = Date.now() + 60000; _attempts = 0;
-            errEl.textContent = 'Zu viele Versuche – bitte 60s warten';
-          } else {
-            errEl.textContent = `Falscher PIN – noch ${5 - _attempts} Versuch(e)`;
+        if (!snap.empty) {
+          // Neues System: individueller PIN
+          const empDoc = snap.docs[0];
+          if (empDoc.data().pinHash !== pinHash) {
+            _attempts++;
+            if (_attempts >= 5) {
+              _lockedUntil = Date.now() + 60000; _attempts = 0;
+              errEl.textContent = 'Zu viele Versuche – bitte 60s warten';
+            } else {
+              errEl.textContent = `Falscher PIN – noch ${5 - _attempts} Versuch(e)`;
+            }
+            _pin = ''; updateDots(); return;
           }
-          _pin = ''; updateDots(); return;
+          loginName  = empDoc.data().vorname + ' ' + empDoc.data().nachname;
+          employeeId = empDoc.id;
+        } else {
+          // Fallback: alter globaler Stations-PIN (solange Mitarbeiter noch nicht angelegt)
+          const cfg = await getDoc(doc(db, 'config', 'app'));
+          const stationPin = cfg.exists() ? cfg.data().pin : null;
+          if (!stationPin || _pin !== stationPin) {
+            _attempts++;
+            if (_attempts >= 5) {
+              _lockedUntil = Date.now() + 60000; _attempts = 0;
+              errEl.textContent = 'Zu viele Versuche – bitte 60s warten';
+            } else {
+              errEl.textContent = `Falscher PIN – noch ${5 - _attempts} Versuch(e)`;
+            }
+            _pin = ''; updateDots(); return;
+          }
         }
         _attempts = 0;
 
-        const fullName = empDoc.data().vorname + ' ' + empDoc.data().nachname;
         if (!auth.currentUser) await signInAnonymously(auth);
         sessionStorage.setItem('lager-pin-auth', 'true');
-        sessionStorage.setItem('lager-pin-name', fullName);
-        sessionStorage.setItem('lager-employee-id', empDoc.id);
+        sessionStorage.setItem('lager-pin-name', loginName);
+        if (employeeId) sessionStorage.setItem('lager-employee-id', employeeId);
+        else sessionStorage.removeItem('lager-employee-id');
         localStorage.setItem('lager-saved-name', name);
         window.location.href = returnUrl || 'mitarbeiter.html';
       } catch (e) {
@@ -831,46 +859,62 @@
       btn.disabled = true;
       btn.innerHTML = '<div class="spinner-sm"></div> Anmelden…';
 
+      const resetDskBtn = () => {
+        btn.disabled = false;
+        btn.innerHTML = '<svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="14" height="10" rx="2"/><path d="M7 8V6a3 3 0 0 1 6 0v2"/></svg> Anmelden';
+      };
       try {
+        if (!auth.currentUser) await signInAnonymously(auth);
+
         const nameKey = normalizeName(name);
         const pinHash = await sha256(_dskPin);
         const snap = await getDocs(query(collection(db, 'mitarbeiter'), where('nameKey', '==', nameKey)));
 
-        if (snap.empty) {
-          errEl.textContent = 'Name nicht gefunden – Wachenleiter fragen';
-          _dskPin = ''; updateDskDots();
-          btn.disabled = false;
-          btn.innerHTML = '<svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="14" height="10" rx="2"/><path d="M7 8V6a3 3 0 0 1 6 0v2"/></svg> Anmelden';
-          return;
-        }
+        let loginName  = name;
+        let employeeId = null;
 
-        const empDoc = snap.docs[0];
-        if (empDoc.data().pinHash !== pinHash) {
-          _dskAttempts++;
-          if (_dskAttempts >= 5) {
-            _dskLockedUntil = Date.now() + 60000; _dskAttempts = 0;
-            errEl.textContent = 'Zu viele Versuche – bitte 60s warten';
-          } else {
-            errEl.textContent = `Falscher PIN – noch ${5 - _dskAttempts} Versuch(e)`;
+        if (!snap.empty) {
+          // Neues System: individueller PIN
+          const empDoc = snap.docs[0];
+          if (empDoc.data().pinHash !== pinHash) {
+            _dskAttempts++;
+            if (_dskAttempts >= 5) {
+              _dskLockedUntil = Date.now() + 60000; _dskAttempts = 0;
+              errEl.textContent = 'Zu viele Versuche – bitte 60s warten';
+            } else {
+              errEl.textContent = `Falscher PIN – noch ${5 - _dskAttempts} Versuch(e)`;
+            }
+            _dskPin = ''; updateDskDots(); resetDskBtn(); return;
           }
-          _dskPin = ''; updateDskDots();
-          btn.disabled = false;
-          btn.innerHTML = '<svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="14" height="10" rx="2"/><path d="M7 8V6a3 3 0 0 1 6 0v2"/></svg> Anmelden';
-          return;
+          loginName  = empDoc.data().vorname + ' ' + empDoc.data().nachname;
+          employeeId = empDoc.id;
+        } else {
+          // Fallback: alter globaler Stations-PIN
+          const cfg = await getDoc(doc(db, 'config', 'app'));
+          const stationPin = cfg.exists() ? cfg.data().pin : null;
+          if (!stationPin || _dskPin !== stationPin) {
+            _dskAttempts++;
+            if (_dskAttempts >= 5) {
+              _dskLockedUntil = Date.now() + 60000; _dskAttempts = 0;
+              errEl.textContent = 'Zu viele Versuche – bitte 60s warten';
+            } else {
+              errEl.textContent = `Falscher PIN – noch ${5 - _dskAttempts} Versuch(e)`;
+            }
+            _dskPin = ''; updateDskDots(); resetDskBtn(); return;
+          }
         }
         _dskAttempts = 0;
 
-        const fullName = empDoc.data().vorname + ' ' + empDoc.data().nachname;
         if (!auth.currentUser) await signInAnonymously(auth);
         sessionStorage.setItem('lager-pin-auth', 'true');
-        sessionStorage.setItem('lager-pin-name', fullName);
-        sessionStorage.setItem('lager-employee-id', empDoc.id);
+        sessionStorage.setItem('lager-pin-name', loginName);
+        if (employeeId) sessionStorage.setItem('lager-employee-id', employeeId);
+        else sessionStorage.removeItem('lager-employee-id');
         localStorage.setItem('lager-saved-name', name);
         window.location.href = returnUrl || 'mitarbeiter.html';
       } catch (e) {
         errEl.textContent = 'Fehler: ' + e.message;
-        btn.disabled = false;
-        btn.innerHTML = '<svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="14" height="10" rx="2"/><path d="M7 8V6a3 3 0 0 1 6 0v2"/></svg> Anmelden';
+        resetDskBtn();
         _dskPin = ''; updateDskDots();
       }
     }
