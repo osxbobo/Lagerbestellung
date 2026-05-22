@@ -682,9 +682,6 @@
     const auth = getAuth(app);
     const db   = getFirestore(app);
 
-    // Anonymous sign-in sofort → damit Firestore-Abfragen auf mitarbeiter-Collection funktionieren
-    signInAnonymously(auth).catch(() => {});
-
     // Already logged in as non-anonymous → redirect
     onAuthStateChanged(auth, async user => {
       if (user && !user.isAnonymous) {
