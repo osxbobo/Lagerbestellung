@@ -46,7 +46,7 @@ LAGER//APP ersetzt das Klemmbrett-System der Rettungswache Malmsheim durch eine 
 ## Live-Demo
 
 ```
-https://osxbobo.github.io/Lagerbestellung
+https://osxbobo.github.io/lagerapp_alpha
 ```
 
 ---
