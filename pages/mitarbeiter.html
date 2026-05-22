@@ -317,6 +317,7 @@
             <span id="auth-status-text">PIN aktiv</span>
           </div>
         </div>
+        <button class="m-auth-btn ghost" id="change-pin-btn" onclick="openPinChange()" style="display:none;">PIN ändern</button>
         <button class="m-auth-btn ghost" onclick="doLogout()">Abmelden</button>
       </div>
       <!-- Guest state (shown when not signed in) -->
@@ -347,6 +348,56 @@
       </div>
     </div>
 
+  </div>
+
+  <!-- PIN Change Modal -->
+  <div id="pin-change-wall" onclick="if(event.target===this)closePinChange()" style="
+    display:none; position:fixed; inset:0; z-index:2000;
+    background:rgba(8,8,12,0.55);
+    backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);">
+    <div style="
+      position:absolute; left:0; right:0; bottom:0;
+      background:var(--surface); border-radius:26px 26px 0 0;
+      padding:14px 20px calc(32px + env(safe-area-inset-bottom,0px));
+      box-shadow:0 -8px 32px rgba(0,0,0,.2);"
+      onclick="event.stopPropagation()">
+      <div style="width:40px;height:4px;background:var(--ink-4);border-radius:2px;margin:0 auto 20px;"></div>
+      <div id="pc-step-1">
+        <div style="font-size:17px;font-weight:700;margin-bottom:4px;">PIN ändern</div>
+        <div style="font-size:13px;color:var(--ink-3);margin-bottom:20px;">Schritt 1 von 2 · Aktuellen PIN eingeben</div>
+        <div style="display:flex;justify-content:center;gap:16px;margin-bottom:16px;">
+          <div class="ln-pin-dot" id="pc-dot-0"></div><div class="ln-pin-dot" id="pc-dot-1"></div>
+          <div class="ln-pin-dot" id="pc-dot-2"></div><div class="ln-pin-dot" id="pc-dot-3"></div>
+        </div>
+        <div class="ln-pin-error" id="pc-error-1"></div>
+        <div class="ln-numpad" style="padding-bottom:0;">
+          <button class="ln-key" onclick="pcKey(1,'1')">1</button><button class="ln-key" onclick="pcKey(1,'2')">2</button><button class="ln-key" onclick="pcKey(1,'3')">3</button>
+          <button class="ln-key" onclick="pcKey(1,'4')">4</button><button class="ln-key" onclick="pcKey(1,'5')">5</button><button class="ln-key" onclick="pcKey(1,'6')">6</button>
+          <button class="ln-key" onclick="pcKey(1,'7')">7</button><button class="ln-key" onclick="pcKey(1,'8')">8</button><button class="ln-key" onclick="pcKey(1,'9')">9</button>
+          <button class="ln-key cancel" onclick="closePinChange()">Abbrechen</button>
+          <button class="ln-key" onclick="pcKey(1,'0')">0</button>
+          <button class="ln-key del" onclick="pcDel(1)"><svg viewBox="0 0 26 20" width="24" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 1h17a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H7L1 10 7 1z"/><path d="M12 6l8 8M20 6l-8 8"/></svg></button>
+        </div>
+      </div>
+      <div id="pc-step-2" style="display:none;">
+        <div style="font-size:17px;font-weight:700;margin-bottom:4px;">PIN ändern</div>
+        <div style="font-size:13px;color:var(--ink-3);margin-bottom:20px;">Schritt 2 von 2 · Neuen PIN zweimal eingeben</div>
+        <div style="font-size:11px;color:var(--ink-3);margin-bottom:8px;" id="pc-new-label">Neuer PIN</div>
+        <div style="display:flex;justify-content:center;gap:16px;margin-bottom:16px;">
+          <div class="ln-pin-dot" id="pc-ndot-0"></div><div class="ln-pin-dot" id="pc-ndot-1"></div>
+          <div class="ln-pin-dot" id="pc-ndot-2"></div><div class="ln-pin-dot" id="pc-ndot-3"></div>
+        </div>
+        <div class="ln-pin-error" id="pc-error-2"></div>
+        <div class="ln-numpad" style="padding-bottom:0;">
+          <button class="ln-key" onclick="pcKey(2,'1')">1</button><button class="ln-key" onclick="pcKey(2,'2')">2</button><button class="ln-key" onclick="pcKey(2,'3')">3</button>
+          <button class="ln-key" onclick="pcKey(2,'4')">4</button><button class="ln-key" onclick="pcKey(2,'5')">5</button><button class="ln-key" onclick="pcKey(2,'6')">6</button>
+          <button class="ln-key" onclick="pcKey(2,'7')">7</button><button class="ln-key" onclick="pcKey(2,'8')">8</button><button class="ln-key" onclick="pcKey(2,'9')">9</button>
+          <button class="ln-key cancel" onclick="closePinChange()">Abbrechen</button>
+          <button class="ln-key" onclick="pcKey(2,'0')">0</button>
+          <button class="ln-key del" onclick="pcDel(2)"><svg viewBox="0 0 26 20" width="24" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 1h17a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H7L1 10 7 1z"/><path d="M12 6l8 8M20 6l-8 8"/></svg></button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- Login Wall (same component as index.html) -->
@@ -423,6 +474,9 @@
       document.getElementById('auth-status-text').textContent = 'PIN aktiv';
       document.getElementById('auth-signed-in').style.display = 'contents';
       document.getElementById('auth-guest').classList.add('hidden');
+      if (sessionStorage.getItem('lager-employee-id')) {
+        document.getElementById('change-pin-btn').style.display = '';
+      }
     } else {
       document.getElementById('user-name').textContent = 'Gast.';
       document.getElementById('auth-signed-in').style.display = 'none';
@@ -530,6 +584,123 @@
       if (diff < 3600000)  return Math.round(diff/60000) + ' min';
       if (diff < 86400000) return Math.round(diff/3600000) + ' h';
       return d.toLocaleDateString('de-DE');
+    }
+  </script>
+
+  <script type="module">
+    import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+    import { getFirestore, doc, getDoc, updateDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+    import { firebaseConfig } from '../js/firebase-config.js';
+
+    const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
+    const db  = getFirestore(app);
+
+    async function sha256(str) {
+      const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+      return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    let _pc1 = '', _pc2 = '', _pcNewFirst = '', _pcConfirming = false;
+
+    function updatePcDots(step, val) {
+      const prefix = step === 1 ? 'pc-dot' : 'pc-ndot';
+      for (let i = 0; i < 4; i++)
+        document.getElementById(`${prefix}-${i}`)?.classList.toggle('filled', i < val.length);
+    }
+
+    window.openPinChange = function() {
+      _pc1 = ''; _pc2 = ''; _pcNewFirst = ''; _pcConfirming = false;
+      updatePcDots(1, ''); updatePcDots(2, '');
+      document.getElementById('pc-error-1').textContent = '';
+      document.getElementById('pc-error-2').textContent = '';
+      document.getElementById('pc-new-label').textContent = 'Neuer PIN';
+      document.getElementById('pc-step-1').style.display = '';
+      document.getElementById('pc-step-2').style.display = 'none';
+      document.getElementById('pin-change-wall').style.display = 'block';
+      document.body.style.overflow = 'hidden';
+    };
+
+    window.closePinChange = function() {
+      document.getElementById('pin-change-wall').style.display = 'none';
+      document.body.style.overflow = '';
+    };
+
+    window.pcKey = function(step, d) {
+      if (step === 1) {
+        if (_pc1.length >= 4) return;
+        _pc1 += d;
+        updatePcDots(1, _pc1);
+        if (_pc1.length === 4) setTimeout(verifyCurrentPin, 150);
+      } else {
+        if (_pc2.length >= 4) return;
+        _pc2 += d;
+        updatePcDots(2, _pc2);
+        if (_pc2.length === 4) setTimeout(handleNewPin, 150);
+      }
+    };
+
+    window.pcDel = function(step) {
+      if (step === 1) { _pc1 = _pc1.slice(0, -1); updatePcDots(1, _pc1); }
+      else            { _pc2 = _pc2.slice(0, -1); updatePcDots(2, _pc2); }
+    };
+
+    async function verifyCurrentPin() {
+      const empId = sessionStorage.getItem('lager-employee-id');
+      if (!empId) {
+        document.getElementById('pc-error-1').textContent = 'Sitzung abgelaufen – bitte neu anmelden';
+        _pc1 = ''; updatePcDots(1, ''); return;
+      }
+      try {
+        const snap = await getDoc(doc(db, 'mitarbeiter', empId));
+        if (!snap.exists()) { document.getElementById('pc-error-1').textContent = 'Mitarbeiter nicht gefunden'; _pc1 = ''; updatePcDots(1, ''); return; }
+        const currentHash = await sha256(_pc1);
+        if (snap.data().pinHash !== currentHash) {
+          document.getElementById('pc-error-1').textContent = 'Falscher PIN';
+          _pc1 = ''; updatePcDots(1, ''); return;
+        }
+        document.getElementById('pc-step-1').style.display = 'none';
+        document.getElementById('pc-step-2').style.display = '';
+        document.getElementById('pc-new-label').textContent = 'Neuer PIN';
+        _pcConfirming = false; _pc2 = ''; updatePcDots(2, '');
+      } catch(e) {
+        document.getElementById('pc-error-1').textContent = 'Fehler: ' + e.message;
+        _pc1 = ''; updatePcDots(1, '');
+      }
+    }
+
+    async function handleNewPin() {
+      if (!_pcConfirming) {
+        _pcNewFirst = _pc2;
+        _pcConfirming = true;
+        _pc2 = ''; updatePcDots(2, '');
+        document.getElementById('pc-new-label').textContent = 'Neuen PIN bestätigen';
+        document.getElementById('pc-error-2').textContent = '';
+      } else {
+        if (_pc2 !== _pcNewFirst) {
+          document.getElementById('pc-error-2').textContent = 'PINs stimmen nicht überein – erneut versuchen';
+          _pcConfirming = false; _pcNewFirst = ''; _pc2 = ''; updatePcDots(2, '');
+          document.getElementById('pc-new-label').textContent = 'Neuer PIN';
+          return;
+        }
+        const empId = sessionStorage.getItem('lager-employee-id');
+        try {
+          const newHash = await sha256(_pc2);
+          await updateDoc(doc(db, 'mitarbeiter', empId), { pinHash: newHash });
+          closePinChange();
+          showToast('PIN erfolgreich geändert');
+        } catch(e) {
+          document.getElementById('pc-error-2').textContent = 'Fehler: ' + e.message;
+          _pc2 = ''; updatePcDots(2, '');
+        }
+      }
+    }
+
+    function showToast(msg) {
+      const t = document.createElement('div');
+      t.textContent = msg;
+      t.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--ok);color:var(--ok);border-radius:12px;padding:10px 18px;font-size:13px;font-weight:600;z-index:3000;box-shadow:0 4px 16px rgba(0,0,0,.15);';
+      document.body.appendChild(t);
+      setTimeout(() => t.remove(), 3000);
     }
   </script>
 
