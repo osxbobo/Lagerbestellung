@@ -1875,6 +1875,7 @@
     // ── FOTOS ──
     function populateFotoSelect() {
       const sel = document.getElementById('foto-artikel-select');
+      if (!sel) return;
       sel.innerHTML = '';
       const def2 = document.createElement('option'); def2.value = ''; def2.textContent = '– Artikel wählen –';
       sel.appendChild(def2);
