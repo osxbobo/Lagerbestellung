@@ -569,6 +569,10 @@
     // Tint colors for bereiche
     const TINTS = ['tint-rose','tint-blue','tint-violet','tint-green','tint-slate','tint-amber'];
 
+    function prettyBereich(name) {
+      return String(name ?? '').replace(/^Lager\s*[-–]\s*/i, '').trim();
+    }
+
     // ── Daten laden ──
     async function loadData() {
       try {
@@ -613,7 +617,7 @@
               <div class="la-bereich-num">${num}</div>
             </div>
             <div>
-              <div class="la-bereich-name">${b.name}</div>
+              <div class="la-bereich-name">${prettyBereich(b.name)}</div>
               ${b.sub ? `<div class="la-bereich-sub">${b.sub}</div>` : ''}
             </div>
             <div class="la-bereich-bottom">
@@ -635,7 +639,7 @@
         const btn = document.createElement('button');
         btn.className = 'la-filter-chip';
         btn.dataset.filter = b.name;
-        btn.textContent = b.name;
+        btn.textContent = prettyBereich(b.name);
         btn.onclick = () => filterChip(btn, b.name);
         chipContainer.appendChild(btn);
       });
@@ -716,7 +720,7 @@
             <div class="result-body">
               <div class="result-name">${hl(a.name, q)}</div>
               <div class="result-location-big">
-                ${b ? `<span class="result-bereich-big">${b.name}</span>` : ''}
+                ${b ? `<span class="result-bereich-big">${prettyBereich(b.name)}</span>` : ''}
                 <span class="result-lp-big">📍 ${a.lp || (a.location||'').replace(/\./g,' · ')}</span>
               </div>
               ${a.aliases?.length ? `<div style="font-size:11px;color:var(--ink-3);margin-top:2px;">${a.aliases.slice(0,3).join(' · ')}</div>` : ''}
@@ -738,7 +742,7 @@
       document.getElementById('empty-state').classList.add('hidden');
       document.getElementById('back-to-bereiche').classList.remove('hidden');
       document.getElementById('status-text').textContent =
-        `${bereichArtikel.length} Artikel · ${name}`;
+        `${bereichArtikel.length} Artikel · ${prettyBereich(name)}`;
 
       const container = document.getElementById('search-results');
       container.innerHTML = bereichArtikel.map(a => `
@@ -749,7 +753,7 @@
           <div class="result-body">
             <div class="result-name">${a.name}</div>
             <div class="result-location-big">
-              <span class="result-bereich-big">${name}</span>
+              <span class="result-bereich-big">${prettyBereich(name)}</span>
               <span class="result-lp-big">📍 ${a.lp || (a.location||'').replace(/\./g,' · ')}</span>
             </div>
           </div>
