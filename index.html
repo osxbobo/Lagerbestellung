@@ -851,7 +851,7 @@
         const ctaBtn = document.getElementById('cta-primary-btn');
         if (ctaBtn) {
           ctaBtn.href = 'pages/login.html?tab=mitarbeiter&return=' +
-            encodeURIComponent(window.location.pathname + 'pages/mitarbeiter.html');
+            encodeURIComponent(new URL('pages/mitarbeiter.html', window.location.href).pathname);
         }
       }
     }
@@ -888,7 +888,7 @@
 
     // Keep openPinModal as an alias for backwards-compat with any remaining calls
     window.openPinModal = function() {
-      window.openLoginWall('für die Lagerbestellung', 'pages/mitarbeiter.html');
+      window.openLoginWall('für die Lagerbestellung', new URL('pages/mitarbeiter.html', window.location.href).pathname);
     };
   </script>
 
