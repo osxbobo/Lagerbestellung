@@ -475,14 +475,14 @@
       document.documentElement.setAttribute('data-theme', t);
       document.addEventListener('DOMContentLoaded', () => {
         const btn = document.querySelector('.s-theme');
-        if (btn) btn.textContent = t === 'dark' ? '🌙' : '☀️';
+        if (btn) btn.textContent = t === 'dark' ? '☀️' : '🌙';
       });
     })();
     function toggleTheme() {
       const t = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
       document.documentElement.setAttribute('data-theme', t);
       localStorage.setItem('lager-theme', t);
-      document.querySelector('.s-theme').textContent = t === 'dark' ? '🌙' : '☀️';
+      document.querySelector('.s-theme').textContent = t === 'dark' ? '☀️' : '🌙';
     }
   </script>
 

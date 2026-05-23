@@ -553,7 +553,7 @@
 </head>
 <body class="check-page">
 
-  <nav style="position:sticky;top:0;z-index:200;display:flex;align-items:center;gap:10px;padding:10px 16px;background:var(--glass-bg-strong);backdrop-filter:blur(24px) saturate(180%);-webkit-backdrop-filter:blur(24px) saturate(180%);border-bottom:1px solid var(--hairline);height:52px;">
+  <nav style="position:sticky;top:0;z-index:200;display:flex;align-items:center;gap:10px;padding:env(safe-area-inset-top,0px) 16px 0;background:var(--glass-bg-strong);backdrop-filter:blur(24px) saturate(180%);-webkit-backdrop-filter:blur(24px) saturate(180%);border-bottom:1px solid var(--hairline);height:calc(52px + env(safe-area-inset-top,0px));">
     <a href="mitarbeiter.html" style="height:28px;padding:0 10px;border-radius:7px;border:1px solid var(--hairline-2);background:var(--surface-2);color:var(--ink-2);font-family:var(--font-ui);font-size:0.78rem;font-weight:500;display:inline-flex;align-items:center;text-decoration:none;">‹ Zurück</a>
     <div style="font-family:var(--font-mono);font-weight:600;font-size:0.9rem;color:var(--brand);letter-spacing:-0.01em;">LAGER<span style="color:var(--ink-3)">//</span>APP</div>
     <div style="margin-left:auto;display:flex;align-items:center;gap:8px;">
@@ -563,7 +563,7 @@
   </nav>
 
   <!-- ── KOLLEGEN-LEISTE (live progress bar) ── -->
-  <div id="kollegen-bar" class="hidden" style="background:var(--surface-2);border-bottom:1px solid var(--hairline-2);padding:5px 14px;display:flex;gap:8px;align-items:center;overflow-x:auto;font-size:0.72rem;position:sticky;top:52px;z-index:9;scrollbar-width:none;"></div>
+  <div id="kollegen-bar" class="hidden" style="background:var(--surface-2);border-bottom:1px solid var(--hairline-2);padding:5px 14px;display:flex;gap:8px;align-items:center;overflow-x:auto;font-size:0.72rem;position:sticky;top:calc(52px + env(safe-area-inset-top,0px));z-index:9;scrollbar-width:none;"></div>
 
   <!-- ── PIN ── -->
   <div id="screen-pin" class="pin-screen">
@@ -673,7 +673,7 @@
       </div>
     </div>
 
-    <div style="text-align:center;padding-bottom:10px;">
+    <div style="text-align:center;padding-bottom:max(20px, calc(10px + env(safe-area-inset-bottom, 0px)));">
       <button onclick="storniereBestellung()" class="cancel-text-btn">🗑️ Lagerbestellung stornieren</button>
     </div>
   </div>
