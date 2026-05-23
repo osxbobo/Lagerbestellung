@@ -1168,6 +1168,7 @@
     window.goToMitarbeiter = function() {
       const name = window._portalDisplayName || document.getElementById('nav-user').textContent;
       sessionStorage.setItem('lager-pin-auth', 'true');
+      sessionStorage.setItem('lager-portal-role', 'wachenleiter');
       if (name) sessionStorage.setItem('lager-pin-name', name);
       window.location.href = 'mitarbeiter.html';
     };
