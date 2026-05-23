@@ -11,6 +11,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>LAGER//APP – Rettungswache Malmsheim</title>
   <link rel="stylesheet" href="css/main.css">
+  <script src="https://unpkg.com/@zxing/library@0.19.1/umd/index.min.js"></script>
   <style>
     /* ── Page Layout ── */
     body { min-height: 100vh; display: flex; flex-direction: column; }
@@ -286,6 +287,10 @@
     .la-pin-key.del { color: var(--ink-3); }
     .la-pin-error { text-align: center; font-size: 12px; color: var(--crit); min-height: 20px; margin-top: 12px; }
 
+    /* ── Lager Scan Animations ── */
+    @keyframes lsPulse { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
+    @keyframes lsScanline { 0%,100%{top:10%;} 50%{top:84%;} }
+
     /* ── Desktop ── */
     @media (min-width: 768px) {
       .la-hero { padding: 40px 0 0; max-width: 700px; margin: 0 auto; }
@@ -376,8 +381,7 @@
   <!-- ── HERO ── -->
   <div class="la-hero">
     <div class="la-greeting">
-      Was suchst du,
-      <span style="color:var(--ink-3);" id="greeting-name">Markus?</span>
+      Was suchst du<span id="greeting-name-wrap" style="display:none;">, <span style="color:var(--ink-3);" id="greeting-name"></span></span>?
     </div>
     <div class="la-greeting-sub" id="status-text">Datenbank wird geladen…</div>
 
@@ -475,6 +479,47 @@
     </div>
   </div>
 
+  <!-- ── LAGER SCAN OVERLAY (Lagerort-Suche per Kamera) ── -->
+  <div id="lager-scan-overlay" style="display:none;position:fixed;inset:0;z-index:500;background:#000;flex-direction:column;">
+    <div style="flex:1;position:relative;overflow:hidden;min-height:0;">
+      <video id="lager-scan-video" style="width:100%;height:100%;object-fit:cover;display:block;" playsinline autoplay muted></video>
+      <div style="position:absolute;top:max(14px,env(safe-area-inset-top));left:14px;right:14px;display:flex;align-items:center;gap:8px;pointer-events:none;z-index:10;">
+        <div style="flex:1;height:36px;padding:0 14px;border-radius:999px;display:flex;align-items:center;gap:8px;background:rgba(14,14,18,.72);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border:0.5px solid rgba(255,255,255,.10);color:rgba(255,255,255,.9);font-size:12px;font-weight:500;font-family:var(--font-ui);">
+          <span style="width:7px;height:7px;border-radius:50%;flex-shrink:0;background:var(--brand);box-shadow:0 0 7px var(--brand);animation:lsPulse 1.8s ease infinite;"></span>
+          <span id="lager-scan-status">Artikel-Code scannen</span>
+        </div>
+        <button onclick="closeLagerScan()" style="pointer-events:all;flex-shrink:0;width:36px;height:36px;border-radius:50%;border:0.5px solid rgba(255,255,255,.10);background:rgba(14,14,18,.72);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);color:rgba(255,255,255,.85);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
+      </div>
+      <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;pointer-events:none;">
+        <div style="position:relative;width:240px;height:240px;">
+          <svg style="position:absolute;top:0;left:0;width:32px;height:32px;" viewBox="0 0 32 32" fill="none"><path d="M0 24V0h24" stroke="#F26B2E" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <svg style="position:absolute;top:0;right:0;width:32px;height:32px;" viewBox="0 0 32 32" fill="none"><path d="M32 24V0H8" stroke="#F26B2E" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <svg style="position:absolute;bottom:0;left:0;width:32px;height:32px;" viewBox="0 0 32 32" fill="none"><path d="M0 8v24h24" stroke="#F26B2E" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <svg style="position:absolute;bottom:0;right:0;width:32px;height:32px;" viewBox="0 0 32 32" fill="none"><path d="M32 8v24H8" stroke="#F26B2E" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <div style="position:absolute;left:10px;right:10px;height:2px;background:var(--brand);box-shadow:0 0 24px 6px rgba(242,107,46,.6);border-radius:1px;animation:lsScanline 2s ease-in-out infinite;"></div>
+        </div>
+        <div style="font-family:var(--font-mono);font-size:11px;font-weight:600;color:rgba(255,255,255,.45);letter-spacing:0.08em;text-transform:uppercase;">Code zentrieren · Halten</div>
+      </div>
+    </div>
+    <div style="background:rgba(12,14,18,.88);backdrop-filter:blur(28px) saturate(160%);-webkit-backdrop-filter:blur(28px) saturate(160%);border-top:0.5px solid rgba(255,255,255,.10);border-radius:26px 26px 0 0;padding:14px 20px;padding-bottom:max(24px,env(safe-area-inset-bottom));">
+      <div style="width:36px;height:4px;border-radius:2px;background:rgba(255,255,255,.22);margin:0 auto 16px;"></div>
+      <div id="lager-scan-hint" style="text-align:center;font-size:13px;color:rgba(255,255,255,.4);padding:8px 0 4px;font-family:var(--font-ui);">Barcode oder LP-Etikett vor die Kamera halten</div>
+      <div id="lager-scan-result" style="display:none;gap:14px;align-items:center;">
+        <div id="lager-scan-photo" style="width:60px;height:60px;border-radius:12px;flex-shrink:0;background:rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;font-size:1.4rem;overflow:hidden;">📦</div>
+        <div style="flex:1;min-width:0;">
+          <div id="lager-scan-art-name" style="font-size:15px;font-weight:700;color:rgba(255,255,255,.92);margin-bottom:6px;font-family:var(--font-ui);"></div>
+          <div id="lager-scan-lp" style="font-family:var(--font-mono);font-size:20px;font-weight:700;color:var(--brand);letter-spacing:0.02em;"></div>
+          <div id="lager-scan-bereich" style="font-size:12px;color:rgba(255,255,255,.45);margin-top:3px;font-family:var(--font-ui);"></div>
+        </div>
+      </div>
+      <div id="lager-scan-not-found" style="display:none;text-align:center;padding:8px 0 4px;">
+        <div style="font-size:1.4rem;margin-bottom:6px;">❓</div>
+        <div style="font-size:13px;color:rgba(255,255,255,.5);font-family:var(--font-ui);">Artikel nicht gefunden</div>
+        <div id="lager-scan-raw" style="font-family:var(--font-mono);font-size:10px;color:rgba(255,255,255,.3);margin-top:4px;"></div>
+      </div>
+    </div>
+  </div>
+
   <!-- ── LOGIN WALL (bottom-sheet, shown when guest taps protected action) ── -->
   <div id="login-wall" onclick="if(event.target===this)closeLoginWall()" style="
     display:none; position:fixed; inset:0; z-index:2000;
@@ -550,12 +595,6 @@
       localStorage.setItem('lager-theme', next);
       document.getElementById('theme-toggle').textContent = next === 'dark' ? '☀️' : '🌙';
     };
-
-    // ── Greeting ──
-    const savedName = localStorage.getItem('lager-saved-name');
-    if (savedName) {
-      document.getElementById('greeting-name').textContent = savedName + '?';
-    }
 
     // ── Firebase ──
     const app = initializeApp(firebaseConfig);
@@ -636,7 +675,7 @@
     function renderFilterChips() {
       const chipContainer = document.getElementById('filter-chips');
       chipContainer.innerHTML = '<button class="la-filter-chip active" data-filter="all" onclick="filterChip(this,\'all\')">Alle</button>';
-      alleBereiche.slice(0, 6).forEach(b => {
+      alleBereiche.forEach(b => {
         const btn = document.createElement('button');
         btn.className = 'la-filter-chip';
         btn.dataset.filter = b.name;
@@ -804,6 +843,103 @@
       searchTimer = setTimeout(() => doSearch(val), 200);
     });
 
+    // ── Lager Scan (Lagerort-Suche per Kamera, kein Login nötig) ──
+    let lagerScanReader = null;
+
+    function extractGTIN(raw) {
+      const s = raw.replace(/[\x00-\x1F\x7F]/g, '').trim();
+      if (s.includes('(')) {
+        const g = s.match(/\(01\)(\d{14})/);
+        return g ? g[1] : null;
+      }
+      if (/^\d{13}$/.test(s)) return '0' + s;
+      if (/^\d{14}$/.test(s)) return s;
+      if (s.startsWith('01') && s.length >= 16) return s.substring(2, 16);
+      return null;
+    }
+
+    window.openLagerScan = function() {
+      const overlay = document.getElementById('lager-scan-overlay');
+      overlay.style.display = 'flex';
+      document.body.style.overflow = 'hidden';
+      document.getElementById('lager-scan-hint').style.display = 'block';
+      document.getElementById('lager-scan-result').style.display = 'none';
+      document.getElementById('lager-scan-not-found').style.display = 'none';
+      document.getElementById('lager-scan-status').textContent = 'Artikel-Code scannen';
+      startLagerScan();
+    };
+
+    async function startLagerScan() {
+      try {
+        const hints = new Map();
+        hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, [
+          ZXing.BarcodeFormat.EAN_13,
+          ZXing.BarcodeFormat.CODE_128,
+          ZXing.BarcodeFormat.QR_CODE,
+          ZXing.BarcodeFormat.DATA_MATRIX,
+        ]);
+        lagerScanReader = new ZXing.BrowserMultiFormatReader(hints);
+        await lagerScanReader.decodeFromConstraints(
+          { video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } } },
+          'lager-scan-video',
+          result => { if (result) onLagerScan(result.getText()); }
+        );
+      } catch(e) {
+        document.getElementById('lager-scan-status').textContent =
+          e.name === 'NotAllowedError' ? 'Kamera verweigert' : 'Kamera nicht verfügbar';
+      }
+    }
+
+    window.closeLagerScan = function() {
+      document.getElementById('lager-scan-overlay').style.display = 'none';
+      document.body.style.overflow = '';
+      if (lagerScanReader) { try { lagerScanReader.reset(); } catch(e) {} lagerScanReader = null; }
+      const v = document.getElementById('lager-scan-video');
+      if (v?.srcObject) { v.srcObject.getTracks().forEach(t => t.stop()); v.srcObject = null; }
+      window._lastLagerScan = null;
+    };
+
+    function onLagerScan(raw) {
+      if (!raw || raw.trim().length < 3) return;
+      const rawTrimmed = raw.trim();
+      if (window._lastLagerScan === rawTrimmed) return;
+      window._lastLagerScan = rawTrimmed;
+      setTimeout(() => { if (window._lastLagerScan === rawTrimmed) window._lastLagerScan = null; }, 2000);
+      if (navigator.vibrate) navigator.vibrate(80);
+
+      const gtin = extractGTIN(rawTrimmed);
+      let found = null;
+      if (gtin) {
+        found = alleArtikel.find(a =>
+          a.gtin === gtin || (Array.isArray(a.gtins) && a.gtins.includes(gtin))
+        );
+      }
+      if (!found) {
+        found = alleArtikel.find(a =>
+          a.lp && a.lp.toLowerCase() === rawTrimmed.toLowerCase()
+        );
+      }
+
+      document.getElementById('lager-scan-hint').style.display = 'none';
+      const resultEl    = document.getElementById('lager-scan-result');
+      const notFoundEl  = document.getElementById('lager-scan-not-found');
+
+      if (found) {
+        const b = alleBereiche.find(x => x.id === found.bereich);
+        document.getElementById('lager-scan-art-name').textContent = found.name;
+        document.getElementById('lager-scan-lp').textContent = '📍 ' + (found.lp || '–');
+        document.getElementById('lager-scan-bereich').textContent = b ? prettyBereich(b.name) : '';
+        const photoEl = document.getElementById('lager-scan-photo');
+        photoEl.innerHTML = found.fotoUrl ? `<img src="${found.fotoUrl}" alt="" style="width:100%;height:100%;object-fit:cover;">` : '📦';
+        resultEl.style.display = 'flex';
+        notFoundEl.style.display = 'none';
+      } else {
+        document.getElementById('lager-scan-raw').textContent = rawTrimmed.substring(0, 50);
+        resultEl.style.display = 'none';
+        notFoundEl.style.display = 'block';
+      }
+    }
+
     // ── Start ──
     loadData();
   </script>
@@ -839,6 +975,8 @@
         avatarEl.textContent  = (fbUser.email || 'W').charAt(0).toUpperCase();
         labelEl.textContent   = 'Portal öffnen';
         linkEl.href           = 'pages/portal.html';
+        const nameWrap = document.getElementById('greeting-name-wrap');
+        if (nameWrap) nameWrap.style.display = 'none';
       } else if (isMa) {
         guestEl.style.display = 'none';
         userEl.style.display  = 'block';
@@ -847,11 +985,18 @@
         labelEl.textContent   = 'Mitarbeiter-Hub';
         linkEl.href           = 'pages/mitarbeiter.html';
         // Also update greeting
-        const greetEl = document.getElementById('greeting-name');
-        if (greetEl && pinName) greetEl.textContent = pinName + '?';
+        const vorname   = pinName.split(' ')[0];
+        const nameWrap  = document.getElementById('greeting-name-wrap');
+        const greetEl   = document.getElementById('greeting-name');
+        if (nameWrap && greetEl && vorname) {
+          greetEl.textContent    = vorname;
+          nameWrap.style.display = 'inline';
+        }
       } else {
         guestEl.style.display = 'block';
         userEl.style.display  = 'none';
+        const nameWrap = document.getElementById('greeting-name-wrap');
+        if (nameWrap) nameWrap.style.display = 'none';
         // CTA: point to login
         const ctaBtn = document.getElementById('cta-primary-btn');
         if (ctaBtn) {
@@ -864,15 +1009,9 @@
     onAuthStateChanged(auth, () => updateAuthPill());
     updateAuthPill();
 
-    // Scan-button: guard if guest
+    // Scan-button: Lagerort-Suche, kein Login nötig
     document.getElementById('scan-btn').addEventListener('click', () => {
-      const pinAuth = sessionStorage.getItem('lager-pin-auth');
-      const fbUser  = auth.currentUser;
-      if (pinAuth === 'true' || (fbUser && !fbUser.isAnonymous)) {
-        window.location.href = 'pages/scanner.html';
-      } else {
-        window.openLoginWall('für den Verfallsscan', 'pages/scanner.html');
-      }
+      window.openLagerScan();
     });
 
     // ── Login Wall ──
