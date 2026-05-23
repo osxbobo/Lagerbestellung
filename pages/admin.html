@@ -60,6 +60,7 @@
     }
     @media (max-width: 768px) { .a-menu-btn { display: flex; } }
     @media (max-width: 768px) { .a-lager-link { display: none; } }
+    @media (max-width: 768px) { .a-ma-link { display: none; } }
 
     /* ── LAYOUT ── */
     .admin-layout { display: flex; flex: 1; }
@@ -251,6 +252,10 @@
     <div class="a-nav-right">
       <span id="nav-user" class="a-nav-user"></span>
       <span class="a-badge">ADMIN</span>
+      <button class="a-btn a-ma-link" onclick="goToMitarbeiter()">
+        <svg viewBox="0 0 20 20" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="7" r="3"/><path d="M4 17c0-3.3 2.7-6 6-6s6 2.7 6 6"/></svg>
+        Mitarbeiter
+      </button>
       <a href="../index.html" class="a-btn a-lager-link" style="text-decoration:none;">
         <svg viewBox="0 0 20 20" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5l-5 5 5 5"/></svg>
         Lagersuche
@@ -289,6 +294,9 @@
   <div class="bottom-sheet" id="bottom-sheet">
     <div class="bottom-sheet-handle"></div>
     <div class="bottom-sheet-title">Navigation</div>
+    <button class="bottom-sheet-item" onclick="goToMitarbeiter()">
+      <span class="bottom-sheet-item-icon">👤</span> Zum Mitarbeiterbereich
+    </button>
     <button class="bottom-sheet-item" onclick="window.location.href='../index.html'">
       <span class="bottom-sheet-item-icon">🔍</span> Zur Lagersuche
     </button>
@@ -902,6 +910,7 @@
       const role     = userSnap.exists() ? userSnap.data().role : null;
       if (role !== 'admin' && role !== 'wachenleiter') { window.location.href = 'login.html?tab=wachenleiter'; return; }
       const displayName = userSnap.data()?.name || user.email;
+      window._adminDisplayName = displayName;
       document.getElementById('nav-user').textContent = user.email;
       document.getElementById('auth-loading').classList.add('hidden');
       document.getElementById('admin-layout').classList.remove('hidden');
@@ -929,6 +938,13 @@
     window.doLogout = async function() {
       await signOut(auth);
       window.location.href = 'login.html';
+    };
+
+    window.goToMitarbeiter = function() {
+      const name = window._adminDisplayName || document.getElementById('nav-user').textContent;
+      sessionStorage.setItem('lager-pin-auth', 'true');
+      if (name) sessionStorage.setItem('lager-pin-name', name);
+      window.location.href = 'mitarbeiter.html';
     };
 
     // ── Neuen Benutzer anlegen ──
