@@ -609,13 +609,18 @@
   <script type="module">
     import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
     import { getFirestore, collection, query, orderBy, limit, onSnapshot, getDocs, doc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
-    import { getAuth, signInAnonymously } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+    import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
     import { firebaseConfig } from '../js/firebase-config.js';
 
     const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
     const db  = getFirestore(app);
     const auth = getAuth(app);
-    if (!auth.currentUser) signInAnonymously(auth).catch(() => {});
+    // Wait for Firebase to restore session from storage before signing in anonymously —
+    // prevents overwriting an active WL/Admin email-password session on page load.
+    const _unsubAuthInit = onAuthStateChanged(auth, user => {
+      _unsubAuthInit();
+      if (!user) signInAnonymously(auth).catch(() => {});
+    });
 
     // ── Live session ──
     onSnapshot(doc(db, 'bestellungen_session', 'current'), snap => {
