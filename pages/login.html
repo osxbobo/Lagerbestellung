@@ -614,12 +614,35 @@
     </div>
   </div>
 
+  <!-- ── Help Sheet ── -->
+  <div id="help-sheet" onclick="if(event.target===this)closeHelp()" style="display:none;position:fixed;inset:0;z-index:3000;background:rgba(0,0,0,0.55);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);">
+    <div style="position:absolute;left:0;right:0;bottom:0;background:var(--surface);border-radius:26px 26px 0 0;padding:12px 20px calc(28px + env(safe-area-inset-bottom,0px));" onclick="event.stopPropagation()">
+      <div style="width:40px;height:4px;background:var(--ink-4);border-radius:2px;margin:0 auto 20px;"></div>
+      <div style="font-size:17px;font-weight:700;margin-bottom:16px;">Hilfe &amp; Kontakt</div>
+      <div style="display:flex;flex-direction:column;gap:14px;font-size:14px;color:var(--ink-2);line-height:1.5;">
+        <div>
+          <div style="font-weight:600;color:var(--ink);margin-bottom:3px;">Kein PIN?</div>
+          Bitte deinen Wachenleiter ansprechen — er kann dir einen persönlichen PIN einrichten.
+        </div>
+        <div>
+          <div style="font-weight:600;color:var(--ink);margin-bottom:3px;">PIN vergessen oder gesperrt?</div>
+          Wachenleiter bitten, deinen PIN zurückzusetzen.
+        </div>
+        <div>
+          <div style="font-weight:600;color:var(--ink);margin-bottom:3px;">Kontakt</div>
+          <a href="mailto:wachenleiter@drk-malmsheim.de" style="color:var(--brand);text-decoration:none;font-weight:500;">wachenleiter@drk-malmsheim.de</a>
+        </div>
+      </div>
+      <button onclick="closeHelp()" style="margin-top:24px;width:100%;height:50px;border-radius:14px;border:none;background:var(--surface-2);color:var(--ink);font-family:var(--font-ui);font-size:15px;font-weight:600;cursor:pointer;box-shadow:inset 0 0 0 1px var(--hairline);touch-action:manipulation;">OK</button>
+    </div>
+  </div>
+
   <!-- ══════════════════════════════════════════
        SCRIPTS
   ══════════════════════════════════════════ -->
   <script type="module">
     import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-    import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signInAnonymously }
+    import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signInAnonymously, signOut }
       from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
     import { getFirestore, doc, getDoc, collection, query, where, getDocs, updateDoc }
       from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
@@ -632,6 +655,14 @@
 
     function normalizeName(n) {
       return n.trim().toLowerCase().replace(/\s+/g, ' ');
+    }
+
+    function withTimeout(promise, ms = 10000) {
+      return Promise.race([
+        promise,
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error('Zeitüberschreitung – bitte erneut versuchen')), ms))
+      ]);
     }
 
     // ── Theme ──
@@ -678,14 +709,24 @@
       if (dsk) dsk.value = savedName;
     }
 
+    // Auto-save name as user types (Bug 3: Name merken)
+    document.getElementById('ma-name')?.addEventListener('input', e => {
+      localStorage.setItem('lager-saved-name', e.target.value);
+    });
+    document.getElementById('dsk-ma-name')?.addEventListener('input', e => {
+      localStorage.setItem('lager-saved-name', e.target.value);
+    });
+
     // ── Firebase ──
     const app  = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db   = getFirestore(app);
 
-    // Already logged in as non-anonymous → redirect
+    // Already logged in as non-anonymous → redirect (skip if MA-PIN-Session aktiv,
+    // damit Mitarbeiter danach noch als WL einloggen können)
     onAuthStateChanged(auth, async user => {
       if (user && !user.isAnonymous) {
+        if (sessionStorage.getItem('lager-pin-auth') === 'true') return;
         const role = await getRole(user.uid);
         redirectByRole(role);
       }
@@ -719,14 +760,18 @@
     document.getElementById('back-btn').onclick = goBack;
 
     window.showHelp = function() {
-      alert('Kein PIN? Wachenleiter fragen.\nKein Zugang mehr? ' +
-        'wachenleiter@drk-malmsheim.de');
+      document.getElementById('help-sheet').style.display = 'block';
+      document.body.style.overflow = 'hidden';
+    };
+    window.closeHelp = function() {
+      document.getElementById('help-sheet').style.display = 'none';
+      document.body.style.overflow = '';
     };
 
     // ══════════════════════════════════════
     // MITARBEITER — PIN auth (mobile)
     // ══════════════════════════════════════
-    let _pin = '', _attempts = 0, _lockedUntil = 0;
+    let _pin = '', _attempts = 0, _lockedUntil = 0, _pinProcessing = false;
 
     function updateDots() {
       for (let i = 0; i < 4; i++) {
@@ -736,71 +781,76 @@
     }
 
     window.maKey = function(d) {
-      if (_pin.length >= 4) return;
+      if (_pin.length >= 4 || _pinProcessing) return;
       _pin += d;
       updateDots();
       if (_pin.length === 4) setTimeout(maPinConfirm, 150);
     };
 
     window.maDel = function() {
+      if (_pinProcessing) return;
       _pin = _pin.slice(0, -1);
       updateDots();
     };
 
     async function maPinConfirm() {
-      const name  = document.getElementById('ma-name').value.trim();
+      if (_pinProcessing) return;
+      _pinProcessing = true;
       const errEl = document.getElementById('ma-error');
-      if (!name) { errEl.textContent = 'Bitte deinen Namen eingeben'; _pin = ''; updateDots(); return; }
+      errEl.textContent = '';
 
-      if (Date.now() < _lockedUntil) {
-        const secs = Math.ceil((_lockedUntil - Date.now()) / 1000);
-        errEl.textContent = `Zu viele Versuche – bitte ${secs}s warten`;
-        _pin = ''; updateDots(); return;
-      }
+      const fail = (msg) => { errEl.textContent = msg; _pin = ''; updateDots(); };
 
       try {
+        const name = document.getElementById('ma-name').value.trim();
+        if (!name) { fail('Bitte deinen Namen eingeben'); return; }
+
+        if (Date.now() < _lockedUntil) {
+          fail(`Zu viele Versuche – bitte ${Math.ceil((_lockedUntil - Date.now()) / 1000)}s warten`); return;
+        }
+
+        // Bug 1: Vorherige nicht-anonyme WL-Session ausloggen
+        if (auth.currentUser && !auth.currentUser.isAnonymous) await signOut(auth);
         if (!auth.currentUser) await signInAnonymously(auth);
 
         const nameKey = normalizeName(name);
         const pinHash = await sha256(_pin);
-        const snap = await getDocs(query(collection(db, 'mitarbeiter'), where('nameKey', '==', nameKey)));
+        const snap = await withTimeout(
+          getDocs(query(collection(db, 'mitarbeiter'), where('nameKey', '==', nameKey)))
+        );
 
-        let loginName = name;
-        let employeeId = null;
+        let loginName = name, employeeId = null;
 
         if (!snap.empty) {
-          // Neues System: individueller PIN
           const empDoc = snap.docs[0];
           if (empDoc.data().pinHash !== pinHash) {
             _attempts++;
             if (_attempts >= 5) {
               _lockedUntil = Date.now() + 60000; _attempts = 0;
-              errEl.textContent = 'Zu viele Versuche – bitte 60s warten';
+              fail('Zu viele Versuche – bitte 60s warten');
             } else {
-              errEl.textContent = `Falscher PIN – noch ${5 - _attempts} Versuch(e)`;
+              fail(`Falscher PIN – noch ${5 - _attempts} Versuch(e)`);
             }
-            _pin = ''; updateDots(); return;
+            return;
           }
           loginName  = empDoc.data().vorname + ' ' + empDoc.data().nachname;
           employeeId = empDoc.id;
         } else {
-          // Fallback: alter globaler Stations-PIN (solange Mitarbeiter noch nicht angelegt)
-          const cfg = await getDoc(doc(db, 'config', 'app'));
+          const cfg = await withTimeout(getDoc(doc(db, 'config', 'app')));
           const stationPin = cfg.exists() ? cfg.data().pin : null;
           if (!stationPin || _pin !== stationPin) {
             _attempts++;
             if (_attempts >= 5) {
               _lockedUntil = Date.now() + 60000; _attempts = 0;
-              errEl.textContent = 'Zu viele Versuche – bitte 60s warten';
+              fail('Zu viele Versuche – bitte 60s warten');
             } else {
-              errEl.textContent = `Falscher PIN – noch ${5 - _attempts} Versuch(e)`;
+              fail(`Falscher PIN – noch ${5 - _attempts} Versuch(e)`);
             }
-            _pin = ''; updateDots(); return;
+            return;
           }
         }
-        _attempts = 0;
 
-        if (!auth.currentUser) await signInAnonymously(auth);
+        _attempts = 0;
         sessionStorage.setItem('lager-pin-auth', 'true');
         sessionStorage.setItem('lager-pin-name', loginName);
         if (employeeId) sessionStorage.setItem('lager-employee-id', employeeId);
@@ -808,15 +858,16 @@
         localStorage.setItem('lager-saved-name', name);
         window.location.href = returnUrl || 'mitarbeiter.html';
       } catch (e) {
-        errEl.textContent = 'Fehler: ' + e.message;
-        _pin = ''; updateDots();
+        fail(e.message || 'Fehler beim Anmelden');
+      } finally {
+        _pinProcessing = false;
       }
     }
 
     // ══════════════════════════════════════
     // MITARBEITER — PIN auth (desktop)
     // ══════════════════════════════════════
-    let _dskPin = '', _dskAttempts = 0, _dskLockedUntil = 0;
+    let _dskPin = '', _dskAttempts = 0, _dskLockedUntil = 0, _dskPinProcessing = false;
 
     function updateDskDots() {
       for (let i = 0; i < 4; i++) {
@@ -826,13 +877,19 @@
     }
 
     window.dskKey = function(d) {
-      if (_dskPin.length >= 4) return;
+      if (_dskPin.length >= 4 || _dskPinProcessing) return;
       _dskPin += d;
       updateDskDots();
       if (_dskPin.length === 4) setTimeout(dskMaConfirm, 150);
     };
-    window.dskDel = function() { _dskPin = _dskPin.slice(0, -1); updateDskDots(); };
-    window.dskClearPin = function() { _dskPin = ''; updateDskDots(); };
+    window.dskDel = function() {
+      if (_dskPinProcessing) return;
+      _dskPin = _dskPin.slice(0, -1); updateDskDots();
+    };
+    window.dskClearPin = function() {
+      if (_dskPinProcessing) return;
+      _dskPin = ''; updateDskDots();
+    };
 
     window.dskMaLogin = function() {
       if (_dskPin.length < 4) {
@@ -843,67 +900,66 @@
     };
 
     async function dskMaConfirm() {
-      const name  = document.getElementById('dsk-ma-name').value.trim();
+      if (_dskPinProcessing) return;
+      _dskPinProcessing = true;
       const errEl = document.getElementById('dsk-ma-error');
-      if (!name) { errEl.textContent = 'Bitte deinen Namen eingeben'; _dskPin = ''; updateDskDots(); return; }
-
-      if (Date.now() < _dskLockedUntil) {
-        const secs = Math.ceil((_dskLockedUntil - Date.now()) / 1000);
-        errEl.textContent = `Zu viele Versuche – bitte ${secs}s warten`;
-        _dskPin = ''; updateDskDots(); return;
-      }
-
+      errEl.textContent = '';
       const btn = document.getElementById('dsk-ma-btn');
       btn.disabled = true;
       btn.innerHTML = '<div class="spinner-sm"></div> Anmelden…';
 
-      const resetDskBtn = () => {
-        btn.disabled = false;
-        btn.innerHTML = '<svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="14" height="10" rx="2"/><path d="M7 8V6a3 3 0 0 1 6 0v2"/></svg> Anmelden';
-      };
+      const fail = (msg) => { errEl.textContent = msg; _dskPin = ''; updateDskDots(); };
+
       try {
+        const name = document.getElementById('dsk-ma-name').value.trim();
+        if (!name) { fail('Bitte deinen Namen eingeben'); return; }
+
+        if (Date.now() < _dskLockedUntil) {
+          fail(`Zu viele Versuche – bitte ${Math.ceil((_dskLockedUntil - Date.now()) / 1000)}s warten`); return;
+        }
+
+        // Bug 1: Vorherige nicht-anonyme WL-Session ausloggen
+        if (auth.currentUser && !auth.currentUser.isAnonymous) await signOut(auth);
         if (!auth.currentUser) await signInAnonymously(auth);
 
         const nameKey = normalizeName(name);
         const pinHash = await sha256(_dskPin);
-        const snap = await getDocs(query(collection(db, 'mitarbeiter'), where('nameKey', '==', nameKey)));
+        const snap = await withTimeout(
+          getDocs(query(collection(db, 'mitarbeiter'), where('nameKey', '==', nameKey)))
+        );
 
-        let loginName  = name;
-        let employeeId = null;
+        let loginName = name, employeeId = null;
 
         if (!snap.empty) {
-          // Neues System: individueller PIN
           const empDoc = snap.docs[0];
           if (empDoc.data().pinHash !== pinHash) {
             _dskAttempts++;
             if (_dskAttempts >= 5) {
               _dskLockedUntil = Date.now() + 60000; _dskAttempts = 0;
-              errEl.textContent = 'Zu viele Versuche – bitte 60s warten';
+              fail('Zu viele Versuche – bitte 60s warten');
             } else {
-              errEl.textContent = `Falscher PIN – noch ${5 - _dskAttempts} Versuch(e)`;
+              fail(`Falscher PIN – noch ${5 - _dskAttempts} Versuch(e)`);
             }
-            _dskPin = ''; updateDskDots(); resetDskBtn(); return;
+            return;
           }
           loginName  = empDoc.data().vorname + ' ' + empDoc.data().nachname;
           employeeId = empDoc.id;
         } else {
-          // Fallback: alter globaler Stations-PIN
-          const cfg = await getDoc(doc(db, 'config', 'app'));
+          const cfg = await withTimeout(getDoc(doc(db, 'config', 'app')));
           const stationPin = cfg.exists() ? cfg.data().pin : null;
           if (!stationPin || _dskPin !== stationPin) {
             _dskAttempts++;
             if (_dskAttempts >= 5) {
               _dskLockedUntil = Date.now() + 60000; _dskAttempts = 0;
-              errEl.textContent = 'Zu viele Versuche – bitte 60s warten';
+              fail('Zu viele Versuche – bitte 60s warten');
             } else {
-              errEl.textContent = `Falscher PIN – noch ${5 - _dskAttempts} Versuch(e)`;
+              fail(`Falscher PIN – noch ${5 - _dskAttempts} Versuch(e)`);
             }
-            _dskPin = ''; updateDskDots(); resetDskBtn(); return;
+            return;
           }
         }
-        _dskAttempts = 0;
 
-        if (!auth.currentUser) await signInAnonymously(auth);
+        _dskAttempts = 0;
         sessionStorage.setItem('lager-pin-auth', 'true');
         sessionStorage.setItem('lager-pin-name', loginName);
         if (employeeId) sessionStorage.setItem('lager-employee-id', employeeId);
@@ -911,9 +967,11 @@
         localStorage.setItem('lager-saved-name', name);
         window.location.href = returnUrl || 'mitarbeiter.html';
       } catch (e) {
-        errEl.textContent = 'Fehler: ' + e.message;
-        resetDskBtn();
-        _dskPin = ''; updateDskDots();
+        fail(e.message || 'Fehler beim Anmelden');
+      } finally {
+        _dskPinProcessing = false;
+        btn.disabled = false;
+        btn.innerHTML = '<svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="14" height="10" rx="2"/><path d="M7 8V6a3 3 0 0 1 6 0v2"/></svg> Anmelden';
       }
     }
 
@@ -943,14 +1001,20 @@
       errEl.classList.add('hidden');
 
       try {
-        const cred = await signInWithEmailAndPassword(auth, email, password);
+        // Bug 1: Anonyme MA-Session zuerst ausloggen
+        if (auth.currentUser?.isAnonymous) await signOut(auth);
+        const cred = await withTimeout(signInWithEmailAndPassword(auth, email, password));
+        sessionStorage.removeItem('lager-pin-auth');
+        sessionStorage.removeItem('lager-pin-name');
+        sessionStorage.removeItem('lager-employee-id');
         const role = await getRole(cred.user.uid);
         redirectByRole(role);
       } catch (e) {
-        btn.disabled = false;
-        btn.innerHTML = '<svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="14" height="10" rx="2"/><path d="M7 8V6a3 3 0 0 1 6 0v2"/></svg> Anmelden';
         errEl.textContent = wlError(e.code);
         errEl.classList.remove('hidden');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="14" height="10" rx="2"/><path d="M7 8V6a3 3 0 0 1 6 0v2"/></svg> Anmelden';
       }
     };
 
@@ -984,14 +1048,19 @@
       errEl.classList.add('hidden');
 
       try {
-        const cred = await signInWithEmailAndPassword(auth, email, password);
+        if (auth.currentUser?.isAnonymous) await signOut(auth);
+        const cred = await withTimeout(signInWithEmailAndPassword(auth, email, password));
+        sessionStorage.removeItem('lager-pin-auth');
+        sessionStorage.removeItem('lager-pin-name');
+        sessionStorage.removeItem('lager-employee-id');
         const role = await getRole(cred.user.uid);
         redirectByRole(role);
       } catch (e) {
-        btn.disabled = false;
-        btn.innerHTML = '<svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="14" height="10" rx="2"/><path d="M7 8V6a3 3 0 0 1 6 0v2"/></svg> Anmelden';
         errEl.textContent = wlError(e.code);
         errEl.classList.remove('hidden');
+      } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="14" height="10" rx="2"/><path d="M7 8V6a3 3 0 0 1 6 0v2"/></svg> Anmelden';
       }
     };
 
