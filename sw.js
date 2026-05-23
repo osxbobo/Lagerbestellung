@@ -7,7 +7,7 @@
 // Diese Nummer bei jedem GitHub Upload um 1 erhöhen
 // z.B. v2, v3, v4 ...
 // → Browser erkennt automatisch die neue Version und lädt alles neu
-const CACHE_VERSION = 'v96';
+const CACHE_VERSION = 'v91';
 const CACHE_NAME    = `lagerapp-${CACHE_VERSION}`;
 const BASE_PATH     = '/Lagerbestellung';
 
@@ -29,7 +29,13 @@ const CACHE_FILES = [
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(CACHE_FILES))
+      .then(cache =>
+        Promise.all(
+          CACHE_FILES.map(url =>
+            cache.add(url).catch(err => console.warn(`[SW] Cache-Fehler: ${url}`, err))
+          )
+        )
+      )
       .then(() => self.skipWaiting())
   );
 });
