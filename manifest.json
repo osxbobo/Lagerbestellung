@@ -1,10 +1,10 @@
 {
-  "id": "/Lagerbestellung/",
+  "id": "/lagerapp_alpha/",
   "name": "LAGER//APP – Rettungswache Malmsheim",
   "short_name": "LAGER//APP",
   "description": "Digitale Lagerverwaltung & Bestandskontrolle",
-  "start_url": "/Lagerbestellung/",
-  "scope": "/Lagerbestellung/",
+  "start_url": "/lagerapp_alpha/",
+  "scope": "/lagerapp_alpha/",
   "display": "standalone",
   "orientation": "portrait-primary",
   "background_color": "#080c14",
@@ -39,12 +39,12 @@
   "shortcuts": [
     {
       "name": "Lagercheck",
-      "url": "/Lagerbestellung/pages/check.html",
+      "url": "/lagerapp_alpha/pages/check.html",
       "description": "Lagercheck starten"
     },
     {
       "name": "Lagersuche",
-      "url": "/Lagerbestellung/",
+      "url": "/lagerapp_alpha/",
       "description": "Artikel suchen"
     }
   ],
