@@ -127,6 +127,7 @@
       background: var(--ok-soft); color: var(--ok);
     }
     .m-tile-chip svg { flex-shrink: 0; }
+    .m-tile-chip.lock-chip { background: var(--surface-3); color: var(--ink-3); }
     .m-tile-bottom {}
     .m-tile-name { font-size: 15px; font-weight: 600; letter-spacing: -0.2px; line-height: 1.2; }
     .m-tile-sub  { font-size: 11px; color: var(--ink-3); margin-top: 2px; }
@@ -516,14 +517,14 @@
         (window.matchMedia('(prefers-color-scheme:dark)').matches ? 'dark' : 'light');
       document.documentElement.setAttribute('data-theme', t);
       const btn = document.getElementById('theme-btn');
-      if (btn) btn.textContent = t === 'dark' ? '🌙' : '☀️';
+      if (btn) btn.textContent = t === 'dark' ? '☀️' : '🌙';
     })();
 
     window.toggleTheme = function() {
       const t = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
       document.documentElement.setAttribute('data-theme', t);
       localStorage.setItem('lager-theme', t);
-      document.getElementById('theme-btn').textContent = t === 'dark' ? '🌙' : '☀️';
+      document.getElementById('theme-btn').textContent = t === 'dark' ? '☀️' : '🌙';
     };
 
     // ── KW ──

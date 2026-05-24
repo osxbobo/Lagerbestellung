@@ -287,7 +287,6 @@
     <div class="p-nav-right">
       <span id="nav-user" class="p-nav-user"></span>
       <span class="p-badge">WACHENLEITER</span>
-      <div id="notif-btn-wrap"></div>
       <button class="p-btn p-ma-link" onclick="goToMitarbeiter()">
         <svg viewBox="0 0 20 20" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="7" r="3"/><path d="M4 17c0-3.3 2.7-6 6-6s6 2.7 6 6"/></svg>
         Mitarbeiter
@@ -797,151 +796,71 @@
         <div class="page-header">
           <div style="display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:10px;">
             <div>
-              <div class="page-title">Verfallswarnungen <span class="la-chip low" style="height:20px;font-size:11px;vertical-align:middle;margin-left:6px;"><span class="dot"></span>12</span></div>
-              <div class="page-sub">Kalender- und Listenansicht · 6-Monats-Vorschau</div>
+              <div class="page-title">Verfallswarnungen
+                <span id="vk-badge" style="display:none;height:20px;font-size:11px;vertical-align:middle;margin-left:6px;" class="la-chip low"><span class="dot"></span><span id="vk-badge-count">0</span></span>
+              </div>
+              <div class="page-sub">Übersicht aller Chargen · Liste und Kalender</div>
             </div>
             <div style="display:flex;align-items:center;gap:8px;">
               <div style="display:inline-flex;align-items:center;background:var(--surface);border-radius:6px;box-shadow:inset 0 0 0 1px var(--hairline);height:28px;padding:2px;">
-                <div style="padding:0 10px;border-radius:4px;font-size:12px;height:24px;display:flex;align-items:center;color:var(--ink-3);">Liste</div>
-                <div style="padding:0 10px;border-radius:4px;font-size:12px;height:24px;display:flex;align-items:center;background:var(--surface-3);font-weight:600;color:var(--ink);">Kalender</div>
-                <div style="padding:0 10px;border-radius:4px;font-size:12px;height:24px;display:flex;align-items:center;color:var(--ink-3);">Heatmap</div>
+                <button id="vk-btn-liste" onclick="setVkView('liste')" style="padding:0 10px;border-radius:4px;font-size:12px;height:24px;background:var(--surface-3);font-weight:600;color:var(--ink);border:none;cursor:pointer;font-family:var(--font-ui);">Liste</button>
+                <button id="vk-btn-kalender" onclick="setVkView('kalender')" style="padding:0 10px;border-radius:4px;font-size:12px;height:24px;background:transparent;font-weight:400;color:var(--ink-3);border:none;cursor:pointer;font-family:var(--font-ui);">Kalender</button>
               </div>
-              <button class="la-btn ghost sm">Export</button>
+              <a href="scanner.html" class="la-btn ghost sm" style="text-decoration:none;">+ Charge erfassen</a>
             </div>
           </div>
         </div>
 
-        <div style="display:grid;grid-template-columns:1fr 380px;gap:0;min-height:0;">
-          <!-- Calendar column -->
-          <div style="padding-right:24px;">
-            <!-- Bucket cards -->
-            <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px;">
-              <div class="la-card outline" style="padding:14px;position:relative;overflow:hidden;">
-                <div style="position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--crit)"></div>
-                <div style="font-size:10px;font-family:var(--font-mono);color:var(--ink-3);text-transform:uppercase;letter-spacing:.06em">Diese Woche</div>
-                <div style="display:flex;align-items:baseline;gap:8px;margin-top:4px;"><span style="font-size:24px;font-weight:700;letter-spacing:-.4px;color:var(--crit)">4</span><span style="font-size:11px;color:var(--ink-3)">Akut · ≤ 7 Tage</span></div>
-              </div>
-              <div class="la-card outline" style="padding:14px;position:relative;overflow:hidden;">
-                <div style="position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--low)"></div>
-                <div style="font-size:10px;font-family:var(--font-mono);color:var(--ink-3);text-transform:uppercase;letter-spacing:.06em">Diesen Monat</div>
-                <div style="display:flex;align-items:baseline;gap:8px;margin-top:4px;"><span style="font-size:24px;font-weight:700;letter-spacing:-.4px;color:var(--low)">8</span><span style="font-size:11px;color:var(--ink-3)">≤ 30 Tage</span></div>
-              </div>
-              <div class="la-card outline" style="padding:14px;position:relative;overflow:hidden;">
-                <div style="position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--ink-4)"></div>
-                <div style="font-size:10px;font-family:var(--font-mono);color:var(--ink-3);text-transform:uppercase;letter-spacing:.06em">Folgemonate</div>
-                <div style="display:flex;align-items:baseline;gap:8px;margin-top:4px;"><span style="font-size:24px;font-weight:700;letter-spacing:-.4px;">12</span><span style="font-size:11px;color:var(--ink-3)">&gt; 30 Tage</span></div>
-              </div>
-            </div>
-
-            <!-- Calendar heatmap grid -->
-            <div class="la-card outline" style="padding:18px;margin-bottom:18px;">
-              <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
-                <div style="font-size:13px;font-weight:600;">6-Monats-Kalender</div>
-                <span style="font-size:11px;color:var(--ink-3)">· Mai – Okt 2026 · KW</span>
-                <div style="flex:1"></div>
-                <div style="display:flex;gap:10px;">
-                  <div style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--ink-2)"><span style="width:8px;height:8px;border-radius:2px;background:var(--crit);display:inline-block"></span>Akut</div>
-                  <div style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--ink-2)"><span style="width:8px;height:8px;border-radius:2px;background:var(--low);display:inline-block"></span>≤ 30 T</div>
-                  <div style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--ink-2)"><span style="width:8px;height:8px;border-radius:2px;background:#F0A12E;display:inline-block"></span>Folge</div>
-                  <div style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--ink-2)"><span style="width:8px;height:8px;border-radius:2px;background:var(--brand);display:inline-block"></span>Heute</div>
-                </div>
-              </div>
-              <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:14px;">
-                <script>
-                  (function(){
-                    const months=[
-                      {lbl:'MAI 26',wks:[[0,0,0,0],[0,0,0,1],[0,1,2,1],[1,2,0,0],[1,0,0,0]]},
-                      {lbl:'JUN 26',wks:[[1,0,1,0],[0,2,0,1],[1,0,1,0],[0,1,0,0],[0,0,0,0]]},
-                      {lbl:'JUL 26',wks:[[0,0,0,1],[1,0,0,0],[0,1,0,0],[1,0,2,0],[0,0,0,1]]},
-                      {lbl:'AUG 26',wks:[[0,0,0,0],[0,0,1,0],[0,0,0,0],[0,1,0,0],[1,0,0,0]]},
-                      {lbl:'SEP 26',wks:[[1,0,0,1],[0,1,2,0],[0,0,0,0],[0,1,0,0],[0,0,0,0]]},
-                      {lbl:'OKT 26',wks:[[0,0,0,0],[0,0,0,1],[1,0,0,0],[0,0,0,0],[0,0,0,0]]},
-                    ];
-                    const today={m:0,w:2,d:1};
-                    function cellColor(v,isT){
-                      if(isT) return 'var(--brand)';
-                      return v>=3?'var(--crit)':v>=2?'var(--low)':v>=1?'#F0A12E':'var(--surface-3)';
-                    }
-                    let html='';
-                    months.forEach((mo,mi)=>{
-                      html+=`<div><div style="font-size:11px;font-weight:600;font-family:var(--font-mono);color:${mi===0?'var(--ink)':'var(--ink-3)'};margin-bottom:8px">${mo.lbl}</div>`;
-                      html+=`<div style="display:flex;flex-direction:column;gap:4px">`;
-                      mo.wks.forEach((wk,wi)=>{
-                        html+=`<div style="display:flex;gap:3px">`;
-                        wk.forEach((v,di)=>{
-                          const isT=mi===today.m&&wi===today.w&&di===today.d;
-                          html+=`<div style="flex:1;height:18px;border-radius:3px;background:${cellColor(v,isT)};display:flex;align-items:center;justify-content:center;color:${v>=1||isT?'white':'var(--ink-4)'};font-family:var(--font-mono);font-size:9px;font-weight:600;${isT?'box-shadow:0 0 0 1.5px var(--brand),0 4px 8px rgba(242,107,46,.3)':''}">${v>=1?v:''}</div>`;
-                        });
-                        html+=`</div>`;
-                      });
-                      html+=`</div></div>`;
-                    });
-                    document.write(html);
-                  })();
-                </script>
-              </div>
-            </div>
-
-            <!-- Upcoming timeline -->
-            <div style="font-size:11px;font-weight:600;color:var(--ink-3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;">Nächste Verfälle</div>
-            <div class="la-card outline" style="padding:0;">
-              <div style="display:grid;grid-template-columns:120px 1fr 200px;align-items:center;gap:16px;padding:14px 18px;border-bottom:.5px solid var(--hairline);position:relative;">
-                <div style="position:absolute;left:0;top:8px;bottom:8px;width:3px;border-radius:0 3px 3px 0;background:var(--crit)"></div>
-                <div><div style="font-family:var(--font-mono);font-size:12px;color:var(--ink-2);font-weight:600">FR 23. Mai</div><span class="la-chip crit" style="height:18px;font-size:10px;margin-top:4px;display:inline-flex"><span class="dot"></span>4 Tage</span></div>
-                <div><div style="font-size:14px;font-weight:500">Atropin 0,5 mg</div><div style="font-size:11px;color:var(--ink-3);font-family:var(--font-mono);margin-top:2px">LOT 23K0917 · GTIN 04030539019812</div></div>
-                <div style="display:flex;gap:6px;justify-content:flex-end;"><button class="la-btn ghost sm" style="height:28px;padding:0 10px">Suchen</button><button class="la-btn ghost sm" style="height:28px;padding:0 10px">Verwerfen</button><button class="la-btn primary sm" style="height:28px;padding:0 10px">Bestellen</button></div>
-              </div>
-              <div style="display:grid;grid-template-columns:120px 1fr 200px;align-items:center;gap:16px;padding:14px 18px;border-bottom:.5px solid var(--hairline);position:relative;">
-                <div style="position:absolute;left:0;top:8px;bottom:8px;width:3px;border-radius:0 3px 3px 0;background:var(--crit)"></div>
-                <div><div style="font-family:var(--font-mono);font-size:12px;color:var(--ink-2);font-weight:600">DO 29. Mai</div><span class="la-chip crit" style="height:18px;font-size:10px;margin-top:4px;display:inline-flex"><span class="dot"></span>6 Tage</span></div>
-                <div><div style="font-size:14px;font-weight:500">NaCl 0,9 % 500 ml</div><div style="font-size:11px;color:var(--ink-3);font-family:var(--font-mono);margin-top:2px">LOT 24A0019</div></div>
-                <div style="display:flex;gap:6px;justify-content:flex-end;"><button class="la-btn ghost sm" style="height:28px;padding:0 10px">Suchen</button><button class="la-btn ghost sm" style="height:28px;padding:0 10px">Verwerfen</button><button class="la-btn primary sm" style="height:28px;padding:0 10px">Bestellen</button></div>
-              </div>
-              <div style="display:grid;grid-template-columns:120px 1fr 200px;align-items:center;gap:16px;padding:14px 18px;position:relative;">
-                <div style="position:absolute;left:0;top:8px;bottom:8px;width:3px;border-radius:0 3px 3px 0;background:var(--low)"></div>
-                <div><div style="font-family:var(--font-mono);font-size:12px;color:var(--ink-2);font-weight:600">DI 04. Jun</div><span class="la-chip low" style="height:18px;font-size:10px;margin-top:4px;display:inline-flex"><span class="dot"></span>14 Tage</span></div>
-                <div><div style="font-size:14px;font-weight:500">Glucose 5 % 250 ml</div><div style="font-size:11px;color:var(--ink-3);font-family:var(--font-mono);margin-top:2px">LOT 24B0102</div></div>
-                <div style="display:flex;gap:6px;justify-content:flex-end;"><button class="la-btn ghost sm" style="height:28px;padding:0 10px">Suchen</button><button class="la-btn ghost sm" style="height:28px;padding:0 10px">Verwerfen</button><button class="la-btn primary sm" style="height:28px;padding:0 10px">Bestellen</button></div>
-              </div>
+        <!-- Bucket summary (beide Views) -->
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:18px;">
+          <div class="la-card outline" style="padding:14px;position:relative;overflow:hidden;">
+            <div style="position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--crit)"></div>
+            <div style="font-size:10px;font-family:var(--font-mono);color:var(--ink-3);text-transform:uppercase;letter-spacing:.06em">Diese Woche</div>
+            <div style="display:flex;align-items:baseline;gap:8px;margin-top:4px;">
+              <span id="vk-count-akut" style="font-size:24px;font-weight:700;letter-spacing:-.4px;color:var(--crit)">–</span>
+              <span style="font-size:11px;color:var(--ink-3)">Akut · ≤ 7 Tage</span>
             </div>
           </div>
+          <div class="la-card outline" style="padding:14px;position:relative;overflow:hidden;">
+            <div style="position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--low)"></div>
+            <div style="font-size:10px;font-family:var(--font-mono);color:var(--ink-3);text-transform:uppercase;letter-spacing:.06em">Diesen Monat</div>
+            <div style="display:flex;align-items:baseline;gap:8px;margin-top:4px;">
+              <span id="vk-count-monat" style="font-size:24px;font-weight:700;letter-spacing:-.4px;color:var(--low)">–</span>
+              <span style="font-size:11px;color:var(--ink-3)">≤ 30 Tage</span>
+            </div>
+          </div>
+          <div class="la-card outline" style="padding:14px;position:relative;overflow:hidden;">
+            <div style="position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--ink-4)"></div>
+            <div style="font-size:10px;font-family:var(--font-mono);color:var(--ink-3);text-transform:uppercase;letter-spacing:.06em">Folgemonate</div>
+            <div style="display:flex;align-items:baseline;gap:8px;margin-top:4px;">
+              <span id="vk-count-spaeter" style="font-size:24px;font-weight:700;letter-spacing:-.4px;">–</span>
+              <span style="font-size:11px;color:var(--ink-3)">&gt; 30 Tage</span>
+            </div>
+          </div>
+        </div>
 
-          <!-- Right rail -->
-          <div style="background:var(--surface-2);border-left:1px solid var(--hairline);padding:20px;overflow:auto;">
-            <div style="font-size:11px;font-weight:600;color:var(--ink-3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;">Heute · 21. Mai</div>
-            <div class="la-card outline" style="padding:14px;margin-bottom:16px;background:var(--surface)">
-              <div style="display:flex;align-items:center;gap:10px;">
-                <div class="la-photo tint-rose" style="width:44px;height:44px;border-radius:11px;font-size:16px;">A</div>
-                <div style="flex:1;min-width:0;">
-                  <div style="font-size:13px;font-weight:600">Adrenalin 1 mg/ml</div>
-                  <div style="font-size:11px;color:var(--ink-3);font-family:var(--font-mono)">LOT 23F8821</div>
-                </div>
-                <span class="la-chip crit" style="height:20px;font-size:10px;"><span class="dot"></span>−2 T</span>
-              </div>
-              <div style="display:flex;gap:6px;margin-top:12px;">
-                <button class="la-btn ghost sm" style="flex:1">Lagern</button>
-                <button class="la-btn primary sm" style="flex:1">Bestellen</button>
+        <!-- LISTEN-VIEW -->
+        <div id="vk-view-liste">
+          <div style="font-size:11px;font-weight:600;color:var(--ink-3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;">Nächste Verfälle</div>
+          <div id="vk-timeline-list" class="la-card outline" style="padding:0;">
+            <div class="loading-state"><div class="spinner"></div></div>
+          </div>
+        </div>
+
+        <!-- KALENDER-VIEW -->
+        <div id="vk-view-kalender" style="display:none;">
+          <div class="la-card outline" style="padding:18px;margin-bottom:18px;">
+            <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
+              <div style="font-size:13px;font-weight:600;">6-Monats-Übersicht</div>
+              <div style="flex:1;"></div>
+              <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                <div style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--ink-2)"><span style="width:8px;height:8px;border-radius:2px;background:var(--crit);display:inline-block"></span>Akut ≤7T</div>
+                <div style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--ink-2)"><span style="width:8px;height:8px;border-radius:2px;background:var(--low);display:inline-block"></span>≤30T</div>
+                <div style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--ink-2)"><span style="width:8px;height:8px;border-radius:2px;background:#F0A12E;display:inline-block"></span>&gt;30T</div>
+                <div style="display:flex;align-items:center;gap:4px;font-size:11px;color:var(--ink-2)"><span style="width:8px;height:8px;border-radius:2px;background:var(--brand);display:inline-block"></span>Heute</div>
               </div>
             </div>
-
-            <!-- Scan widget -->
-            <div class="la-card outline" style="padding:18px;background:var(--surface)">
-              <div style="display:flex;align-items:center;gap:8px;">
-                <div style="width:32px;height:32px;border-radius:10px;background:var(--brand-soft);color:var(--brand);display:flex;align-items:center;justify-content:center;">
-                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M3 5V3h2M13 5V3h-2M3 11v2h2M13 11v2h-2M5 6v4M7 5v6M9 6v4M11 5v6"/></svg>
-                </div>
-                <div>
-                  <div style="font-size:13px;font-weight:600">Charge erfassen</div>
-                  <div style="font-size:11px;color:var(--ink-3)">Per Scanner oder Eingabe</div>
-                </div>
-              </div>
-              <div style="margin-top:12px;padding:10px 12px;border-radius:8px;background:var(--surface-2);box-shadow:inset 0 0 0 1px var(--hairline);font-family:var(--font-mono);font-size:12px;color:var(--ink-3)">(01)…(17)…(10)…</div>
-              <a href="scanner.html" class="la-btn primary sm" style="width:100%;margin-top:10px;justify-content:center;text-decoration:none;">+ Neue Charge</a>
-            </div>
-
-            <div style="font-size:11px;font-weight:600;color:var(--ink-3);text-transform:uppercase;letter-spacing:.06em;margin:22px 0 8px;">Heute verworfen</div>
-            <div style="display:flex;gap:10px;padding:8px 0;border-bottom:.5px solid var(--hairline)"><span class="la-av" style="width:24px;height:24px;font-size:9px;background:#CFE0FF;color:#163770">AS</span><div style="flex:1"><div style="font-size:12px">Mullbinde 8 cm · LOT 22D118</div><div style="font-size:10px;color:var(--ink-3);font-family:var(--font-mono)">11:14</div></div></div>
-            <div style="display:flex;gap:10px;padding:8px 0"><span class="la-av" style="width:24px;height:24px;font-size:9px;background:#FFD3C1;color:#7A2D0B">MK</span><div style="flex:1"><div style="font-size:12px">Pflasterstrip · LOT 22E550</div><div style="font-size:10px;color:var(--ink-3);font-family:var(--font-mono)">09:48</div></div></div>
+            <div id="vk-heatmap-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:14px;"></div>
           </div>
         </div>
       </section>
@@ -1249,6 +1168,7 @@
       if (name === 'statistik') renderStatistik();
       if (name === 'ss-fotos') renderSsFotos();
       if (name === 'analytics') renderAnalytics();
+      if (name === 'verfallskalender') renderVerfallskalender();
       if (name === 'rollen') loadRollen();
       if (name === 'mitarbeiter') loadMitarbeiter();
     };
@@ -1420,6 +1340,129 @@
         showToast('Fehler: ' + e.message, 'error');
       }
     };
+
+    // ── Verfallskalender ──
+    window.setVkView = function(view) {
+      document.getElementById('vk-view-liste').style.display    = view === 'liste' ? '' : 'none';
+      document.getElementById('vk-view-kalender').style.display = view === 'kalender' ? '' : 'none';
+      const btnL = document.getElementById('vk-btn-liste');
+      const btnK = document.getElementById('vk-btn-kalender');
+      btnL.style.background  = view === 'liste'    ? 'var(--surface-3)' : 'transparent';
+      btnK.style.background  = view === 'kalender' ? 'var(--surface-3)' : 'transparent';
+      btnL.style.fontWeight  = view === 'liste'    ? '600' : '400';
+      btnK.style.fontWeight  = view === 'kalender' ? '600' : '400';
+      btnL.style.color       = view === 'liste'    ? 'var(--ink)'  : 'var(--ink-3)';
+      btnK.style.color       = view === 'kalender' ? 'var(--ink)'  : 'var(--ink-3)';
+    };
+
+    let vkRendered = false;
+    function renderVerfallskalender() {
+      if (vkRendered) return;
+      vkRendered = true;
+
+      const heute = new Date();
+      heute.setHours(0, 0, 0, 0);
+
+      // Collect all charges with a verfall date
+      const charges = [];
+      for (const a of alleArtikel) {
+        for (const c of (a.chargen || [])) {
+          if (!c.verfall) continue;
+          const exp  = new Date(c.verfall);
+          const days = Math.round((exp - heute) / 86400000);
+          const bereich = alleBereiche.find(b => b.id === a.bereichId)?.name || a.bereichId || '–';
+          charges.push({ a, c, days, exp, bereich });
+        }
+      }
+      charges.sort((x, y) => x.days - y.days);
+
+      // Bucket counts
+      const akut    = charges.filter(x => x.days <= 7).length;
+      const monat   = charges.filter(x => x.days > 7  && x.days <= 30).length;
+      const spaeter = charges.filter(x => x.days > 30).length;
+      document.getElementById('vk-count-akut').textContent    = akut;
+      document.getElementById('vk-count-monat').textContent   = monat;
+      document.getElementById('vk-count-spaeter').textContent = spaeter;
+
+      // Badge
+      const badge = document.getElementById('vk-badge');
+      const badgeCount = document.getElementById('vk-badge-count');
+      if (akut > 0) {
+        badge.style.display = 'inline-flex';
+        badge.className = 'la-chip crit';
+        badgeCount.textContent = akut;
+      } else if (monat > 0) {
+        badge.style.display = 'inline-flex';
+        badge.className = 'la-chip low';
+        badgeCount.textContent = monat;
+      } else {
+        badge.style.display = 'none';
+      }
+
+      // Liste-View
+      const timeline = document.getElementById('vk-timeline-list');
+      if (charges.length === 0) {
+        timeline.innerHTML = '<div style="padding:20px 16px;font-size:13px;color:var(--ink-3);text-align:center;">Keine Chargen mit Verfallsdatum erfasst</div>';
+      } else {
+        timeline.innerHTML = charges.map((x, i) => {
+          const isLast = i === charges.length - 1;
+          let dotColor = 'var(--ink-4)';
+          let daysLabel = '';
+          if (x.days < 0) {
+            dotColor = 'var(--crit)';
+            daysLabel = `Abgelaufen vor ${Math.abs(x.days)} Tag${Math.abs(x.days) === 1 ? '' : 'en'}`;
+          } else if (x.days === 0) {
+            dotColor = 'var(--crit)';
+            daysLabel = 'Läuft heute ab';
+          } else if (x.days <= 7) {
+            dotColor = 'var(--crit)';
+            daysLabel = `Noch ${x.days} Tag${x.days === 1 ? '' : 'e'}`;
+          } else if (x.days <= 30) {
+            dotColor = 'var(--low)';
+            daysLabel = `Noch ${x.days} Tage`;
+          } else {
+            dotColor = 'var(--ok)';
+            daysLabel = `Noch ${x.days} Tage`;
+          }
+          const verfallStr = x.exp.toLocaleDateString('de-DE', { day:'2-digit', month:'2-digit', year:'numeric' });
+          return `<div style="display:flex;align-items:center;gap:12px;padding:10px 14px;${isLast ? '' : 'border-bottom:1px solid var(--hairline);'}">
+            <span style="width:8px;height:8px;border-radius:50%;background:${dotColor};flex-shrink:0;"></span>
+            <div style="flex:1;min-width:0;">
+              <div style="font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(x.a.name)}</div>
+              <div style="font-size:11px;color:var(--ink-3);margin-top:1px;">${esc(prettyBereich(x.bereich))}${x.c.lot ? ` · LOT ${esc(x.c.lot)}` : ''}</div>
+            </div>
+            <div style="text-align:right;flex-shrink:0;">
+              <div style="font-size:12px;font-family:var(--font-mono);">${verfallStr}</div>
+              <div style="font-size:11px;color:${dotColor};margin-top:1px;">${daysLabel}</div>
+            </div>
+          </div>`;
+        }).join('');
+      }
+
+      // Kalender-View: 6-Monats-Heatmap
+      const grid = document.getElementById('vk-heatmap-grid');
+      const monthCards = [];
+      for (let m = 0; m < 6; m++) {
+        const d = new Date(heute.getFullYear(), heute.getMonth() + m, 1);
+        const year  = d.getFullYear();
+        const month = d.getMonth();
+        const monthCharges = charges.filter(x => {
+          return x.exp.getFullYear() === year && x.exp.getMonth() === month;
+        });
+        const akutM    = monthCharges.filter(x => x.days <= 7).length;
+        const monatM   = monthCharges.filter(x => x.days > 7 && x.days <= 30).length;
+        const spaeterM = monthCharges.filter(x => x.days > 30).length;
+        const isThisMonth = m === 0;
+        const color = akutM > 0 ? 'var(--crit)' : monatM > 0 ? 'var(--low)' : spaeterM > 0 ? '#F0A12E' : 'var(--ink-4)';
+        const monthName = d.toLocaleDateString('de-DE', { month: 'long', year: 'numeric' });
+        monthCards.push(`<div class="la-card outline" style="padding:12px;${isThisMonth ? 'box-shadow:inset 0 0 0 2px var(--brand);' : ''}">
+          <div style="font-size:10px;font-family:var(--font-mono);color:${isThisMonth ? 'var(--brand)' : 'var(--ink-3)'};text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">${monthName}</div>
+          <div style="font-size:22px;font-weight:700;color:${monthCharges.length > 0 ? color : 'var(--ink-4)'};">${monthCharges.length}</div>
+          <div style="font-size:10px;color:var(--ink-3);margin-top:2px;">Charge${monthCharges.length !== 1 ? 'n' : ''}</div>
+        </div>`);
+      }
+      grid.innerHTML = monthCards.join('');
+    }
 
     // ── Konten & Rollen (echte Firestore-Daten) ──
     let alleUsers = [];
