@@ -1121,26 +1121,29 @@
     const data  = S.session;
     const bs    = data?.bereichStatus || {};
 
-    const offenCount = S.bereiche.filter(b => {
-      const s = bs[b.id]?.status;
-      return !s || s === 'frei' || ACTIVE_STATS.has(s);
-    }).length;
+    // Count bereiche where someone is currently active
+    const aktivCount = S.bereiche.filter(b => ACTIVE_STATS.has(bs[b.id]?.status)).length;
 
-    const alleErledigt = S.bereiche.every(b => {
+    const erledigtCount = S.bereiche.filter(b => {
       const s = bs[b.id]?.status;
       return s === 'erledigt' || s === 'abgebrochen';
-    });
+    }).length;
+
+    // Can finish when nobody is actively working (frei bereiche are OK to skip)
+    const canFinish = aktivCount === 0 && erledigtCount > 0;
 
     const hasFree = S.bereiche.some(b => {
       const s = bs[b.id]?.status;
       return !s || s === 'frei' || s === 'abgebrochen';
     });
 
-    document.getElementById('wait-sub').textContent = alleErledigt
-      ? 'Alle Bereiche fertig!'
-      : `Noch ${offenCount} Bereich${offenCount !== 1 ? 'e' : ''} offen…`;
+    document.getElementById('wait-sub').textContent = aktivCount > 0
+      ? `${aktivCount} Bereich${aktivCount !== 1 ? 'e' : ''} noch in Bearbeitung…`
+      : erledigtCount === S.bereiche.length
+        ? 'Alle Bereiche fertig!'
+        : `${erledigtCount} von ${S.bereiche.length} Bereichen geprüft`;
 
-    document.getElementById('btn-abschliessen').classList.toggle('hidden', !alleErledigt);
+    document.getElementById('btn-abschliessen').classList.toggle('hidden', !canFinish);
     document.getElementById('btn-weiterer').style.display = hasFree ? '' : 'none';
 
     // Bereich rows
