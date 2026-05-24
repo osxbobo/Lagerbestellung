@@ -868,6 +868,11 @@
     const b = S.bereiche.find(x => x.id === S.myBereichId);
     document.getElementById('check-bereich-label').textContent = prettyName(b?.name || '');
 
+    // Always reset finish button — it may be disabled from a previous bereich
+    const finishBtn = document.getElementById('btn-finish');
+    finishBtn.disabled = false;
+    finishBtn.textContent = '✅ Bereich fertig markieren';
+
     S.myArtikel = S.alleArtikel
       .filter(a => a.bereich === S.myBereichId)
       .sort((a, b) => naturalSort(a.lp || '', b.lp || ''));
