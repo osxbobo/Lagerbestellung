@@ -1058,43 +1058,39 @@
   }
 
   /* ── Bereich fertig ── */
-  window.bereichFertig = async function() {
+  window.bereichFertig = function() {
     const btn = document.getElementById('btn-finish');
-    btn.disabled = true; btn.textContent = 'Wird gespeichert…';
+    btn.disabled = true;
 
-    try {
-      // Compute alleErledigt from local session state (no need for a transaction)
-      const bs = S.session?.bereichStatus || {};
-      const updatedBs = {
-        ...bs,
-        [S.myBereichId]: {
-          status:        'erledigt',
-          mitarbeiter:   S.user.name,
-          mitarbeiterId: S.user.id,
-          startedAt:     bs[S.myBereichId]?.startedAt ?? null,
-          erledigtAt:    serverTimestamp(),
-        },
+    // Capture everything before clearing state
+    const myBereichId = S.myBereichId;
+    const userName    = S.user.name;
+    const userId      = S.user.id;
+    const startedAt   = S.session?.bereichStatus?.[myBereichId]?.startedAt ?? null;
+
+    // Optimistic local update so renderWait shows correct state immediately
+    if (S.session) {
+      if (!S.session.bereichStatus) S.session.bereichStatus = {};
+      S.session.bereichStatus[myBereichId] = {
+        status: 'erledigt', mitarbeiter: userName,
+        mitarbeiterId: userId, startedAt, erledigtAt: null,
       };
-      const alleErledigt = S.bereiche.every(b => {
-        const s = updatedBs[b.id]?.status;
-        return s === 'erledigt' || s === 'abgebrochen';
-      });
-
-      await updateDoc(doc(db, 'bestellungen_session', SID), {
-        [`bereichStatus.${S.myBereichId}`]: updatedBs[S.myBereichId],
-        alleErledigt,
-        zuletzt: serverTimestamp(),
-      });
-
-      clearPresence(); // intentionally not awaited – RTDB must never block screen nav
-      S.myBereichId = null; S.myArtikel = []; S.warenkorb = {};
-      showScreen('wait');
-      renderWait();
-
-    } catch(e) {
-      btn.disabled = false; btn.textContent = '✅ Bereich fertig markieren';
-      toast('Fehler: ' + e.message, 'error');
     }
+
+    // Navigate immediately – never wait for server
+    clearPresence();
+    S.myBereichId = null; S.myArtikel = []; S.warenkorb = {};
+    showScreen('wait');
+    renderWait();
+
+    // Fire write in background – onSnapshot will re-render wait screen when confirmed
+    updateDoc(doc(db, 'bestellungen_session', SID), {
+      [`bereichStatus.${myBereichId}`]: {
+        status: 'erledigt', mitarbeiter: userName,
+        mitarbeiterId: userId, startedAt, erledigtAt: serverTimestamp(),
+      },
+      zuletzt: serverTimestamp(),
+    }).catch(e => toast('Fehler beim Speichern: ' + e.message, 'error'));
   };
 
   /* ── Cancel bereich ── */
@@ -1121,27 +1117,25 @@
     const data  = S.session;
     const bs    = data?.bereichStatus || {};
 
-    // Count bereiche where someone is currently active
-    const aktivCount = S.bereiche.filter(b => ACTIVE_STATS.has(bs[b.id]?.status)).length;
-
-    const erledigtCount = S.bereiche.filter(b => {
-      const s = bs[b.id]?.status;
-      return s === 'erledigt' || s === 'abgebrochen';
-    }).length;
-
-    // Can finish when nobody is actively working (frei bereiche are OK to skip)
-    const canFinish = aktivCount === 0 && erledigtCount > 0;
-
-    const hasFree = S.bereiche.some(b => {
+    // Count bereiche by status
+    const aktivCount    = S.bereiche.filter(b => ACTIVE_STATS.has(bs[b.id]?.status)).length;
+    const erledigtCount = S.bereiche.filter(b => bs[b.id]?.status === 'erledigt').length;
+    const offenCount    = S.bereiche.filter(b => {
       const s = bs[b.id]?.status;
       return !s || s === 'frei' || s === 'abgebrochen';
-    });
+    }).length;
+
+    // Can only finish when every bereich is erledigt (abgebrochen muss auch fertig gemacht werden)
+    const canFinish = S.bereiche.length > 0 && erledigtCount === S.bereiche.length;
+
+    // Weiterer-Button: frei oder abgebrochen = muss noch jemand übernehmen
+    const hasFree = offenCount > 0;
 
     document.getElementById('wait-sub').textContent = aktivCount > 0
       ? `${aktivCount} Bereich${aktivCount !== 1 ? 'e' : ''} noch in Bearbeitung…`
-      : erledigtCount === S.bereiche.length
-        ? 'Alle Bereiche fertig!'
-        : `${erledigtCount} von ${S.bereiche.length} Bereichen geprüft`;
+      : offenCount > 0
+        ? `Noch ${offenCount} Bereich${offenCount !== 1 ? 'e' : ''} offen`
+        : 'Alle Bereiche fertig!';
 
     document.getElementById('btn-abschliessen').classList.toggle('hidden', !canFinish);
     document.getElementById('btn-weiterer').style.display = hasFree ? '' : 'none';
@@ -1274,31 +1268,39 @@
       const teilnehmer   = S.session?.teilnehmer || [{ id: S.user.id, name: S.user.name }];
 
       // Save order document
-      await addDoc(collection(db, 'bestellungen'), {
-        modus:            'team',
-        datum:            serverTimestamp(),
-        teilnehmer,
-        mitarbeiter:      teilnehmer.map(t => t.name).join(' · '),
-        mitarbeiterListe: teilnehmer.map(t => t.name),
-        sessionId:        SID,
-        unterschrift:     document.getElementById('sig-canvas').toDataURL('image/png'),
-        status:           'abgeschlossen',
-        quelle:           'check',
-        items:            bestellItems.map(i => ({
-          artikelId:     i.artikelId,
-          artikelName:   i.artikelName,
-          bereichId:     i.bereichId,
-          menge:         i.menge,
-          einheit:       i.einheit || 'Stk',
-          mitarbeiter:   i.mitarbeiter,
-          mitarbeiterId: i.mitarbeiterId,
-        })),
-      });
+      try {
+        await addDoc(collection(db, 'bestellungen'), {
+          modus:            'team',
+          datum:            serverTimestamp(),
+          teilnehmer,
+          mitarbeiter:      teilnehmer.map(t => t.name).join(' · '),
+          mitarbeiterListe: teilnehmer.map(t => t.name),
+          sessionId:        SID,
+          unterschrift:     document.getElementById('sig-canvas').toDataURL('image/png'),
+          status:           'abgeschlossen',
+          quelle:           'check',
+          items:            bestellItems.map(i => ({
+            artikelId:     i.artikelId,
+            artikelName:   i.artikelName,
+            bereichId:     i.bereichId,
+            menge:         i.menge,
+            einheit:       i.einheit || 'Stk',
+            mitarbeiter:   i.mitarbeiter,
+            mitarbeiterId: i.mitarbeiterId,
+          })),
+        });
+      } catch(e) {
+        throw new Error('Bestellung schreiben fehlgeschlagen: ' + e.message);
+      }
 
       // Mark session as done
-      await updateDoc(doc(db, 'bestellungen_session', SID), {
-        status: 'abgeschlossen', zuletzt: serverTimestamp(),
-      });
+      try {
+        await updateDoc(doc(db, 'bestellungen_session', SID), {
+          status: 'abgeschlossen', zuletzt: serverTimestamp(),
+        });
+      } catch(e) {
+        throw new Error('Session abschließen fehlgeschlagen: ' + e.message);
+      }
 
       // Cleanup
       stopHeartbeatFallback();
