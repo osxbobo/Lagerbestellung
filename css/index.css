@@ -349,6 +349,10 @@
   .search-input { font-size: 0.9rem; }
 }
 
+@media (max-width: 380px) {
+  .bereiche-grid { grid-template-columns: 1fr; }
+}
+
 @media (min-width: 1025px) {
   .main-content {
     display: grid;
