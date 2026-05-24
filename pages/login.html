@@ -698,7 +698,6 @@
     const params    = new URLSearchParams(location.search);
     const returnUrl = params.get('return') || '';
     const initTab   = params.get('tab') || 'mitarbeiter';
-    if (initTab === 'wachenleiter') switchTab('wachenleiter');
 
     // ── Pre-fill saved name ──
     const savedName = localStorage.getItem('lager-saved-name') || '';
@@ -752,6 +751,9 @@
       document.getElementById('pane-mitarbeiter').classList.toggle('hidden', tab !== 'mitarbeiter');
       document.getElementById('pane-wachenleiter').classList.toggle('hidden', tab !== 'wachenleiter');
     };
+
+    // Apply initial tab from URL param (must run after switchTab is defined)
+    if (initTab === 'wachenleiter') window.switchTab('wachenleiter');
 
     // ── Back button ──
     window.goBack = function() {
