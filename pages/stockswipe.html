@@ -736,7 +736,7 @@
 
   <script type="module">
     import { initializeApp }  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+    import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
     import { getFirestore, collection, getDocs, doc, getDoc, setDoc, addDoc, updateDoc, deleteDoc, query, orderBy, where, limit, serverTimestamp, runTransaction, onSnapshot, arrayUnion }
                               from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
     import { firebaseConfig } from "../js/firebase-config.js";
@@ -1688,7 +1688,11 @@
     async function startDirectly() {
       try {
         const auth = getAuth(app);
-        if (!auth.currentUser) await signInAnonymously(auth);
+        // Wait for Firebase to restore stored session before signing in anonymously
+        const _authUser = await new Promise(resolve => {
+          const unsub = onAuthStateChanged(auth, user => { unsub(); resolve(user); });
+        });
+        if (!_authUser || _authUser.isAnonymous) await signInAnonymously(auth);
 
         // Prüfen ob aktive Team- oder fremde Solo-Bestellung läuft
         const blocked = await checkForActiveCheckSession();
