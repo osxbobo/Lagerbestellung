@@ -12,1613 +12,1277 @@
   <title>Lagerbestellung – LAGER//APP</title>
   <link rel="stylesheet" href="../css/main.css">
   <style>
-    body { min-height: 100vh; display: flex; flex-direction: column; }
+    body { margin:0; min-height:100dvh; display:flex; flex-direction:column; background:var(--bg); font-family:var(--font-ui); }
 
-    /* ══════════════════════════════
-       NAVBAR
-    ══════════════════════════════ */
+    /* ── Navbar ── */
     .c-nav {
-      position: sticky; top: 0; z-index: 100;
-      background: var(--glass-bg-strong);
-      border-bottom: 0.5px solid var(--hairline);
-      backdrop-filter: blur(24px) saturate(180%);
-      -webkit-backdrop-filter: blur(24px) saturate(180%);
-      padding: env(safe-area-inset-top, 0px) 16px 0;
-      height: calc(52px + env(safe-area-inset-top, 0px));
-      display: flex; align-items: center; gap: 10px;
+      position:sticky; top:0; z-index:100;
+      background:var(--glass-bg-strong); border-bottom:0.5px solid var(--hairline);
+      backdrop-filter:blur(24px) saturate(180%); -webkit-backdrop-filter:blur(24px) saturate(180%);
+      padding:env(safe-area-inset-top,0px) 16px 0;
+      height:calc(52px + env(safe-area-inset-top,0px));
+      display:flex; align-items:center; gap:10px;
     }
     .c-nav-back {
-      width: 34px; height: 34px; border-radius: 17px;
-      background: var(--surface); border: none; cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      color: var(--ink-2); box-shadow: inset 0 0 0 1px var(--hairline);
+      width:34px; height:34px; border-radius:17px;
+      background:var(--surface); border:none; cursor:pointer;
+      display:flex; align-items:center; justify-content:center;
+      color:var(--ink-2); box-shadow:inset 0 0 0 1px var(--hairline); font-size:18px;
+      touch-action:manipulation; -webkit-tap-highlight-color:transparent;
     }
-    .c-nav-user {
-      font-family: var(--font-mono); font-size: 11px; color: var(--ink-3);
-      margin-left: auto;
+    .c-nav-title { font-family:var(--font-mono); font-size:13px; font-weight:600; color:var(--ink); }
+    .c-nav-user  { font-family:var(--font-mono); font-size:11px; color:var(--ink-3); margin-left:auto; max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .c-theme     { width:34px; height:34px; border-radius:17px; background:var(--surface-3); border:none; cursor:pointer; font-size:15px; flex-shrink:0; }
+
+    /* ── Screens ── */
+    .screen { flex:1; display:flex; flex-direction:column; overflow-y:auto; -webkit-overflow-scrolling:touch; }
+    .screen.hidden { display:none !important; }
+
+    /* ── Buttons ── */
+    .btn-primary {
+      width:100%; height:52px; border-radius:var(--r-lg); border:none;
+      background:var(--brand); color:white;
+      font-family:var(--font-ui); font-size:16px; font-weight:700;
+      cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;
+      touch-action:manipulation; -webkit-tap-highlight-color:transparent;
+      box-shadow:0 6px 16px rgba(242,107,46,.28); transition:transform .12s, opacity .15s;
     }
-    .c-theme {
-      width: 34px; height: 34px; border-radius: 17px;
-      background: var(--surface-3); border: none; cursor: pointer; font-size: 15px;
+    .btn-primary:active  { transform:scale(0.97); }
+    .btn-primary:disabled{ opacity:0.5; pointer-events:none; }
+    .btn-primary.hidden  { display:none !important; }
+    .btn-secondary {
+      width:100%; height:44px; border-radius:var(--r-md); border:none;
+      background:transparent; color:var(--ink-2);
+      font-family:var(--font-ui); font-size:14px; font-weight:600;
+      cursor:pointer; touch-action:manipulation;
+      box-shadow:inset 0 0 0 1px var(--hairline); transition:background .12s;
     }
+    .btn-secondary:active { background:var(--surface-3); }
+
+    /* ── Bottom bar (fixed) ── */
+    .bottom-bar {
+      position:fixed; bottom:0; left:0; right:0; z-index:20;
+      background:var(--glass-bg-strong); border-top:0.5px solid var(--hairline);
+      backdrop-filter:blur(24px) saturate(180%); -webkit-backdrop-filter:blur(24px) saturate(180%);
+      padding:12px 16px; padding-bottom:max(12px,env(safe-area-inset-bottom));
+      display:flex; flex-direction:column; gap:8px;
+    }
+
+    /* ── Loading ── */
+    .loading-state { display:flex; align-items:center; justify-content:center; flex-direction:column; gap:14px; padding:60px 20px; color:var(--ink-3); font-size:13px; font-family:var(--font-mono); }
+    .spinner { width:32px; height:32px; border:2.5px solid var(--hairline-2); border-top-color:var(--brand); border-radius:50%; animation:spin .7s linear infinite; }
+    @keyframes spin { to { transform:rotate(360deg); } }
 
     /* ══════════════════════════════
-       PIN SCREEN
+       BEREICH-AUSWAHL
     ══════════════════════════════ */
-    .pin-screen {
-      flex: 1; display: flex; align-items: center; justify-content: center; padding: 24px;
+    .join-wrap {
+      padding:20px 16px 120px; max-width:480px; margin:0 auto; width:100%;
+      display:flex; flex-direction:column; gap:12px; box-sizing:border-box;
     }
-    .pin-box {
-      width: 100%; max-width: 360px;
-      display: flex; flex-direction: column; gap: 24px; align-items: center;
-    }
-    .pin-header { text-align: center; }
-    .pin-logo {
-      font-family: var(--font-mono); font-size: 15px; font-weight: 600;
-      color: var(--ink); letter-spacing: 0.02em; margin-bottom: 10px;
-    }
-    .pin-logo .slash { color: var(--brand); }
-    .pin-icon {
-      width: 72px; height: 72px; border-radius: 22px;
-      background: var(--brand-soft); color: var(--brand);
-      display: flex; align-items: center; justify-content: center;
-      margin: 0 auto 14px;
-      box-shadow: inset 0 0 0 1px var(--brand-soft-2);
-    }
-    .pin-title { font-size: 24px; font-weight: 700; letter-spacing: -0.03em; margin-bottom: 4px; }
-    .pin-sub   { font-size: 13px; color: var(--ink-3); line-height: 1.4; }
+    .join-title { font-size:22px; font-weight:700; letter-spacing:-0.02em; }
+    .join-sub   { font-size:13px; color:var(--ink-3); margin-top:2px; line-height:1.4; }
 
-    .pin-card {
-      background: var(--surface); border-radius: var(--r-xl); padding: 24px;
-      width: 100%;
-      box-shadow: var(--sh-2), inset 0 0 0 0.5px var(--hairline);
-      display: flex; flex-direction: column; gap: 20px;
+    .live-badge {
+      display:flex; align-items:center; gap:6px;
+      font-size:11px; font-family:var(--font-mono); color:var(--ok);
+      opacity:0; transition:opacity .5s; height:20px;
     }
+    .live-badge.on { opacity:1; }
+    .live-dot { width:7px; height:7px; border-radius:50%; background:var(--ok); flex-shrink:0; animation:pulse 2s ease-in-out infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
 
-    .pin-dots { display: flex; justify-content: center; gap: 14px; padding: 4px 0; }
-    .pin-dot {
-      width: 16px; height: 16px; border-radius: 8px;
-      border: 2px solid var(--ink-4); background: transparent;
-      transition: all .15s;
-    }
-    .pin-dot.filled { background: var(--brand); border-color: var(--brand); transform: scale(1.1); }
+    /* Status dots */
+    .s-dot { width:12px; height:12px; border-radius:50%; flex-shrink:0; }
+    .s-dot.frei        { background:var(--low); }
+    .s-dot.erledigt    { background:var(--ok); }
+    .s-dot.abgebrochen { background:var(--crit); }
 
-    .pin-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-    .pin-key {
-      aspect-ratio: 1; border-radius: var(--r-md); border: none;
-      background: var(--surface-2); color: var(--ink);
-      font-family: var(--font-mono); font-size: 24px; font-weight: 500;
-      cursor: pointer; display: flex; align-items: center; justify-content: center;
-      user-select: none; -webkit-user-select: none;
-      touch-action: manipulation; -webkit-tap-highlight-color: transparent;
-      transition: background .1s, transform .1s;
-      box-shadow: var(--sh-1), inset 0 0 0 0.5px var(--hairline);
+    /* Bereich cards */
+    .bereich-card {
+      display:flex; align-items:center; gap:14px; padding:16px;
+      border-radius:var(--r-lg); background:var(--surface);
+      box-shadow:var(--sh-1),inset 0 0 0 1px var(--hairline);
+      transition:transform .12s, box-shadow .12s;
+      user-select:none; -webkit-user-select:none;
+      touch-action:manipulation; -webkit-tap-highlight-color:transparent;
     }
-    .pin-key.pressed, .pin-key:active {
-      background: var(--surface-3); transform: scale(0.91); color: var(--brand);
-    }
-    .pin-key.confirm {
-      background: var(--brand); color: white;
-      box-shadow: 0 6px 14px rgba(242,107,46,.30);
-    }
-    .pin-key.confirm.pressed, .pin-key.confirm:active { background: #E55F22; }
-    .pin-key.del { color: var(--ink-3); }
+    .bereich-card.clickable { cursor:pointer; }
+    .bereich-card.clickable:active { transform:scale(0.98); }
+    .bereich-card.blocked   { opacity:0.45; pointer-events:none; }
+    .bereich-card.is-done   { box-shadow:var(--sh-1),inset 0 0 0 1.5px var(--ok);   pointer-events:none; }
+    .bereich-card.is-broken { box-shadow:var(--sh-1),inset 0 0 0 1.5px var(--crit); }
+    .bereich-card.is-mine   { box-shadow:var(--sh-1),inset 0 0 0 1.5px var(--brand); }
 
-    .name-input {
-      width: 100%; height: 48px; padding: 0 16px;
-      background: var(--surface-2); border-radius: 14px;
-      border: none; box-shadow: inset 0 0 0 1px var(--hairline);
-      font-family: var(--font-ui); font-size: 15px; font-weight: 500; color: var(--ink);
-      outline: none; text-align: center; transition: box-shadow .2s;
+    .bc-icon  { width:32px; display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+    .bc-info  { flex:1; min-width:0; }
+    .bc-name  { font-size:15px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .bc-sub   { font-size:11px; color:var(--ink-3); font-family:var(--font-mono); margin-top:2px; }
+    .bc-badge {
+      height:22px; padding:0 9px; border-radius:11px;
+      font-size:10px; font-weight:700; font-family:var(--font-mono);
+      display:flex; align-items:center; gap:4px; flex-shrink:0; white-space:nowrap;
     }
-    .name-input:focus { box-shadow: inset 0 0 0 1.5px var(--brand); }
-    .name-input::placeholder { color: var(--ink-3); font-weight: 400; }
-
-    .pin-error {
-      text-align: center; font-size: 12px; color: var(--crit);
-      min-height: 20px; font-family: var(--font-mono);
-    }
+    .bc-badge.frei     { background:var(--brand-soft); color:var(--brand); }
+    .bc-badge.done     { background:var(--ok-soft);   color:var(--ok); }
+    .bc-badge.broken   { background:var(--crit-soft); color:var(--crit); }
+    .bc-badge.aktiv    { background:var(--surface-3); color:var(--ink-3); }
+    .bc-badge.mine     { background:var(--brand-soft-2); color:var(--brand); }
 
     /* ══════════════════════════════
-       JOIN SCREEN (Bereichsauswahl)
+       ARTIKEL-CHECK
     ══════════════════════════════ */
-    .join-screen {
-      flex: 1; display: flex; flex-direction: column;
-      padding: 20px; gap: 0; overflow-y: auto;
+    .check-sticky {
+      position:sticky; top:calc(52px + env(safe-area-inset-top,0px)); z-index:10;
+      background:var(--glass-bg-strong); backdrop-filter:blur(24px) saturate(180%); -webkit-backdrop-filter:blur(24px) saturate(180%);
+      border-bottom:0.5px solid var(--hairline); padding:10px 16px;
     }
-    .join-box {
-      width: 100%; max-width: 480px; margin: 0 auto;
-      display: flex; flex-direction: column; gap: 14px;
-      padding-bottom: 100px;
-    }
-    .join-title { font-size: 22px; font-weight: 700; letter-spacing: -0.02em; }
-    .join-sub   { font-size: 13px; color: var(--ink-3); margin-top: 3px; }
+    .check-bereich-label { font-family:var(--font-mono); font-size:11px; color:var(--brand); font-weight:600; text-transform:uppercase; letter-spacing:0.06em; margin-bottom:5px; }
+    .prog-bar-wrap { height:4px; background:var(--surface-3); border-radius:2px; overflow:hidden; margin-bottom:5px; }
+    .prog-bar-fill { height:100%; background:var(--brand); border-radius:2px; transition:width .3s; }
+    .prog-labels   { display:flex; justify-content:space-between; font-size:11px; color:var(--ink-3); font-family:var(--font-mono); }
 
-    .session-badge {
-      background: var(--surface); border-radius: var(--r-md);
-      padding: 12px 14px; font-size: 13px;
-      box-shadow: inset 0 0 0 1px var(--brand-soft-2);
-    }
-    .session-badge-title { font-weight: 700; color: var(--brand); margin-bottom: 3px; font-size: 12px; }
+    .check-body { padding:14px; display:flex; flex-direction:column; gap:14px; max-width:640px; margin:0 auto; width:100%; padding-bottom:110px; box-sizing:border-box; }
 
-    /* Bereich rows */
-    .bereich-row {
-      display: flex; align-items: center; gap: 12px;
-      padding: 14px 16px; border-radius: var(--r-md);
-      background: var(--surface); cursor: pointer;
-      transition: all .15s;
-      -webkit-tap-highlight-color: transparent; touch-action: manipulation;
-      user-select: none; -webkit-user-select: none;
-      box-shadow: inset 0 0 0 1px var(--hairline);
-    }
-    .bereich-row.selectable:active { transform: scale(0.98); }
-    .bereich-row.selected {
-      box-shadow: inset 0 0 0 1.5px var(--brand);
-      background: var(--brand-soft);
-    }
-    .bereich-row.blocked  { opacity: 0.45; cursor: default; pointer-events: none; }
-    .bereich-row.erledigt {
-      box-shadow: inset 0 0 0 1px var(--ok);
-      background: var(--ok-soft); cursor: default; pointer-events: none;
-    }
-    .bereich-row.abgebrochen {
-      box-shadow: inset 0 0 0 1px var(--crit);
-      background: var(--crit-soft); cursor: pointer;
-    }
-    .bereich-row.abgebrochen:active { transform: scale(0.98); }
+    /* Artikel cards */
+    .artikel-card { background:var(--surface); border-radius:var(--r-xl); overflow:hidden; box-shadow:var(--sh-1),inset 0 0 0 0.5px var(--hairline); }
+    .artikel-card.is-bestell { box-shadow:var(--sh-2),inset 0 0 0 1.5px var(--crit); }
+    .artikel-card.is-ok      { box-shadow:var(--sh-1),inset 0 0 0 1px var(--ok); }
 
-    .status-indicator { width: 14px; height: 14px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
-    .status-dot { width: 10px; height: 10px; border-radius: 50%; }
-    .dot-frei        { background: var(--brand); }
-    .dot-erledigt    { background: var(--ok); }
-    .dot-abgebrochen { background: var(--crit); }
-
-    .bereich-row-info  { flex: 1; min-width: 0; }
-    .bereich-row-name  { font-size: 15px; font-weight: 600; }
-    .bereich-row-sub   { font-size: 11px; color: var(--ink-3); font-family: var(--font-mono); margin-top: 2px; }
-
-    .bereich-radio {
-      width: 20px; height: 20px; border-radius: 50%;
-      border: 2px solid var(--hairline-2); background: transparent;
-      display: flex; align-items: center; justify-content: center;
-      flex-shrink: 0; transition: all .15s;
+    .a-header { padding:16px 16px 12px; display:flex; gap:12px; align-items:flex-start; }
+    .a-fotos  { display:flex; flex-direction:column; gap:5px; flex-shrink:0; }
+    .a-foto-btn {
+      width:60px; height:60px; border-radius:12px; border:none; cursor:pointer;
+      background:var(--surface-2); overflow:hidden;
+      display:flex; align-items:center; justify-content:center; font-size:1.3rem;
+      touch-action:manipulation; -webkit-tap-highlight-color:transparent;
+      transition:opacity .15s;
     }
-    .bereich-row.selected .bereich-radio { border-color: var(--brand); background: var(--brand); }
-    .bereich-radio::after {
-      content: ''; width: 7px; height: 7px; border-radius: 50%;
-      background: white; opacity: 0; transition: opacity .15s;
+    .a-foto-btn img { width:100%; height:100%; object-fit:cover; }
+    .a-foto-btn:active { opacity:0.7; }
+    .a-foto-label { font-size:9px; color:var(--ink-3); font-family:var(--font-mono); text-align:center; }
+
+    .a-info { flex:1; min-width:0; }
+    .a-name { font-size:16px; font-weight:700; line-height:1.3; margin-bottom:4px; }
+    .a-lp   { font-size:11px; color:var(--ink-3); font-family:var(--font-mono); margin-bottom:8px; display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+    .a-lp-chip { background:var(--surface-2); border-radius:4px; padding:1px 6px; font-size:10px; }
+
+    /* MMI */
+    .mmi-row  { display:flex; gap:6px; margin-bottom:6px; flex-wrap:wrap; }
+    .mmi-cell { display:flex; flex-direction:column; align-items:center; background:var(--surface-2); border-radius:var(--r-sm); padding:5px 10px; min-width:50px; box-shadow:inset 0 0 0 0.5px var(--hairline); }
+    .mmi-lbl  { font-size:9px; color:var(--ink-3); font-family:var(--font-mono); text-transform:uppercase; letter-spacing:0.1em; }
+    .mmi-val  { font-size:17px; font-weight:700; font-family:var(--font-mono); color:var(--ink); line-height:1.2; }
+    .mmi-unit { font-size:9px; color:var(--ink-3); font-family:var(--font-mono); }
+    .mmi-ist-crit .mmi-val { color:var(--crit); }
+    .mmi-ist-low  .mmi-val { color:var(--low); }
+    .mmi-ist-ok   .mmi-val { color:var(--ok); }
+    .mmi-min  .mmi-val { color:var(--low); }
+    .mmi-max  .mmi-val { color:var(--ok); }
+
+    /* Stock bar */
+    .stock-bar { height:4px; background:var(--surface-3); border-radius:2px; overflow:visible; position:relative; margin-top:6px; }
+    .stock-fill { height:100%; border-radius:2px; position:absolute; top:0; left:0; }
+    .stock-fill.ok   { background:var(--ok); }
+    .stock-fill.low  { background:var(--low); }
+    .stock-fill.crit { background:var(--crit); }
+    .stock-min-marker { position:absolute; top:-2px; width:2px; height:8px; background:var(--ink-4); border-radius:1px; }
+
+    .a-hinweis { padding:0 16px 10px; font-size:12px; color:var(--low); display:flex; gap:6px; align-items:flex-start; }
+    .bestell-div { height:0.5px; background:var(--hairline); margin:0 16px; }
+    .bestell-body { padding:14px 16px 16px; display:flex; flex-direction:column; gap:12px; }
+    .bestell-q { font-size:13px; font-weight:600; color:var(--ink-2); }
+
+    /* Ja/Nein */
+    .ja-nein-row { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .jn-btn {
+      height:56px; border-radius:var(--r-md); border:none;
+      background:var(--surface-2); color:var(--ink);
+      font-family:var(--font-ui); font-size:15px; font-weight:700;
+      cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;
+      touch-action:manipulation; -webkit-tap-highlight-color:transparent;
+      transition:transform .12s; user-select:none; -webkit-user-select:none;
+      box-shadow:inset 0 0 0 1px var(--hairline);
     }
-    .bereich-row.selected .bereich-radio::after { opacity: 1; }
+    .jn-btn:active { transform:scale(0.95); }
+    .jn-btn.nein.sel { background:var(--ok-soft);   color:var(--ok);   box-shadow:inset 0 0 0 1.5px var(--ok); }
+    .jn-btn.ja.sel   { background:var(--crit-soft); color:var(--crit); box-shadow:inset 0 0 0 1.5px var(--crit); }
 
-    .join-bottom {
-      position: fixed; bottom: 0; left: 0; right: 0;
-      background: var(--glass-bg-strong); border-top: 0.5px solid var(--hairline);
-      backdrop-filter: blur(24px) saturate(180%);
-      -webkit-backdrop-filter: blur(24px) saturate(180%);
-      padding: 12px 16px;
-      padding-bottom: max(12px, env(safe-area-inset-bottom));
-      display: flex; flex-direction: column; gap: 8px; z-index: 20;
-    }
+    /* Menge */
+    .menge-wrap { display:none; flex-direction:column; gap:10px; }
+    .menge-wrap.vis { display:flex; }
+    .menge-lbl { font-size:12px; font-weight:600; color:var(--ink-2); }
 
-    /* ══════════════════════════════
-       CHECK SCREEN
-    ══════════════════════════════ */
-    .check-screen { flex: 1; display: flex; flex-direction: column; padding-bottom: 88px; }
-
-    .check-header {
-      background: var(--glass-bg-strong);
-      border-bottom: 0.5px solid var(--hairline);
-      backdrop-filter: blur(24px) saturate(180%);
-      -webkit-backdrop-filter: blur(24px) saturate(180%);
-      padding: 12px 16px;
-      position: sticky; top: 52px; z-index: 10;
-    }
-    .check-bereich-name {
-      font-weight: 700; color: var(--brand); font-size: 15px; margin-bottom: 8px;
-      font-family: var(--font-mono);
-    }
-
-    .erklaerung {
-      background: var(--surface); border-radius: var(--r-md);
-      padding: 14px 16px; margin: 14px 16px 0;
-      display: flex; gap: 12px; align-items: flex-start;
-      box-shadow: var(--sh-1), inset 0 0 0 0.5px var(--hairline);
-    }
-    .erklaerung-icon { font-size: 1.1rem; flex-shrink: 0; margin-top: 1px; }
-    .erklaerung-text { font-size: 12px; color: var(--ink-2); line-height: 1.5; }
-    .erklaerung-text strong { font-weight: 700; color: var(--ink); }
-
-    .check-body {
-      flex: 1; padding: 14px; display: flex; flex-direction: column; gap: 14px;
-      max-width: 800px; margin: 0 auto; width: 100%;
-    }
-
-    /* ── Artikel Card ── */
-    .artikel-card {
-      background: var(--surface); border-radius: var(--r-xl);
-      overflow: hidden;
-      box-shadow: var(--sh-1), inset 0 0 0 0.5px var(--hairline);
-      transition: box-shadow .2s;
-    }
-    .artikel-card.bestellen {
-      box-shadow: var(--sh-2), inset 0 0 0 1.5px var(--crit);
-    }
-    .artikel-card.ok {
-      box-shadow: var(--sh-1), inset 0 0 0 1px var(--ok);
-    }
-
-    .artikel-header { padding: 16px 16px 12px; display: flex; gap: 12px; align-items: flex-start; }
-
-    .artikel-foto-btn {
-      width: 56px; height: 56px; border-radius: 12px; border: none;
-      background: var(--surface-2); overflow: hidden; flex-shrink: 0; cursor: pointer;
-      touch-action: manipulation; -webkit-tap-highlight-color: transparent;
-      display: flex; align-items: center; justify-content: center; font-size: 1.3rem;
-      transition: opacity .15s; position: relative;
-    }
-    .artikel-foto-btn:active { opacity: 0.7; }
-    .artikel-foto-btn img { width: 100%; height: 100%; object-fit: cover; }
-
-    .artikel-info { flex: 1; min-width: 0; }
-    .artikel-name { font-size: 16px; font-weight: 700; line-height: 1.3; margin-bottom: 5px; }
-    .artikel-lp   {
-      font-size: 11px; color: var(--ink-3); font-family: var(--font-mono);
-      margin-bottom: 10px; display: flex; align-items: center; gap: 6px;
-    }
-
-    .minmax-row { display: flex; gap: 8px; }
-    .minmax-badge {
-      display: flex; flex-direction: column; align-items: center;
-      background: var(--surface-2); border-radius: var(--r-sm);
-      padding: 6px 12px; min-width: 64px;
-      box-shadow: inset 0 0 0 0.5px var(--hairline);
-    }
-    .minmax-label { font-size: 9px; color: var(--ink-3); font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.1em; }
-    .minmax-value { font-size: 18px; font-weight: 700; font-family: var(--font-mono); color: var(--ink); line-height: 1.2; }
-    .minmax-unit  { font-size: 10px; color: var(--ink-3); font-family: var(--font-mono); }
-    .minmax-badge.min .minmax-value { color: var(--low); }
-    .minmax-badge.max .minmax-value { color: var(--ok); }
-
-    .artikel-hinweis {
-      font-size: 12px; color: var(--low); padding: 0 16px 12px;
-      display: flex; align-items: flex-start; gap: 6px;
-    }
-
-    .bestell-divider { height: 0.5px; background: var(--hairline); margin: 0 16px; }
-
-    .bestell-section { padding: 14px 16px 16px; }
-    .bestell-frage { font-size: 13px; font-weight: 600; color: var(--ink-2); margin-bottom: 12px; }
-
-    .ja-nein-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
-    .ja-nein-btn {
-      height: 56px; border-radius: var(--r-md);
-      border: none; background: var(--surface-2); color: var(--ink);
-      font-family: var(--font-ui); font-size: 16px; font-weight: 700;
-      cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;
-      touch-action: manipulation; -webkit-tap-highlight-color: transparent;
-      transition: all .15s; user-select: none; -webkit-user-select: none;
-      box-shadow: inset 0 0 0 1px var(--hairline);
-    }
-    .ja-nein-btn:active { transform: scale(0.95); }
-    .ja-nein-btn.nein.selected { background: var(--ok-soft); color: var(--ok); box-shadow: inset 0 0 0 1.5px var(--ok); }
-    .ja-nein-btn.ja.selected   { background: var(--crit-soft); color: var(--crit); box-shadow: inset 0 0 0 1.5px var(--crit); }
-
-    .menge-wrap { display: none; flex-direction: column; gap: 10px; }
-    .menge-wrap.visible { display: flex; }
-    .menge-label { font-size: 12px; color: var(--ink-2); font-weight: 600; }
-
-    .chips-row { display: flex; gap: 8px; flex-wrap: wrap; }
+    .chips-row { display:flex; gap:8px; flex-wrap:wrap; }
     .chip {
-      min-width: 52px; height: 52px; border-radius: var(--r-md);
-      background: var(--surface-2); color: var(--ink);
-      font-family: var(--font-mono); font-size: 17px; font-weight: 700;
-      cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0 10px;
-      touch-action: manipulation; -webkit-tap-highlight-color: transparent;
-      transition: all .12s; user-select: none; -webkit-user-select: none;
-      box-shadow: inset 0 0 0 1px var(--hairline);
+      min-width:52px; height:52px; border-radius:var(--r-md);
+      background:var(--surface-2); color:var(--ink);
+      font-family:var(--font-mono); font-size:17px; font-weight:700;
+      cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0 10px;
+      touch-action:manipulation; -webkit-tap-highlight-color:transparent;
+      transition:transform .1s; user-select:none;
+      box-shadow:inset 0 0 0 1px var(--hairline);
     }
-    .chip:active, .chip.pressed { transform: scale(0.89); }
-    .chip.selected { background: var(--crit); color: white; box-shadow: none; }
+    .chip:active  { transform:scale(0.88); }
+    .chip.sel     { background:var(--crit); color:white; box-shadow:none; }
 
-    .plusminus-row { display: flex; align-items: center; gap: 10px; justify-content: flex-start; }
+    .pm-row { display:flex; align-items:center; gap:10px; }
     .pm-btn {
-      width: 52px; height: 52px; border-radius: var(--r-md); border: none;
-      background: var(--surface-2); color: var(--ink); font-size: 22px; font-weight: 600;
-      cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-      touch-action: manipulation; -webkit-tap-highlight-color: transparent;
-      transition: all .1s; user-select: none;
-      box-shadow: inset 0 0 0 1px var(--hairline);
+      width:52px; height:52px; border-radius:var(--r-md); border:none;
+      background:var(--surface-2); color:var(--ink); font-size:22px; font-weight:600;
+      cursor:pointer; display:flex; align-items:center; justify-content:center; flex-shrink:0;
+      touch-action:manipulation; transition:transform .1s; user-select:none;
+      box-shadow:inset 0 0 0 1px var(--hairline);
     }
-    .pm-btn:active, .pm-btn.pressed { transform: scale(0.88); background: var(--surface-3); }
-    .pm-btn.minus:active, .pm-btn.minus.pressed { color: var(--crit); }
-    .pm-btn.plus:active,  .pm-btn.plus.pressed  { color: var(--ok); }
-    .pm-display {
-      flex: 1; max-width: 100px; height: 52px; border-radius: var(--r-md);
-      background: var(--surface-2); border: none;
-      box-shadow: inset 0 0 0 1px var(--hairline);
-      font-family: var(--font-mono); font-size: 22px; font-weight: 700;
-      color: var(--crit); text-align: center; outline: none;
-      transition: box-shadow .2s;
+    .pm-btn:active { transform:scale(0.88); background:var(--surface-3); }
+    .pm-disp {
+      flex:1; max-width:100px; height:52px; border-radius:var(--r-md);
+      background:var(--surface-2); border:none;
+      box-shadow:inset 0 0 0 1px var(--hairline);
+      font-family:var(--font-mono); font-size:22px; font-weight:700;
+      color:var(--crit); text-align:center; outline:none;
     }
-    .pm-display:focus { box-shadow: inset 0 0 0 1.5px var(--crit); }
-
-    /* ── Bottom Nav (check) ── */
-    .bottom-nav {
-      position: fixed; bottom: 0; left: 0; right: 0;
-      background: var(--glass-bg-strong); border-top: 0.5px solid var(--hairline);
-      backdrop-filter: blur(24px) saturate(180%);
-      -webkit-backdrop-filter: blur(24px) saturate(180%);
-      padding: 12px 16px;
-      padding-bottom: max(12px, env(safe-area-inset-bottom));
-      display: flex; gap: 10px; z-index: 20;
-    }
-    .bnav-btn {
-      flex: 1; height: 52px; border-radius: var(--r-md); border: none;
-      background: var(--surface-3); color: var(--ink);
-      font-family: var(--font-ui); font-size: 15px; font-weight: 700;
-      cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;
-      touch-action: manipulation; -webkit-tap-highlight-color: transparent;
-      transition: all .15s; user-select: none;
-    }
-    .bnav-btn:active  { transform: scale(0.97); }
-    .bnav-btn:disabled{ opacity: 0.3; cursor: not-allowed; transform: none; }
-    .bnav-btn.finish  { background: var(--ok); color: white; flex: 2; box-shadow: 0 4px 12px rgba(22,163,74,.3); }
+    .pm-disp:focus { box-shadow:inset 0 0 0 1.5px var(--crit); }
 
     /* ══════════════════════════════
-       WAIT SCREEN
+       WARTE-SCREEN
     ══════════════════════════════ */
-    .wait-screen { flex: 1; display: flex; flex-direction: column; padding: 20px; overflow-y: auto; }
-    .wait-box {
-      width: 100%; max-width: 480px; margin: 0 auto;
-      display: flex; flex-direction: column; gap: 16px; padding-bottom: 100px;
-    }
+    .wait-wrap { padding:20px 16px 120px; max-width:480px; margin:0 auto; width:100%; display:flex; flex-direction:column; gap:14px; box-sizing:border-box; }
+    .wait-title { font-size:22px; font-weight:700; letter-spacing:-0.02em; }
+    .wait-sub   { font-size:13px; color:var(--ink-3); margin-top:2px; }
 
-    .wait-bereich-row {
-      display: flex; align-items: center; gap: 12px;
-      padding: 12px 14px; border-radius: var(--r-md);
-      background: var(--surface);
-      box-shadow: inset 0 0 0 0.5px var(--hairline);
-    }
-    .wait-bereich-row.w-erledigt    { box-shadow: inset 0 0 0 1px var(--ok);   background: var(--ok-soft); }
-    .wait-bereich-row.w-abgebrochen { box-shadow: inset 0 0 0 1px var(--crit); background: var(--crit-soft); }
-    .wait-bereich-row.w-gesperrt    { box-shadow: inset 0 0 0 1px var(--brand);background: var(--brand-soft); }
-    .wait-bereich-row.w-frei        { opacity: 0.55; }
+    .wait-card { background:var(--surface); border-radius:var(--r-lg); overflow:hidden; box-shadow:var(--sh-1),inset 0 0 0 0.5px var(--hairline); }
+    .wait-card-hd { padding:12px 16px 10px; font-size:11px; font-weight:700; color:var(--ink-3); font-family:var(--font-mono); text-transform:uppercase; letter-spacing:0.06em; border-bottom:0.5px solid var(--hairline); }
 
-    .wait-bottom {
-      position: fixed; bottom: 0; left: 0; right: 0;
-      background: var(--glass-bg-strong); border-top: 0.5px solid var(--hairline);
-      backdrop-filter: blur(24px) saturate(180%);
-      -webkit-backdrop-filter: blur(24px) saturate(180%);
-      padding: 12px 16px;
-      padding-bottom: max(12px, env(safe-area-inset-bottom));
-      z-index: 20;
-    }
+    .wait-row { display:flex; align-items:center; gap:12px; padding:12px 16px; border-bottom:0.5px solid var(--hairline); }
+    .wait-row:last-child { border-bottom:none; }
+    .wait-row-info { flex:1; min-width:0; }
+    .wait-row-name { font-size:14px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .wait-row-sub  { font-size:11px; color:var(--ink-3); font-family:var(--font-mono); margin-top:2px; }
+
+    .pills-wrap { display:flex; flex-wrap:wrap; gap:8px; padding:14px 16px; }
+    .name-pill  { padding:5px 12px; border-radius:20px; background:var(--surface-2); font-size:12px; font-weight:600; box-shadow:inset 0 0 0 1px var(--hairline); }
 
     /* ══════════════════════════════
-       SIGNATURE SCREEN
+       UNTERSCHRIFT
     ══════════════════════════════ */
-    .sig-screen { flex: 1; display: flex; align-items: center; justify-content: center; padding: 20px; }
-    .sig-box { width: 100%; max-width: 480px; display: flex; flex-direction: column; gap: 18px; }
-    .sig-title { font-size: 20px; font-weight: 700; text-align: center; letter-spacing: -0.02em; }
+    .sig-wrap { padding:20px 16px 120px; max-width:480px; margin:0 auto; width:100%; display:flex; flex-direction:column; gap:14px; box-sizing:border-box; }
+    .sig-title { font-size:22px; font-weight:700; letter-spacing:-0.02em; }
+    .sig-card  { background:var(--surface); border-radius:var(--r-lg); padding:16px; box-shadow:var(--sh-1),inset 0 0 0 0.5px var(--hairline); display:flex; flex-direction:column; gap:10px; }
+    .sig-card-lbl { font-size:11px; font-weight:700; color:var(--ink-3); font-family:var(--font-mono); text-transform:uppercase; letter-spacing:0.06em; }
 
-    .summary-grid {
-      background: var(--surface); border-radius: var(--r-lg); overflow: hidden;
-      box-shadow: var(--sh-1), inset 0 0 0 0.5px var(--hairline);
-    }
-    .summary-row {
-      display: flex; justify-content: space-between; align-items: center;
-      padding: 13px 16px; border-bottom: 0.5px solid var(--hairline); font-size: 14px;
-    }
-    .summary-row:last-child { border-bottom: none; }
-    .summary-key { color: var(--ink-3); }
-    .summary-val { font-family: var(--font-mono); font-size: 13px; font-weight: 700; }
+    .sum-row { display:flex; justify-content:space-between; gap:12px; padding:6px 0; border-bottom:0.5px solid var(--hairline); }
+    .sum-row:last-child { border-bottom:none; }
+    .sum-key { font-size:12px; color:var(--ink-3); font-family:var(--font-mono); }
+    .sum-val { font-size:13px; font-weight:600; text-align:right; flex-shrink:0; }
 
-    .sig-canvas-wrap {
-      background: var(--surface); border: 2px dashed var(--hairline-2);
-      border-radius: var(--r-md); overflow: hidden; position: relative;
-    }
-    #sig-canvas { display: block; width: 100%; height: 160px; cursor: crosshair; touch-action: none; }
-    .sig-line {
-      position: absolute; bottom: 28px; left: 16px; right: 16px;
-      height: 0.5px; background: var(--hairline-2); pointer-events: none;
-    }
-    .sig-hint {
-      position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%);
-      font-size: 12px; color: var(--ink-3); pointer-events: none;
-      font-family: var(--font-mono); transition: opacity .2s;
-    }
-    .sig-clear {
-      position: absolute; top: 10px; right: 10px;
-      background: var(--surface-2); border: none; border-radius: 8px;
-      color: var(--ink-3); font-size: 11px; padding: 5px 12px; cursor: pointer;
-      font-family: var(--font-mono);
-    }
+    .order-tbl { width:100%; border-collapse:collapse; font-size:13px; }
+    .order-tbl th { font-size:10px; font-family:var(--font-mono); text-transform:uppercase; letter-spacing:0.06em; color:var(--ink-3); padding:0 4px 8px; text-align:left; border-bottom:0.5px solid var(--hairline); }
+    .order-tbl td { padding:8px 4px; border-bottom:0.5px solid var(--hairline); vertical-align:top; }
+    .order-tbl tr:last-child td { border-bottom:none; }
 
-    .hidden { display: none !important; }
-
-    /* ── MinMaxIst 3-cell block ── */
-    .mmi-row {
-      display: flex; gap: 1px; border-radius: var(--r-sm); overflow: hidden;
-      box-shadow: inset 0 0 0 0.5px var(--hairline); margin-top: 10px;
-    }
-    .mmi-cell {
-      flex: 1; display: flex; flex-direction: column; align-items: center;
-      padding: 7px 10px; background: var(--surface-2);
-      border-right: 0.5px solid var(--hairline);
-    }
-    .mmi-cell:last-child { border-right: none; }
-    .mmi-lbl { font-size: 9px; color: var(--ink-3); font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 2px; }
-    .mmi-val { font-size: 20px; font-weight: 700; font-family: var(--font-mono); line-height: 1.1; color: var(--ink); font-variant-numeric: tabular-nums; }
-    .mmi-unit { font-size: 9px; color: var(--ink-3); font-family: var(--font-mono); margin-top: 1px; }
-    .mmi-cell.mmi-min .mmi-val { color: var(--low); }
-    .mmi-cell.mmi-max .mmi-val { color: var(--ok); }
-    .mmi-cell.mmi-ist-ok   .mmi-val { color: var(--ok); }
-    .mmi-cell.mmi-ist-low  .mmi-val { color: var(--low); }
-    .mmi-cell.mmi-ist-crit .mmi-val { color: var(--crit); }
-
-    /* ── Stock Bar ── */
-    .stock-bar-wrap {
-      position: relative; height: 8px; border-radius: 4px;
-      background: var(--surface-3); overflow: visible; margin-top: 10px;
-    }
-    .stock-bar-fill {
-      height: 100%; border-radius: 4px; transition: width .3s;
-      background: var(--ok);
-    }
-    .stock-bar-fill.low  { background: var(--low); }
-    .stock-bar-fill.crit { background: var(--crit); }
-    .stock-bar-min {
-      position: absolute; top: -3px; bottom: -3px; width: 2px;
-      background: var(--ink-3); border-radius: 1px; transform: translateX(-50%);
-    }
-
-    /* ── Member Pills (Bereichsauswahl) ── */
-    .member-pills {
-      display: flex; gap: 8px; overflow-x: auto; padding-bottom: 2px;
-      scrollbar-width: none;
-    }
-    .member-pills::-webkit-scrollbar { display: none; }
-    .member-pill {
-      display: flex; align-items: center; gap: 7px; flex-shrink: 0;
-      padding: 5px 10px 5px 6px; border-radius: var(--r-pill);
-      background: var(--surface); box-shadow: inset 0 0 0 1px var(--hairline);
-    }
-    .mpill-avatar {
-      width: 22px; height: 22px; border-radius: 50%;
-      background: var(--brand-soft); color: var(--brand);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 9px; font-weight: 700; font-family: var(--font-mono); flex-shrink: 0;
-    }
-    .mpill-name { font-size: 12px; font-weight: 600; }
-    .mpill-area { font-size: 10px; color: var(--ink-3); font-family: var(--font-mono); }
-
-    /* ── Bereich row right side ── */
-    .bereich-row-right { margin-left: auto; flex-shrink: 0; display: flex; align-items: center; }
-    .bereich-take-btn {
-      height: 30px; padding: 0 12px; border-radius: var(--r-sm);
-      border: 1px solid var(--hairline-2); background: var(--surface-2);
-      color: var(--ink-2); font-family: var(--font-ui); font-size: 12px; font-weight: 600;
-      cursor: pointer;
-    }
-    .bereich-row.selected .bereich-take-btn { border-color: var(--brand); color: var(--brand); background: var(--brand-soft); }
-
-    /* ── Progress ── */
-    .la-prog-text {
-      display: flex; justify-content: space-between;
-      font-size: 10px; color: var(--ink-3);
-      font-family: var(--font-mono); margin-top: 5px;
-    }
+    .canvas-wrap { background:var(--surface-2); border-radius:var(--r-md); position:relative; overflow:hidden; box-shadow:inset 0 0 0 1px var(--hairline); }
+    #sig-canvas  { display:block; width:100%; height:160px; touch-action:none; }
+    .sig-hint    { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:13px; color:var(--ink-3); pointer-events:none; transition:opacity .2s; }
   </style>
 </head>
 <body>
 
-  <nav class="c-nav">
-    <button class="c-nav-back" onclick="window.location.href='./mitarbeiter.html'" title="Zurück">
-      <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5l-5 5 5 5"/></svg>
-    </button>
-    <span class="la-wordmark" style="font-size:14px;">LAGER<span class="slash">//</span>APP</span>
-    <span id="nav-user" class="c-nav-user"></span>
-    <button class="c-theme" id="theme-toggle" onclick="toggleTheme()">☀️</button>
-  </nav>
+<!-- ── Navbar ── -->
+<nav class="c-nav">
+  <button class="c-nav-back" onclick="history.back()">←</button>
+  <span class="c-nav-title">Lagerbestellung</span>
+  <span class="c-nav-user" id="nav-user"></span>
+  <button class="c-theme" id="theme-toggle" onclick="toggleTheme()">🌙</button>
+</nav>
 
-  <!-- ── SCREEN: PIN ── -->
-  <div id="screen-pin" class="pin-screen">
-    <div class="pin-box">
-      <div class="pin-header">
-        <div class="pin-logo">LAGER<span class="slash">//</span>APP</div>
-        <div class="pin-icon">
-          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
-        </div>
-        <h1 class="pin-title">PIN eingeben</h1>
-        <p class="pin-sub">4-stelligen PIN vom Schichtleiter<br>für den heutigen Lagercheck</p>
-      </div>
-      <div class="pin-card">
-        <input type="text" id="name-input" class="name-input" placeholder="Dein Name…" maxlength="40" autocomplete="off">
-        <div class="pin-dots">
-          <div class="pin-dot" id="dot-0"></div>
-          <div class="pin-dot" id="dot-1"></div>
-          <div class="pin-dot" id="dot-2"></div>
-          <div class="pin-dot" id="dot-3"></div>
-        </div>
-        <div class="pin-grid" role="group" aria-label="PIN-Eingabe">
-          <div class="pin-key" data-key="1">1</div>
-          <div class="pin-key" data-key="2">2</div>
-          <div class="pin-key" data-key="3">3</div>
-          <div class="pin-key" data-key="4">4</div>
-          <div class="pin-key" data-key="5">5</div>
-          <div class="pin-key" data-key="6">6</div>
-          <div class="pin-key" data-key="7">7</div>
-          <div class="pin-key" data-key="8">8</div>
-          <div class="pin-key" data-key="9">9</div>
-          <div class="pin-key del" data-key="del">⌫</div>
-          <div class="pin-key" data-key="0">0</div>
-          <div class="pin-key confirm" data-key="confirm">✓</div>
-        </div>
-        <div class="pin-error" id="pin-error"></div>
-      </div>
+<!-- ════════════════════════════════
+     SCREEN: BEREICH-AUSWAHL
+════════════════════════════════ -->
+<div id="screen-join" class="screen hidden">
+  <div class="join-wrap">
+    <div>
+      <div class="join-title">Bereich wählen</div>
+      <div class="join-sub" id="join-sub">Wähle deinen Bereich für die Lagerbestellung</div>
+    </div>
+    <div class="live-badge" id="live-badge">
+      <div class="live-dot"></div>
+      Live-Sync aktiv
+    </div>
+    <div id="bereich-list">
+      <div class="loading-state"><div class="spinner"></div>Bereiche laden…</div>
     </div>
   </div>
+</div>
 
-  <!-- ── SCREEN: BEREICHSAUSWAHL ── -->
-  <div id="screen-join" class="join-screen hidden">
-    <div class="join-box">
-      <div>
-        <div class="join-title" id="join-title">Lagerbestellung</div>
-        <div class="join-sub" id="join-sub" style="margin-top:4px;">Bereich auswählen und starten</div>
-      </div>
-
-      <div id="join-session-badge" class="session-badge hidden">
-        <div class="session-badge-title">👥 Laufende Bestellung</div>
-        <div id="join-session-info" style="font-size:12px;color:var(--ink-2);margin-top:2px;"></div>
-      </div>
-
-      <div id="member-pills" class="member-pills" style="display:none;"></div>
-
-      <div style="font-size:11px;font-weight:600;color:var(--ink-3);text-transform:uppercase;letter-spacing:0.06em;">Bereich wählen</div>
-
-      <div id="bereich-list" style="display:flex;flex-direction:column;gap:8px;"></div>
-    </div>
-
-    <div class="join-bottom">
-      <button id="btn-join-start" class="la-btn primary la-btn-full" style="width:100%;height:52px;font-size:16px;" onclick="lockUndStart()" disabled>
-        Bereich auswählen…
-      </button>
-      <button onclick="window.location.href='./mitarbeiter.html'" class="la-btn ghost" style="width:100%;height:44px;font-size:13px;">
-        ← Zurück
-      </button>
+<!-- ════════════════════════════════
+     SCREEN: ARTIKEL-CHECK
+════════════════════════════════ -->
+<div id="screen-check" class="screen hidden">
+  <div class="check-sticky">
+    <div class="check-bereich-label" id="check-bereich-label">–</div>
+    <div class="prog-bar-wrap"><div class="prog-bar-fill" id="prog-fill" style="width:0%"></div></div>
+    <div class="prog-labels">
+      <span id="prog-text">0 / 0 beantwortet</span>
+      <span id="prog-pct">0%</span>
     </div>
   </div>
+  <div class="check-body" id="check-body"></div>
+  <div class="bottom-bar">
+    <button id="btn-finish" class="btn-primary hidden" onclick="bereichFertig()">✅ Bereich fertig markieren</button>
+    <button class="btn-secondary" onclick="cancelBereich()">Bereich abbrechen</button>
+  </div>
+</div>
 
-  <!-- ── SCREEN: BESTELLUNG (Ja/Nein) ── -->
-  <div id="screen-check" class="check-screen hidden">
-
-    <div class="erklaerung">
-      <div class="erklaerung-icon">ℹ️</div>
-      <div class="erklaerung-text">
-        <strong>So funktioniert der Lagercheck:</strong><br>
-        Schau bei jedem Artikel nach dem Bestand. Wenn etwas nachbestellt werden muss, tippe auf <strong>„Ja"</strong> und wähle die Menge. Bei ausreichendem Bestand tippe auf <strong>„Nein"</strong>.
-      </div>
+<!-- ════════════════════════════════
+     SCREEN: WARTEN / ÜBERSICHT
+════════════════════════════════ -->
+<div id="screen-wait" class="screen hidden">
+  <div class="wait-wrap">
+    <div>
+      <div class="wait-title">Übersicht</div>
+      <div class="wait-sub" id="wait-sub">Warte auf Kollegen…</div>
     </div>
-
-    <div class="check-header">
-      <div class="check-bereich-name" id="check-bereich-name">Bereich</div>
-      <div class="la-prog"><div id="check-progress" style="display:block;height:100%;background:var(--brand);border-radius:99px;transition:width 0.4s;"></div></div>
-      <div class="la-prog-text">
-        <span id="check-progress-label">0 / 0 beantwortet</span>
-        <span id="check-progress-pct">0%</span>
-      </div>
+    <div class="wait-card">
+      <div class="wait-card-hd">Bereiche</div>
+      <div id="wait-list"></div>
     </div>
-
-    <div class="check-body" id="check-body"></div>
-
-    <div class="bottom-nav">
-      <button class="bnav-btn" onclick="storniereBestellung()" style="flex:1;">🗑️ Abbrechen</button>
-      <button class="bnav-btn finish hidden" id="btn-finish" onclick="abschliesseBereich()">✅ Bereich fertig</button>
+    <div class="wait-card" id="wait-teilnehmer-card" style="display:none;">
+      <div class="wait-card-hd">Beteiligte Mitarbeiter</div>
+      <div class="pills-wrap" id="wait-pills"></div>
     </div>
   </div>
+  <div class="bottom-bar">
+    <button id="btn-abschliessen" class="btn-primary hidden" onclick="showSig()">🏁 Abschließen & Unterschrift</button>
+    <button id="btn-weiterer" class="btn-secondary" onclick="goJoin()" style="display:none;">+ Weiteren Bereich übernehmen</button>
+  </div>
+</div>
 
-  <!-- ── SCREEN: WARTEN / ÜBERSICHT ── -->
-  <div id="screen-wait" class="wait-screen hidden">
-    <div class="wait-box">
-      <div style="text-align:center;padding:8px 0 4px;">
-        <div style="font-size:2.2rem;margin-bottom:8px;">🎉</div>
-        <div style="font-size:22px;font-weight:700;letter-spacing:-0.02em;">Dein Bereich ist fertig!</div>
-        <div style="font-size:13px;color:var(--ink-3);margin-top:4px;" id="wait-subtitle">Warte auf deine Kollegen…</div>
-      </div>
+<!-- ════════════════════════════════
+     SCREEN: UNTERSCHRIFT
+════════════════════════════════ -->
+<div id="screen-sig" class="screen hidden">
+  <div class="sig-wrap">
+    <div class="sig-title">Abschluss & Unterschrift</div>
 
-      <div>
-        <div style="font-size:10px;font-weight:600;color:var(--ink-3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:10px;font-family:var(--font-mono);">
-          Live-Status aller Bereiche
-        </div>
-        <div id="wait-bereich-list" style="display:flex;flex-direction:column;gap:8px;"></div>
-      </div>
-
-      <div id="wait-teilnehmer-block" style="display:none;">
-        <div style="font-size:10px;font-weight:600;color:var(--ink-3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px;font-family:var(--font-mono);">
-          Mitarbeiter
-        </div>
-        <div id="wait-teilnehmer-list" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
-      </div>
-
-      <button id="btn-weiterer-bereich" class="la-btn ghost" onclick="wähleWeiterenBereich()"
-        style="width:100%;height:50px;font-size:14px;display:none;">
-        + Weiteren Bereich übernehmen
-      </button>
-
-      <div id="wait-spinner" style="display:flex;flex-direction:column;align-items:center;gap:10px;padding:16px 0;">
-        <div class="spinner"></div>
-        <div style="font-size:13px;color:var(--ink-3);">Warte auf andere Bereiche…</div>
-      </div>
+    <div class="sig-card">
+      <div class="sig-card-lbl">Zusammenfassung</div>
+      <div id="sum-rows"></div>
     </div>
 
-    <div class="wait-bottom hidden" id="wait-bottom">
-      <button class="la-btn primary" style="width:100%;height:52px;font-size:16px;" onclick="showSignature()">
-        ✅ Alle fertig – Unterschrift
-      </button>
+    <div class="sig-card" id="order-card" style="display:none;">
+      <div class="sig-card-lbl">Zu bestellende Artikel</div>
+      <table class="order-tbl">
+        <thead><tr><th>Artikel</th><th>Menge</th><th>Von</th></tr></thead>
+        <tbody id="order-body"></tbody>
+      </table>
+    </div>
+
+    <div class="sig-card">
+      <div class="sig-card-lbl">Unterschrift</div>
+      <div class="canvas-wrap">
+        <canvas id="sig-canvas"></canvas>
+        <div class="sig-hint" id="sig-hint">Hier unterschreiben</div>
+      </div>
+      <button onclick="clearSig()" class="btn-secondary">Unterschrift löschen</button>
     </div>
   </div>
-
-  <!-- ── SCREEN: UNTERSCHRIFT ── -->
-  <div id="screen-sig" class="sig-screen hidden">
-    <div class="sig-box">
-      <div class="sig-title">✅ Lagerbestellung abgeschlossen</div>
-      <div class="summary-grid" id="summary-grid"></div>
-      <div>
-        <div class="section-label mb-8">Unterschrift</div>
-        <div class="sig-canvas-wrap">
-          <canvas id="sig-canvas"></canvas>
-          <div class="sig-line"></div>
-          <div class="sig-hint" id="sig-hint">Hier unterschreiben…</div>
-          <button class="sig-clear" onclick="clearSig()">Löschen</button>
-        </div>
-      </div>
-      <button class="la-btn primary" style="width:100%;height:52px;font-size:16px;" id="btn-submit" onclick="submitCheck()">
-        📄 Absenden &amp; Fertig
-      </button>
-      <button class="la-btn ghost" style="width:100%;height:48px;font-size:14px;" onclick="backToWait()">← Zurück</button>
-    </div>
+  <div class="bottom-bar">
+    <button id="btn-submit" class="btn-primary" onclick="submitOrder()">📄 Absenden & Fertig</button>
+    <button class="btn-secondary" onclick="showScreen('wait')">← Zurück zur Übersicht</button>
   </div>
+</div>
 
-  <script type="module">
-    import { initializeApp }  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-    import {
-      getFirestore, collection, getDocs, doc, getDoc,
-      addDoc, updateDoc, deleteDoc, setDoc,
-      query, orderBy, where, limit,
-      serverTimestamp, runTransaction,
-      onSnapshot, arrayUnion, writeBatch
-    } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-    import { firebaseConfig } from "../js/firebase-config.js";
+<!-- ════════════════════════════════
+     JAVASCRIPT
+════════════════════════════════ -->
+<script type="module">
+  import { initializeApp }              from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+  import { getAuth, signInAnonymously } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+  import {
+    getFirestore, doc, collection,
+    getDocs, setDoc, updateDoc, addDoc, deleteDoc,
+    query, where, orderBy, writeBatch,
+    onSnapshot, runTransaction, serverTimestamp, arrayUnion,
+  } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+  import {
+    getDatabase,
+    ref    as rtRef,
+    set    as rtSet,
+    remove as rtRemove,
+    onDisconnect,
+    onValue,
+  } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js';
+  import { firebaseConfig } from '../js/firebase-config.js';
 
-    function esc(str) {
-      return String(str ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  /* ── Theme ──────────────────────────────────── */
+  const savedTheme = localStorage.getItem('lager-theme');
+  const initTheme  = savedTheme || (window.matchMedia('(prefers-color-scheme:dark)').matches ? 'dark' : 'light');
+  document.documentElement.setAttribute('data-theme', initTheme);
+  document.getElementById('theme-toggle').textContent = initTheme === 'dark' ? '☀️' : '🌙';
+  window.toggleTheme = function() {
+    const cur  = document.documentElement.getAttribute('data-theme');
+    const next = cur === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('lager-theme', next);
+    document.getElementById('theme-toggle').textContent = next === 'dark' ? '☀️' : '🌙';
+  };
+
+  /* ── Firebase ───────────────────────────────── */
+  const app  = initializeApp(firebaseConfig);
+  const db   = getFirestore(app);
+  const auth = getAuth(app);
+  let rtdb   = null;
+  try { rtdb = getDatabase(app); } catch(e) {}
+
+  /* ── Constants ──────────────────────────────── */
+  const SID          = 'current';  // single active session ID
+  const QUICK_VALUES = [1, 2, 3, 5, 10];
+  // Statuses treated as "someone is working here"
+  const ACTIVE_STATS = new Set(['aktiv', 'gesperrt']);
+
+  /* ── State ──────────────────────────────────── */
+  const S = {
+    user:       { id: null, name: '' },
+    bereiche:   [],
+    alleArtikel:[],
+    session:    null,       // latest Firestore session doc data
+    myBereichId:null,
+    myArtikel:  [],
+    warenkorb:  {},         // local cache { [artikelId]: { bestellen, menge } }
+    presRef:    null,       // RTDB reference for own presence
+    disconnRef: null,       // OnDisconnect handle
+    unsubSess:  null,       // Firestore onSnapshot cleanup
+    heartbeat:  null,       // setInterval timer (RTDB fallback)
+  };
+
+  /* ── Utilities ──────────────────────────────── */
+  const esc = s => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+  function toast(msg, type = 'info') {
+    const color = type === 'error' ? 'var(--crit)' : type === 'ok' ? 'var(--ok)' : 'var(--ink-2)';
+    const el = document.createElement('div');
+    el.style.cssText = `position:fixed;bottom:80px;left:50%;transform:translateX(-50%);
+      background:var(--surface);color:${color};border-radius:12px;padding:10px 18px;
+      font-size:13px;font-family:var(--font-ui);z-index:3000;
+      box-shadow:var(--sh-3),inset 0 0 0 1px ${color};
+      white-space:nowrap;max-width:88vw;overflow:hidden;text-overflow:ellipsis;`;
+    el.textContent = msg;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 2800);
+  }
+
+  window.showScreen = function(name) {
+    ['join','check','wait','sig'].forEach(s =>
+      document.getElementById(`screen-${s}`).classList.toggle('hidden', s !== name)
+    );
+  };
+
+  function prettyName(name) {
+    return (name || '').replace(/^Lager\s*[-–]\s*/i, '').trim();
+  }
+
+  function naturalSort(a, b) {
+    const seg = s => (s || '').split(/[\.\-]/).map(x => isNaN(x) ? x : +x);
+    const A = seg(a), B = seg(b);
+    for (let i = 0; i < Math.max(A.length, B.length); i++) {
+      const sa = A[i] ?? '', sb = B[i] ?? '';
+      if (sa < sb) return -1; if (sa > sb) return 1;
+    }
+    return 0;
+  }
+
+  function stockState(stock, min) {
+    if (stock == null) return 'ok';
+    if (stock === 0 || stock < min) return 'crit';
+    if (stock < min * 1.5) return 'low';
+    return 'ok';
+  }
+
+  /* ── Auth & Bootstrap ───────────────────────── */
+  (async function init() {
+    const pinOk = sessionStorage.getItem('lager-pin-auth');
+    const name  = sessionStorage.getItem('lager-pin-name');
+    const empId = sessionStorage.getItem('lager-employee-id');
+
+    if (!pinOk || !name) {
+      const ret = encodeURIComponent(window.location.pathname);
+      window.location.replace(`../pages/login.html?tab=mitarbeiter&return=${ret}`);
+      return;
     }
 
-    function prettyBereich(name) {
-      return String(name ?? '').replace(/^Lager\s*[-–]\s*/i, '').trim();
+    S.user.name = name;
+    S.user.id   = empId
+      || btoa(unescape(encodeURIComponent(name))).replace(/[^a-zA-Z0-9]/g, '').substring(0, 20)
+      || name.replace(/\s+/g, '_');
+
+    document.getElementById('nav-user').textContent = name;
+
+    if (!auth.currentUser) {
+      try { await signInAnonymously(auth); } catch(e) {}
     }
 
-    function getStockState(stock, min) {
-      if (stock == null) return null;
-      if (stock === 0 || stock < min) return 'crit';
-      if (stock < min * 1.5) return 'low';
-      return 'ok';
-    }
+    await loadData();
+    startSessionListener();
+    setupRtdbListener();
+    showScreen('join');
+    renderJoin();
+  })();
 
-    function buildMmiHtml(a) {
-      const unit = a.minEinheit || a.maxEinheit || 'Stk';
-      const state = getStockState(a.stock, a.min);
-      const minCell = a.min != null
-        ? `<div class="mmi-cell mmi-min"><span class="mmi-lbl">MIN</span><span class="mmi-val">${a.min}</span><span class="mmi-unit">${unit}</span></div>` : '';
-      const istCell = a.stock != null
-        ? `<div class="mmi-cell mmi-ist-${state || 'ok'}"><span class="mmi-lbl">IST</span><span class="mmi-val">${a.stock}</span><span class="mmi-unit">${unit}</span></div>` : '';
-      const maxCell = a.max != null
-        ? `<div class="mmi-cell mmi-max"><span class="mmi-lbl">MAX</span><span class="mmi-val">${a.max}</span><span class="mmi-unit">${unit}</span></div>` : '';
-      if (!minCell && !istCell && !maxCell) return '';
-      return `<div class="mmi-row">${minCell}${istCell}${maxCell}</div>`;
-    }
+  /* ── Load bereiche + artikel ────────────────── */
+  async function loadData() {
+    const [bSnap, aSnap] = await Promise.all([
+      getDocs(query(collection(db, 'bereiche'), orderBy('reihenfolge'))),
+      getDocs(collection(db, 'artikel')),
+    ]);
+    S.bereiche    = bSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+    S.alleArtikel = aSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+  }
 
-    function buildStockBarHtml(a) {
-      if (a.max == null) return '';
-      const stock = a.stock ?? 0;
-      const max   = a.max;
-      const fillPct = max > 0 ? Math.min(100, Math.round((stock / max) * 100)) : 0;
-      const minPct  = (a.min != null && max > 0) ? Math.min(100, Math.round((a.min / max) * 100)) : null;
-      const state   = getStockState(stock, a.min) || 'ok';
-      const marker  = minPct != null ? `<div class="stock-bar-min" style="left:${minPct}%"></div>` : '';
-      return `<div class="stock-bar-wrap"><div class="stock-bar-fill ${state}" style="width:${fillPct}%"></div>${marker}</div>`;
-    }
+  /* ── Session listener (Firestore) ───────────── */
+  function startSessionListener() {
+    if (S.unsubSess) { S.unsubSess(); S.unsubSess = null; }
+    S.unsubSess = onSnapshot(doc(db, 'bestellungen_session', SID), snap => {
+      S.session = snap.exists() ? snap.data() : null;
+      onSessionChange();
+    });
+  }
 
-    function buildStockChipHtml(stock, min) {
-      const state = getStockState(stock, min);
-      if (!state) return '';
-      const labels = { ok: 'OK', low: 'Niedrig', crit: 'Kritisch' };
-      return `<span class="la-chip ${state}" style="height:18px;font-size:10px;margin-left:6px;"><span class="dot"></span>${labels[state]}</span>`;
-    }
+  function onSessionChange() {
+    const joinHidden  = document.getElementById('screen-join').classList.contains('hidden');
+    const waitVisible = !document.getElementById('screen-wait').classList.contains('hidden');
 
-    function naturalSort(a, b) {
-      const seg = s => s.split(/[\.\-]/).map(x => isNaN(x) ? x : parseInt(x, 10));
-      const A = seg(a), B = seg(b);
-      for (let i = 0; i < Math.max(A.length, B.length); i++) {
-        const sa = A[i] ?? '', sb = B[i] ?? '';
-        if (sa < sb) return -1;
-        if (sa > sb) return  1;
-      }
-      return 0;
-    }
+    if (!joinHidden)   renderJoin();
+    if (waitVisible)   renderWait();
+  }
 
-    /* ── Theme ── */
-    const savedTheme  = localStorage.getItem('lager-theme');
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    document.documentElement.setAttribute('data-theme', savedTheme || (prefersDark ? 'dark' : 'light'));
-    document.getElementById('theme-toggle').textContent = (savedTheme || (prefersDark ? 'dark' : 'light')) === 'dark' ? '☀️' : '🌙';
-    window.toggleTheme = function() {
-      const cur  = document.documentElement.getAttribute('data-theme');
-      const next = cur === 'dark' ? 'light' : 'dark';
-      document.documentElement.setAttribute('data-theme', next);
-      localStorage.setItem('lager-theme', next);
-      document.getElementById('theme-toggle').textContent = next === 'dark' ? '☀️' : '🌙';
-    };
+  /* ── RTDB presence ──────────────────────────── */
+  function setupRtdbListener() {
+    if (!rtdb) return;
+    try {
+      onValue(rtRef(rtdb, 'presence'), snap => {
+        handlePresence(snap.val() || {});
+      });
+    } catch(e) {}
+  }
 
-    /* ── Firebase ── */
-    const app = initializeApp(firebaseConfig);
-    const db  = getFirestore(app);
+  async function handlePresence(presence) {
+    if (!S.session) return;
+    const bs = S.session.bereichStatus || {};
+    const updates = {};
 
-    /* ── State ── */
-    let correctPin      = '1234';
-    let alleArtikel     = [];
-    let alleBereiche    = [];
-    let userName        = '';
-    let pinValue        = '';
-    let pinAttempts     = 0;
-    let pinLockedUntil  = 0;
-
-    let sessionId         = null;
-    let currentBereichId  = null;
-    let bereichArtikel    = [];
-    let bestellungen      = {};
-    let selectedBereichId = null;
-
-    let heartbeatTimer = null;
-    let abandonedCheckTimer = null;
-    let sessionUnsubscribe = null;
-    let joinUnsubscribe    = null;
-    let latestSessionData = null;
-
-    const QUICK_VALUES = [1, 2, 3, 5, 10];
-
-    /* ── Auth-Check ── */
-    (async function checkAuth() {
-      const pinOk = sessionStorage.getItem('lager-pin-auth');
-      const name  = sessionStorage.getItem('lager-pin-name');
-      if (pinOk && name) {
-        document.getElementById('screen-pin').classList.add('hidden');
-        userName = name;
-        document.getElementById('nav-user').textContent = userName;
-        await loadCheckData();
-        showJoinScreen();
-      } else {
-        const ret = encodeURIComponent(window.location.pathname + window.location.search);
-        window.location.replace(`../pages/login.html?tab=mitarbeiter&return=${ret}`);
-      }
-    })();
-
-    /* ── PIN ── */
-    function handlePinKey(key) {
-      document.getElementById('pin-error').textContent = '';
-      if (key === 'del') {
-        pinValue = pinValue.slice(0, -1);
-        updateDots();
-      } else if (key === 'confirm') {
-        pinConfirm();
-      } else {
-        if (pinValue.length >= 4) return;
-        pinValue += key;
-        updateDots();
-      }
-    }
-
-    function updateDots() {
-      for (let i = 0; i < 4; i++)
-        document.getElementById(`dot-${i}`).classList.toggle('filled', i < pinValue.length);
-    }
-
-    document.querySelectorAll('.pin-key').forEach(btn => {
-      const key = btn.dataset.key;
-      btn.addEventListener('touchstart', e => { e.preventDefault(); btn.classList.add('pressed'); handlePinKey(key); }, { passive: false });
-      btn.addEventListener('touchend',   () => setTimeout(() => btn.classList.remove('pressed'), 100));
-      btn.addEventListener('click',      () => handlePinKey(key));
+    Object.entries(presence).forEach(([uid, data]) => {
+      if (uid === S.user.id || data?.status !== 'abgebrochen') return;
+      Object.entries(bs).forEach(([bid, bsData]) => {
+        if (bsData.mitarbeiterId === uid && ACTIVE_STATS.has(bsData.status)) {
+          updates[`bereichStatus.${bid}.status`] = 'abgebrochen';
+        }
+      });
     });
 
-    async function pinConfirm() {
-      userName = document.getElementById('name-input').value.trim();
-      const err = document.getElementById('pin-error');
-      if (!userName)          { err.textContent = 'Bitte deinen Namen eingeben.';    return; }
-      if (pinValue.length < 4){ err.textContent = 'Bitte 4-stelligen PIN eingeben.'; return; }
-
-      if (Date.now() < pinLockedUntil) {
-        const secs = Math.ceil((pinLockedUntil - Date.now()) / 1000);
-        err.textContent = `Zu viele Versuche – bitte ${secs}s warten`;
-        pinValue = ''; updateDots(); return;
-      }
-
-      try {
-        const snap = await getDoc(doc(db, 'config', 'app'));
-        if (snap.exists()) correctPin = snap.data().pin || '1234';
-      } catch {}
-
-      if (pinValue !== correctPin) {
-        pinAttempts++;
-        if (pinAttempts >= 5) {
-          pinLockedUntil = Date.now() + 60000;
-          pinAttempts = 0;
-          err.textContent = 'Zu viele Versuche – bitte 60s warten';
-        } else {
-          err.textContent = `Falscher PIN – noch ${5 - pinAttempts} Versuch(e)`;
+    if (Object.keys(updates).length === 0) return;
+    try {
+      await updateDoc(doc(db, 'bestellungen_session', SID), updates);
+      // clean up detected entries from RTDB
+      Object.entries(presence).forEach(([uid, data]) => {
+        if (data?.status === 'abgebrochen' && uid !== S.user.id) {
+          try { rtRemove(rtRef(rtdb, `presence/${uid}`)); } catch(e) {}
         }
-        pinValue = ''; updateDots(); return;
-      }
-      pinAttempts = 0;
-
-      const auth = getAuth(app);
-      if (!auth.currentUser) await signInAnonymously(auth);
-
-      document.getElementById('nav-user').textContent = userName;
-      sessionStorage.setItem('lager-pin-auth', 'true');
-      sessionStorage.setItem('lager-pin-name', userName);
-
-      await loadCheckData();
-      showJoinScreen();
-    }
-
-    /* ── Daten laden ── */
-    async function loadCheckData() {
-      const auth = getAuth(app);
-      if (!auth.currentUser) await signInAnonymously(auth);
-
-      const [bSnap, aSnap] = await Promise.all([
-        getDocs(query(collection(db, 'bereiche'), orderBy('reihenfolge'))),
-        getDocs(collection(db, 'artikel')),
-      ]);
-      alleBereiche = bSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-      alleArtikel  = aSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-    }
-
-    /* ── Join Screen ── */
-    async function showJoinScreen() {
-      showScreen('join');
-      selectedBereichId = null;
-      document.getElementById('btn-join-start').disabled = true;
-      document.getElementById('btn-join-start').textContent = 'Bereich auswählen…';
-      document.getElementById('join-session-badge').classList.add('hidden');
-      document.getElementById('join-title').textContent = 'Neue Lagerbestellung';
-      document.getElementById('join-sub').textContent = 'Wähle deinen Bereich';
-
-      renderBereichList(latestSessionData || null);
-
-      if (joinUnsubscribe) { joinUnsubscribe(); joinUnsubscribe = null; }
-
-      const joinQuery = query(
-        collection(db, 'bestellungen_session'),
-        where('status', '==', 'aktiv'),
-        limit(1)
-      );
-      joinUnsubscribe = onSnapshot(joinQuery, snap => {
-        if (!snap.empty) {
-          const docSnap = snap.docs[0];
-          const data = docSnap.data();
-          const namen = (data.teilnehmer || []).map(t => t.name).join(', ');
-          document.getElementById('join-session-badge').classList.remove('hidden');
-          document.getElementById('join-session-info').textContent =
-            `${namen} macht${namen.includes(',') ? 'en' : ''} gerade die Lagerbestellung`;
-          document.getElementById('join-title').textContent = 'Lagerbestellung beitreten';
-          document.getElementById('join-sub').textContent = 'Wähle einen freien Bereich';
-          const btn = document.getElementById('btn-join-start');
-          if (!btn.textContent.includes('→')) btn.textContent = 'Beitreten & starten →';
-          renderBereichList(data);
-        } else {
-          sessionId = null;
-          document.getElementById('join-session-badge').classList.add('hidden');
-          document.getElementById('join-title').textContent = 'Neue Lagerbestellung';
-          document.getElementById('join-sub').textContent = 'Wähle deinen Bereich';
-          const btn = document.getElementById('btn-join-start');
-          if (!btn.textContent.includes('→')) btn.textContent = 'Session starten →';
-          renderBereichList(null);
-        }
-      }, () => {
-        renderBereichList(latestSessionData || null);
       });
+    } catch(e) {}
+  }
+
+  async function setupPresence(bereichId) {
+    if (!rtdb) { startHeartbeatFallback(); return; }
+    try {
+      S.presRef    = rtRef(rtdb, `presence/${S.user.id}`);
+      const data   = { status: 'aktiv', bereichId, name: S.user.name, ts: Date.now() };
+      await rtSet(S.presRef, data);
+      S.disconnRef = onDisconnect(S.presRef);
+      await S.disconnRef.set({ status: 'abgebrochen', bereichId, name: S.user.name, ts: Date.now() });
+    } catch(e) {
+      console.warn('RTDB Presence fehlgeschlagen – Heartbeat-Fallback aktiv', e);
+      startHeartbeatFallback();
     }
+  }
 
-    function renderBereichList(sessionData) {
-      const listEl       = document.getElementById('bereich-list');
-      const pillsEl      = document.getElementById('member-pills');
-      const bereichStatus = sessionData?.bereichStatus || {};
+  async function clearPresence() {
+    stopHeartbeatFallback();
+    if (!S.presRef) return;
+    try {
+      if (S.disconnRef) await S.disconnRef.cancel();
+      await rtRemove(S.presRef);
+    } catch(e) {}
+    S.presRef = null; S.disconnRef = null;
+  }
 
-      // Member pills — who's working where
-      const active = Object.entries(bereichStatus)
-        .filter(([, bs]) => bs.status === 'gesperrt' && bs.mitarbeiter);
-      if (active.length > 0 && pillsEl) {
-        pillsEl.style.display = 'flex';
-        pillsEl.innerHTML = active.map(([bid, bs]) => {
-          const initials = bs.mitarbeiter.split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
-          const area     = prettyBereich(alleBereiche.find(b => b.id === bid)?.name || bid);
-          return `<div class="member-pill">
-            <div class="mpill-avatar">${esc(initials)}</div>
-            <div><div class="mpill-name">${esc(bs.mitarbeiter)}</div><div class="mpill-area">${esc(area)}</div></div>
-          </div>`;
-        }).join('');
-      } else if (pillsEl) {
-        pillsEl.style.display = 'none';
-        pillsEl.innerHTML = '';
-      }
-
-      listEl.innerHTML = '';
-      alleBereiche.forEach(b => {
-        const bs     = bereichStatus[b.id] || { status: 'frei' };
-        const status = bs.status;
-        const count  = alleArtikel.filter(a => a.bereich === b.id).length;
-
-        const div = document.createElement('div');
-        div.dataset.bereichId = b.id;
-
-        let indicatorHtml = '';
-        let subText       = `${count} Artikel`;
-        let rowClass      = '';
-        let canSelect     = false;
-        let rightHtml     = '';
-
-        if (status === 'erledigt') {
-          indicatorHtml = '<div class="status-dot dot-erledigt"></div>';
-          subText      += bs.mitarbeiter ? ` · Erledigt von ${esc(bs.mitarbeiter)}` : ' · Erledigt';
-          rowClass      = 'erledigt';
-          rightHtml     = `<span class="la-chip ok" style="height:20px;font-size:10px;"><span class="dot"></span>Fertig</span>`;
-        } else if (status === 'gesperrt') {
-          const initials = (bs.mitarbeiter || '?').split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
-          indicatorHtml  = '<span style="font-size:0.95rem;line-height:1;">🔒</span>';
-          subText       += bs.mitarbeiter ? ` · ${esc(bs.mitarbeiter)}` : '';
-          rowClass       = 'blocked';
-          rightHtml      = `<div style="display:flex;align-items:center;gap:6px;">
-            <div style="width:22px;height:22px;border-radius:50%;background:var(--brand-soft);color:var(--brand);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;font-family:var(--font-mono);">${esc(initials)}</div>
-            <span style="font-size:11px;color:var(--ink-3);">läuft</span>
-          </div>`;
-        } else if (status === 'abgebrochen') {
-          indicatorHtml = '<div class="status-dot dot-abgebrochen"></div>';
-          subText      += ' · Abgebrochen';
-          rowClass      = 'abgebrochen selectable';
-          canSelect     = true;
-          rightHtml     = `<button class="bereich-take-btn">Fortführen</button>`;
-        } else {
-          indicatorHtml = '<div class="status-dot dot-frei"></div>';
-          rowClass      = 'selectable';
-          canSelect     = true;
-          rightHtml     = `<button class="bereich-take-btn">Übernehmen</button>`;
-        }
-
-        const isSelected = selectedBereichId === b.id;
-        if (isSelected) rowClass += ' selected';
-
-        div.className = 'bereich-row ' + rowClass;
-        div.innerHTML = `
-          <div class="status-indicator">${indicatorHtml}</div>
-          <div class="bereich-row-info">
-            <div class="bereich-row-name">${esc(prettyBereich(b.name))}</div>
-            <div class="bereich-row-sub">${subText}</div>
-          </div>
-          <div class="bereich-row-right">${rightHtml}</div>
-        `;
-
-        if (canSelect) div.addEventListener('click', () => selectBereich(b.id));
-        listEl.appendChild(div);
-      });
-    }
-
-    function selectBereich(id) {
-      selectedBereichId = id;
-      document.querySelectorAll('.bereich-row.selectable').forEach(row => row.classList.remove('selected'));
-      const row = document.querySelector(`.bereich-row[data-bereich-id="${id}"]`);
-      if (row) row.classList.add('selected');
-      const bereich = alleBereiche.find(b => b.id === id);
-      document.getElementById('btn-join-start').disabled = false;
-      document.getElementById('btn-join-start').textContent =
-        sessionId ? `Beitreten: ${prettyBereich(bereich?.name)} →` : `Starten: ${prettyBereich(bereich?.name)} →`;
-    }
-
-    /* ── Lock & Start ── */
-    window.lockUndStart = async function() {
-      if (!selectedBereichId) return;
-      const btn = document.getElementById('btn-join-start');
-      btn.disabled = true;
-      btn.textContent = 'Bitte warten…';
-      if (joinUnsubscribe) { joinUnsubscribe(); joinUnsubscribe = null; }
-
+  /* ── Heartbeat fallback (when RTDB unavailable) ── */
+  function startHeartbeatFallback() {
+    stopHeartbeatFallback();
+    S.heartbeat = setInterval(async () => {
+      if (!S.session || !S.myBereichId) return;
       try {
-        const auth = getAuth(app);
-        if (!auth.currentUser) await signInAnonymously(auth);
-
-        const sessionRef = doc(db, 'bestellungen_session', 'current');
-        await runTransaction(db, async tx => {
-          const snap     = await tx.get(sessionRef);
-          const isActive = snap.exists() && snap.data().status === 'aktiv';
-
-          if (isActive) {
-            const data = snap.data();
-            const bs   = data.bereichStatus?.[selectedBereichId];
-            if (bs?.status === 'gesperrt' && bs.mitarbeiter !== userName)
-              throw new Error(`Bereich wird gerade von ${bs.mitarbeiter} bearbeitet`);
-            if (bs?.status === 'erledigt')
-              throw new Error('Bereich ist bereits abgeschlossen');
-            const bereitsRin = (data.teilnehmer || []).some(t => t.name === userName);
-            tx.update(sessionRef, {
-              [`bereichStatus.${selectedBereichId}`]: { status:'gesperrt', mitarbeiter:userName, gesperrtAt:serverTimestamp(), erledigtAt:null },
-              ...(bereitsRin ? {} : { teilnehmer: arrayUnion({ name: userName, beitritt: new Date().toISOString() }) }),
-              [`heartbeats.${userName}`]: serverTimestamp(),
-            });
-          } else {
-            tx.set(sessionRef, {
-              status:'aktiv', startzeit:serverTimestamp(),
-              teilnehmer:[{ name:userName, beitritt:new Date().toISOString() }],
-              bereichStatus:{ [selectedBereichId]:{ status:'gesperrt', mitarbeiter:userName, gesperrtAt:serverTimestamp(), erledigtAt:null } },
-              heartbeats:{ [userName]:serverTimestamp() },
-              alleErledigt:false,
-            });
-          }
+        await updateDoc(doc(db, 'bestellungen_session', SID), {
+          [`heartbeats.${S.user.id}`]: serverTimestamp(),
         });
-        sessionId = 'current';
-        currentBereichId = selectedBereichId;
-        await loadBereichWarenkorb();
-        startSessionListener(sessionId);
-        startHeartbeat();
-        startAbandonedCheck();
-        renderCheckScreen();
-        showScreen('check');
-      } catch(e) {
-        showToast(e.message, 'error');
-        btn.disabled = false;
-        btn.textContent = sessionId ? 'Beitreten & starten →' : 'Session starten →';
-      }
-    };
+      } catch(e) {}
+    }, 15_000);
+  }
 
-    async function loadBereichWarenkorb() {
+  function stopHeartbeatFallback() {
+    if (S.heartbeat) { clearInterval(S.heartbeat); S.heartbeat = null; }
+  }
+
+  /* ── beforeunload: best-effort mark abandoned ── */
+  window.addEventListener('beforeunload', () => {
+    const myStatus = S.session?.bereichStatus?.[S.myBereichId]?.status;
+    if (S.myBereichId && ACTIVE_STATS.has(myStatus)) {
       try {
-        const snap = await getDocs(collection(db, 'bestellungen_session', sessionId, 'warenkorb'));
-        bestellungen = {};
-        snap.forEach(d => {
-          const item = d.data();
-          if (item.bereich === currentBereichId)
-            bestellungen[item.artikelId] = { bestellen: item.bestellen, menge: item.menge ?? 1 };
-        });
-      } catch(e) { bestellungen = {}; }
-    }
-
-    /* ── Check Screen ── */
-    function renderCheckScreen() {
-      const bereich = alleBereiche.find(b => b.id === currentBereichId);
-      document.getElementById('check-bereich-name').textContent = prettyBereich(bereich?.name) || '–';
-      bereichArtikel = alleArtikel
-        .filter(a => a.bereich === currentBereichId)
-        .sort((a, b) => naturalSort(a.lp || '', b.lp || ''));
-      renderArtikelCards();
-      updateCheckProgress();
-    }
-
-    function renderArtikelCards() {
-      document.getElementById('check-body').innerHTML =
-        bereichArtikel.map(a => {
-          const state   = bestellungen[a.id] || { bestellen: null, menge: 1 };
-          const bestell = state.bestellen;
-          const menge   = state.menge ?? 1;
-
-          const mmiHtml      = buildMmiHtml(a);
-          const stockBarHtml = buildStockBarHtml(a);
-          const stockChipHtml = buildStockChipHtml(a.stock, a.min);
-
-          const fotoHtml = (a.fotoUrl || a.lagerFotoUrl)
-            ? `<div style="display:flex;flex-direction:column;gap:6px;flex-shrink:0;">
-                 ${a.fotoUrl ? `
-                   <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
-                     <div class="artikel-foto-btn" style="width:64px;height:64px;" data-foto="${esc(a.fotoUrl)}" data-name="${esc(a.name)}">
-                       <img src="${esc(a.fotoUrl)}" alt="${esc(a.name)}" loading="lazy">
-                     </div>
-                     <div style="font-size:9px;color:var(--ink-3);font-family:var(--font-mono);letter-spacing:0.03em;">PRODUKT</div>
-                   </div>` : ''}
-                 ${a.lagerFotoUrl ? `
-                   <div style="display:flex;flex-direction:column;align-items:center;gap:2px;">
-                     <div class="artikel-foto-btn" style="width:64px;height:64px;" data-foto="${esc(a.lagerFotoUrl)}" data-name="Lagerort: ${esc(a.name)}" style="background:var(--surface-3);">
-                       <img src="${esc(a.lagerFotoUrl)}" alt="Lagerort" loading="lazy">
-                     </div>
-                     <div style="font-size:9px;color:var(--ink-3);font-family:var(--font-mono);letter-spacing:0.03em;">LAGERORT</div>
-                   </div>` : ''}
-               </div>`
-            : `<div class="artikel-foto-btn" style="width:64px;height:64px;cursor:default;opacity:0.4;">📦</div>`;
-
-          const chipsHtml = QUICK_VALUES.map(v =>
-            `<div class="chip ${menge === v && bestell ? 'selected' : ''}" data-id="${a.id}" data-val="${v}">${v}</div>`
-          ).join('');
-
-          return `
-            <div class="artikel-card ${bestell === true ? 'bestellen' : bestell === false ? 'ok' : ''}" id="card-${a.id}">
-              <div class="artikel-header">
-                ${fotoHtml}
-                <div class="artikel-info">
-                  <div style="display:flex;align-items:center;gap:0;flex-wrap:wrap;">
-                    <span class="artikel-name" style="margin-bottom:0;">${esc(a.name)}</span>
-                    ${stockChipHtml}
-                  </div>
-                  <div class="artikel-lp" style="margin-top:5px;">
-                    <span class="la-lp">${esc(a.lp)}</span>
-                    ${a.location ? `<span style="color:var(--ink-3);">·</span><span style="color:var(--ink-3);">${esc(a.location)}</span>` : ''}
-                  </div>
-                  ${mmiHtml}
-                  ${stockBarHtml}
-                </div>
-              </div>
-              ${a.hinweis ? `<div class="artikel-hinweis">💡 ${esc(a.hinweis)}</div>` : ''}
-              <div class="bestell-divider"></div>
-              <div class="bestell-section">
-                <div class="bestell-frage">Muss bestellt werden?</div>
-                <div class="ja-nein-row">
-                  <button class="ja-nein-btn nein ${bestell === false ? 'selected' : ''}" data-id="${a.id}" data-val="nein">✓ Ausreichend</button>
-                  <button class="ja-nein-btn ja   ${bestell === true  ? 'selected' : ''}" data-id="${a.id}" data-val="ja">Bestellen${a.max != null && a.stock != null ? ` +${Math.max(1, a.max - (a.stock ?? 0))}` : ''}</button>
-                </div>
-                <div class="menge-wrap ${bestell === true ? 'visible' : ''}" id="menge-${a.id}">
-                  <div class="menge-label">Wie viel soll bestellt werden?</div>
-                  <div class="chips-row" data-id="${a.id}">${chipsHtml}</div>
-                  <div class="plusminus-row">
-                    <button class="pm-btn minus" data-id="${a.id}" data-action="minus">−</button>
-                    <input  class="pm-display" id="pm-${a.id}" type="number" inputmode="numeric" value="${menge}" min="1">
-                    <button class="pm-btn plus"  data-id="${a.id}" data-action="plus">+</button>
-                  </div>
-                </div>
-              </div>
-            </div>`;
-        }).join('') || `<div style="color:var(--ink-3);font-size:14px;padding:30px;text-align:center;">Keine Artikel in diesem Bereich</div>`;
-
-      attachListeners();
-      window.scrollTo(0, 0);
-    }
-
-    function updateCheckProgress() {
-      const total = bereichArtikel.length;
-      const beantwortet = bereichArtikel.filter(a =>
-        bestellungen[a.id]?.bestellen !== undefined && bestellungen[a.id]?.bestellen !== null
-      ).length;
-      const pct = total > 0 ? Math.round((beantwortet / total) * 100) : 0;
-
-      document.getElementById('check-progress').style.width = pct + '%';
-      document.getElementById('check-progress-label').textContent = `${beantwortet} / ${total} beantwortet`;
-      document.getElementById('check-progress-pct').textContent   = pct + '%';
-
-      const alleBeantwortet = beantwortet === total && total > 0;
-      document.getElementById('btn-finish').classList.toggle('hidden', !alleBeantwortet);
-    }
-
-    function attachListeners() {
-      document.querySelectorAll('.ja-nein-btn').forEach(btn => {
-        const id  = btn.dataset.id;
-        const val = btn.dataset.val;
-        const handle = () => {
-          const bestellen = val === 'ja';
-          if (!bestellungen[id]) bestellungen[id] = { bestellen: null, menge: 1 };
-          bestellungen[id].bestellen = bestellen;
-          document.getElementById(`card-${id}`).className = `artikel-card ${bestellen ? 'bestellen' : 'ok'}`;
-          document.querySelectorAll(`.ja-nein-btn[data-id="${id}"]`).forEach(b =>
-            b.classList.toggle('selected', b.dataset.val === val)
-          );
-          document.getElementById(`menge-${id}`).classList.toggle('visible', bestellen);
-          updateCheckProgress();
-          saveWarenkorb(id);
-        };
-        btn.addEventListener('touchstart', e => { e.preventDefault(); btn.style.transform = 'scale(0.95)'; handle(); }, { passive: false });
-        btn.addEventListener('touchend',   () => { btn.style.transform = ''; });
-        btn.addEventListener('click', handle);
-      });
-
-      document.querySelectorAll('.chip').forEach(chip => {
-        const id  = chip.dataset.id;
-        const val = parseInt(chip.dataset.val);
-        const handle = () => { setMenge(id, val); saveWarenkorb(id); };
-        chip.addEventListener('touchstart', e => { e.preventDefault(); chip.classList.add('pressed'); handle(); }, { passive: false });
-        chip.addEventListener('touchend',   () => setTimeout(() => chip.classList.remove('pressed'), 100));
-        chip.addEventListener('click', handle);
-      });
-
-      document.querySelectorAll('.pm-btn').forEach(btn => {
-        const id     = btn.dataset.id;
-        const action = btn.dataset.action;
-        const handle = () => {
-          const cur  = parseInt(document.getElementById(`pm-${id}`).value) || 1;
-          const next = action === 'plus' ? cur + 1 : Math.max(1, cur - 1);
-          setMenge(id, next);
-          saveWarenkorb(id);
-        };
-        btn.addEventListener('touchstart', e => { e.preventDefault(); btn.classList.add('pressed'); handle(); }, { passive: false });
-        btn.addEventListener('touchend',   () => setTimeout(() => btn.classList.remove('pressed'), 100));
-        btn.addEventListener('click', handle);
-      });
-
-      document.querySelectorAll('.pm-display').forEach(input => {
-        const id = input.id.replace('pm-', '');
-        input.addEventListener('change', () => { setMenge(id, Math.max(1, parseInt(input.value) || 1)); saveWarenkorb(id); });
-      });
-
-      document.querySelectorAll('.artikel-foto-btn[data-foto]').forEach(btn => {
-        btn.addEventListener('click', () => openFoto(btn.dataset.foto, btn.dataset.name));
-      });
-    }
-
-    function setMenge(id, val) {
-      if (!bestellungen[id]) bestellungen[id] = { bestellen: true, menge: val };
-      bestellungen[id].menge = val;
-      const input = document.getElementById(`pm-${id}`);
-      if (input) input.value = val;
-      document.querySelectorAll(`.chip[data-id="${id}"]`).forEach(c =>
-        c.classList.toggle('selected', parseInt(c.dataset.val) === val)
-      );
-    }
-
-    async function saveWarenkorb(artikelId) {
-      if (!sessionId || !currentBereichId) return;
-      const item = bestellungen[artikelId];
-      if (!item || item.bestellen === null || item.bestellen === undefined) return;
-      const artikel = alleArtikel.find(a => a.id === artikelId);
-      const bereich = alleBereiche.find(b => b.id === currentBereichId);
-      try {
-        await setDoc(doc(db, 'bestellungen_session', sessionId, 'warenkorb', artikelId), {
-          artikelId, artikelName: artikel?.name ?? artikelId,
-          bestellen: item.bestellen, menge: item.menge ?? 1,
-          mitarbeiter: userName, bereich: currentBereichId, bereichName: bereich?.name ?? '',
-          timestamp: serverTimestamp(), quelle: 'check',
+        updateDoc(doc(db, 'bestellungen_session', SID), {
+          [`bereichStatus.${S.myBereichId}.status`]: 'abgebrochen',
+          zuletzt: serverTimestamp(),
         });
       } catch(e) {}
     }
+  });
 
-    /* ── Heartbeat ── */
-    function startHeartbeat() {
-      stopHeartbeat();
-      heartbeatTimer = setInterval(async () => {
-        if (!sessionId) return;
-        try { await updateDoc(doc(db, 'bestellungen_session', sessionId), { [`heartbeats.${userName}`]: serverTimestamp() }); } catch(e) {}
-      }, 30_000);
-    }
-    function stopHeartbeat() {
-      if (heartbeatTimer) { clearInterval(heartbeatTimer); heartbeatTimer = null; }
-    }
+  /* ══════════════════════════════════════════════
+     SCREEN: BEREICH-AUSWAHL
+  ══════════════════════════════════════════════ */
+  function renderJoin() {
+    document.getElementById('live-badge').classList.add('on');
 
-    /* ── Abandoned Check ── */
-    function startAbandonedCheck() {
-      stopAbandonedCheck();
-      abandonedCheckTimer = setInterval(async () => {
-        if (!sessionId || !latestSessionData) return;
-        const now = Date.now(), STALE_MS = 90_000, updates = {};
-        Object.entries(latestSessionData.heartbeats ?? {}).forEach(([name, ts]) => {
-          const lastBeat = ts?.toMillis?.() ?? 0;
-          if (lastBeat === 0) return;
-          if (now - lastBeat > STALE_MS) {
-            Object.entries(latestSessionData.bereichStatus ?? {}).forEach(([bid, bs]) => {
-              if (bs.mitarbeiter === name && bs.status === 'gesperrt')
-                updates[`bereichStatus.${bid}.status`] = 'abgebrochen';
-            });
-          }
-        });
-        if (Object.keys(updates).length > 0) {
-          try { await updateDoc(doc(db, 'bestellungen_session', sessionId), updates); } catch(e) {}
-        }
-      }, 30_000);
-    }
-    function stopAbandonedCheck() {
-      if (abandonedCheckTimer) { clearInterval(abandonedCheckTimer); abandonedCheckTimer = null; }
-    }
+    const sessionData   = S.session;
+    const bereichStatus = sessionData?.bereichStatus || {};
 
-    /* ── Session Listener ── */
-    function startSessionListener(sid) {
-      if (sessionUnsubscribe) { sessionUnsubscribe(); sessionUnsubscribe = null; }
-      sessionUnsubscribe = onSnapshot(doc(db, 'bestellungen_session', sid), handleSessionUpdate);
-    }
-    function stopSessionListener() {
-      if (sessionUnsubscribe) { sessionUnsubscribe(); sessionUnsubscribe = null; }
-    }
+    // Count active participants (not including me)
+    const andereAktiv = Object.values(bereichStatus).filter(bs =>
+      ACTIVE_STATS.has(bs.status) && bs.mitarbeiterId !== S.user.id
+    ).length;
+    document.getElementById('join-sub').textContent =
+      andereAktiv > 0
+        ? `${andereAktiv} Kollege${andereAktiv > 1 ? 'n' : ''} gerade aktiv · Wähle deinen Bereich`
+        : 'Wähle deinen Bereich für die Lagerbestellung';
 
-    function handleSessionUpdate(snap) {
-      if (!snap.exists()) return;
-      const data = snap.data();
-      latestSessionData = data;
+    document.getElementById('bereich-list').innerHTML = S.bereiche.map(b => {
+      const bs     = bereichStatus[b.id];
+      const status = bs?.status || 'frei';
+      const count  = S.alleArtikel.filter(a => a.bereich === b.id).length;
+      const isMe   = bs?.mitarbeiterId === S.user.id;
 
-      if (!snap.metadata.hasPendingWrites) {
-        const now = Date.now(), STALE_MS = 90_000, updates = {};
-        Object.entries(data.heartbeats ?? {}).forEach(([name, ts]) => {
-          const lastBeat = ts?.toMillis?.() ?? 0;
-          if (lastBeat === 0) return;
-          if (now - lastBeat > STALE_MS) {
-            Object.entries(data.bereichStatus ?? {}).forEach(([bid, bs]) => {
-              if (bs.mitarbeiter === name && bs.status === 'gesperrt')
-                updates[`bereichStatus.${bid}.status`] = 'abgebrochen';
-            });
-          }
-        });
-        if (Object.keys(updates).length > 0) updateDoc(snap.ref, updates).catch(() => {});
+      let iconHtml, badgeHtml, cardClass, subText;
+      let clickable = false;
+      let cardonclick = '';
+
+      if (status === 'erledigt') {
+        iconHtml  = `<div class="s-dot erledigt"></div>`;
+        badgeHtml = `<div class="bc-badge done">✓ Fertig</div>`;
+        cardClass = 'is-done';
+        subText   = bs.mitarbeiter ? `Erledigt von ${esc(bs.mitarbeiter)}` : 'Erledigt';
+
+      } else if (ACTIVE_STATS.has(status) && !isMe) {
+        const initials = (bs?.mitarbeiter || '?').split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase();
+        iconHtml  = `<span style="font-size:1.1rem;line-height:1;">🔒</span>`;
+        badgeHtml = `<div class="bc-badge aktiv">${esc(initials)} läuft</div>`;
+        cardClass = 'blocked';
+        subText   = bs.mitarbeiter ? `${esc(bs.mitarbeiter)} arbeitet hier` : 'Belegt';
+
+      } else if (ACTIVE_STATS.has(status) && isMe) {
+        iconHtml  = `<div class="s-dot frei"></div>`;
+        badgeHtml = `<div class="bc-badge mine">Fortführen →</div>`;
+        cardClass = 'is-mine clickable';
+        subText   = 'Dein Bereich – weitermachen';
+        clickable = true;
+
+      } else if (status === 'abgebrochen') {
+        iconHtml  = `<div class="s-dot abgebrochen"></div>`;
+        badgeHtml = `<div class="bc-badge broken">Abgebrochen</div>`;
+        cardClass = 'is-broken clickable';
+        subText   = 'Fortführen?';
+        clickable = true;
+
+      } else {
+        iconHtml  = `<div class="s-dot frei"></div>`;
+        badgeHtml = `<div class="bc-badge frei">Frei</div>`;
+        cardClass = 'clickable';
+        subText   = '';
+        clickable = true;
       }
 
-      if (data.alleErledigt) checkAlleDone();
+      if (clickable) cardonclick = `onclick="pickBereich('${b.id}')"`;
 
-      const joinScreen = document.getElementById('screen-join');
-      if (!joinScreen.classList.contains('hidden')) {
-        renderBereichList(data);
-        if (selectedBereichId) {
-          const row = document.querySelector(`.bereich-row[data-bereich-id="${selectedBereichId}"]`);
-          if (row && !row.classList.contains('blocked') && !row.classList.contains('erledigt')) {
-            row.classList.add('selected');
-          } else {
-            selectedBereichId = null;
-            document.getElementById('btn-join-start').disabled = true;
-            document.getElementById('btn-join-start').textContent = 'Bereich auswählen…';
-            showToast('Dein gewählter Bereich wurde soeben von einem Kollegen übernommen', 'error');
-          }
-        }
-      }
-
-      const waitScreen = document.getElementById('screen-wait');
-      if (!waitScreen.classList.contains('hidden')) renderWaitStatus(data);
-    }
-
-    /* ── Bereich abschließen ── */
-    window.abschliesseBereich = async function() {
-      try {
-        await runTransaction(db, async tx => {
-          const ref  = doc(db, 'bestellungen_session', sessionId);
-          const snap = await tx.get(ref);
-          if (!snap.exists()) throw new Error('Session nicht gefunden');
-          const data = snap.data();
-          const newStatus = {
-            ...(data.bereichStatus || {}),
-            [currentBereichId]: { status:'erledigt', mitarbeiter:userName, gesperrtAt:data.bereichStatus?.[currentBereichId]?.gesperrtAt ?? null, erledigtAt:serverTimestamp() }
-          };
-          const alleDone = alleBereiche.every(b => {
-            const s = newStatus[b.id]?.status;
-            return s === 'erledigt' || s === 'abgebrochen';
-          });
-          tx.update(ref, { bereichStatus: newStatus, alleErledigt: alleDone, [`heartbeats.${userName}`]: serverTimestamp() });
-        });
-        stopHeartbeat();
-        showScreen('wait');
-        if (latestSessionData) renderWaitStatus(latestSessionData);
-        if (latestSessionData?.alleErledigt) checkAlleDone();
-      } catch(e) {
-        showToast('Fehler: ' + e.message, 'error');
-      }
-    };
-
-    /* ── Wait Screen ── */
-    function renderWaitStatus(data) {
-      const bereichStatus = data.bereichStatus || {};
-      const listEl = document.getElementById('wait-bereich-list');
-      listEl.innerHTML = alleBereiche.map(b => {
-        const bs = bereichStatus[b.id] || { status: 'frei' };
-        let dotHtml = '', rowClass = '', infoText = '';
-        if (bs.status === 'erledigt') {
-          dotHtml = '<div style="width:10px;height:10px;border-radius:50%;background:var(--ok);flex-shrink:0;"></div>';
-          rowClass = 'w-erledigt'; infoText = `Erledigt von ${bs.mitarbeiter}`;
-        } else if (bs.status === 'gesperrt') {
-          dotHtml = '<span style="font-size:0.85rem;">🔒</span>';
-          rowClass = 'w-gesperrt'; infoText = `${bs.mitarbeiter} ist gerade hier`;
-        } else if (bs.status === 'abgebrochen') {
-          dotHtml = '<div style="width:10px;height:10px;border-radius:50%;background:var(--crit);flex-shrink:0;"></div>';
-          rowClass = 'w-abgebrochen'; infoText = 'Abgebrochen';
-        } else {
-          dotHtml = '<div style="width:10px;height:10px;border-radius:50%;background:var(--brand);flex-shrink:0;"></div>';
-          rowClass = 'w-frei'; infoText = 'Noch nicht bearbeitet';
-        }
-        return `
-          <div class="wait-bereich-row ${rowClass}">
-            ${dotHtml}
-            <div style="flex:1;min-width:0;">
-              <div style="font-size:14px;font-weight:600;">${esc(prettyBereich(b.name))}</div>
-              <div style="font-size:11px;color:var(--ink-3);font-family:var(--font-mono);margin-top:2px;">${esc(infoText)}</div>
-            </div>
-          </div>`;
-      }).join('');
-
-      const teilnehmer = data.teilnehmer || [];
-      const teilBlock  = document.getElementById('wait-teilnehmer-block');
-      if (teilnehmer.length > 0) {
-        teilBlock.style.display = 'block';
-        document.getElementById('wait-teilnehmer-list').innerHTML = teilnehmer.map(t => `
-          <span style="background:var(--surface);border-radius:20px;padding:5px 12px;font-size:12px;font-weight:600;box-shadow:inset 0 0 0 1px var(--hairline);">
-            ${esc(t.name)}
-          </span>`).join('');
-      }
-
-      const offen = alleBereiche.filter(b => {
-        const s = bereichStatus[b.id]?.status;
-        return s !== 'erledigt' && s !== 'abgebrochen';
-      });
-      document.getElementById('wait-subtitle').textContent = offen.length > 0
-        ? `Noch ${offen.length} Bereich${offen.length > 1 ? 'e' : ''} offen…`
-        : 'Alle Bereiche fertig!';
-
-      const hasFree = alleBereiche.some(b => {
-        const s = bereichStatus[b.id]?.status;
-        return !s || s === 'frei' || s === 'abgebrochen';
-      });
-      const btnWeiterer = document.getElementById('btn-weiterer-bereich');
-      if (btnWeiterer) btnWeiterer.style.display = hasFree ? '' : 'none';
-    }
-
-    window.wähleWeiterenBereich = function() { showJoinScreen(); };
-
-    function checkAlleDone() {
-      document.getElementById('wait-spinner').style.display = 'none';
-      document.getElementById('wait-subtitle').textContent = 'Alle Bereiche fertig!';
-      document.getElementById('wait-bottom').classList.remove('hidden');
-    }
-
-    window.backToWait = function() { showScreen('wait'); };
-
-    /* ── Unterschrift ── */
-    window.showSignature = async function() {
-      let warenkorbItems = [];
-      try {
-        const snap = await getDocs(collection(db, 'bestellungen_session', sessionId, 'warenkorb'));
-        snap.forEach(d => warenkorbItems.push({ id: d.id, ...d.data() }));
-      } catch(e) {}
-
-      const zuBestellen = warenkorbItems.filter(i => i.bestellen === true);
-      const teilnehmer  = latestSessionData?.teilnehmer ?? [];
-      const alleNamen   = teilnehmer.map(t => t.name);
-
-      document.getElementById('summary-grid').innerHTML = `
-        <div class="summary-row"><span class="summary-key">Mitarbeiter</span><span class="summary-val">${esc(alleNamen.join(' · ') || userName)}</span></div>
-        <div class="summary-row"><span class="summary-key">Datum</span><span class="summary-val">${new Date().toLocaleDateString('de-DE')} · ${new Date().toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'})}</span></div>
-        <div class="summary-row"><span class="summary-key">Bereiche</span><span class="summary-val">${alleBereiche.length} gesamt</span></div>
-        <div class="summary-row"><span class="summary-key">Zu bestellen</span><span class="summary-val" style="color:${zuBestellen.length > 0 ? 'var(--crit)' : 'var(--ok)'};">${zuBestellen.length} Artikel</span></div>`;
-
-      showScreen('sig');
-      initCanvas();
-    };
-
-    /* ── Canvas ── */
-    let drawing = false, hasSig = false;
-    function initCanvas() {
-      const canvas = document.getElementById('sig-canvas');
-      const ctx    = canvas.getContext('2d');
-      canvas.width  = canvas.parentElement.clientWidth;
-      canvas.height = 160;
-      ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--brand').trim();
-      ctx.lineWidth = 2.5; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-
-      function getPos(e) {
-        const r = canvas.getBoundingClientRect();
-        const t = e.touches ? e.touches[0] : e;
-        return { x: (t.clientX - r.left) * (canvas.width / r.width), y: (t.clientY - r.top) * (canvas.height / r.height) };
-      }
-      canvas.addEventListener('mousedown',  e => { drawing = true; ctx.beginPath(); const p = getPos(e); ctx.moveTo(p.x, p.y); });
-      canvas.addEventListener('mousemove',  e => { if (!drawing) return; const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); hasSig = true; document.getElementById('sig-hint').style.opacity = '0'; });
-      canvas.addEventListener('mouseup',    () => drawing = false);
-      canvas.addEventListener('mouseleave', () => drawing = false);
-      canvas.addEventListener('touchstart', e => { e.preventDefault(); drawing = true; ctx.beginPath(); const p = getPos(e); ctx.moveTo(p.x, p.y); }, { passive: false });
-      canvas.addEventListener('touchmove',  e => { e.preventDefault(); if (!drawing) return; const p = getPos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); hasSig = true; document.getElementById('sig-hint').style.opacity = '0'; }, { passive: false });
-      canvas.addEventListener('touchend',   () => drawing = false);
-    }
-
-    window.clearSig = function() {
-      const c = document.getElementById('sig-canvas');
-      c.getContext('2d').clearRect(0, 0, c.width, c.height);
-      hasSig = false;
-      document.getElementById('sig-hint').style.opacity = '1';
-    };
-
-    /* ── Submit ── */
-    window.submitCheck = async function() {
-      if (!hasSig) { showToast('Bitte zuerst unterschreiben!', 'error'); return; }
-      const btn = document.getElementById('btn-submit');
-      btn.disabled = true; btn.textContent = 'Wird gespeichert…';
-
-      try {
-        const warenkorbSnap = await getDocs(collection(db, 'bestellungen_session', sessionId, 'warenkorb'));
-        const bestellungenMap = {}, nachbestellungen = [];
-        warenkorbSnap.forEach(d => {
-          const item = d.data(), art = alleArtikel.find(a => a.id === item.artikelId);
-          bestellungenMap[item.artikelId] = { bestellen: item.bestellen, menge: item.menge ?? 1, mitarbeiter: item.mitarbeiter };
-          if (item.bestellen) nachbestellungen.push({ id: item.artikelId, name: item.artikelName, menge: item.menge ?? 1, mitarbeiter: item.mitarbeiter, location: art?.location ?? '', lp: art?.lp ?? '', einheit: art?.minEinheit ?? 'Stk' });
-        });
-
-        const teilnehmer = latestSessionData?.teilnehmer ?? [{ name: userName }];
-        const alleNamen  = teilnehmer.map(t => t.name);
-
-        await addDoc(collection(db, 'bestellungen'), {
-          mitarbeiter: alleNamen.join(' · '), mitarbeiterListe: alleNamen,
-          datum: serverTimestamp(), unterschrift: document.getElementById('sig-canvas').toDataURL('image/png'),
-          status: 'abgeschlossen', sessionId, quelle: 'check',
-          bestellungen: bestellungenMap, nachbestellungen,
-        });
-
-        await updateDoc(doc(db, 'bestellungen_session', sessionId), { status: 'abgeschlossen' });
-
-        stopHeartbeat(); stopAbandonedCheck(); stopSessionListener();
-
-        try {
-          const wkSnap = await getDocs(collection(db, 'bestellungen_session', sessionId, 'warenkorb'));
-          if (!wkSnap.empty) { const b = writeBatch(db); wkSnap.forEach(d => b.delete(d.ref)); await b.commit(); }
-        } catch(e) {}
-        try { await deleteDoc(doc(db, 'bestellungen_session', sessionId)); } catch(e) {}
-
-        sessionId = null; currentBereichId = null; bestellungen = {};
-        alert(`✅ Lagerbestellung abgeschlossen!\n${nachbestellungen.length} Artikel zur Bestellung gemeldet.`);
-        window.location.href = './mitarbeiter.html';
-      } catch(e) {
-        btn.disabled = false;
-        btn.textContent = '📄 Absenden & Fertig';
-        showToast('Fehler: ' + e.message, 'error');
-      }
-    };
-
-    /* ── Stornieren ── */
-    window.storniereBestellung = async function() {
-      const ok = confirm('Lagerbestellung abbrechen?\n\nDein Bereich wird freigegeben, andere können weitermachen.');
-      if (!ok) return;
-      try {
-        stopHeartbeat(); stopAbandonedCheck();
-        if (joinUnsubscribe) { joinUnsubscribe(); joinUnsubscribe = null; }
-        if (sessionId && currentBereichId) {
-          const sessionRef = doc(db, 'bestellungen_session', sessionId);
-          const snap = await getDoc(sessionRef);
-          if (snap.exists()) {
-            const data = snap.data();
-            const andereAktiv = (data.teilnehmer || []).filter(t => t.name !== userName);
-            if (andereAktiv.length > 0) {
-              await updateDoc(sessionRef, { [`bereichStatus.${currentBereichId}.status`]:'frei', [`bereichStatus.${currentBereichId}.mitarbeiter`]:null, teilnehmer:(data.teilnehmer||[]).filter(t=>t.name!==userName) });
-              try { const wk = await getDocs(collection(db,'bestellungen_session',sessionId,'warenkorb')); const batch=writeBatch(db); wk.forEach(d=>{if(d.data().mitarbeiter===userName)batch.delete(d.ref);}); await batch.commit(); } catch(e) {}
-            } else {
-              try { const wk = await getDocs(collection(db,'bestellungen_session',sessionId,'warenkorb')); if(!wk.empty){const b=writeBatch(db);wk.forEach(d=>b.delete(d.ref));await b.commit();} } catch(e) {}
-              await deleteDoc(sessionRef);
-            }
-          }
-        }
-        stopSessionListener();
-        sessionId = null; currentBereichId = null; bestellungen = {};
-      } catch(e) { showToast('Fehler beim Stornieren: ' + e.message, 'error'); }
-      window.location.href = './mitarbeiter.html';
-    };
-
-    /* ── Foto Modal ── */
-    window.openFoto = function(url, name) {
-      const modal = document.createElement('div');
-      modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(8px);';
-      modal.innerHTML = `
-        <div style="background:var(--surface);border-radius:24px;overflow:hidden;max-width:440px;width:100%;box-shadow:0 25px 60px rgba(0,0,0,.5);">
-          <div style="padding:14px 18px;border-bottom:0.5px solid var(--hairline);display:flex;justify-content:space-between;align-items:center;">
-            <span style="font-size:14px;font-weight:600;">${esc(name)}</span>
-            <button onclick="this.closest('[style]').remove()" style="background:var(--surface-3);border:none;color:var(--ink-2);width:28px;height:28px;border-radius:14px;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
+      return `
+        <div class="bereich-card ${cardClass}" data-id="${b.id}" ${cardonclick}>
+          <div class="bc-icon">${iconHtml}</div>
+          <div class="bc-info">
+            <div class="bc-name">${esc(prettyName(b.name))}</div>
+            <div class="bc-sub">${count} Artikel${subText ? ' · ' + subText : ''}</div>
           </div>
-          <img src="${esc(url)}" style="width:100%;max-height:400px;object-fit:contain;background:var(--surface-2);display:block;">
-          <div style="padding:10px 16px;font-size:11px;color:var(--ink-3);font-family:var(--font-mono);text-align:center;">Soll-Zustand</div>
+          ${badgeHtml}
         </div>`;
-      modal.onclick = e => { if (e.target === modal) modal.remove(); };
-      document.body.appendChild(modal);
-    };
+    }).join('');
+  }
 
-    /* ── Toast ── */
-    function showToast(msg, type = 'success') {
-      const t = document.createElement('div');
-      t.style.cssText = `position:fixed;bottom:80px;left:50%;transform:translateX(-50%);
-        background:var(--surface);
-        color:${type === 'error' ? 'var(--crit)' : 'var(--ok)'};
-        border-radius:12px;padding:10px 18px;font-size:13px;
-        box-shadow:var(--sh-3),inset 0 0 0 1px ${type==='error'?'var(--crit)':'var(--ok)'};
-        z-index:3000;white-space:nowrap;max-width:90vw;overflow:hidden;`;
-      t.textContent = msg;
-      document.body.appendChild(t);
-      setTimeout(() => t.remove(), 2800);
+  window.goJoin = function() { showScreen('join'); renderJoin(); };
+
+  /* ── Pick & lock bereich (Transaction) ── */
+  window.pickBereich = async function(bereichId) {
+    const card = document.querySelector(`.bereich-card[data-id="${bereichId}"]`);
+    if (card) { card.style.opacity = '0.5'; card.style.pointerEvents = 'none'; }
+
+    try {
+      if (!auth.currentUser) await signInAnonymously(auth);
+
+      const sessRef = doc(db, 'bestellungen_session', SID);
+      await runTransaction(db, async tx => {
+        const snap     = await tx.get(sessRef);
+        const isActive = snap.exists() && snap.data().status === 'aktiv';
+
+        if (isActive) {
+          const data = snap.data();
+          const bs   = data.bereichStatus?.[bereichId];
+
+          // Block if someone else has it active
+          if (ACTIVE_STATS.has(bs?.status) && bs.mitarbeiterId !== S.user.id)
+            throw new Error(`Bereich wird gerade von ${esc(bs.mitarbeiter)} bearbeitet`);
+          if (bs?.status === 'erledigt')
+            throw new Error('Dieser Bereich ist bereits abgeschlossen');
+
+          const alreadyIn = (data.teilnehmer || []).some(t => t.id === S.user.id);
+          tx.update(sessRef, {
+            [`bereichStatus.${bereichId}`]: {
+              status:        'aktiv',
+              mitarbeiter:   S.user.name,
+              mitarbeiterId: S.user.id,
+              startedAt:     serverTimestamp(),
+              erledigtAt:    null,
+            },
+            ...(!alreadyIn ? { teilnehmer: arrayUnion({ id: S.user.id, name: S.user.name, joinedAt: new Date().toISOString() }) } : {}),
+            [`heartbeats.${S.user.id}`]: serverTimestamp(),
+            zuletzt: serverTimestamp(),
+          });
+        } else {
+          tx.set(sessRef, {
+            status:  'aktiv', modus: 'team',
+            startzeit: serverTimestamp(), zuletzt: serverTimestamp(),
+            teilnehmer: [{ id: S.user.id, name: S.user.name, joinedAt: new Date().toISOString() }],
+            bereichStatus: {
+              [bereichId]: {
+                status: 'aktiv', mitarbeiter: S.user.name, mitarbeiterId: S.user.id,
+                startedAt: serverTimestamp(), erledigtAt: null,
+              }
+            },
+            heartbeats: { [S.user.id]: serverTimestamp() },
+          });
+        }
+      });
+
+      S.myBereichId = bereichId;
+      await setupPresence(bereichId);
+      await loadWarenkorb();
+      renderCheck();
+      showScreen('check');
+
+    } catch(e) {
+      toast(e.message, 'error');
+      if (card) { card.style.opacity = ''; card.style.pointerEvents = ''; }
     }
+  };
 
-    /* ── Screens ── */
-    function showScreen(name) {
-      ['pin', 'join', 'check', 'wait', 'sig'].forEach(s =>
-        document.getElementById(`screen-${s}`).classList.toggle('hidden', s !== name)
+  /* ── Load existing warenkorb for my bereich ── */
+  async function loadWarenkorb() {
+    S.warenkorb = {};
+    try {
+      const snap = await getDocs(
+        query(collection(db, 'warenkorb'), where('sessionId', '==', SID))
       );
+      snap.forEach(d => {
+        const item = d.data();
+        if (item.bereichId === S.myBereichId) {
+          S.warenkorb[item.artikelId] = { bestellen: item.bestellen, menge: item.menge ?? 1 };
+        }
+      });
+    } catch(e) {}
+  }
+
+  /* ══════════════════════════════════════════════
+     SCREEN: ARTIKEL-CHECK
+  ══════════════════════════════════════════════ */
+  function renderCheck() {
+    const b = S.bereiche.find(x => x.id === S.myBereichId);
+    document.getElementById('check-bereich-label').textContent = prettyName(b?.name || '');
+
+    S.myArtikel = S.alleArtikel
+      .filter(a => a.bereich === S.myBereichId)
+      .sort((a, b) => naturalSort(a.lp || '', b.lp || ''));
+
+    document.getElementById('check-body').innerHTML =
+      S.myArtikel.length === 0
+        ? `<div style="padding:60px 20px;text-align:center;color:var(--ink-3);font-size:14px;">Keine Artikel in diesem Bereich</div>`
+        : S.myArtikel.map(buildArtikelCard).join('');
+
+    attachCheckListeners();
+    updateProgress();
+    window.scrollTo(0, 0);
+  }
+
+  function buildArtikelCard(a) {
+    const item    = S.warenkorb[a.id] || { bestellen: null, menge: 1 };
+    const bestell = item.bestellen;
+    const menge   = item.menge ?? 1;
+    const unit    = a.minEinheit || a.maxEinheit || 'Stk';
+    const state   = stockState(a.stock, a.min);
+
+    // MMI cells
+    const minC = a.min  != null ? `<div class="mmi-cell mmi-min"><span class="mmi-lbl">MIN</span><span class="mmi-val">${a.min}</span><span class="mmi-unit">${unit}</span></div>` : '';
+    const istC = a.stock != null ? `<div class="mmi-cell mmi-ist-${state}"><span class="mmi-lbl">IST</span><span class="mmi-val">${a.stock}</span><span class="mmi-unit">${unit}</span></div>` : '';
+    const maxC = a.max  != null ? `<div class="mmi-cell mmi-max"><span class="mmi-lbl">MAX</span><span class="mmi-val">${a.max}</span><span class="mmi-unit">${unit}</span></div>` : '';
+    const mmiHtml = (minC || istC || maxC) ? `<div class="mmi-row">${minC}${istC}${maxC}</div>` : '';
+
+    // Stock bar
+    let barHtml = '';
+    if (a.max != null) {
+      const fill   = a.max > 0 ? Math.min(100, Math.round(((a.stock ?? 0) / a.max) * 100)) : 0;
+      const minPct = (a.min != null && a.max > 0) ? Math.min(100, Math.round((a.min / a.max) * 100)) : null;
+      const marker = minPct != null ? `<div class="stock-min-marker" style="left:${minPct}%"></div>` : '';
+      barHtml = `<div class="stock-bar"><div class="stock-fill ${state}" style="width:${fill}%"></div>${marker}</div>`;
     }
-  </script>
-  <script src="../js/pwa.js"></script>
+
+    // Photos
+    const fotoItems = [];
+    if (a.fotoUrl)      fotoItems.push(`<div><div class="a-foto-btn" data-foto="${esc(a.fotoUrl)}" data-name="${esc(a.name)}"><img src="${esc(a.fotoUrl)}" alt="" loading="lazy"></div><div class="a-foto-label">PRODUKT</div></div>`);
+    if (a.lagerFotoUrl) fotoItems.push(`<div><div class="a-foto-btn" data-foto="${esc(a.lagerFotoUrl)}" data-name="Lagerort: ${esc(a.name)}"><img src="${esc(a.lagerFotoUrl)}" alt="" loading="lazy"></div><div class="a-foto-label">LAGERORT</div></div>`);
+    const fotosHtml = fotoItems.length
+      ? `<div class="a-fotos">${fotoItems.join('')}</div>`
+      : `<div class="a-fotos"><div class="a-foto-btn" style="cursor:default;opacity:0.35;pointer-events:none;">📦</div></div>`;
+
+    // Chips
+    const chipsHtml = QUICK_VALUES.map(v =>
+      `<div class="chip ${(menge === v && bestell) ? 'sel' : ''}" data-id="${a.id}" data-val="${v}">${v}</div>`
+    ).join('');
+
+    // Suggested qty
+    const suggestQty = (a.max != null && a.stock != null) ? Math.max(1, a.max - (a.stock ?? 0)) : null;
+    const jaLabel    = suggestQty ? `Bestellen (+${suggestQty})` : 'Bestellen';
+
+    const cardCls = bestell === true ? 'is-bestell' : bestell === false ? 'is-ok' : '';
+    return `
+      <div class="artikel-card ${cardCls}" id="card-${a.id}">
+        <div class="a-header">
+          ${fotosHtml}
+          <div class="a-info">
+            <div class="a-name">${esc(a.name)}</div>
+            <div class="a-lp">
+              <span class="a-lp-chip">${esc(a.lp || '–')}</span>
+              ${a.location ? `<span style="color:var(--ink-4);">·</span><span>${esc(a.location)}</span>` : ''}
+            </div>
+            ${mmiHtml}
+            ${barHtml}
+          </div>
+        </div>
+        ${a.hinweis ? `<div class="a-hinweis">💡 <span>${esc(a.hinweis)}</span></div>` : ''}
+        <div class="bestell-div"></div>
+        <div class="bestell-body">
+          <div class="bestell-q">Muss bestellt werden?</div>
+          <div class="ja-nein-row">
+            <button class="jn-btn nein ${bestell === false ? 'sel' : ''}" data-id="${a.id}" data-val="nein">✓ Ausreichend</button>
+            <button class="jn-btn ja   ${bestell === true  ? 'sel' : ''}" data-id="${a.id}" data-val="ja">${jaLabel}</button>
+          </div>
+          <div class="menge-wrap ${bestell === true ? 'vis' : ''}" id="menge-${a.id}">
+            <div class="menge-lbl">Wie viel soll bestellt werden?</div>
+            <div class="chips-row" data-id="${a.id}">${chipsHtml}</div>
+            <div class="pm-row">
+              <button class="pm-btn" data-id="${a.id}" data-action="minus">−</button>
+              <input  class="pm-disp" id="pm-${a.id}" type="number" inputmode="numeric" value="${menge}" min="1">
+              <button class="pm-btn" data-id="${a.id}" data-action="plus">+</button>
+            </div>
+          </div>
+        </div>
+      </div>`;
+  }
+
+  function attachCheckListeners() {
+    // Ja / Nein
+    document.querySelectorAll('.jn-btn').forEach(btn => {
+      const handle = () => {
+        const id      = btn.dataset.id;
+        const bestell = btn.dataset.val === 'ja';
+        if (!S.warenkorb[id]) S.warenkorb[id] = { bestellen: null, menge: 1 };
+        S.warenkorb[id].bestellen = bestell;
+
+        document.getElementById(`card-${id}`).className = `artikel-card ${bestell ? 'is-bestell' : 'is-ok'}`;
+        document.querySelectorAll(`.jn-btn[data-id="${id}"]`).forEach(b =>
+          b.classList.toggle('sel', b.dataset.val === btn.dataset.val)
+        );
+        document.getElementById(`menge-${id}`).classList.toggle('vis', bestell);
+        updateProgress();
+        saveWarenkorb(id); // fire-and-forget
+      };
+      btn.addEventListener('touchstart', e => { e.preventDefault(); btn.style.transform = 'scale(0.95)'; handle(); }, { passive: false });
+      btn.addEventListener('touchend',   () => { btn.style.transform = ''; });
+      btn.addEventListener('click', handle);
+    });
+
+    // Chips
+    document.querySelectorAll('.chip').forEach(chip => {
+      const handle = () => { setMenge(chip.dataset.id, +chip.dataset.val); saveWarenkorb(chip.dataset.id); };
+      chip.addEventListener('touchstart', e => { e.preventDefault(); handle(); }, { passive: false });
+      chip.addEventListener('click', handle);
+    });
+
+    // ± buttons
+    document.querySelectorAll('.pm-btn').forEach(btn => {
+      const handle = () => {
+        const id  = btn.dataset.id;
+        const cur = parseInt(document.getElementById(`pm-${id}`).value) || 1;
+        const nxt = btn.dataset.action === 'plus' ? cur + 1 : Math.max(1, cur - 1);
+        setMenge(id, nxt); saveWarenkorb(id);
+      };
+      btn.addEventListener('touchstart', e => { e.preventDefault(); handle(); }, { passive: false });
+      btn.addEventListener('click', handle);
+    });
+
+    // Manual input
+    document.querySelectorAll('.pm-disp').forEach(inp => {
+      const id = inp.id.replace('pm-', '');
+      inp.addEventListener('change', () => { setMenge(id, Math.max(1, parseInt(inp.value) || 1)); saveWarenkorb(id); });
+    });
+
+    // Photo buttons
+    document.querySelectorAll('.a-foto-btn[data-foto]').forEach(btn => {
+      btn.addEventListener('click', () => openFoto(btn.dataset.foto, btn.dataset.name));
+    });
+  }
+
+  function setMenge(id, val) {
+    if (!S.warenkorb[id]) S.warenkorb[id] = { bestellen: true, menge: val };
+    S.warenkorb[id].menge = val;
+    const inp = document.getElementById(`pm-${id}`);
+    if (inp) inp.value = val;
+    document.querySelectorAll(`.chip[data-id="${id}"]`).forEach(c =>
+      c.classList.toggle('sel', +c.dataset.val === val)
+    );
+  }
+
+  function updateProgress() {
+    const total  = S.myArtikel.length;
+    const beant  = S.myArtikel.filter(a => S.warenkorb[a.id]?.bestellen != null).length;
+    const pct    = total > 0 ? Math.round((beant / total) * 100) : 0;
+    document.getElementById('prog-fill').style.width  = pct + '%';
+    document.getElementById('prog-text').textContent  = `${beant} / ${total} beantwortet`;
+    document.getElementById('prog-pct').textContent   = pct + '%';
+    document.getElementById('btn-finish').classList.toggle('hidden', beant < total || total === 0);
+  }
+
+  /* ── Save warenkorb item (fire-and-forget) ── */
+  async function saveWarenkorb(artikelId) {
+    if (!S.myBereichId) return;
+    const item = S.warenkorb[artikelId];
+    if (!item || item.bestellen == null) return;
+
+    const artikel  = S.alleArtikel.find(a => a.id === artikelId);
+    const bereich  = S.bereiche.find(b => b.id === S.myBereichId);
+    const docId    = `${SID}_${artikelId}`;
+
+    try {
+      await setDoc(doc(db, 'warenkorb', docId), {
+        sessionId:      SID,
+        artikelId,
+        artikelName:    artikel?.name ?? artikelId,
+        bereichId:      S.myBereichId,
+        bereichName:    bereich?.name ?? '',
+        mitarbeiter:    S.user.name,
+        mitarbeiterId:  S.user.id,
+        bestellen:      item.bestellen,
+        menge:          item.menge ?? 1,
+        einheit:        artikel?.minEinheit || artikel?.maxEinheit || 'Stk',
+        timestamp:      serverTimestamp(),
+      }, { merge: true });
+    } catch(e) {}
+  }
+
+  /* ── Bereich fertig ── */
+  window.bereichFertig = async function() {
+    const btn = document.getElementById('btn-finish');
+    btn.disabled = true; btn.textContent = 'Wird gespeichert…';
+
+    try {
+      const sessRef = doc(db, 'bestellungen_session', SID);
+      let alleErledigt = false;
+
+      await runTransaction(db, async tx => {
+        const snap = await tx.get(sessRef);
+        if (!snap.exists()) throw new Error('Session nicht gefunden');
+        const data   = snap.data();
+        const newBs  = {
+          ...(data.bereichStatus || {}),
+          [S.myBereichId]: {
+            status:        'erledigt',
+            mitarbeiter:   S.user.name,
+            mitarbeiterId: S.user.id,
+            startedAt:     data.bereichStatus?.[S.myBereichId]?.startedAt ?? null,
+            erledigtAt:    serverTimestamp(),
+          },
+        };
+        alleErledigt = S.bereiche.every(b => {
+          const s = newBs[b.id]?.status;
+          return s === 'erledigt' || s === 'abgebrochen';
+        });
+        tx.update(sessRef, { bereichStatus: newBs, alleErledigt, zuletzt: serverTimestamp() });
+      });
+
+      await clearPresence();
+      showScreen('wait');
+      renderWait();
+
+    } catch(e) {
+      btn.disabled = false; btn.textContent = '✅ Bereich fertig markieren';
+      toast('Fehler: ' + e.message, 'error');
+    }
+  };
+
+  /* ── Cancel bereich ── */
+  window.cancelBereich = async function() {
+    const ok = confirm('Bereich abbrechen?\n\nDein Bereich wird freigegeben, ein Kollege kann ihn fortführen.');
+    if (!ok) return;
+    try {
+      await clearPresence();
+      if (S.myBereichId) {
+        await updateDoc(doc(db, 'bestellungen_session', SID), {
+          [`bereichStatus.${S.myBereichId}.status`]: 'abgebrochen',
+          zuletzt: serverTimestamp(),
+        });
+      }
+      S.myBereichId = null; S.myArtikel = []; S.warenkorb = {};
+      showScreen('join');
+    } catch(e) { toast('Fehler: ' + e.message, 'error'); }
+  };
+
+  /* ══════════════════════════════════════════════
+     SCREEN: WARTEN
+  ══════════════════════════════════════════════ */
+  function renderWait() {
+    const data  = S.session;
+    const bs    = data?.bereichStatus || {};
+
+    const offenCount = S.bereiche.filter(b => {
+      const s = bs[b.id]?.status;
+      return !s || s === 'frei' || ACTIVE_STATS.has(s);
+    }).length;
+
+    const alleErledigt = S.bereiche.every(b => {
+      const s = bs[b.id]?.status;
+      return s === 'erledigt' || s === 'abgebrochen';
+    });
+
+    const hasFree = S.bereiche.some(b => {
+      const s = bs[b.id]?.status;
+      return !s || s === 'frei' || s === 'abgebrochen';
+    });
+
+    document.getElementById('wait-sub').textContent = alleErledigt
+      ? 'Alle Bereiche fertig!'
+      : `Noch ${offenCount} Bereich${offenCount !== 1 ? 'e' : ''} offen…`;
+
+    document.getElementById('btn-abschliessen').classList.toggle('hidden', !alleErledigt);
+    document.getElementById('btn-weiterer').style.display = hasFree ? '' : 'none';
+
+    // Bereich rows
+    document.getElementById('wait-list').innerHTML = S.bereiche.map(b => {
+      const bsEntry = bs[b.id];
+      const status  = bsEntry?.status || 'frei';
+      let dot, info;
+
+      if (status === 'erledigt') {
+        dot  = `<div class="s-dot erledigt"></div>`;
+        info = `Erledigt von ${esc(bsEntry.mitarbeiter)}`;
+      } else if (ACTIVE_STATS.has(status)) {
+        dot  = `<span style="font-size:0.9rem;">🔒</span>`;
+        info = `${esc(bsEntry?.mitarbeiter || '?')} arbeitet hier`;
+      } else if (status === 'abgebrochen') {
+        dot  = `<div class="s-dot abgebrochen"></div>`;
+        info = 'Abgebrochen';
+      } else {
+        dot  = `<div class="s-dot frei"></div>`;
+        info = 'Noch nicht begonnen';
+      }
+
+      return `
+        <div class="wait-row">
+          ${dot}
+          <div class="wait-row-info">
+            <div class="wait-row-name">${esc(prettyName(b.name))}</div>
+            <div class="wait-row-sub">${info}</div>
+          </div>
+        </div>`;
+    }).join('');
+
+    // Teilnehmer
+    const tlist = data?.teilnehmer || [];
+    const tCard = document.getElementById('wait-teilnehmer-card');
+    if (tlist.length > 0) {
+      tCard.style.display = '';
+      document.getElementById('wait-pills').innerHTML = tlist.map(t =>
+        `<div class="name-pill">${esc(t.name)}</div>`
+      ).join('');
+    } else {
+      tCard.style.display = 'none';
+    }
+  }
+
+  /* ══════════════════════════════════════════════
+     SCREEN: UNTERSCHRIFT
+  ══════════════════════════════════════════════ */
+  window.showSig = async function() {
+    let items = [];
+    try {
+      const snap = await getDocs(query(collection(db, 'warenkorb'), where('sessionId', '==', SID)));
+      snap.forEach(d => items.push({ id: d.id, ...d.data() }));
+    } catch(e) {}
+
+    const zuBestellen = items.filter(i => i.bestellen === true);
+    const teilnehmer  = S.session?.teilnehmer || [{ name: S.user.name }];
+    const alleNamen   = teilnehmer.map(t => t.name).join(' · ');
+
+    document.getElementById('sum-rows').innerHTML = `
+      <div class="sum-row"><span class="sum-key">Mitarbeiter</span><span class="sum-val">${esc(alleNamen)}</span></div>
+      <div class="sum-row"><span class="sum-key">Datum</span><span class="sum-val">${new Date().toLocaleDateString('de-DE')} · ${new Date().toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'})}</span></div>
+      <div class="sum-row"><span class="sum-key">Bereiche geprüft</span><span class="sum-val">${S.bereiche.length}</span></div>
+      <div class="sum-row"><span class="sum-key">Zu bestellen</span><span class="sum-val" style="color:${zuBestellen.length > 0 ? 'var(--crit)' : 'var(--ok)'};">${zuBestellen.length} Artikel</span></div>`;
+
+    const orderCard = document.getElementById('order-card');
+    if (zuBestellen.length > 0) {
+      orderCard.style.display = '';
+      document.getElementById('order-body').innerHTML = zuBestellen
+        .sort((a, b) => (a.bereichId || '').localeCompare(b.bereichId || '') || (a.artikelName || '').localeCompare(b.artikelName || ''))
+        .map(i => `
+          <tr>
+            <td>${esc(i.artikelName)}</td>
+            <td style="font-family:var(--font-mono);font-weight:700;white-space:nowrap;">${i.menge} ${esc(i.einheit || 'Stk')}</td>
+            <td style="color:var(--ink-3);font-size:11px;font-family:var(--font-mono);">${esc(i.mitarbeiter)}</td>
+          </tr>`).join('');
+    } else {
+      orderCard.style.display = 'none';
+    }
+
+    showScreen('sig');
+    initCanvas();
+  };
+
+  /* ── Signature canvas ── */
+  let drawing = false, hasSig = false;
+  function initCanvas() {
+    const canvas = document.getElementById('sig-canvas');
+    const ctx    = canvas.getContext('2d');
+    canvas.width  = canvas.parentElement.clientWidth;
+    canvas.height = 160;
+    hasSig = false;
+    document.getElementById('sig-hint').style.opacity = '1';
+    ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--brand').trim() || '#F26B2E';
+    ctx.lineWidth = 2.5; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+
+    function pos(e) {
+      const r = canvas.getBoundingClientRect();
+      const t = e.touches ? e.touches[0] : e;
+      return { x: (t.clientX - r.left) * (canvas.width / r.width), y: (t.clientY - r.top) * (canvas.height / r.height) };
+    }
+    canvas.onmousedown  = e => { drawing = true; ctx.beginPath(); const p = pos(e); ctx.moveTo(p.x, p.y); };
+    canvas.onmousemove  = e => { if (!drawing) return; const p = pos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); markSig(); };
+    canvas.onmouseup    = () => { drawing = false; };
+    canvas.addEventListener('touchstart', e => { e.preventDefault(); drawing = true; ctx.beginPath(); const p = pos(e); ctx.moveTo(p.x, p.y); }, { passive: false });
+    canvas.addEventListener('touchmove',  e => { e.preventDefault(); if (!drawing) return; const p = pos(e); ctx.lineTo(p.x, p.y); ctx.stroke(); markSig(); }, { passive: false });
+    canvas.addEventListener('touchend',   () => { drawing = false; });
+  }
+  function markSig() { hasSig = true; document.getElementById('sig-hint').style.opacity = '0'; }
+  window.clearSig = function() {
+    const c = document.getElementById('sig-canvas');
+    c.getContext('2d').clearRect(0, 0, c.width, c.height);
+    hasSig = false; document.getElementById('sig-hint').style.opacity = '1';
+  };
+
+  /* ── Submit order ── */
+  window.submitOrder = async function() {
+    if (!hasSig) { toast('Bitte zuerst unterschreiben!', 'error'); return; }
+    const btn = document.getElementById('btn-submit');
+    btn.disabled = true; btn.textContent = 'Wird gespeichert…';
+
+    try {
+      const snap = await getDocs(query(collection(db, 'warenkorb'), where('sessionId', '==', SID)));
+      const allItems = [];
+      snap.forEach(d => allItems.push({ id: d.id, ...d.data() }));
+
+      const bestellItems = allItems.filter(i => i.bestellen === true);
+      const teilnehmer   = S.session?.teilnehmer || [{ id: S.user.id, name: S.user.name }];
+
+      // Save order document
+      await addDoc(collection(db, 'bestellungen'), {
+        modus:            'team',
+        datum:            serverTimestamp(),
+        teilnehmer,
+        mitarbeiter:      teilnehmer.map(t => t.name).join(' · '),
+        mitarbeiterListe: teilnehmer.map(t => t.name),
+        sessionId:        SID,
+        unterschrift:     document.getElementById('sig-canvas').toDataURL('image/png'),
+        status:           'abgeschlossen',
+        quelle:           'check',
+        items:            bestellItems.map(i => ({
+          artikelId:     i.artikelId,
+          artikelName:   i.artikelName,
+          bereichId:     i.bereichId,
+          menge:         i.menge,
+          einheit:       i.einheit || 'Stk',
+          mitarbeiter:   i.mitarbeiter,
+          mitarbeiterId: i.mitarbeiterId,
+        })),
+      });
+
+      // Mark session as done
+      await updateDoc(doc(db, 'bestellungen_session', SID), {
+        status: 'abgeschlossen', zuletzt: serverTimestamp(),
+      });
+
+      // Cleanup
+      stopHeartbeatFallback();
+      await clearPresence();
+      if (S.unsubSess) { S.unsubSess(); S.unsubSess = null; }
+
+      // Delete warenkorb docs (batch)
+      try {
+        const batch = writeBatch(db);
+        snap.forEach(d => batch.delete(d.ref));
+        await batch.commit();
+      } catch(e) {}
+
+      // Delete session doc
+      try { await deleteDoc(doc(db, 'bestellungen_session', SID)); } catch(e) {}
+
+      toast(`✅ Abgeschlossen! ${bestellItems.length} Artikel zur Bestellung gemeldet.`, 'ok');
+      setTimeout(() => { window.location.href = './mitarbeiter.html'; }, 1800);
+
+    } catch(e) {
+      btn.disabled = false; btn.textContent = '📄 Absenden & Fertig';
+      toast('Fehler: ' + e.message, 'error');
+    }
+  };
+
+  /* ── Photo lightbox ── */
+  window.openFoto = function(url, name) {
+    const mid   = `foto-${Date.now()}`;
+    const modal = document.createElement('div');
+    modal.id = mid;
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:2000;display:flex;align-items:center;justify-content:center;padding:20px;backdrop-filter:blur(8px);';
+    modal.innerHTML = `
+      <div style="background:var(--surface);border-radius:24px;overflow:hidden;max-width:440px;width:100%;box-shadow:0 25px 60px rgba(0,0,0,.5);">
+        <div style="padding:14px 18px;border-bottom:0.5px solid var(--hairline);display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:14px;font-weight:600;">${esc(name)}</span>
+          <button onclick="document.getElementById('${mid}').remove()" style="background:var(--surface-3);border:none;color:var(--ink-2);width:28px;height:28px;border-radius:14px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
+        </div>
+        <img src="${esc(url)}" style="width:100%;max-height:70dvh;object-fit:contain;background:var(--surface-2);display:block;">
+        <div style="padding:10px 16px;font-size:11px;color:var(--ink-3);font-family:var(--font-mono);text-align:center;">Soll-Zustand</div>
+      </div>`;
+    modal.onclick = e => { if (e.target === modal) modal.remove(); };
+    document.body.appendChild(modal);
+  };
+</script>
+<script src="../js/pwa.js"></script>
 </body>
 </html>
