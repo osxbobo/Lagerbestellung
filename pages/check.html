@@ -8,7 +8,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="LAGER//APP">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Lagerbestellung – LAGER//APP</title>
   <link rel="stylesheet" href="../css/main.css">
   <style>
@@ -911,8 +911,8 @@
 
     // Photos
     const fotoItems = [];
-    if (a.fotoUrl)      fotoItems.push(`<div><div class="a-foto-btn" data-foto="${esc(a.fotoUrl)}" data-name="${esc(a.name)}"><img src="${esc(a.fotoUrl)}" alt="" loading="lazy"></div><div class="a-foto-label">PRODUKT</div></div>`);
-    if (a.lagerFotoUrl) fotoItems.push(`<div><div class="a-foto-btn" data-foto="${esc(a.lagerFotoUrl)}" data-name="Lagerort: ${esc(a.name)}"><img src="${esc(a.lagerFotoUrl)}" alt="" loading="lazy"></div><div class="a-foto-label">LAGERORT</div></div>`);
+    if (a.fotoUrl)      fotoItems.push(`<div><div class="a-foto-btn" data-foto="${esc(a.fotoUrl)}" data-name="${esc(a.name)}"><img src="${esc(a.fotoUrl)}" alt="${esc(a.name)}" loading="lazy"></div><div class="a-foto-label">PRODUKT</div></div>`);
+    if (a.lagerFotoUrl) fotoItems.push(`<div><div class="a-foto-btn" data-foto="${esc(a.lagerFotoUrl)}" data-name="Lagerort: ${esc(a.name)}"><img src="${esc(a.lagerFotoUrl)}" alt="Lagerort: ${esc(a.name)}" loading="lazy"></div><div class="a-foto-label">LAGERORT</div></div>`);
     const fotosHtml = fotoItems.length
       ? `<div class="a-fotos">${fotoItems.join('')}</div>`
       : `<div class="a-fotos"><div class="a-foto-btn" style="cursor:default;opacity:0.35;pointer-events:none;">📦</div></div>`;

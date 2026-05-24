@@ -8,7 +8,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="LAGER//APP">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>StockSwipe – LAGER//APP</title>
   <link rel="stylesheet" href="../css/main.css">
   <style>
@@ -661,9 +661,10 @@
       </div>
       <!-- medium: bookmark -->
       <div class="action-btn-wrap">
-        <button class="action-circle undo" style="color:var(--ink-2)" onclick="" title="Merken">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4h12v17l-6-4-6 4V4z"/></svg>
+        <button class="action-circle undo" id="btn-merken" style="color:var(--ink-2)" onclick="merkenArtikel()" title="Merken">
+          <svg id="icon-merken" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4h12v17l-6-4-6 4V4z"/></svg>
         </button>
+        <div class="action-label">Merken</div>
       </div>
       <!-- small: scan -->
       <div class="action-btn-wrap">
@@ -789,6 +790,7 @@
     let swipeArtikel = [];
     let swipeIdx     = 0;
     let swipeHistory = [];
+    let gemerktSet   = new Set();
     let currentMengeArtikel = null;
     let currentMenge = 1;
 
@@ -1189,6 +1191,15 @@
       topCard.classList.add('top-card');
       attachSwipeHandlers(topCard, swipeArtikel[swipeIdx]);
       stack.appendChild(topCard);
+
+      // Sync bookmark button to current article state
+      const isGemerkt = gemerktSet.has(swipeArtikel[swipeIdx].id);
+      const btnMerken = document.getElementById('btn-merken');
+      const iconMerken = document.getElementById('icon-merken');
+      if (btnMerken && iconMerken) {
+        iconMerken.setAttribute('fill', isGemerkt ? 'currentColor' : 'none');
+        btnMerken.style.color = isGemerkt ? 'var(--brand)' : 'var(--ink-2)';
+      }
     }
 
     // ── BUILD CARD DOM ──
@@ -1387,6 +1398,24 @@
       delete bestellungen[last.artikel.id];
       renderCardStack();
       showToast('Rückgängig gemacht');
+    };
+
+    window.merkenArtikel = function() {
+      if (swipeIdx >= swipeArtikel.length) return;
+      const artikel = swipeArtikel[swipeIdx];
+      const btn  = document.getElementById('btn-merken');
+      const icon = document.getElementById('icon-merken');
+      if (gemerktSet.has(artikel.id)) {
+        gemerktSet.delete(artikel.id);
+        if (icon) icon.setAttribute('fill', 'none');
+        if (btn)  btn.style.color = 'var(--ink-2)';
+        showToast('Merker entfernt');
+      } else {
+        gemerktSet.add(artikel.id);
+        if (icon) icon.setAttribute('fill', 'currentColor');
+        if (btn)  btn.style.color = 'var(--brand)';
+        showToast(`${artikel.name} gemerkt ✓`);
+      }
     };
 
     // ── DETAIL VIEW ──
