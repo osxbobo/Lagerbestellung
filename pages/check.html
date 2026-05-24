@@ -703,6 +703,11 @@
         ? `${andereAktiv} Kollege${andereAktiv > 1 ? 'n' : ''} gerade aktiv · Wähle deinen Bereich`
         : 'Wähle deinen Bereich für die Lagerbestellung';
 
+    // Check if I already have an active area – if so, I can only resume that one
+    const myActiveBereichId = Object.entries(bereichStatus).find(
+      ([, bs]) => ACTIVE_STATS.has(bs.status) && bs.mitarbeiterId === S.user.id
+    )?.[0] ?? null;
+
     document.getElementById('bereich-list').innerHTML = S.bereiche.map(b => {
       const bs     = bereichStatus[b.id];
       const status = bs?.status || 'frei';
@@ -736,16 +741,24 @@
       } else if (status === 'abgebrochen') {
         iconHtml  = `<div class="s-dot abgebrochen"></div>`;
         badgeHtml = `<div class="bc-badge broken">Abgebrochen</div>`;
-        cardClass = 'is-broken clickable';
+        // Only allow taking over a broken area if user has no active area
+        cardClass = myActiveBereichId ? 'is-broken' : 'is-broken clickable';
         subText   = 'Fortführen?';
-        clickable = true;
+        clickable = !myActiveBereichId;
 
       } else {
         iconHtml  = `<div class="s-dot frei"></div>`;
-        badgeHtml = `<div class="bc-badge frei">Frei</div>`;
-        cardClass = 'clickable';
-        subText   = '';
-        clickable = true;
+        // Only allow picking a free area if user has no active area
+        if (myActiveBereichId) {
+          badgeHtml = `<div class="bc-badge frei">Frei</div>`;
+          cardClass = '';
+          subText   = '';
+        } else {
+          badgeHtml = `<div class="bc-badge frei">Frei</div>`;
+          cardClass = 'clickable';
+          subText   = '';
+          clickable = true;
+        }
       }
 
       if (clickable) cardonclick = `onclick="pickBereich('${b.id}')"`;
@@ -817,7 +830,7 @@
       });
 
       S.myBereichId = bereichId;
-      await setupPresence(bereichId);
+      setupPresence(bereichId); // intentionally not awaited – RTDB must never block screen nav
       await loadWarenkorb();
       renderCheck();
       showScreen('check');
