@@ -7,7 +7,7 @@
 // Diese Nummer bei jedem GitHub Upload um 1 erhöhen
 // z.B. v2, v3, v4 ...
 // → Browser erkennt automatisch die neue Version und lädt alles neu
-const CACHE_VERSION = 'v110';
+const CACHE_VERSION = 'v111';
 const CACHE_NAME    = `lagerapp-${CACHE_VERSION}`;
 const BASE_PATH     = '/lagerapp_alpha';
 
@@ -72,6 +72,9 @@ self.addEventListener('activate', event => {
 
 // ── FETCH (Offline Support) ──
 self.addEventListener('fetch', event => {
+  // Nur http/https cachen – chrome-extension:// und andere Schemes überspringen
+  if (!event.request.url.startsWith('http')) return;
+
   // Firebase & externe Requests immer online durchlassen
   if (event.request.url.includes('firebase') ||
       event.request.url.includes('cloudinary') ||
