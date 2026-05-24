@@ -637,12 +637,14 @@
 
   async function setupPresence(bereichId) {
     if (!rtdb) { startHeartbeatFallback(); return; }
+    const withTimeout = (promise, ms) =>
+      Promise.race([promise, new Promise((_, rej) => setTimeout(() => rej(new Error('RTDB timeout')), ms))]);
     try {
       S.presRef    = rtRef(rtdb, `presence/${S.user.id}`);
       const data   = { status: 'aktiv', bereichId, name: S.user.name, ts: Date.now() };
-      await rtSet(S.presRef, data);
+      await withTimeout(rtSet(S.presRef, data), 3000);
       S.disconnRef = onDisconnect(S.presRef);
-      await S.disconnRef.set({ status: 'abgebrochen', bereichId, name: S.user.name, ts: Date.now() });
+      await withTimeout(S.disconnRef.set({ status: 'abgebrochen', bereichId, name: S.user.name, ts: Date.now() }), 3000);
     } catch(e) {
       console.warn('RTDB Presence fehlgeschlagen – Heartbeat-Fallback aktiv', e);
       startHeartbeatFallback();
@@ -788,49 +790,47 @@
     try {
       if (!auth.currentUser) await signInAnonymously(auth);
 
-      const sessRef = doc(db, 'bestellungen_session', SID);
-      await runTransaction(db, async tx => {
-        const snap     = await tx.get(sessRef);
-        const isActive = snap.exists() && snap.data().status === 'aktiv';
+      const sessRef  = doc(db, 'bestellungen_session', SID);
+      const snap     = await getDoc(sessRef);
+      const isActive = snap.exists() && snap.data().status === 'aktiv';
 
-        if (isActive) {
-          const data = snap.data();
-          const bs   = data.bereichStatus?.[bereichId];
+      if (isActive) {
+        const data = snap.data();
+        const bs   = data.bereichStatus?.[bereichId];
 
-          // Block if someone else has it active
-          if (ACTIVE_STATS.has(bs?.status) && bs.mitarbeiterId !== S.user.id)
-            throw new Error(`Bereich wird gerade von ${esc(bs.mitarbeiter)} bearbeitet`);
-          if (bs?.status === 'erledigt')
-            throw new Error('Dieser Bereich ist bereits abgeschlossen');
+        // Block if someone else has it active
+        if (ACTIVE_STATS.has(bs?.status) && bs.mitarbeiterId !== S.user.id)
+          throw new Error(`Bereich wird gerade von ${esc(bs.mitarbeiter)} bearbeitet`);
+        if (bs?.status === 'erledigt')
+          throw new Error('Dieser Bereich ist bereits abgeschlossen');
 
-          const alreadyIn = (data.teilnehmer || []).some(t => t.id === S.user.id);
-          tx.update(sessRef, {
-            [`bereichStatus.${bereichId}`]: {
-              status:        'aktiv',
-              mitarbeiter:   S.user.name,
-              mitarbeiterId: S.user.id,
-              startedAt:     serverTimestamp(),
-              erledigtAt:    null,
-            },
-            ...(!alreadyIn ? { teilnehmer: arrayUnion({ id: S.user.id, name: S.user.name, joinedAt: new Date().toISOString() }) } : {}),
-            [`heartbeats.${S.user.id}`]: serverTimestamp(),
-            zuletzt: serverTimestamp(),
-          });
-        } else {
-          tx.set(sessRef, {
-            status:  'aktiv', modus: 'team',
-            startzeit: serverTimestamp(), zuletzt: serverTimestamp(),
-            teilnehmer: [{ id: S.user.id, name: S.user.name, joinedAt: new Date().toISOString() }],
-            bereichStatus: {
-              [bereichId]: {
-                status: 'aktiv', mitarbeiter: S.user.name, mitarbeiterId: S.user.id,
-                startedAt: serverTimestamp(), erledigtAt: null,
-              }
-            },
-            heartbeats: { [S.user.id]: serverTimestamp() },
-          });
-        }
-      });
+        const alreadyIn = (data.teilnehmer || []).some(t => t.id === S.user.id);
+        await updateDoc(sessRef, {
+          [`bereichStatus.${bereichId}`]: {
+            status:        'aktiv',
+            mitarbeiter:   S.user.name,
+            mitarbeiterId: S.user.id,
+            startedAt:     serverTimestamp(),
+            erledigtAt:    null,
+          },
+          ...(!alreadyIn ? { teilnehmer: arrayUnion({ id: S.user.id, name: S.user.name, joinedAt: new Date().toISOString() }) } : {}),
+          [`heartbeats.${S.user.id}`]: serverTimestamp(),
+          zuletzt: serverTimestamp(),
+        });
+      } else {
+        await setDoc(sessRef, {
+          status:  'aktiv', modus: 'team',
+          startzeit: serverTimestamp(), zuletzt: serverTimestamp(),
+          teilnehmer: [{ id: S.user.id, name: S.user.name, joinedAt: new Date().toISOString() }],
+          bereichStatus: {
+            [bereichId]: {
+              status: 'aktiv', mitarbeiter: S.user.name, mitarbeiterId: S.user.id,
+              startedAt: serverTimestamp(), erledigtAt: null,
+            }
+          },
+          heartbeats: { [S.user.id]: serverTimestamp() },
+        });
+      }
 
       S.myBereichId = bereichId;
       startHeartbeatFallback(); // always keep Firestore heartbeat alive, RTDB is additive
