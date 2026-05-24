@@ -1096,7 +1096,7 @@
         adminBtn.href = 'admin.html';
         adminBtn.className = 'nav-action-btn hide-mobile';
         adminBtn.textContent = '⚙️ Admin';
-        document.getElementById('notif-btn-wrap').before(adminBtn);
+        document.querySelector('.p-btn-logout').before(adminBtn);
       }
 
       await loadAll();
