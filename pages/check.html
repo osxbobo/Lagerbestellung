@@ -409,7 +409,7 @@
 ════════════════════════════════ -->
 <script type="module">
   import { initializeApp }              from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-  import { getAuth, signInAnonymously } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+  import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
   import {
     getFirestore, doc, collection,
     getDoc, getDocs, setDoc, updateDoc, addDoc, deleteDoc,
