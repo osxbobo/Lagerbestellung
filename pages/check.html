@@ -830,6 +830,7 @@
       });
 
       S.myBereichId = bereichId;
+      startHeartbeatFallback(); // always keep Firestore heartbeat alive, RTDB is additive
       setupPresence(bereichId); // intentionally not awaited – RTDB must never block screen nav
       await loadWarenkorb();
       renderCheck();
@@ -1083,7 +1084,7 @@
         tx.update(sessRef, { bereichStatus: newBs, alleErledigt, zuletzt: serverTimestamp() });
       });
 
-      await clearPresence();
+      clearPresence(); // intentionally not awaited – RTDB must never block screen nav
       showScreen('wait');
       renderWait();
 
@@ -1098,7 +1099,7 @@
     const ok = confirm('Bereich abbrechen?\n\nDein Bereich wird freigegeben, ein Kollege kann ihn fortführen.');
     if (!ok) return;
     try {
-      await clearPresence();
+      clearPresence(); // intentionally not awaited – RTDB must never block screen nav
       if (S.myBereichId) {
         await updateDoc(doc(db, 'bestellungen_session', SID), {
           [`bereichStatus.${S.myBereichId}.status`]: 'abgebrochen',
@@ -1295,7 +1296,7 @@
 
       // Cleanup
       stopHeartbeatFallback();
-      await clearPresence();
+      clearPresence(); // intentionally not awaited – RTDB must never block screen nav
       if (S.unsubSess) { S.unsubSess(); S.unsubSess = null; }
 
       // Delete warenkorb docs (batch)
