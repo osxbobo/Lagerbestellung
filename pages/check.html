@@ -393,6 +393,18 @@
 </div>
 
 <!-- ════════════════════════════════
+     SCREEN: GESPERRT (Solo-Modus)
+════════════════════════════════ -->
+<div id="screen-block" class="screen hidden">
+  <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;padding:40px 24px;text-align:center;gap:20px;">
+    <div style="font-size:48px;">🔒</div>
+    <div style="font-family:var(--font-mono);font-size:1.1rem;font-weight:700;color:var(--ink);">StockSwipe läuft gerade</div>
+    <div id="block-solo-info" style="font-size:0.9rem;color:var(--ink-2);line-height:1.6;max-width:320px;"></div>
+    <div style="font-size:0.8rem;color:var(--ink-3);margin-top:8px;">Diese Seite entsperrt sich automatisch sobald die Bestellung abgeschlossen ist.</div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════
      JAVASCRIPT
 ════════════════════════════════ -->
 <script type="module">
@@ -400,7 +412,7 @@
   import { getAuth, signInAnonymously } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
   import {
     getFirestore, doc, collection,
-    getDocs, setDoc, updateDoc, addDoc, deleteDoc,
+    getDoc, getDocs, setDoc, updateDoc, addDoc, deleteDoc,
     query, where, orderBy, writeBatch,
     onSnapshot, runTransaction, serverTimestamp, arrayUnion,
   } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
@@ -472,7 +484,7 @@
   }
 
   window.showScreen = function(name) {
-    ['join','check','wait','sig'].forEach(s =>
+    ['join','check','wait','sig','block'].forEach(s =>
       document.getElementById(`screen-${s}`).classList.toggle('hidden', s !== name)
     );
   };
@@ -522,6 +534,25 @@
     }
 
     await loadData();
+
+    // Block if a solo StockSwipe session is running
+    const sessSnap = await getDoc(doc(db, 'bestellungen_session', SID));
+    if (sessSnap.exists() && sessSnap.data().status === 'aktiv' && sessSnap.data().modus === 'solo') {
+      const d = sessSnap.data();
+      const heartbeats = d.heartbeats ?? {};
+      const alive = Object.values(heartbeats).some(ts => {
+        const t = ts?.toMillis?.() ?? 0;
+        return t > 0 && (Date.now() - t) < 90_000;
+      });
+      if (alive) {
+        document.getElementById('block-solo-info').textContent =
+          `${d.mitarbeiter || 'Ein Kollege'} macht gerade die Lagerbestellung (StockSwipe). Bitte warten bis abgeschlossen.`;
+        showScreen('block');
+        startSessionListener(); // will auto-unblock via onSessionChange
+        return;
+      }
+    }
+
     startSessionListener();
     setupRtdbListener();
     showScreen('join');
@@ -548,8 +579,17 @@
   }
 
   function onSessionChange() {
-    const joinHidden  = document.getElementById('screen-join').classList.contains('hidden');
-    const waitVisible = !document.getElementById('screen-wait').classList.contains('hidden');
+    const blockVisible = !document.getElementById('screen-block').classList.contains('hidden');
+    const joinHidden   = document.getElementById('screen-join').classList.contains('hidden');
+    const waitVisible  = !document.getElementById('screen-wait').classList.contains('hidden');
+
+    // Auto-unblock when solo session ends
+    if (blockVisible && (!S.session || S.session.status !== 'aktiv' || S.session.modus !== 'solo')) {
+      setupRtdbListener();
+      showScreen('join');
+      renderJoin();
+      return;
+    }
 
     if (!joinHidden)   renderJoin();
     if (waitVisible)   renderWait();

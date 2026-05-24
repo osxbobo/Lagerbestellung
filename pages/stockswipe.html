@@ -737,7 +737,7 @@
   <script type="module">
     import { initializeApp }  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-    import { getFirestore, collection, getDocs, doc, getDoc, addDoc, updateDoc, deleteDoc, query, orderBy, where, limit, serverTimestamp, runTransaction, onSnapshot, arrayUnion }
+    import { getFirestore, collection, getDocs, doc, getDoc, setDoc, addDoc, updateDoc, deleteDoc, query, orderBy, where, limit, serverTimestamp, runTransaction, onSnapshot, arrayUnion }
                               from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
     import { firebaseConfig } from "../js/firebase-config.js";
 
@@ -772,6 +772,7 @@
     let alleBereiche = [];
     let bestellungen = {};
     let userName     = '';
+    let employeeId   = null;
     let pinValue     = '';
     let pinAttempts  = 0;
     let pinLockedUntil = 0;
@@ -780,6 +781,8 @@
     let sessionId    = null;
     let meineBereiche = [];
     let sessionUnsubscribe = null;
+    let soloModeActive = false;
+    let soloHeartbeatTimer = null;
 
 
     // Swipe state
@@ -795,9 +798,11 @@
     (async function checkAuth() {
       const pinOk = sessionStorage.getItem('lager-pin-auth');
       const name  = sessionStorage.getItem('lager-pin-name');
+      const empId = sessionStorage.getItem('lager-employee-id');
       if (pinOk && name) {
         document.getElementById('screen-pin').classList.add('hidden');
-        userName = name;
+        userName   = name;
+        employeeId = empId || btoa(unescape(encodeURIComponent(name))).replace(/[^a-zA-Z0-9]/g, '').substring(0, 20);
         document.getElementById('nav-user').textContent = userName;
         await loadCheckData();
         await startDirectly();
@@ -1095,6 +1100,7 @@
         } else {
           if (!confirm('Lagerbestellung wirklich stornieren?\n\nAlle bisherigen Eingaben gehen verloren.')) return;
           if (autoSaveId) { await deleteDoc(doc(db, 'bestellungen_draft', autoSaveId)); autoSaveId = null; }
+          await cleanupSoloSession();
         }
       } catch(e) { showToast('Fehler: ' + e.message, 'error'); }
       window.location.href = './mitarbeiter.html';
@@ -1571,6 +1577,7 @@
             unterschrift: document.getElementById('sig-canvas').toDataURL('image/png'),
             status: 'abgeschlossen', quelle: 'stockswipe',
           });
+          await cleanupSoloSession();
         }
 
         if (autoSaveId && !sessionId) {
@@ -1591,29 +1598,49 @@
         const snap = await getDoc(doc(db, 'bestellungen_session', 'current'));
         if (snap.exists() && snap.data().status === 'aktiv') {
           const data = snap.data();
-          // Prüfen ob noch jemand aktiv ist (frischer Heartbeat < 90s)
+          const modus = data.modus || 'team';
+
+          // Frischer Heartbeat < 90s?
           const heartbeats = data.heartbeats ?? {};
           const hasAliveUser = Object.values(heartbeats).some(ts => {
             const lastBeat = ts?.toMillis?.() ?? 0;
             return lastBeat > 0 && (Date.now() - lastBeat) < 90_000;
           });
-          if (hasAliveUser) {
-            showBlockScreen('current', data);
+
+          if (!hasAliveUser) {
+            // Zombie-Session – alle Heartbeats abgelaufen → löschen
+            try { await deleteDoc(snap.ref); } catch(e2) {}
+            return false;
+          }
+
+          if (modus === 'solo') {
+            // Eigene Solo-Session → einfach weitermachen (Resume)
+            if (data.mitarbeiterId === employeeId) return false;
+            // Andere Person stockswipet gerade
+            showBlockScreen('current', data, 'solo');
             return true;
           }
-          // Zombie-Session – alle Heartbeats abgelaufen → löschen
-          try { await deleteDoc(snap.ref); } catch(e2) {}
+
+          // modus === 'team'
+          showBlockScreen('current', data, 'team');
+          return true;
         }
       } catch(e) {}
       return false;
     }
 
-    function showBlockScreen(sid, data) {
-      const namen = (data.teilnehmer || []).map(t => t.name).join(', ') || 'Ein Kollege';
-      const offen = Object.values(data.bereichStatus || {}).filter(v => v.status !== 'erledigt' && v.status !== 'abgebrochen').length;
-      document.getElementById('block-session-info').innerHTML =
-        `<strong>${esc(namen)}</strong> macht gerade die Lagerbestellung.<br>
+    function showBlockScreen(sid, data, modus) {
+      let infoHtml;
+      if (modus === 'solo') {
+        const name = data.mitarbeiter || 'Ein Kollege';
+        infoHtml = `<strong>${esc(name)}</strong> macht gerade die Lagerbestellung (StockSwipe).<br>Bitte warten bis abgeschlossen.`;
+      } else {
+        const namen = (data.teilnehmer || []).map(t => t.name).join(', ') || 'Ein Kollege';
+        const offen = Object.values(data.bereichStatus || {}).filter(v => v.status !== 'erledigt' && v.status !== 'abgebrochen').length;
+        infoHtml = `<strong>${esc(namen)}</strong> macht gerade die Lagerbestellung (Team).<br>
          ${offen} Bereich${offen !== 1 ? 'e' : ''} noch offen.`;
+      }
+      document.getElementById('block-session-info').innerHTML = infoHtml;
 
       ['pin','join','check','sig','wait'].forEach(s => {
         const el = document.getElementById(`screen-${s}`);
@@ -1623,7 +1650,7 @@
 
       if (blockUnsubscribe) blockUnsubscribe();
       blockUnsubscribe = onSnapshot(doc(db, 'bestellungen_session', sid), snap => {
-        if (!snap.exists() || snap.data().status === 'abgeschlossen') {
+        if (!snap.exists() || snap.data().status !== 'aktiv') {
           if (blockUnsubscribe) { blockUnsubscribe(); blockUnsubscribe = null; }
           document.getElementById('screen-blocked').classList.add('hidden');
           document.getElementById('screen-pin').classList.remove('hidden');
@@ -1632,15 +1659,53 @@
       });
     }
 
+    function startSoloHeartbeat() {
+      stopSoloHeartbeat();
+      soloHeartbeatTimer = setInterval(async () => {
+        try {
+          await updateDoc(doc(db, 'bestellungen_session', 'current'), {
+            [`heartbeats.${employeeId}`]: serverTimestamp(),
+            zuletzt: serverTimestamp(),
+          });
+        } catch(e) {}
+      }, 15_000);
+    }
+
+    function stopSoloHeartbeat() {
+      if (soloHeartbeatTimer) { clearInterval(soloHeartbeatTimer); soloHeartbeatTimer = null; }
+    }
+
+    async function cleanupSoloSession() {
+      if (!soloModeActive) return;
+      soloModeActive = false;
+      stopSoloHeartbeat();
+      try {
+        await updateDoc(doc(db, 'bestellungen_session', 'current'), { status: 'abgeschlossen' });
+      } catch(e) {}
+    }
+
     // ── DIREKT STARTEN (kein Join Screen, keine gemeinsame Bestellung) ──
     async function startDirectly() {
       try {
         const auth = getAuth(app);
         if (!auth.currentUser) await signInAnonymously(auth);
 
-        // Prüfen ob aktive Team-Bestellung läuft
+        // Prüfen ob aktive Team- oder fremde Solo-Bestellung läuft
         const blocked = await checkForActiveCheckSession();
         if (blocked) return;
+
+        // Solo-Session in Firestore schreiben (damit check.html blockiert wird)
+        await setDoc(doc(db, 'bestellungen_session', 'current'), {
+          status: 'aktiv',
+          modus: 'solo',
+          mitarbeiter: userName,
+          mitarbeiterId: employeeId,
+          startzeit: serverTimestamp(),
+          zuletzt: serverTimestamp(),
+          heartbeats: { [employeeId]: serverTimestamp() },
+        });
+        soloModeActive = true;
+        startSoloHeartbeat();
 
         meineBereiche = alleBereiche.map(b => b.id);
         await checkForDraft();
@@ -1648,6 +1713,14 @@
         startAutoSave();
       } catch(e) { showToast('Fehler: ' + e.message, 'error'); }
     }
+
+    window.addEventListener('beforeunload', () => {
+      if (soloModeActive) {
+        // Best-effort sync cleanup (keepalive not guaranteed in all browsers)
+        navigator.sendBeacon && navigator.sendBeacon('', '');
+        cleanupSoloSession().catch(() => {});
+      }
+    });
 
     function showScreen(name) {
       ['pin','join','check','sig','wait'].forEach(s =>
