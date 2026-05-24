@@ -359,9 +359,6 @@
     <button class="bottom-sheet-item" data-section="verfallskalender" onclick="showSection('verfallskalender');closeBottomSheet()">
       <span class="bottom-sheet-item-icon">📅</span> Verfallskalender
     </button>
-    <button class="bottom-sheet-item" data-section="rollen" onclick="showSection('rollen');closeBottomSheet()">
-      <span class="bottom-sheet-item-icon">🛡️</span> Konten &amp; Rollen
-    </button>
     <button class="bottom-sheet-item" data-section="mitarbeiter" onclick="showSection('mitarbeiter');closeBottomSheet()">
       <span class="bottom-sheet-item-icon">👥</span> Mitarbeiter
     </button>
@@ -440,10 +437,6 @@
         <div class="sidebar-item" id="nav-mitarbeiter" onclick="showSection('mitarbeiter')">
           <svg class="s-ico" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="4" r="2"/><path d="M1 11c0-2 1.8-3.5 4-3.5s4 1.5 4 3.5"/><path d="M10 5v4M12 7h-4" stroke-linecap="round"/></svg>
           Mitarbeiter
-        </div>
-        <div class="sidebar-item" id="nav-rollen" onclick="showSection('rollen')">
-          <svg class="s-ico" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 1.5l4 1.5v4c0 2.5-1.8 4.3-4 5-2.2-.7-4-2.5-4-5v-4l4-1.5z"/></svg>
-          Konten &amp; Rollen
         </div>
         <div class="sidebar-item" onclick="window.location.href='scanner.html'">
           <svg class="s-ico" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5V3h2M11 5V3H9M3 9v2h2M11 9v2H9M5 5v4M7 4v6M9 5v4"/></svg>
@@ -764,7 +757,8 @@
           <div class="la-card outline" style="padding:20px;background:linear-gradient(180deg,var(--brand-soft),transparent);">
             <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
               <span class="la-chip ok" style="height:20px;font-size:10px;"><span class="dot"></span>Live</span>
-              <span id="sessions-active-meta" style="font-size:11px;font-family:var(--font-mono);color:var(--ink-3)"></span>
+              <span id="sessions-active-meta" style="font-size:11px;font-family:var(--font-mono);color:var(--ink-3);flex:1;"></span>
+              <button onclick="resetSession()" style="padding:5px 12px;border-radius:7px;border:1px solid var(--crit);background:transparent;color:var(--crit);font-size:0.72rem;font-weight:600;cursor:pointer;font-family:var(--font-ui);transition:background 0.15s,color 0.15s;" onmouseover="this.style.background='var(--crit)';this.style.color='#fff'" onmouseout="this.style.background='transparent';this.style.color='var(--crit)'">🗑 Session zurücksetzen</button>
             </div>
             <div style="font-size:11px;color:var(--ink-3);font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;">Teilnehmer</div>
             <div id="sessions-active-teilnehmer" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;"></div>
@@ -1119,7 +1113,7 @@
     import { initializeApp }  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getAuth, onAuthStateChanged, signOut }
                               from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-    import { getFirestore, collection, getDocs, doc, getDoc, setDoc, updateDoc, deleteDoc, addDoc, query, orderBy, limit, where, onSnapshot, Timestamp }
+    import { getFirestore, collection, getDocs, doc, getDoc, setDoc, updateDoc, deleteDoc, addDoc, query, orderBy, limit, where, onSnapshot, Timestamp, writeBatch }
                               from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
     import { firebaseConfig } from "../js/firebase-config.js";
 
@@ -1397,6 +1391,35 @@
         document.getElementById('sessions-no-active').style.display = 'block';
       });
     }
+
+    // ── Session Reset ──
+    window.resetSession = async function() {
+      const ok = confirm(
+        'Session komplett zurücksetzen?\n\n' +
+        'Dadurch wird die laufende Bestellung gelöscht – alle Bereiche und Warenkorb-Einträge gehen verloren.\n\n' +
+        'Nur nutzen wenn die Session feststeckt!'
+      );
+      if (!ok) return;
+
+      try {
+        // Delete all warenkorb docs for this session
+        const wSnap = await getDocs(
+          query(collection(db, 'warenkorb'), where('sessionId', '==', 'current'))
+        );
+        if (!wSnap.empty) {
+          const batch = writeBatch(db);
+          wSnap.forEach(d => batch.delete(d.ref));
+          await batch.commit();
+        }
+
+        // Delete the session document
+        await deleteDoc(doc(db, 'bestellungen_session', 'current'));
+
+        showToast('Session wurde zurückgesetzt', 'success');
+      } catch(e) {
+        showToast('Fehler: ' + e.message, 'error');
+      }
+    };
 
     // ── Konten & Rollen (echte Firestore-Daten) ──
     let alleUsers = [];
