@@ -649,13 +649,12 @@
     }
   }
 
-  async function clearPresence() {
+  function clearPresence() {
     stopHeartbeatFallback();
     if (!S.presRef) return;
-    try {
-      if (S.disconnRef) await S.disconnRef.cancel();
-      await rtRemove(S.presRef);
-    } catch(e) {}
+    // Fire-and-forget — RTDB may be in reconnecting state and would hang if awaited
+    if (S.disconnRef) S.disconnRef.cancel().catch(() => {});
+    rtRemove(S.presRef).catch(() => {});
     S.presRef = null; S.disconnRef = null;
   }
 
@@ -1064,31 +1063,31 @@
     btn.disabled = true; btn.textContent = 'Wird gespeichert…';
 
     try {
-      const sessRef = doc(db, 'bestellungen_session', SID);
-      let alleErledigt = false;
+      // Compute alleErledigt from local session state (no need for a transaction)
+      const bs = S.session?.bereichStatus || {};
+      const updatedBs = {
+        ...bs,
+        [S.myBereichId]: {
+          status:        'erledigt',
+          mitarbeiter:   S.user.name,
+          mitarbeiterId: S.user.id,
+          startedAt:     bs[S.myBereichId]?.startedAt ?? null,
+          erledigtAt:    serverTimestamp(),
+        },
+      };
+      const alleErledigt = S.bereiche.every(b => {
+        const s = updatedBs[b.id]?.status;
+        return s === 'erledigt' || s === 'abgebrochen';
+      });
 
-      await runTransaction(db, async tx => {
-        const snap = await tx.get(sessRef);
-        if (!snap.exists()) throw new Error('Session nicht gefunden');
-        const data   = snap.data();
-        const newBs  = {
-          ...(data.bereichStatus || {}),
-          [S.myBereichId]: {
-            status:        'erledigt',
-            mitarbeiter:   S.user.name,
-            mitarbeiterId: S.user.id,
-            startedAt:     data.bereichStatus?.[S.myBereichId]?.startedAt ?? null,
-            erledigtAt:    serverTimestamp(),
-          },
-        };
-        alleErledigt = S.bereiche.every(b => {
-          const s = newBs[b.id]?.status;
-          return s === 'erledigt' || s === 'abgebrochen';
-        });
-        tx.update(sessRef, { bereichStatus: newBs, alleErledigt, zuletzt: serverTimestamp() });
+      await updateDoc(doc(db, 'bestellungen_session', SID), {
+        [`bereichStatus.${S.myBereichId}`]: updatedBs[S.myBereichId],
+        alleErledigt,
+        zuletzt: serverTimestamp(),
       });
 
       clearPresence(); // intentionally not awaited – RTDB must never block screen nav
+      S.myBereichId = null; S.myArtikel = []; S.warenkorb = {};
       showScreen('wait');
       renderWait();
 
