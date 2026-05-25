@@ -413,7 +413,7 @@
   import {
     initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
     doc, collection,
-    getDoc, getDocs, getDocsFromCache, setDoc, updateDoc, addDoc, deleteDoc,
+    getDoc, getDocs, getDocsFromCache, getDocsFromServer, setDoc, updateDoc, addDoc, deleteDoc,
     query, where, orderBy, writeBatch,
     onSnapshot, runTransaction, serverTimestamp, arrayUnion,
   } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
@@ -1076,7 +1076,7 @@
 
     const artikel  = S.alleArtikel.find(a => a.id === artikelId);
     const bereich  = S.bereiche.find(b => b.id === S.myBereichId);
-    const docId    = `${SID}_${artikelId}`;
+    const docId    = `${SID}_${S.myBereichId}_${artikelId}`;
 
     try {
       await setDoc(doc(db, 'warenkorb', docId), {
@@ -1227,9 +1227,12 @@
   window.showSig = async function() {
     let items = [];
     try {
-      const snap = await getDocs(query(collection(db, 'warenkorb'), where('sessionId', '==', SID)));
+      const snap = await getDocsFromServer(query(collection(db, 'warenkorb'), where('sessionId', '==', SID)));
       snap.forEach(d => items.push({ id: d.id, ...d.data() }));
-    } catch(e) {}
+    } catch(e) {
+      toast('Keine Verbindung – Bestelldaten können nicht geladen werden. Bitte Internetverbindung prüfen.', 'error');
+      return;
+    }
 
     const zuBestellen = items.filter(i => i.bestellen === true);
     const teilnehmer  = S.session?.teilnehmer || [{ name: S.user.name }];
@@ -1298,7 +1301,7 @@
     btn.disabled = true; btn.textContent = 'Wird gespeichert…';
 
     try {
-      const snap = await getDocs(query(collection(db, 'warenkorb'), where('sessionId', '==', SID)));
+      const snap = await getDocsFromServer(query(collection(db, 'warenkorb'), where('sessionId', '==', SID)));
       const allItems = [];
       snap.forEach(d => allItems.push({ id: d.id, ...d.data() }));
 
