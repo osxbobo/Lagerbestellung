@@ -8,7 +8,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="LAGER//APP">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Lagerbestellung – LAGER//APP</title>
   <link rel="stylesheet" href="../css/main.css">
   <style>
@@ -133,7 +133,7 @@
        ARTIKEL-CHECK
     ══════════════════════════════ */
     .check-sticky {
-      position:sticky; top:calc(52px + env(safe-area-inset-top,0px)); z-index:10;
+      position:sticky; top:0; z-index:10;
       background:var(--glass-bg-strong); backdrop-filter:blur(24px) saturate(180%); -webkit-backdrop-filter:blur(24px) saturate(180%);
       border-bottom:0.5px solid var(--hairline); padding:10px 16px;
     }
@@ -411,7 +411,8 @@
   import { initializeApp }              from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
   import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
   import {
-    getFirestore, doc, collection,
+    getFirestore, enableMultiTabIndexedDbPersistence,
+    doc, collection,
     getDoc, getDocs, setDoc, updateDoc, addDoc, deleteDoc,
     query, where, orderBy, writeBatch,
     onSnapshot, runTransaction, serverTimestamp, arrayUnion,
@@ -442,6 +443,7 @@
   /* ── Firebase ───────────────────────────────── */
   const app  = initializeApp(firebaseConfig);
   const db   = getFirestore(app);
+  enableMultiTabIndexedDbPersistence(db).catch(() => {});
   const auth = getAuth(app);
   let rtdb   = null;
   try { rtdb = getDatabase(app); } catch(e) {}
@@ -511,10 +513,11 @@
   }
 
   /* ── Auth & Bootstrap ───────────────────────── */
+  function authGet(key) { return sessionStorage.getItem(key) || localStorage.getItem(key); }
   (async function init() {
-    const pinOk = sessionStorage.getItem('lager-pin-auth');
-    const name  = sessionStorage.getItem('lager-pin-name');
-    const empId = sessionStorage.getItem('lager-employee-id');
+    const pinOk = authGet('lager-pin-auth');
+    const name  = authGet('lager-pin-name');
+    const empId = authGet('lager-employee-id');
 
     if (!pinOk || !name) {
       const ret = encodeURIComponent(window.location.pathname);
@@ -917,13 +920,16 @@
       ? `<div class="a-fotos">${fotoItems.join('')}</div>`
       : `<div class="a-fotos"><div class="a-foto-btn" style="cursor:default;opacity:0.35;pointer-events:none;">📦</div></div>`;
 
-    // Chips
-    const chipsHtml = QUICK_VALUES.map(v =>
+    // Max orderable = lagerplatz-Max minus current stock
+    const maxOrder = (a.max != null && a.stock != null) ? Math.max(1, a.max - (a.stock ?? 0)) : null;
+
+    // Chips — only show values ≤ maxOrder
+    const chipsHtml = QUICK_VALUES.filter(v => maxOrder == null || v <= maxOrder).map(v =>
       `<div class="chip ${(menge === v && bestell) ? 'sel' : ''}" data-id="${a.id}" data-val="${v}">${v}</div>`
     ).join('');
 
     // Suggested qty
-    const suggestQty = (a.max != null && a.stock != null) ? Math.max(1, a.max - (a.stock ?? 0)) : null;
+    const suggestQty = maxOrder;
     const jaLabel    = suggestQty ? `Bestellen (+${suggestQty})` : 'Bestellen';
 
     const cardCls = bestell === true ? 'is-bestell' : bestell === false ? 'is-ok' : '';
@@ -954,7 +960,7 @@
             <div class="chips-row" data-id="${a.id}">${chipsHtml}</div>
             <div class="pm-row">
               <button class="pm-btn" data-id="${a.id}" data-action="minus">−</button>
-              <input  class="pm-disp" id="pm-${a.id}" type="number" inputmode="numeric" value="${menge}" min="1">
+              <input  class="pm-disp" id="pm-${a.id}" type="number" inputmode="numeric" value="${menge}" min="1"${maxOrder != null ? ` max="${maxOrder}"` : ''}>
               <button class="pm-btn" data-id="${a.id}" data-action="plus">+</button>
             </div>
           </div>
@@ -995,8 +1001,10 @@
     document.querySelectorAll('.pm-btn').forEach(btn => {
       const handle = () => {
         const id  = btn.dataset.id;
-        const cur = parseInt(document.getElementById(`pm-${id}`).value) || 1;
-        const nxt = btn.dataset.action === 'plus' ? cur + 1 : Math.max(1, cur - 1);
+        const inp = document.getElementById(`pm-${id}`);
+        const cur = parseInt(inp.value) || 1;
+        const max = inp.max ? parseInt(inp.max) : Infinity;
+        const nxt = btn.dataset.action === 'plus' ? Math.min(max, cur + 1) : Math.max(1, cur - 1);
         setMenge(id, nxt); saveWarenkorb(id);
       };
       btn.addEventListener('touchstart', e => { e.preventDefault(); handle(); }, { passive: false });
@@ -1006,7 +1014,11 @@
     // Manual input
     document.querySelectorAll('.pm-disp').forEach(inp => {
       const id = inp.id.replace('pm-', '');
-      inp.addEventListener('change', () => { setMenge(id, Math.max(1, parseInt(inp.value) || 1)); saveWarenkorb(id); });
+      inp.addEventListener('change', () => {
+        const max = inp.max ? parseInt(inp.max) : Infinity;
+        setMenge(id, Math.min(max, Math.max(1, parseInt(inp.value) || 1)));
+        saveWarenkorb(id);
+      });
     });
 
     // Photo buttons

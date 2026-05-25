@@ -2,7 +2,7 @@
 <html lang="de" data-theme="dark">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -498,6 +498,7 @@
     };
     firebase.initializeApp(firebaseConfig);
     const db   = firebase.firestore();
+    db.enablePersistence({ synchronizeTabs: true }).catch(() => {});
     const auth = firebase.auth();
 
     // ── State ──
@@ -512,17 +513,18 @@
 
     // ── Auth ──
     auth.onAuthStateChanged(async user => {
-      const pinOk = sessionStorage.getItem('lager-pin-auth');
+      const pinOk = sessionStorage.getItem('lager-pin-auth') || localStorage.getItem('lager-pin-auth');
       if (!user && !pinOk) {
         const ret = encodeURIComponent(window.location.pathname + window.location.search);
         window.location.replace(`login.html?tab=mitarbeiter&return=${ret}`);
         return;
       }
       const name = user?.displayName || user?.email
-        || sessionStorage.getItem('lager-pin-name')
+        || sessionStorage.getItem('lager-pin-name') || localStorage.getItem('lager-pin-name')
         || localStorage.getItem('lager-saved-name') || '';
       document.getElementById('nav-user').textContent = name;
       await load();
+      if (localStorage.getItem('camera-auto-start') === '1') startCam();
     });
 
     // ── Artikel laden ──
@@ -852,6 +854,7 @@
       document.getElementById('btn-cam').classList.add('on');
       document.getElementById('cam-overlay').classList.remove('hidden');
       document.body.style.overflow = 'hidden';
+      localStorage.setItem('camera-auto-start', '1');
       try {
         const hints = new Map();
         hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, [
@@ -867,6 +870,7 @@
           result => { if (result) onScan(result.getText(), 'cam'); }
         );
       } catch(e) {
+        if (e.name === 'NotAllowedError') localStorage.removeItem('camera-auto-start');
         toast(e.name==='NotAllowedError'?'Kamera-Zugriff verweigert':'Kamera: '+e.message,'err');
         stopCam();
       }

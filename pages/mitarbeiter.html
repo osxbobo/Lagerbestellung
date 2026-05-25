@@ -2,7 +2,7 @@
 <html lang="de" data-theme="dark">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -160,6 +160,20 @@
     }
     .m-auth-btn.primary { background: var(--brand); color: white; box-shadow: 0 4px 10px rgba(242,107,46,.25); }
     .m-auth-btn.ghost   { background: var(--surface-3); color: var(--ink-2); }
+
+    /* ── Tutorial card ── */
+    .m-tutorial-card {
+      background: var(--surface); border-radius: 16px;
+      box-shadow: inset 0 0 0 0.5px var(--hairline); overflow: hidden;
+    }
+    .m-tutorial-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 11px 14px; border-bottom: 0.5px solid var(--hairline);
+    }
+    .m-tutorial-item:last-child { border-bottom: none; }
+    .m-tutorial-icon { font-size: 16px; flex-shrink: 0; width: 24px; text-align: center; }
+    .m-tutorial-title { font-size: 13px; font-weight: 600; }
+    .m-tutorial-sub   { font-size: 11px; color: var(--ink-3); margin-top: 1px; }
 
     /* ── Letzte Aktivität ── */
     .m-section-label {
@@ -388,8 +402,57 @@
       </div>
     </div>
 
-    <!-- Letzte Aktivität -->
+    <!-- Tutorial / Anleitung -->
     <div>
+      <div class="m-section-label">Anleitung</div>
+      <div class="m-tutorial-card">
+        <div class="m-tutorial-item">
+          <span class="m-tutorial-icon">🔍</span>
+          <div>
+            <div class="m-tutorial-title">Lagersuche</div>
+            <div class="m-tutorial-sub">Artikel, Bestände und Lagerorte durchsuchen</div>
+          </div>
+        </div>
+        <div class="m-tutorial-item">
+          <span class="m-tutorial-icon">⏳</span>
+          <div>
+            <div class="m-tutorial-title">Verfallsmonitor</div>
+            <div class="m-tutorial-sub">Ablaufdaten aller Chargen im Überblick</div>
+          </div>
+        </div>
+        <div class="m-tutorial-item">
+          <span class="m-tutorial-icon">📋</span>
+          <div>
+            <div class="m-tutorial-title">Lagerbestellung (Multi)</div>
+            <div class="m-tutorial-sub">Artikel mit Ja/Nein und Menge bestellen</div>
+          </div>
+        </div>
+        <div class="m-tutorial-item">
+          <span class="m-tutorial-icon">👆</span>
+          <div>
+            <div class="m-tutorial-title">Lagerbestellung (StockSwipe)</div>
+            <div class="m-tutorial-sub">Karten nach rechts (bestellen) oder links (genug) swipen</div>
+          </div>
+        </div>
+        <div class="m-tutorial-item">
+          <span class="m-tutorial-icon">📷</span>
+          <div>
+            <div class="m-tutorial-title">Verfallscan</div>
+            <div class="m-tutorial-sub">Chargen per Barcode scannen und Verfall erfassen</div>
+          </div>
+        </div>
+        <div class="m-tutorial-item">
+          <span class="m-tutorial-icon">🔑</span>
+          <div>
+            <div class="m-tutorial-title">PIN ändern</div>
+            <div class="m-tutorial-sub">Persönlichen 4-stelligen PIN aktualisieren</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Letzte Aktivität (nur für eingeloggte Mitarbeiter) -->
+    <div id="activity-section" class="hidden">
       <div class="m-section-label">Letzte Aktivität</div>
       <div class="m-activity-list" id="activity-list">
         <!-- filled by JS or static fallback -->
@@ -536,8 +599,9 @@
     })();
 
     // ── Auth state ──
-    const pinAuth = sessionStorage.getItem('lager-pin-auth');
-    const pinName = sessionStorage.getItem('lager-pin-name') || '';
+    function authGet(key) { return sessionStorage.getItem(key) || localStorage.getItem(key); }
+    const pinAuth = authGet('lager-pin-auth');
+    const pinName = authGet('lager-pin-name') || '';
 
     if (pinAuth === 'true' && pinName) {
       document.getElementById('user-name').textContent = pinName + '.';
@@ -547,7 +611,8 @@
       document.getElementById('auth-status-text').textContent = 'PIN aktiv';
       document.getElementById('auth-signed-in').style.display = 'contents';
       document.getElementById('auth-guest').classList.add('hidden');
-      if (sessionStorage.getItem('lager-employee-id')) {
+      document.getElementById('activity-section').classList.remove('hidden');
+      if (authGet('lager-employee-id')) {
         document.getElementById('change-pin-btn').style.display = '';
       }
     } else {
@@ -572,15 +637,18 @@
 
     // ── Logout ──
     window.doLogout = function() {
-      sessionStorage.removeItem('lager-pin-auth');
-      sessionStorage.removeItem('lager-pin-name');
+      ['lager-pin-auth','lager-pin-name','lager-employee-id'].forEach(k => {
+        sessionStorage.removeItem(k);
+        localStorage.removeItem(k);
+      });
+      localStorage.removeItem('lager-keep-login');
       localStorage.removeItem('lager-saved-name');
       window.location.href = '../index.html';
     };
 
     // ── Protected nav ──
     window.guardedNav = function(href, context) {
-      if (sessionStorage.getItem('lager-pin-auth') === 'true') {
+      if (authGet('lager-pin-auth') === 'true') {
         window.location.href = href;
       } else {
         openLoginWall(context, href);
@@ -609,12 +677,13 @@
 
   <script type="module">
     import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-    import { getFirestore, collection, query, orderBy, limit, onSnapshot, getDocs, doc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+    import { getFirestore, enableMultiTabIndexedDbPersistence, collection, query, orderBy, limit, onSnapshot, getDocs, doc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
     import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
     import { firebaseConfig } from '../js/firebase-config.js';
 
     const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
     const db  = getFirestore(app);
+    enableMultiTabIndexedDbPersistence(db).catch(() => {});
     const auth = getAuth(app);
     // Wait for Firebase to restore session from storage before signing in anonymously —
     // prevents overwriting an active WL/Admin email-password session on page load.
@@ -748,7 +817,7 @@
     };
 
     async function verifyCurrentPin() {
-      const empId = sessionStorage.getItem('lager-employee-id');
+      const empId = authGet('lager-employee-id');
       if (!empId) {
         document.getElementById('pc-error-1').textContent = 'Kein persönlicher Account – PIN-Änderung nicht möglich';
         _pc1 = ''; updateDots('pc-dot', ''); return;
@@ -782,7 +851,7 @@
         setStep(2);
         return;
       }
-      const empId = sessionStorage.getItem('lager-employee-id');
+      const empId = authGet('lager-employee-id');
       try {
         await updateDoc(doc(db, 'mitarbeiter', empId), { pinHash: await sha256(_pc3) });
         closePinChange();

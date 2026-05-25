@@ -8,7 +8,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="LAGER//APP">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>StockSwipe – LAGER//APP</title>
   <link rel="stylesheet" href="../css/main.css">
   <style>
@@ -240,8 +240,8 @@
       position: absolute; inset: 0; pointer-events: none; opacity: 0;
       transition: opacity 0.15s;
     }
-    .card-swipe-glow.right { background: linear-gradient(90deg, transparent 50%, rgba(22,163,74,.18) 100%); }
-    .card-swipe-glow.left  { background: linear-gradient(270deg, transparent 50%, rgba(242,107,46,.18) 100%); }
+    .card-swipe-glow.right { background: linear-gradient(90deg, transparent 50%, rgba(242,107,46,.18) 100%); }
+    .card-swipe-glow.left  { background: linear-gradient(270deg, transparent 50%, rgba(22,163,74,.18) 100%); }
 
     /* Stamp overlays */
     .swipe-overlay {
@@ -261,22 +261,22 @@
       line-height: 1;
     }
 
-    /* GENUG (Bestand OK) — left side, swiping right */
+    /* BESTELLEN — left side, swiping right */
     .swipe-overlay-right {
       left: 18px;
-      color: var(--ok, #16a34a);
-      border-color: var(--ok, #16a34a);
-      transform: rotate(-8deg);
-      background: rgba(22,163,74,.06);
-    }
-
-    /* BESTELLEN — right side, swiping left  */
-    .swipe-overlay-left {
-      right: 18px;
       color: var(--brand, #F26B2E);
       border-color: var(--brand, #F26B2E);
-      transform: rotate(8deg);
+      transform: rotate(-8deg);
       background: rgba(242,107,46,.06);
+    }
+
+    /* GENUG (Bestand OK) — right side, swiping left */
+    .swipe-overlay-left {
+      right: 18px;
+      color: var(--ok, #16a34a);
+      border-color: var(--ok, #16a34a);
+      transform: rotate(8deg);
+      background: rgba(22,163,74,.06);
     }
 
     /* Lower 40%: data panel */
@@ -738,7 +738,7 @@
   <script type="module">
     import { initializeApp }  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-    import { getFirestore, collection, getDocs, doc, getDoc, setDoc, addDoc, updateDoc, deleteDoc, query, orderBy, where, limit, serverTimestamp, runTransaction, onSnapshot, arrayUnion }
+    import { getFirestore, enableMultiTabIndexedDbPersistence, collection, getDocs, doc, getDoc, setDoc, addDoc, updateDoc, deleteDoc, query, orderBy, where, limit, serverTimestamp, runTransaction, onSnapshot, arrayUnion }
                               from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
     import { firebaseConfig } from "../js/firebase-config.js";
 
@@ -766,6 +766,7 @@
 
     const app = initializeApp(firebaseConfig);
     const db  = getFirestore(app);
+    enableMultiTabIndexedDbPersistence(db).catch(() => {});
 
     // ── State ──
     let correctPin   = '1234';
@@ -797,10 +798,11 @@
     const QUICK_VALUES = [1, 2, 3, 5, 10];
 
     // ── Auth-Check ──
+    function authGet(key) { return sessionStorage.getItem(key) || localStorage.getItem(key); }
     (async function checkAuth() {
-      const pinOk = sessionStorage.getItem('lager-pin-auth');
-      const name  = sessionStorage.getItem('lager-pin-name');
-      const empId = sessionStorage.getItem('lager-employee-id');
+      const pinOk = authGet('lager-pin-auth');
+      const name  = authGet('lager-pin-name');
+      const empId = authGet('lager-employee-id');
       if (pinOk && name) {
         document.getElementById('screen-pin').classList.add('hidden');
         userName   = name;
@@ -1274,8 +1276,8 @@
           </div>
           <div class="card-swipe-glow right" id="glow-right-${artikel.id}"></div>
           <div class="card-swipe-glow left"  id="glow-left-${artikel.id}"></div>
-          <div class="swipe-overlay swipe-overlay-right">GENUG</div>
-          <div class="swipe-overlay swipe-overlay-left">BESTELLEN</div>
+          <div class="swipe-overlay swipe-overlay-right">BESTELLEN</div>
+          <div class="swipe-overlay swipe-overlay-left">GENUG</div>
           <button class="card-info-btn">ⓘ</button>
         </div>
         ${dataArea}`;
@@ -1478,14 +1480,19 @@
       currentMengeArtikel = artikel;
       currentMenge = 1;
 
+      const maxOrder = (artikel.max != null && artikel.stock != null)
+        ? Math.max(1, artikel.max - (artikel.stock ?? 0)) : null;
+
       const title = artikel.name.length > 30 ? artikel.name.slice(0, 28) + '…' : artikel.name;
       document.getElementById('menge-sheet-title').textContent = `Wie viel „${title}" bestellen?`;
 
-      const chipsHtml = QUICK_VALUES.map(v =>
+      const chipsHtml = QUICK_VALUES.filter(v => maxOrder == null || v <= maxOrder).map(v =>
         `<div class="chip ${v === 1 ? 'selected' : ''}" data-val="${v}">${v}</div>`
       ).join('');
       document.getElementById('swipe-chips-row').innerHTML = chipsHtml;
-      document.getElementById('pm-swipe-input').value = 1;
+      const inp = document.getElementById('pm-swipe-input');
+      inp.value = 1;
+      if (maxOrder != null) inp.max = maxOrder; else inp.removeAttribute('max');
 
       document.querySelectorAll('#swipe-chips-row .chip').forEach(chip => {
         function handleChip() {
@@ -1502,9 +1509,10 @@
     }
 
     window.pmAction = function(action) {
-      const input = document.getElementById('pm-swipe-input');
-      const cur   = parseInt(input.value) || 1;
-      currentMenge = action === 'plus' ? cur + 1 : Math.max(1, cur - 1);
+      const input  = document.getElementById('pm-swipe-input');
+      const cur    = parseInt(input.value) || 1;
+      const maxVal = input.max ? parseInt(input.max) : Infinity;
+      currentMenge = action === 'plus' ? Math.min(maxVal, cur + 1) : Math.max(1, cur - 1);
       input.value  = currentMenge;
       document.querySelectorAll('#swipe-chips-row .chip').forEach(c => {
         c.classList.toggle('selected', parseInt(c.dataset.val) === currentMenge);
@@ -1512,8 +1520,9 @@
     };
 
     window.confirmMenge = function() {
-      const input = document.getElementById('pm-swipe-input');
-      currentMenge = Math.max(1, parseInt(input.value) || 1);
+      const input  = document.getElementById('pm-swipe-input');
+      const maxVal = input.max ? parseInt(input.max) : Infinity;
+      currentMenge = Math.min(maxVal, Math.max(1, parseInt(input.value) || 1));
       if (currentMengeArtikel) {
         bestellungen[currentMengeArtikel.id] = { bestellen: true, menge: currentMenge };
         quickSave(currentMengeArtikel.id, { bestellen: true, menge: currentMenge });

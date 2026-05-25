@@ -8,7 +8,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="apple-mobile-web-app-title" content="LAGER//APP">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Anmelden – LAGER//APP</title>
   <link rel="stylesheet" href="../css/main.css">
   <style>
@@ -149,6 +149,13 @@
       text-align: center; font-size: 12px; color: var(--crit);
       min-height: 18px; margin: 6px 0;
     }
+
+    .ln-keep-row {
+      display: flex; align-items: center; justify-content: center;
+      gap: 8px; margin: 4px 0 2px; cursor: pointer;
+    }
+    .ln-keep-row input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--brand); cursor: pointer; }
+    .ln-keep-row span { font-size: 12px; color: var(--ink-3); }
 
     /* ── Wachenleiter form ── */
     .ln-wl-form {
@@ -404,6 +411,10 @@
     </div>
 
     <div class="ln-pin-error" id="ma-error"></div>
+    <label class="ln-keep-row">
+      <input type="checkbox" id="ma-keep-login">
+      <span>Eingeloggt bleiben</span>
+    </label>
 
     <!-- Numpad -->
     <div class="ln-numpad">
@@ -551,6 +562,10 @@
           </div>
           <div class="dsk-pin-error" id="dsk-ma-error"></div>
         </div>
+        <label class="ln-keep-row" style="margin-top:10px;">
+          <input type="checkbox" id="dsk-keep-login">
+          <span>Eingeloggt bleiben</span>
+        </label>
 
         <button class="dsk-btn-primary" id="dsk-ma-btn" onclick="dskMaLogin()">
           <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -716,6 +731,28 @@
       localStorage.setItem('lager-saved-name', e.target.value);
     });
 
+    // ── "Eingeloggt bleiben" — restore checkbox state ──
+    const keepChecked = localStorage.getItem('lager-keep-login') === '1';
+    if (keepChecked) {
+      const cbM = document.getElementById('ma-keep-login');
+      const cbD = document.getElementById('dsk-keep-login');
+      if (cbM) cbM.checked = true;
+      if (cbD) cbD.checked = true;
+    }
+    // If already persistently logged in, skip login page
+    if (localStorage.getItem('lager-pin-auth') === 'true') {
+      window.location.replace(returnUrl || 'mitarbeiter.html');
+    }
+
+    // Returns the storage to use for auth data
+    function authStore() {
+      const cbM = document.getElementById('ma-keep-login');
+      const cbD = document.getElementById('dsk-keep-login');
+      const keep = (cbM?.checked || cbD?.checked);
+      localStorage.setItem('lager-keep-login', keep ? '1' : '0');
+      return keep ? localStorage : sessionStorage;
+    }
+
     // ── Firebase ──
     const app  = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
     const auth = getAuth(app);
@@ -726,6 +763,7 @@
     onAuthStateChanged(auth, async user => {
       if (user && !user.isAnonymous) {
         if (sessionStorage.getItem('lager-pin-auth') === 'true') return;
+        if (localStorage.getItem('lager-pin-auth') === 'true') return;
         const role = await getRole(user.uid);
         redirectByRole(role);
       }
@@ -853,10 +891,11 @@
         }
 
         _attempts = 0;
-        sessionStorage.setItem('lager-pin-auth', 'true');
-        sessionStorage.setItem('lager-pin-name', loginName);
-        if (employeeId) sessionStorage.setItem('lager-employee-id', employeeId);
-        else sessionStorage.removeItem('lager-employee-id');
+        const store = authStore();
+        store.setItem('lager-pin-auth', 'true');
+        store.setItem('lager-pin-name', loginName);
+        if (employeeId) store.setItem('lager-employee-id', employeeId);
+        else { store.removeItem('lager-employee-id'); }
         localStorage.setItem('lager-saved-name', name);
         window.location.href = returnUrl || 'mitarbeiter.html';
       } catch (e) {
@@ -962,10 +1001,11 @@
         }
 
         _dskAttempts = 0;
-        sessionStorage.setItem('lager-pin-auth', 'true');
-        sessionStorage.setItem('lager-pin-name', loginName);
-        if (employeeId) sessionStorage.setItem('lager-employee-id', employeeId);
-        else sessionStorage.removeItem('lager-employee-id');
+        const store = authStore();
+        store.setItem('lager-pin-auth', 'true');
+        store.setItem('lager-pin-name', loginName);
+        if (employeeId) store.setItem('lager-employee-id', employeeId);
+        else { store.removeItem('lager-employee-id'); }
         localStorage.setItem('lager-saved-name', name);
         window.location.href = returnUrl || 'mitarbeiter.html';
       } catch (e) {

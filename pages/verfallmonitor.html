@@ -2,7 +2,7 @@
 <html lang="de" data-theme="dark">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -73,6 +73,13 @@
     }
     .verfall-accent.crit { background: var(--crit); }
     .verfall-accent.low  { background: var(--low); }
+    .verfall-item.is-expired { background: var(--crit-soft, rgba(220,38,38,.08)); }
+    .btn-entsorgt {
+      margin-top: 6px; padding: 4px 10px; border-radius: 8px; border: 1px solid var(--crit);
+      background: transparent; color: var(--crit); font-size: 11px; font-weight: 600;
+      cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+    }
+    .btn-entsorgt:active { opacity: 0.7; }
 
     /* ── Group header ── */
     .vm-group-header {
@@ -264,11 +271,12 @@
     };
     firebase.initializeApp(firebaseConfig);
     const db   = firebase.firestore();
+    db.enablePersistence({ synchronizeTabs: true }).catch(() => {});
     const auth = firebase.auth();
 
     // ── Auth ──
     auth.onAuthStateChanged(user => {
-      const pinOk = sessionStorage.getItem('lager-pin-auth');
+      const pinOk = sessionStorage.getItem('lager-pin-auth') || localStorage.getItem('lager-pin-auth');
       if (!user && !pinOk) { window.location.href = '../index.html'; return; }
       loadData();
     });
@@ -302,6 +310,7 @@
           const a = doc.data();
           (a.chargen || []).forEach(c => {
             if (!c.verfall) return;
+            if (c.disposed) return;
             const verfallDate = new Date(c.verfall);
             const isUeberfaellig = verfallDate < monthStart;
             const isDiesenMonat  = c.verfall.startsWith(monthPrefix);
@@ -310,6 +319,7 @@
             if (!isUeberfaellig && !isDiesenMonat && !isFolge) return;
 
             entries.push({
+              artikelId: doc.id,
               name:    a.name || '–',
               bereich: prettyBereich(bereiche[a.bereich] || a.bereich || '–'),
               lot:     c.lot || '–',
@@ -374,18 +384,53 @@
       const isLow  = e.status === 'diesen-monat';
       const tone   = isCrit ? 'crit' : isLow ? 'low' : 'neutral';
       const chipCls = isCrit ? 'crit' : isLow ? 'low' : 'neutral';
-      const diff   = daysLabel(e.verfall);
-      return `<div class="verfall-item">
+
+      const today = new Date(); today.setHours(0,0,0,0);
+      const end   = new Date(e.verfall); end.setHours(0,0,0,0);
+      const daysDiff = Math.round((end - today) / 86400000);
+      const isExpired = daysDiff < 0;
+      const diffLabel = isExpired ? 'ABGELAUFEN' : daysLabel(e.verfall);
+      const expiredClass = isExpired ? ' is-expired' : '';
+
+      const entsorgtBtn = isExpired
+        ? `<button class="btn-entsorgt" onclick="meldungEntsorgt(${JSON.stringify(e.artikelId)},${JSON.stringify(e.lot)},${JSON.stringify(e.verfall)})">Entsorgt melden</button>`
+        : '';
+
+      return `<div class="verfall-item${expiredClass}">
         <div class="verfall-accent ${tone}"></div>
         <div style="flex:1;min-width:0;padding-left:4px">
           <div style="font-size:14px;font-weight:600;line-height:1.3">${esc(e.name)}</div>
           <div style="font-size:11px;color:var(--ink-3);margin-top:2px;font-family:var(--font-mono)">LOT ${esc(e.lot)} · ${formatVerfall(e.verfall)}</div>
+          ${entsorgtBtn}
         </div>
         <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0">
-          <span class="la-chip ${chipCls}" style="height:20px"><span class="dot"></span>${diff}</span>
+          <span class="la-chip ${chipCls}" style="height:20px"><span class="dot"></span>${diffLabel}</span>
           <span style="font-size:10px;color:var(--ink-3)">${esc(e.bereich)}</span>
         </div>
       </div>`;
+    }
+
+    async function meldungEntsorgt(artikelId, lot, verfall) {
+      if (!confirm(`Charge LOT ${lot} (${formatVerfall(verfall)}) als entsorgt melden?`)) return;
+      try {
+        const snap = await db.collection('artikel').doc(artikelId).get();
+        if (!snap.exists) { alert('Artikel nicht gefunden.'); return; }
+        const chargen = (snap.data().chargen || []).map(c => {
+          if (c.lot === lot && c.verfall === verfall) {
+            return {
+              ...c,
+              disposed: true,
+              disposedAt: new Date().toISOString(),
+              disposedBy: sessionStorage.getItem('lager-pin-name') || localStorage.getItem('lager-pin-name') || '–'
+            };
+          }
+          return c;
+        });
+        await db.collection('artikel').doc(artikelId).update({ chargen });
+        loadData();
+      } catch(e) {
+        alert('Fehler: ' + e.message);
+      }
     }
 
     function prettyBereich(name) {
