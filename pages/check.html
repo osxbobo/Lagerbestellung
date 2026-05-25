@@ -413,7 +413,7 @@
   import {
     initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
     doc, collection,
-    getDoc, getDocs, setDoc, updateDoc, addDoc, deleteDoc,
+    getDoc, getDocs, getDocsFromCache, setDoc, updateDoc, addDoc, deleteDoc,
     query, where, orderBy, writeBatch,
     onSnapshot, runTransaction, serverTimestamp, arrayUnion,
   } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
@@ -531,15 +531,18 @@
 
     document.getElementById('nav-user').textContent = name;
 
-    // Wait for Firebase to restore stored session before deciding to sign in anonymously
-    const _authUser = await new Promise(resolve => {
-      const unsub = onAuthStateChanged(auth, user => { unsub(); resolve(user); });
-    });
-    if (!_authUser || _authUser.isAnonymous) {
-      try { await signInAnonymously(auth); } catch(e) {}
-    }
+    // Auth im Hintergrund starten — public reads brauchen kein Auth
+    const authReady = (async () => {
+      const _authUser = await new Promise(resolve => {
+        const unsub = onAuthStateChanged(auth, user => { unsub(); resolve(user); });
+      });
+      if (!_authUser || _authUser.isAnonymous) {
+        try { await signInAnonymously(auth); } catch(e) {}
+      }
+    })();
 
     await loadData();
+    await authReady; // sicherstellen vor RTDB-Writes
 
     // Block if a solo StockSwipe session is running
     const sessSnap = await getDoc(doc(db, 'bestellungen_session', SID));
@@ -567,6 +570,25 @@
 
   /* ── Load bereiche + artikel ────────────────── */
   async function loadData() {
+    // Cache-First: sofort aus IndexedDB lesen wenn vorhanden
+    try {
+      const [bCached, aCached] = await Promise.all([
+        getDocsFromCache(query(collection(db, 'bereiche'), orderBy('reihenfolge'))),
+        getDocsFromCache(collection(db, 'artikel')),
+      ]);
+      S.bereiche    = bCached.docs.map(d => ({ id: d.id, ...d.data() }));
+      S.alleArtikel = aCached.docs.map(d => ({ id: d.id, ...d.data() }));
+      // Cache-Hit: Netzwerk im Hintergrund (nicht blockieren)
+      Promise.all([
+        getDocs(query(collection(db, 'bereiche'), orderBy('reihenfolge'))),
+        getDocs(collection(db, 'artikel')),
+      ]).then(([bSnap, aSnap]) => {
+        S.bereiche    = bSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+        S.alleArtikel = aSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+      }).catch(() => {});
+      return; // sofort zurück — Daten kommen aus Cache
+    } catch (_) {}
+    // Kein Cache: Netzwerkabruf abwarten
     const [bSnap, aSnap] = await Promise.all([
       getDocs(query(collection(db, 'bereiche'), orderBy('reihenfolge'))),
       getDocs(collection(db, 'artikel')),

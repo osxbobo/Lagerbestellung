@@ -738,7 +738,7 @@
   <script type="module">
     import { initializeApp }  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-    import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, collection, getDocs, doc, getDoc, setDoc, addDoc, updateDoc, deleteDoc, query, orderBy, where, limit, serverTimestamp, runTransaction, onSnapshot, arrayUnion }
+    import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, collection, getDocs, getDocsFromCache, doc, getDoc, setDoc, addDoc, updateDoc, deleteDoc, query, orderBy, where, limit, serverTimestamp, runTransaction, onSnapshot, arrayUnion }
                               from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
     import { firebaseConfig } from "../js/firebase-config.js";
 
@@ -807,7 +807,16 @@
         userName   = name;
         employeeId = empId || btoa(unescape(encodeURIComponent(name))).replace(/[^a-zA-Z0-9]/g, '').substring(0, 20);
         document.getElementById('nav-user').textContent = userName;
+        // Auth im Hintergrund starten — parallel zum Datenladen
+        const _auth = getAuth(app);
+        const authReady = (async () => {
+          const _u = await new Promise(resolve => {
+            const unsub = onAuthStateChanged(_auth, u => { unsub(); resolve(u); });
+          });
+          if (!_u || _u.isAnonymous) try { await signInAnonymously(_auth); } catch(e) {}
+        })();
         await loadCheckData();
+        await authReady; // Auth fertig → startDirectly() findet user sofort
         await startDirectly();
       } else {
         const ret = encodeURIComponent(window.location.pathname + window.location.search);
@@ -1118,6 +1127,25 @@
     }
 
     async function loadCheckData() {
+      // Cache-First: sofort aus IndexedDB lesen wenn vorhanden
+      try {
+        const [bCached, aCached] = await Promise.all([
+          getDocsFromCache(query(collection(db, 'bereiche'), orderBy('reihenfolge'))),
+          getDocsFromCache(collection(db, 'artikel')),
+        ]);
+        alleBereiche = bCached.docs.map(d => ({ id: d.id, ...d.data() }));
+        alleArtikel  = aCached.docs.map(d => ({ id: d.id, ...d.data() }));
+        // Cache-Hit: Netzwerk im Hintergrund (nicht blockieren)
+        Promise.all([
+          getDocs(query(collection(db, 'bereiche'), orderBy('reihenfolge'))),
+          getDocs(collection(db, 'artikel')),
+        ]).then(([bSnap, aSnap]) => {
+          alleBereiche = bSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+          alleArtikel  = aSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+        }).catch(() => {});
+        return; // sofort zurück — Daten kommen aus Cache
+      } catch (_) {}
+      // Kein Cache: Netzwerkabruf abwarten
       const [bSnap, aSnap] = await Promise.all([
         getDocs(query(collection(db, 'bereiche'), orderBy('reihenfolge'))),
         getDocs(collection(db, 'artikel')),
