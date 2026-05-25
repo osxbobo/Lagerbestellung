@@ -677,13 +677,12 @@
 
   <script type="module">
     import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-    import { getFirestore, enableMultiTabIndexedDbPersistence, collection, query, orderBy, limit, onSnapshot, getDocs, doc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+    import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, collection, query, orderBy, limit, onSnapshot, getDocs, doc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
     import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
     import { firebaseConfig } from '../js/firebase-config.js';
 
     const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
-    const db  = getFirestore(app);
-    enableMultiTabIndexedDbPersistence(db).catch(() => {});
+    const db  = initializeFirestore(app, { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) });
     const auth = getAuth(app);
     // Wait for Firebase to restore session from storage before signing in anonymously —
     // prevents overwriting an active WL/Admin email-password session on page load.

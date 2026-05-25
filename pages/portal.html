@@ -1032,7 +1032,7 @@
     import { initializeApp }  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getAuth, onAuthStateChanged, signOut }
                               from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-    import { getFirestore, enableMultiTabIndexedDbPersistence, collection, getDocs, doc, getDoc, setDoc, updateDoc, deleteDoc, addDoc, query, orderBy, limit, where, onSnapshot, Timestamp, writeBatch }
+    import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, collection, getDocs, doc, getDoc, setDoc, updateDoc, deleteDoc, addDoc, query, orderBy, limit, where, onSnapshot, Timestamp, writeBatch }
                               from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
     import { firebaseConfig } from "../js/firebase-config.js";
 
@@ -1054,8 +1054,7 @@
 
     const app  = initializeApp(firebaseConfig);
     const auth = getAuth(app);
-    const db   = getFirestore(app);
-    enableMultiTabIndexedDbPersistence(db).catch(() => {});
+    const db   = initializeFirestore(app, { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) });
 
     const CLOUDINARY_CLOUD  = 'dvqug2dcx';
     const CLOUDINARY_PRESET = 'lagerapp_unsigned';

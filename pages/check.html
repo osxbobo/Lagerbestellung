@@ -411,7 +411,7 @@
   import { initializeApp }              from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
   import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
   import {
-    getFirestore, enableMultiTabIndexedDbPersistence,
+    initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
     doc, collection,
     getDoc, getDocs, setDoc, updateDoc, addDoc, deleteDoc,
     query, where, orderBy, writeBatch,
@@ -442,8 +442,7 @@
 
   /* ── Firebase ───────────────────────────────── */
   const app  = initializeApp(firebaseConfig);
-  const db   = getFirestore(app);
-  enableMultiTabIndexedDbPersistence(db).catch(() => {});
+  const db   = initializeFirestore(app, { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) });
   const auth = getAuth(app);
   let rtdb   = null;
   try { rtdb = getDatabase(app); } catch(e) {}
