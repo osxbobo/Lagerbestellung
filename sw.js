@@ -7,7 +7,7 @@
 // Diese Nummer bei jedem GitHub Upload um 1 erhöhen
 // z.B. v2, v3, v4 ...
 // → Browser erkennt automatisch die neue Version und lädt alles neu
-const CACHE_VERSION = 'v128';
+const CACHE_VERSION = 'v125';
 const CACHE_NAME    = `lagerapp-${CACHE_VERSION}`;
 const BASE_PATH     = '/lagerapp_alpha';
 
@@ -17,11 +17,16 @@ const CACHE_FILES = [
   `${BASE_PATH}/index.html`,
   `${BASE_PATH}/pages/check.html`,
   `${BASE_PATH}/pages/login.html`,
+  `${BASE_PATH}/pages/mitarbeiter.html`,
   `${BASE_PATH}/pages/portal.html`,
   `${BASE_PATH}/pages/admin.html`,
   `${BASE_PATH}/pages/scanner.html`,
+  `${BASE_PATH}/pages/stockswipe.html`,
+  `${BASE_PATH}/pages/verfallmonitor.html`,
   `${BASE_PATH}/css/main.css`,
   `${BASE_PATH}/css/index.css`,
+  `${BASE_PATH}/js/firebase-config.js`,
+  `${BASE_PATH}/js/pwa.js`,
   `${BASE_PATH}/manifest.json`,
 ];
 
