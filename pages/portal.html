@@ -361,6 +361,9 @@
     <button class="bottom-sheet-item" data-section="mitarbeiter" onclick="showSection('mitarbeiter');closeBottomSheet()">
       <span class="bottom-sheet-item-icon">👥</span> Mitarbeiter
     </button>
+    <button class="bottom-sheet-item" data-section="anleitung" onclick="showSection('anleitung');closeBottomSheet()">
+      <span class="bottom-sheet-item-icon">📖</span> Anleitungen
+    </button>
     <button class="bottom-sheet-item" onclick="window.location.href='scanner.html'">
       <span class="bottom-sheet-item-icon">📷</span> Charge-Scanner
     </button>
@@ -2853,41 +2856,111 @@
       { id: 'pin',             icon: '🔑', title: 'PIN ändern',                    sub: 'Persönlichen 4-stelligen PIN aktualisieren' },
     ];
 
-    let helpImagesPortal = {};
-    let helpFotoTargetId = null;
+    let helpImagesPortal  = {};
+    let helpContentPortal = {};
+    let helpFotoTargetId  = null;
 
     async function renderAnleitung() {
       try {
-        const snap = await getDoc(doc(db, 'config', 'help_images'));
-        if (snap.exists()) helpImagesPortal = snap.data();
+        const [snapImg, snapTxt] = await Promise.all([
+          getDoc(doc(db, 'config', 'help_images')),
+          getDoc(doc(db, 'config', 'help_content')),
+        ]);
+        if (snapImg.exists()) helpImagesPortal  = snapImg.data();
+        if (snapTxt.exists()) helpContentPortal = snapTxt.data();
       } catch(e) {}
 
       const list = document.getElementById('anleitung-list');
       list.innerHTML = HELP_ITEMS.map(item => {
         const imgUrl = helpImagesPortal[item.id];
+        const steps  = helpContentPortal[item.id] || [];
+        const stepsHtml = steps.map((s, i) => stepRowHTML(item.id, i, s)).join('');
         return `
-          <div style="background:var(--surface);border:1px solid var(--hairline);border-radius:14px;
-            display:flex;align-items:center;gap:14px;padding:14px 16px;flex-wrap:wrap;">
-            <div style="font-size:1.6rem;flex-shrink:0;width:36px;text-align:center;">${item.icon}</div>
-            <div style="flex:1;min-width:120px;">
-              <div style="font-size:0.88rem;font-weight:600;">${esc(item.title)}</div>
-              <div style="font-size:0.7rem;color:var(--ink-3);margin-top:2px;">${esc(item.sub)}</div>
+          <div style="background:var(--surface);border:1px solid var(--hairline);border-radius:14px;padding:14px 16px;">
+            <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+              <div style="font-size:1.6rem;flex-shrink:0;width:36px;text-align:center;">${item.icon}</div>
+              <div style="flex:1;min-width:120px;">
+                <div style="font-size:0.88rem;font-weight:600;">${esc(item.title)}</div>
+                <div style="font-size:0.7rem;color:var(--ink-3);margin-top:2px;">${esc(item.sub)}</div>
+                ${steps.length
+                  ? `<div style="font-size:0.65rem;color:var(--ok);font-family:var(--font-mono);margin-top:3px;">${steps.length} eigene Schritt${steps.length !== 1 ? 'e' : ''}</div>`
+                  : `<div style="font-size:0.65rem;color:var(--ink-4);font-family:var(--font-mono);margin-top:3px;">Standard-Text</div>`}
+              </div>
+              ${imgUrl ? `
+                <img src="${esc(imgUrl)}" alt="${esc(item.title)}"
+                  style="width:60px;height:60px;object-fit:cover;border-radius:10px;
+                    border:1px solid var(--hairline);flex-shrink:0;">
+              ` : `
+                <div style="width:60px;height:60px;border-radius:10px;border:1.5px dashed var(--hairline-2);
+                  background:var(--surface-2);display:flex;align-items:center;justify-content:center;
+                  font-size:1.2rem;flex-shrink:0;color:var(--ink-4);">📷</div>
+              `}
+              <div style="display:flex;gap:6px;flex-wrap:wrap;flex-shrink:0;">
+                <button onclick="triggerHelpFotoUpload('${item.id}')" class="tbl-btn">${imgUrl ? '↺ Bild' : '+ Bild'}</button>
+                ${imgUrl ? `<button onclick="deleteHelpFoto('${item.id}')" class="tbl-btn del">🗑</button>` : ''}
+                <button onclick="toggleStepEditor('${item.id}')" class="tbl-btn">✏️ Schritte</button>
+              </div>
             </div>
-            ${imgUrl ? `
-              <img src="${esc(imgUrl)}" alt="${esc(item.title)}"
-                style="width:60px;height:60px;object-fit:cover;border-radius:10px;
-                  border:1px solid var(--hairline);flex-shrink:0;">
-            ` : `
-              <div style="width:60px;height:60px;border-radius:10px;border:1.5px dashed var(--hairline-2);
-                background:var(--surface-2);display:flex;align-items:center;justify-content:center;
-                font-size:1.2rem;flex-shrink:0;color:var(--ink-4);">📷</div>
-            `}
-            <button onclick="triggerHelpFotoUpload('${item.id}')" class="tbl-btn"
-              style="flex-shrink:0;">${imgUrl ? '↺ Ersetzen' : '+ Bild'}</button>
-            ${imgUrl ? `<button onclick="deleteHelpFoto('${item.id}')" class="tbl-btn del" style="flex-shrink:0;">🗑</button>` : ''}
+            <div id="step-editor-${item.id}" style="display:none;margin-top:14px;border-top:1px solid var(--hairline);padding-top:14px;">
+              <div style="font-size:0.7rem;font-weight:600;color:var(--ink-3);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px;">Schritte bearbeiten</div>
+              <div id="steps-list-${item.id}">${stepsHtml}</div>
+              <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">
+                <button onclick="addStep('${item.id}')" class="tbl-btn">+ Schritt</button>
+                <button onclick="saveSteps('${item.id}')" class="tbl-btn" style="color:var(--ok);border-color:var(--ok);">💾 Speichern</button>
+                ${steps.length ? `<button onclick="resetSteps('${item.id}')" class="tbl-btn del" style="margin-left:auto;">↩ Standard</button>` : ''}
+              </div>
+            </div>
           </div>`;
       }).join('');
     }
+
+    function stepRowHTML(id, idx, text) {
+      const rowId = 'step-row-' + id + '-' + idx;
+      return `<div id="${rowId}" style="display:flex;gap:8px;align-items:flex-start;margin-bottom:6px;">
+        <textarea rows="2" style="flex:1;background:var(--surface-2);border:1.5px solid var(--hairline-2);
+          border-radius:8px;padding:7px 10px;font-family:var(--font-ui);font-size:0.82rem;color:var(--ink);
+          resize:vertical;outline:none;min-height:38px;" placeholder="Schritt beschreiben…"
+          onfocus="this.style.borderColor='var(--brand)'" onblur="this.style.borderColor='var(--hairline-2)'">${esc(text)}</textarea>
+        <button onclick="document.getElementById('${rowId}').remove()" class="tbl-btn del" style="flex-shrink:0;margin-top:2px;">✕</button>
+      </div>`;
+    }
+
+    window.toggleStepEditor = function(id) {
+      const el = document.getElementById('step-editor-' + id);
+      el.style.display = el.style.display === 'none' ? '' : 'none';
+    };
+
+    window.addStep = function(id) {
+      const list = document.getElementById('steps-list-' + id);
+      list.insertAdjacentHTML('beforeend', stepRowHTML(id, Date.now(), ''));
+      list.lastElementChild?.querySelector('textarea')?.focus();
+    };
+
+    window.saveSteps = async function(id) {
+      const list  = document.getElementById('steps-list-' + id);
+      const steps = [...list.querySelectorAll('textarea')].map(t => t.value.trim()).filter(Boolean);
+      try {
+        await setDoc(doc(db, 'config', 'help_content'), { [id]: steps }, { merge: true });
+        helpContentPortal[id] = steps;
+        showPortalToast('Schritte gespeichert', 'success');
+        renderAnleitung();
+      } catch(e) {
+        showPortalToast('Fehler: ' + e.message, 'error');
+      }
+    };
+
+    window.resetSteps = async function(id) {
+      const item = HELP_ITEMS.find(x => x.id === id);
+      if (!confirm('Standard-Schritte für „' + (item?.title || id) + '" wiederherstellen? Eigene Änderungen gehen verloren.')) return;
+      try {
+        await setDoc(doc(db, 'config', 'help_content'), { [id]: [] }, { merge: true });
+        helpContentPortal[id] = [];
+        showPortalToast('Standard wiederhergestellt', 'success');
+        renderAnleitung();
+      } catch(e) {
+        showPortalToast('Fehler: ' + e.message, 'error');
+      }
+    };
 
     window.triggerHelpFotoUpload = function(id) {
       helpFotoTargetId = id;

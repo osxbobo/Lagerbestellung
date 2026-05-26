@@ -800,14 +800,16 @@
       },
     };
 
-    let helpImages = {};
+    let helpImages  = {};
+    let helpContent = {};
 
     window.openHelp = function(id) {
       const d = HELP_DATA[id];
       if (!d) return;
       document.getElementById('help-icon').textContent  = d.icon;
       document.getElementById('help-title').textContent = d.title;
-      document.getElementById('help-steps').innerHTML = d.steps.map((s, i) => `
+      const steps = (helpContent[id] && helpContent[id].length) ? helpContent[id] : d.steps;
+      document.getElementById('help-steps').innerHTML = steps.map((s, i) => `
         <li style="display:flex;gap:12px;align-items:flex-start;">
           <span style="min-width:24px;height:24px;border-radius:50%;background:var(--brand);color:#fff;
             font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">${i + 1}</span>
@@ -847,9 +849,12 @@
       if (!user) signInAnonymously(auth).catch(() => {});
     });
 
-    // ── Help-Bilder laden (fire-and-forget) ──
+    // ── Help-Daten laden (fire-and-forget) ──
     getDoc(doc(db, 'config', 'help_images')).then(snap => {
       if (snap.exists()) helpImages = snap.data();
+    }).catch(() => {});
+    getDoc(doc(db, 'config', 'help_content')).then(snap => {
+      if (snap.exists()) helpContent = snap.data();
     }).catch(() => {});
 
     // ── Live session ──
