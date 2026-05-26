@@ -710,12 +710,17 @@
 
     // ── Letzte Aktivität (last 5 Bestellungen) ──
     (async () => {
-      // Auth muss bereit sein bevor Firestore-Reads erlaubt sind
-      await new Promise(resolve => {
-        const unsub = onAuthStateChanged(auth, user => { unsub(); resolve(user); });
-      });
+      // Wait until Firebase auth has a signed-in user (anonymous or otherwise).
+      // onAuthStateChanged fires immediately with the current state — if null we must
+      // wait for the next callback which fires after signInAnonymously completes.
       if (!auth.currentUser) {
-        try { await signInAnonymously(auth); } catch(_) {}
+        await new Promise(resolve => {
+          let unsub;
+          const timer = setTimeout(() => { if (unsub) unsub(); resolve(); }, 6000);
+          unsub = onAuthStateChanged(auth, u => {
+            if (u) { clearTimeout(timer); unsub(); resolve(); }
+          });
+        });
       }
 
       const list = document.getElementById('activity-list');
@@ -749,6 +754,7 @@
           list.innerHTML = '<div class="m-activity-row"><div class="m-activity-text" style="color:var(--ink-3);font-size:12px;">Noch keine Aktivität</div></div>';
         }
       } catch(e) {
+        console.error('[mitarbeiter] bestellungen query:', e.code, e.message);
         list.innerHTML = '<div class="m-activity-row"><div class="m-activity-text" style="color:var(--ink-3);font-size:12px;">Aktivität nicht verfügbar</div></div>';
       }
     })();

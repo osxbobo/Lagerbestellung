@@ -275,9 +275,10 @@
     const auth = firebase.auth();
 
     // ── Auth ──
-    auth.onAuthStateChanged(user => {
+    auth.onAuthStateChanged(async user => {
       const pinOk = sessionStorage.getItem('lager-pin-auth') || localStorage.getItem('lager-pin-auth');
       if (!user && !pinOk) { window.location.href = '../index.html'; return; }
+      if (!user) { try { await auth.signInAnonymously(); } catch(_) {} }
       loadData();
     });
 
