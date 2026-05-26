@@ -1507,11 +1507,23 @@
       currentMengeArtikel = artikel;
       currentMenge = 1;
 
-      const maxOrder = (artikel.max != null && artikel.stock != null)
-        ? Math.max(1, artikel.max - (artikel.stock ?? 0)) : null;
+      const maxOrder = artikel.max != null ? artikel.max : null;
+      const unit     = artikel.minEinheit || artikel.maxEinheit || 'Stk';
 
       const title = artikel.name.length > 30 ? artikel.name.slice(0, 28) + '…' : artikel.name;
       document.getElementById('menge-sheet-title').textContent = `Wie viel „${title}" bestellen?`;
+
+      // Show unit + max hint below title
+      let subtitle = document.getElementById('menge-sheet-subtitle');
+      if (!subtitle) {
+        subtitle = document.createElement('div');
+        subtitle.id = 'menge-sheet-subtitle';
+        subtitle.style.cssText = 'text-align:center;font-size:0.78rem;color:var(--ink-3);font-family:\'IBM Plex Mono\',monospace;margin-top:-8px;';
+        document.getElementById('menge-sheet-title').after(subtitle);
+      }
+      subtitle.textContent = maxOrder != null
+        ? `Einheit: ${unit} · max. ${maxOrder} ${unit}`
+        : `Einheit: ${unit}`;
 
       const chipsHtml = QUICK_VALUES.filter(v => maxOrder == null || v <= maxOrder).map(v =>
         `<div class="chip ${v === 1 ? 'selected' : ''}" data-val="${v}">${v}</div>`

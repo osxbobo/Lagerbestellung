@@ -12,7 +12,7 @@
   <title>Lagerbestellung – LAGER//APP</title>
   <link rel="stylesheet" href="../css/main.css">
   <style>
-    body { margin:0; min-height:100dvh; display:flex; flex-direction:column; background:var(--bg); font-family:var(--font-ui); }
+    body { margin:0; height:100dvh; overflow:hidden; display:flex; flex-direction:column; background:var(--bg); font-family:var(--font-ui); }
 
     /* ── Navbar ── */
     .c-nav {
@@ -261,6 +261,10 @@
 
     .pills-wrap { display:flex; flex-wrap:wrap; gap:8px; padding:14px 16px; }
     .name-pill  { padding:5px 12px; border-radius:20px; background:var(--surface-2); font-size:12px; font-weight:600; box-shadow:inset 0 0 0 1px var(--hairline); }
+
+    .wait-row.clickable { cursor:pointer; }
+    .wait-row.clickable:active { background:var(--surface-2); }
+    .wait-row-pick { font-size:12px; font-weight:700; color:var(--brand); flex-shrink:0; }
 
     /* ══════════════════════════════
        UNTERSCHRIFT
@@ -941,17 +945,16 @@
       ? `<div class="a-fotos">${fotoItems.join('')}</div>`
       : `<div class="a-fotos"><div class="a-foto-btn" style="cursor:default;opacity:0.35;pointer-events:none;">📦</div></div>`;
 
-    // Max orderable = lagerplatz-Max minus current stock
-    const maxOrder = (a.max != null && a.stock != null) ? Math.max(1, a.max - (a.stock ?? 0)) : null;
+    // Max orderable = article MAX value (in the article's unit)
+    const maxOrder = a.max != null ? a.max : null;
 
     // Chips — only show values ≤ maxOrder
     const chipsHtml = QUICK_VALUES.filter(v => maxOrder == null || v <= maxOrder).map(v =>
       `<div class="chip ${(menge === v && bestell) ? 'sel' : ''}" data-id="${a.id}" data-val="${v}">${v}</div>`
     ).join('');
 
-    // Suggested qty
     const suggestQty = maxOrder;
-    const jaLabel    = suggestQty ? `Bestellen (+${suggestQty})` : 'Bestellen';
+    const jaLabel    = suggestQty ? `Bestellen (+${suggestQty} ${unit})` : 'Bestellen';
 
     const cardCls = bestell === true ? 'is-bestell' : bestell === false ? 'is-ok' : '';
     return `
@@ -977,7 +980,7 @@
             <button class="jn-btn ja   ${bestell === true  ? 'sel' : ''}" data-id="${a.id}" data-val="ja">${jaLabel}</button>
           </div>
           <div class="menge-wrap ${bestell === true ? 'vis' : ''}" id="menge-${a.id}">
-            <div class="menge-lbl">Wie viel soll bestellt werden?</div>
+            <div class="menge-lbl">Wie viel soll bestellt werden? <span style="color:var(--brand);font-family:var(--font-mono);font-size:11px;">(in ${unit}${maxOrder != null ? ` · max. ${maxOrder}` : ''})</span></div>
             <div class="chips-row" data-id="${a.id}">${chipsHtml}</div>
             <div class="pm-row">
               <button class="pm-btn" data-id="${a.id}" data-action="minus">−</button>
@@ -1176,13 +1179,13 @@
         : 'Alle Bereiche fertig!';
 
     document.getElementById('btn-abschliessen').classList.toggle('hidden', !canFinish);
-    document.getElementById('btn-weiterer').style.display = hasFree ? '' : 'none';
+    document.getElementById('btn-weiterer').style.display = 'none';
 
     // Bereich rows
     document.getElementById('wait-list').innerHTML = S.bereiche.map(b => {
       const bsEntry = bs[b.id];
       const status  = bsEntry?.status || 'frei';
-      let dot, info;
+      let dot, info, pickable = false;
 
       if (status === 'erledigt') {
         dot  = `<div class="s-dot erledigt"></div>`;
@@ -1191,20 +1194,27 @@
         dot  = `<span style="font-size:0.9rem;">🔒</span>`;
         info = `${esc(bsEntry?.mitarbeiter || '?')} arbeitet hier`;
       } else if (status === 'abgebrochen') {
-        dot  = `<div class="s-dot abgebrochen"></div>`;
-        info = 'Abgebrochen';
+        dot      = `<div class="s-dot abgebrochen"></div>`;
+        info     = 'Abgebrochen – fortführen?';
+        pickable = true;
       } else {
-        dot  = `<div class="s-dot frei"></div>`;
-        info = 'Noch nicht begonnen';
+        dot      = `<div class="s-dot frei"></div>`;
+        info     = 'Noch nicht begonnen';
+        pickable = true;
       }
 
+      const pickBtn = pickable
+        ? `<div class="wait-row-pick">Übernehmen →</div>`
+        : '';
+
       return `
-        <div class="wait-row">
+        <div class="wait-row${pickable ? ' clickable' : ''}" ${pickable ? `onclick="pickBereich('${b.id}')"` : ''}>
           ${dot}
           <div class="wait-row-info">
             <div class="wait-row-name">${esc(prettyName(b.name))}</div>
             <div class="wait-row-sub">${info}</div>
           </div>
+          ${pickBtn}
         </div>`;
     }).join('');
 
