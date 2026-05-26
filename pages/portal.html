@@ -2295,7 +2295,7 @@
       if (!b) return;
       currentBest = b;
       const d   = b.datum?.toDate ? b.datum.toDate() : new Date();
-      const nb  = b.nachbestellungen || [];
+      const nb  = b.items || b.nachbestellungen || [];
       document.getElementById('detail-modal-title').textContent = `Lagercheck – ${b.mitarbeiter}`;
       document.getElementById('detail-modal-body').innerHTML = `
         <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;overflow:hidden;">
@@ -2309,7 +2309,7 @@
             <div style="display:flex;flex-direction:column;gap:6px;">
               ${nb.map(a=>`
                 <div style="background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.2);border-radius:8px;padding:8px 12px;display:flex;justify-content:space-between;align-items:center;">
-                  <span style="font-size:0.78rem;font-weight:600;">${a.name}</span>
+                  <span style="font-size:0.78rem;font-weight:600;">${a.artikelName||a.name||'–'}</span>
                   <span style="font-size:0.7rem;font-family:'IBM Plex Mono',monospace;color:var(--red);">${a.menge||a.ist||'–'} ${a.einheit||a.minEinheit||''}</span>
                 </div>`).join('')}
             </div>
@@ -2346,7 +2346,7 @@
       const datum   = b.datum?.toDate ? b.datum.toDate() : new Date();
       const dateStr = datum.toLocaleDateString('de-DE');
       const timeStr = datum.toLocaleTimeString('de-DE', { hour:'2-digit', minute:'2-digit' });
-      const nachbest = b.nachbestellungen || [];
+      const nachbest = b.items || b.nachbestellungen || [];
 
       let y = 14;
       pdf.setFillColor(240,240,240);
@@ -2398,7 +2398,7 @@
 
         for (const a of bereichArtikel) {
           if (y > 268) { pdf.addPage(); y = 14; drawHeader(); }
-          const nb       = nachbest.find(x => x.id === a.id || x.name === a.name);
+          const nb       = nachbest.find(x => x.id === a.id || x.artikelId === a.id || x.name === a.name || x.artikelName === a.name);
           const bestellt = nb ? true : (b.bestellungen?.[a.id]?.bestellen === true);
           const menge    = nb?.menge ?? b.bestellungen?.[a.id]?.menge ?? '';
           const einheit  = nb?.einheit || a.minEinheit || '';
@@ -2473,10 +2473,10 @@
       let totalNachbest = 0;
 
       for (const b of alle) {
-        const nb = b.nachbestellungen || [];
+        const nb = b.items || b.nachbestellungen || [];
         totalNachbest += nb.length;
         for (const a of nb) {
-          const key = a.name || a.id;
+          const key = a.artikelName || a.name || a.artikelId || a.id;
           artikelCount[key] = (artikelCount[key] || 0) + 1;
         }
       }
@@ -2542,7 +2542,7 @@
         const key = `KW${getWeek(d)}`;
         if (wochen[key]) {
           wochen[key].count++;
-          wochen[key].nb += (b.nachbestellungen || []).length;
+          wochen[key].nb += (b.items || b.nachbestellungen || []).length;
         }
       }
 
