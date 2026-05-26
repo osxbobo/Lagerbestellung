@@ -811,3 +811,58 @@ h1, h2, h3 { font-weight: 700; line-height: 1.2; }
 @media (min-width: 1025px) {
   .hide-desktop { display: none !important; }
 }
+
+/* ═══════════════════════════════════════════════
+   LAUFBAND (News-Ticker)
+   ═══════════════════════════════════════════════ */
+.laufband-bar {
+  position: sticky;
+  top: calc(52px + env(safe-area-inset-top, 0px));
+  z-index: 90;
+  background: var(--brand);
+  color: white;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  white-space: nowrap;
+  border-bottom: 1px solid rgba(0,0,0,0.12);
+  flex-shrink: 0;
+}
+.laufband-bar.hidden { display: none !important; }
+.laufband-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  padding: 0 10px;
+  background: rgba(0,0,0,0.18);
+  height: 100%;
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  border-right: 1px solid rgba(255,255,255,0.2);
+}
+.laufband-track {
+  flex: 1;
+  overflow: hidden;
+  height: 100%;
+  display: flex;
+  align-items: center;
+}
+.laufband-text {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 0 40px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  animation: lb-scroll 22s linear infinite;
+}
+@keyframes lb-scroll {
+  from { transform: translateX(100vw); }
+  to   { transform: translateX(-100%); }
+}
+.laufband-text.long  { animation-duration: 34s; }
+.laufband-text.short { animation-duration: 14s; }
