@@ -364,6 +364,9 @@
     <button class="bottom-sheet-item" data-section="anleitung" onclick="showSection('anleitung');closeBottomSheet()">
       <span class="bottom-sheet-item-icon">📖</span> Anleitungen
     </button>
+    <button class="bottom-sheet-item" data-section="laufband" onclick="showSection('laufband');closeBottomSheet()">
+      <span class="bottom-sheet-item-icon">📢</span> Laufband
+    </button>
     <button class="bottom-sheet-item" onclick="window.location.href='scanner.html'">
       <span class="bottom-sheet-item-icon">📷</span> Charge-Scanner
     </button>
@@ -443,6 +446,10 @@
         <div class="sidebar-item" id="nav-anleitung" onclick="showSection('anleitung')">
           <svg class="s-ico" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="1" width="10" height="12" rx="1.2"/><path d="M4 4h6M4 6.5h6M4 9h4"/></svg>
           Anleitungen
+        </div>
+        <div class="sidebar-item" id="nav-laufband" onclick="showSection('laufband')">
+          <svg class="s-ico" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="12" height="6" rx="1.2"/><path d="M3 7h8M3 9h5"/></svg>
+          Laufband
         </div>
         <div class="sidebar-item" onclick="window.location.href='scanner.html'">
           <svg class="s-ico" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5V3h2M11 5V3H9M3 9v2h2M11 9v2H9M5 5v4M7 4v6M9 5v4"/></svg>
@@ -983,6 +990,34 @@
         <input type="file" id="help-foto-input" accept="image/*" style="display:none" onchange="uploadHelpFoto(this)">
       </section>
 
+      <!-- ── LAUFBAND ── -->
+      <section class="content-section" id="section-laufband">
+        <div class="page-header">
+          <div class="page-title">Laufband</div>
+          <div class="page-sub">Info-Ticker für alle eingeloggten Mitarbeiter</div>
+        </div>
+        <div style="background:var(--surface);border:1px solid var(--hairline);border-radius:16px;padding:24px;max-width:560px;display:flex;flex-direction:column;gap:16px;">
+          <div class="form-group">
+            <label class="form-label">Nachricht</label>
+            <textarea id="laufband-input" class="form-input" rows="3" placeholder="z.B. Neue Richtlinie: Kühlschrank täglich prüfen – Ablaufdaten beachten!" oninput="updateLaufbandPreview()" style="resize:vertical;min-height:72px;"></textarea>
+            <div class="form-hint">Wird als scrollendes Laufband oben auf jeder Seite angezeigt. Leer lassen zum Ausblenden.</div>
+          </div>
+          <div>
+            <div class="form-label" style="margin-bottom:6px;">Vorschau</div>
+            <div style="display:flex;align-items:center;height:32px;background:var(--brand);color:#fff;overflow:hidden;border-radius:8px;">
+              <div style="font-family:var(--font-mono);font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:0 10px;background:rgba(0,0,0,.18);height:100%;display:flex;align-items:center;flex-shrink:0;border-right:1px solid rgba(255,255,255,.2);white-space:nowrap;">Info</div>
+              <div style="flex:1;overflow:hidden;padding:0 12px;">
+                <span id="laufband-preview-text" style="font-size:12px;font-weight:600;white-space:nowrap;"></span>
+              </div>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;">
+            <button class="btn btn-primary" onclick="saveLaufband()" style="flex:1;height:40px;">💾 Speichern</button>
+            <button class="btn btn-ghost" onclick="clearLaufband()" style="height:40px;padding:0 16px;">✕ Löschen</button>
+          </div>
+        </div>
+      </section>
+
     </main>
   </div>
 
@@ -1151,7 +1186,12 @@
       alleBereiche     = bSnap.docs.map(d => ({ id: d.id, ...d.data() }));
       alleArtikel      = aSnap.docs.map(d => ({ id: d.id, ...d.data() }));
       alleBestellungen = bestSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-      if (configSnap.exists()) currentPin = configSnap.data().pin || '1234';
+      if (configSnap.exists()) {
+        currentPin = configSnap.data().pin || '1234';
+        const lbText = configSnap.data().laufband || '';
+        const lbInput = document.getElementById('laufband-input');
+        if (lbInput) { lbInput.value = lbText; updateLaufbandPreview(); }
+      }
 
       renderDashboard();
       renderBestellungen();
@@ -1166,7 +1206,7 @@
     }
 
     // ── Navigation ──
-    const moreSheetSections = ['artikel','bereiche','fotos','ss-fotos','statistik','pin','analytics','sessions','verfallskalender','rollen','mitarbeiter','anleitung'];
+    const moreSheetSections = ['artikel','bereiche','fotos','ss-fotos','statistik','pin','analytics','sessions','verfallskalender','rollen','mitarbeiter','anleitung','laufband'];
 
     window.showSection = function(name) {
       document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
@@ -1356,6 +1396,35 @@
         await deleteDoc(doc(db, 'bestellungen_session', 'current'));
 
         showToast('Session wurde zurückgesetzt', 'success');
+      } catch(e) {
+        showToast('Fehler: ' + e.message, 'error');
+      }
+    };
+
+    // ── Laufband ──
+    window.updateLaufbandPreview = function() {
+      const text = document.getElementById('laufband-input')?.value.trim() || '';
+      const el = document.getElementById('laufband-preview-text');
+      if (el) el.textContent = text || '(kein Text)';
+    };
+
+    window.saveLaufband = async function() {
+      const text = document.getElementById('laufband-input')?.value.trim() || '';
+      try {
+        await setDoc(doc(db, 'config', 'app'), { laufband: text }, { merge: true });
+        showToast('Laufband gespeichert', 'success');
+      } catch(e) {
+        showToast('Fehler: ' + e.message, 'error');
+      }
+    };
+
+    window.clearLaufband = async function() {
+      const input = document.getElementById('laufband-input');
+      if (input) input.value = '';
+      updateLaufbandPreview();
+      try {
+        await setDoc(doc(db, 'config', 'app'), { laufband: '' }, { merge: true });
+        showToast('Laufband gelöscht', 'success');
       } catch(e) {
         showToast('Fehler: ' + e.message, 'error');
       }
