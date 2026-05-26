@@ -1225,7 +1225,7 @@
       const bestellRows = alleBestellungen.slice(0, 10).map((b, i) => {
         const d = b.datum?.toDate ? b.datum.toDate() : new Date(b.datum);
         const dateStr = isNaN(d) ? '–' : d.toLocaleDateString('de-DE');
-        const cnt = (b.items || b.bestellungen || []).length || '–';
+        const cnt = (b.items || b.nachbestellungen || []).length || '–';
         return `<tr class="${i < alleBestellungen.slice(0,10).length - 1 ? 'lin-tr' : ''}">
           <td class="lin-td" style="font-family:var(--font-mono);font-size:12px;">${dateStr}</td>
           <td class="lin-td" style="font-size:13px;">${esc(b.mitarbeiter || b.name || '–')}</td>
@@ -1298,7 +1298,7 @@
         const rows = alleBestellungen.slice(0, 10).map((b, i) => {
           const d = b.datum?.toDate ? b.datum.toDate() : new Date(b.datum);
           const dateStr = isNaN(d) ? '–' : d.toLocaleDateString('de-DE');
-          const cnt = (b.items || b.bestellungen || []).length || '–';
+          const cnt = (b.items || b.nachbestellungen || []).length || '–';
           return `<tr class="${i < 9 ? 'lin-tr' : ''}">
             <td class="lin-td" style="font-family:var(--font-mono);font-size:12px;">${dateStr}</td>
             <td class="lin-td" style="font-size:13px;">${esc(b.mitarbeiter || b.name || '–')}</td>
@@ -1593,7 +1593,7 @@
         </tr></thead>
         <tbody>${last5.map(b => {
           const d  = b.datum?.toDate ? b.datum.toDate() : new Date();
-          const nb = b.nachbestellungen?.length || 0;
+          const nb = (b.items || b.nachbestellungen || []).length;
           return `<tr style="cursor:pointer;" onclick="openDetail('${b.id}')">
             <td style="padding:10px 14px;font-size:0.82rem;font-weight:600;border-bottom:1px solid var(--border);">${b.mitarbeiter||'–'}</td>
             <td style="padding:10px 14px;font-size:0.75rem;font-family:'IBM Plex Mono',monospace;color:var(--muted);border-bottom:1px solid var(--border);">${d.toLocaleDateString('de-DE')}</td>
@@ -1618,7 +1618,7 @@
       }
       list.innerHTML = alleBestellungen.map(b => {
         const d  = b.datum?.toDate ? b.datum.toDate() : new Date();
-        const nb = b.nachbestellungen?.length || 0;
+        const nb = (b.items || b.nachbestellungen || []).length;
         return `
           <div class="bestellung-item" onclick="openDetail('${b.id}')">
             <div class="bestellung-icon">📋</div>
