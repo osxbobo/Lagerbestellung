@@ -14,6 +14,16 @@
   <style>
     body { margin:0; height:100dvh; overflow:hidden; display:flex; flex-direction:column; background:var(--bg); font-family:var(--font-ui); }
 
+    /* ── Laufband ── */
+    .laufband-bar { display:flex; align-items:center; height:32px; background:var(--brand); color:#fff; overflow:hidden; border-bottom:1px solid rgba(0,0,0,.1); flex-shrink:0; }
+    .laufband-bar.hidden { display:none !important; }
+    .laufband-label { font-family:var(--font-mono); font-size:10px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; padding:0 10px; background:rgba(0,0,0,.18); height:100%; display:flex; align-items:center; flex-shrink:0; border-right:1px solid rgba(255,255,255,.2); white-space:nowrap; }
+    .laufband-track { flex:1; overflow:hidden; height:100%; display:flex; align-items:center; }
+    .laufband-text { display:inline-block; font-size:12px; font-weight:600; white-space:nowrap; flex-shrink:0; padding:0 60px; animation:lb-scroll 22s linear infinite; }
+    .laufband-text.long  { animation-duration:34s; }
+    .laufband-text.short { animation-duration:14s; }
+    @keyframes lb-scroll { from { transform:translateX(100vw); } to { transform:translateX(-100%); } }
+
     /* ── Navbar ── */
     .c-nav {
       position:sticky; top:0; z-index:100;
