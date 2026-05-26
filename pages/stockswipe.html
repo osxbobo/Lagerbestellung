@@ -1254,7 +1254,8 @@
       const ist   = typeof artikel.ist === 'number' ? artikel.ist : null;
       const min   = artikel.min  ?? null;
       const max   = artikel.max  ?? null;
-      const unit  = artikel.minEinheit || artikel.maxEinheit || 'Stk';
+      const minUnit = artikel.minEinheit || 'Stk';
+      const maxUnit = artikel.maxEinheit || artikel.minEinheit || 'Stk';
       let stockState = 'ok';
       if (ist != null && min != null) {
         if (ist < min) stockState = 'crit';
@@ -1275,16 +1276,16 @@
           <div class="card-minmax-grid">
             <div class="card-minmax-cell" style="background:${bgOk}">
               <div class="card-minmax-lbl">MIN</div>
-              <div class="card-minmax-val">${min ?? '–'}<span class="card-minmax-unit">${min != null ? unit : ''}</span></div>
+              <div class="card-minmax-val">${min ?? '–'}<span class="card-minmax-unit">${min != null ? minUnit : ''}</span></div>
             </div>
             <div class="card-minmax-cell" style="background:${bgOk}">
               <div class="card-minmax-lbl">MAX</div>
-              <div class="card-minmax-val">${max ?? '–'}<span class="card-minmax-unit">${max != null ? unit : ''}</span></div>
+              <div class="card-minmax-val">${max ?? '–'}<span class="card-minmax-unit">${max != null ? maxUnit : ''}</span></div>
             </div>
             <div class="card-minmax-cell" style="background:${stockState === 'crit' ? bgCrit : stockState === 'low' ? bgLow : bgOk}">
               <div class="card-minmax-lbl" style="color:${stockState === 'crit' ? 'var(--crit)' : stockState === 'low' ? 'var(--low)' : 'var(--ink-3)'}">IST</div>
               <div class="card-minmax-val" style="color:${stockState === 'crit' ? 'var(--crit)' : stockState === 'low' ? 'var(--low)' : 'var(--ok)'}">
-                ${ist ?? '–'}<span class="card-minmax-unit">${ist != null ? unit : ''}</span>
+                ${ist ?? '–'}<span class="card-minmax-unit">${ist != null ? minUnit : ''}</span>
               </div>
             </div>
           </div>
@@ -1508,7 +1509,7 @@
       currentMenge = 1;
 
       const maxOrder = artikel.max != null ? artikel.max : null;
-      const unit     = artikel.minEinheit || artikel.maxEinheit || 'Stk';
+      const unit     = artikel.maxEinheit || artikel.minEinheit || 'Stk';
 
       const title = artikel.name.length > 30 ? artikel.name.slice(0, 28) + '…' : artikel.name;
       document.getElementById('menge-sheet-title').textContent = `Wie viel „${title}" bestellen?`;
@@ -1624,7 +1625,7 @@
 
       const nachbestellungen = alleArtikel
         .filter(a => bestellungen[a.id]?.bestellen === true)
-        .map(a => ({ id: a.id, name: a.name, location: a.location, lp: a.lp, menge: bestellungen[a.id].menge, einheit: a.minEinheit || 'Stk' }));
+        .map(a => ({ id: a.id, name: a.name, location: a.location, lp: a.lp, menge: bestellungen[a.id].menge, einheit: a.maxEinheit || a.minEinheit || 'Stk' }));
 
       try {
         stopAutoSave();
@@ -1637,7 +1638,7 @@
           const alleBestellungen = { ...(sessionData.bestellungen || {}), ...bestellungen };
           const alleNachbest = alleArtikel
             .filter(a => alleBestellungen[a.id]?.bestellen === true)
-            .map(a => ({ id: a.id, name: a.name, location: a.location, lp: a.lp, menge: alleBestellungen[a.id].menge, einheit: a.minEinheit || 'Stk' }));
+            .map(a => ({ id: a.id, name: a.name, location: a.location, lp: a.lp, menge: alleBestellungen[a.id].menge, einheit: a.maxEinheit || a.minEinheit || 'Stk' }));
           alleNamen = (sessionData.teilnehmer || [{ name: userName }]).map(t => t.name);
           await updateDoc(doc(db, 'bestellungen_session', sessionId), { status: 'abgeschlossen', abgeschlossen: new Date().toISOString() });
           await addDoc(collection(db, 'bestellungen'), {

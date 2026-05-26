@@ -912,20 +912,22 @@
 
     attachCheckListeners();
     updateProgress();
-    window.scrollTo(0, 0);
+    document.getElementById('screen-check').scrollTop = 0;
   }
 
   function buildArtikelCard(a) {
     const item    = S.warenkorb[a.id] || { bestellen: null, menge: 1 };
     const bestell = item.bestellen;
     const menge   = item.menge ?? 1;
-    const unit    = a.minEinheit || a.maxEinheit || 'Stk';
-    const state   = stockState(a.stock, a.min);
+    const minUnit   = a.minEinheit || 'Stk';
+    const maxUnit   = a.maxEinheit || a.minEinheit || 'Stk';
+    const orderUnit = maxUnit;
+    const state     = stockState(a.stock, a.min);
 
     // MMI cells
-    const minC = a.min  != null ? `<div class="mmi-cell mmi-min"><span class="mmi-lbl">MIN</span><span class="mmi-val">${a.min}</span><span class="mmi-unit">${unit}</span></div>` : '';
-    const istC = a.stock != null ? `<div class="mmi-cell mmi-ist-${state}"><span class="mmi-lbl">IST</span><span class="mmi-val">${a.stock}</span><span class="mmi-unit">${unit}</span></div>` : '';
-    const maxC = a.max  != null ? `<div class="mmi-cell mmi-max"><span class="mmi-lbl">MAX</span><span class="mmi-val">${a.max}</span><span class="mmi-unit">${unit}</span></div>` : '';
+    const minC = a.min  != null ? `<div class="mmi-cell mmi-min"><span class="mmi-lbl">MIN</span><span class="mmi-val">${a.min}</span><span class="mmi-unit">${minUnit}</span></div>` : '';
+    const istC = a.stock != null ? `<div class="mmi-cell mmi-ist-${state}"><span class="mmi-lbl">IST</span><span class="mmi-val">${a.stock}</span><span class="mmi-unit">${minUnit}</span></div>` : '';
+    const maxC = a.max  != null ? `<div class="mmi-cell mmi-max"><span class="mmi-lbl">MAX</span><span class="mmi-val">${a.max}</span><span class="mmi-unit">${maxUnit}</span></div>` : '';
     const mmiHtml = (minC || istC || maxC) ? `<div class="mmi-row">${minC}${istC}${maxC}</div>` : '';
 
     // Stock bar
@@ -954,7 +956,7 @@
     ).join('');
 
     const suggestQty = maxOrder;
-    const jaLabel    = suggestQty ? `Bestellen (+${suggestQty} ${unit})` : 'Bestellen';
+    const jaLabel    = suggestQty ? `Bestellen (+${suggestQty} ${orderUnit})` : 'Bestellen';
 
     const cardCls = bestell === true ? 'is-bestell' : bestell === false ? 'is-ok' : '';
     return `
@@ -980,7 +982,7 @@
             <button class="jn-btn ja   ${bestell === true  ? 'sel' : ''}" data-id="${a.id}" data-val="ja">${jaLabel}</button>
           </div>
           <div class="menge-wrap ${bestell === true ? 'vis' : ''}" id="menge-${a.id}">
-            <div class="menge-lbl">Wie viel soll bestellt werden? <span style="color:var(--brand);font-family:var(--font-mono);font-size:11px;">(in ${unit}${maxOrder != null ? ` · max. ${maxOrder}` : ''})</span></div>
+            <div class="menge-lbl">Wie viel soll bestellt werden? <span style="color:var(--brand);font-family:var(--font-mono);font-size:11px;">(in ${orderUnit}${maxOrder != null ? ` · max. ${maxOrder}` : ''})</span></div>
             <div class="chips-row" data-id="${a.id}">${chipsHtml}</div>
             <div class="pm-row">
               <button class="pm-btn" data-id="${a.id}" data-action="minus">−</button>
@@ -1092,7 +1094,7 @@
         mitarbeiterId:  S.user.id,
         bestellen:      item.bestellen,
         menge:          item.menge ?? 1,
-        einheit:        artikel?.minEinheit || artikel?.maxEinheit || 'Stk',
+        einheit:        artikel?.maxEinheit || artikel?.minEinheit || 'Stk',
         timestamp:      serverTimestamp(),
       }, { merge: true });
     } catch(e) {}
