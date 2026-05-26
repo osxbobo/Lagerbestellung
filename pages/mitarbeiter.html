@@ -708,35 +708,50 @@
       }
     }, () => {});
 
-    // ── Letzte Aktivität (last 3 Bestellungen) ──
-    try {
-      const q = query(collection(db, 'bestellungen'), orderBy('datum', 'desc'), limit(3));
-      const snap = await getDocs(q);
-      const list = document.getElementById('activity-list');
-      if (!snap.empty) {
-        list.innerHTML = snap.docs.map((d, i, all) => {
-          const b = d.data();
-          const dt = b.datum?.toDate ? b.datum.toDate() : new Date(b.datum || 0);
-          const rel = relTime(dt);
-          const hasLow  = (b.artikelNiedrig  || 0) > 0;
-          const hasCrit = (b.artikelKritisch || 0) > 0;
-          const tone = hasCrit ? 'crit' : hasLow ? 'low' : 'ok';
-          const icon = hasCrit ? '!' : hasLow ? '↑' : '✓';
-          return `<div class="m-activity-row">
-            <div class="m-activity-chip ${tone}">${icon}</div>
-            <div>
-              <div class="m-activity-text">Bestellung #${d.id.slice(-4)} · ${b.mitarbeiter || '–'}</div>
-              <div class="m-activity-meta">${b.mitarbeiter || '–'} · ${rel}</div>
-            </div>
-          </div>`;
-        }).join('');
-      } else {
-        list.innerHTML = '<div class="m-activity-row"><div class="m-activity-text" style="color:var(--ink-3);font-size:12px;">Noch keine Aktivität</div></div>';
+    // ── Letzte Aktivität (last 5 Bestellungen) ──
+    (async () => {
+      // Auth muss bereit sein bevor Firestore-Reads erlaubt sind
+      await new Promise(resolve => {
+        const unsub = onAuthStateChanged(auth, user => { unsub(); resolve(user); });
+      });
+      if (!auth.currentUser) {
+        try { await signInAnonymously(auth); } catch(_) {}
       }
-    } catch(e) {
-      document.getElementById('activity-list').innerHTML =
-        '<div class="m-activity-row"><div class="m-activity-text" style="color:var(--ink-3);font-size:12px;">Aktivität nicht verfügbar</div></div>';
-    }
+
+      const list = document.getElementById('activity-list');
+      try {
+        const q = query(collection(db, 'bestellungen'), orderBy('datum', 'desc'), limit(5));
+        const snap = await getDocs(q);
+        if (!snap.empty) {
+          list.innerHTML = snap.docs.map(d => {
+            const b   = d.data();
+            const dt  = b.datum?.toDate ? b.datum.toDate() : new Date(b.datum || 0);
+            const rel = relTime(dt);
+
+            // Bestellte Artikel zählen (check.html speichert 'items', stockswipe 'nachbestellungen')
+            const orderCount = b.items?.length
+              ?? b.nachbestellungen?.filter(n => n.menge > 0)?.length
+              ?? 0;
+
+            const source = b.quelle === 'stockswipe' ? 'StockSwipe' : 'Lagerbestellung';
+            const tone   = orderCount > 0 ? 'crit' : 'ok';
+            const icon   = orderCount > 0 ? orderCount : '✓';
+
+            return `<div class="m-activity-row">
+              <div class="m-activity-chip ${tone}">${icon}</div>
+              <div style="flex:1;min-width:0;">
+                <div class="m-activity-text">${source} · ${b.mitarbeiter || '–'}</div>
+                <div class="m-activity-meta">${orderCount > 0 ? orderCount + ' Artikel bestellt · ' : 'Nichts zu bestellen · '}${rel}</div>
+              </div>
+            </div>`;
+          }).join('');
+        } else {
+          list.innerHTML = '<div class="m-activity-row"><div class="m-activity-text" style="color:var(--ink-3);font-size:12px;">Noch keine Aktivität</div></div>';
+        }
+      } catch(e) {
+        list.innerHTML = '<div class="m-activity-row"><div class="m-activity-text" style="color:var(--ink-3);font-size:12px;">Aktivität nicht verfügbar</div></div>';
+      }
+    })();
 
     function relTime(d) {
       const diff = Date.now() - d.getTime();
