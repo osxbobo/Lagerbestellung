@@ -1029,8 +1029,8 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
   <script type="module">
-    import { initializeApp }  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getAuth, onAuthStateChanged, signOut }
+    import { initializeApp, deleteApp }  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signOut, createUserWithEmailAndPassword }
                               from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
     import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, collection, getDocs, doc, getDoc, setDoc, updateDoc, deleteDoc, addDoc, query, orderBy, limit, where, onSnapshot, Timestamp, writeBatch }
                               from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
@@ -2719,7 +2719,26 @@
       try {
         const pinHash = await sha256(_maPinVal);
         if (_maEditId) {
-          await updateDoc(doc(db, 'mitarbeiter', _maEditId), { pinHash });
+          // Check whether this mitarbeiter already has a Firebase Auth account
+          const maSnap = await getDoc(doc(db, 'mitarbeiter', _maEditId));
+          const updateData = { pinHash };
+
+          if (!maSnap.data()?.fbEmail) {
+            // First-time migration: create Firebase Auth account for existing mitarbeiter
+            const fbEmail    = `${_maEditId}@drk.local`;
+            const fbPassword = [...crypto.getRandomValues(new Uint8Array(9))]
+              .map(b => b.toString(36).padStart(2, '0')).join('').slice(0, 12);
+            const secondaryApp = initializeApp(firebaseConfig, 'ma-reset-' + _maEditId);
+            try {
+              await createUserWithEmailAndPassword(getAuth(secondaryApp), fbEmail, fbPassword);
+            } finally {
+              await deleteApp(secondaryApp);
+            }
+            updateData.fbEmail    = fbEmail;
+            updateData.fbPassword = fbPassword;
+          }
+
+          await updateDoc(doc(db, 'mitarbeiter', _maEditId), updateData);
           showPortalToast('PIN erfolgreich zurückgesetzt', 'success');
         } else {
           const vorname  = document.getElementById('ma-vorname').value.trim();
@@ -2729,8 +2748,24 @@
             btn.disabled = false; btn.textContent = 'Speichern'; return;
           }
           const nameKey = (vorname + ' ' + nachname).toLowerCase().replace(/\s+/g, ' ');
-          await addDoc(collection(db, 'mitarbeiter'), {
+
+          // Pre-generate Firestore doc ID so we can derive the Firebase Auth email from it
+          const newDocRef = doc(collection(db, 'mitarbeiter'));
+          const fbEmail   = `${newDocRef.id}@drk.local`;
+          const fbPassword = [...crypto.getRandomValues(new Uint8Array(9))]
+            .map(b => b.toString(36).padStart(2, '0')).join('').slice(0, 12);
+
+          // Create Firebase Auth user via secondary app — avoids logging out the current WL session
+          const secondaryApp = initializeApp(firebaseConfig, 'ma-create-' + newDocRef.id);
+          try {
+            await createUserWithEmailAndPassword(getAuth(secondaryApp), fbEmail, fbPassword);
+          } finally {
+            await deleteApp(secondaryApp);
+          }
+
+          await setDoc(newDocRef, {
             vorname, nachname, nameKey, pinHash,
+            fbEmail, fbPassword,
             createdAt: new Date().toISOString(),
           });
           showPortalToast('Mitarbeiter angelegt', 'success');

@@ -891,6 +891,14 @@
         }
 
         _attempts = 0;
+        // Sign in as real Firebase user (isStaff()) if credentials exist
+        if (employeeId && !snap.empty) {
+          const { fbEmail, fbPassword } = snap.docs[0].data();
+          if (fbEmail && fbPassword) {
+            if (auth.currentUser?.isAnonymous) await signOut(auth);
+            await signInWithEmailAndPassword(auth, fbEmail, fbPassword);
+          }
+        }
         const store = authStore();
         store.setItem('lager-pin-auth', 'true');
         store.setItem('lager-pin-name', loginName);
@@ -1001,6 +1009,14 @@
         }
 
         _dskAttempts = 0;
+        // Sign in as real Firebase user (isStaff()) if credentials exist
+        if (employeeId && !snap.empty) {
+          const { fbEmail, fbPassword } = snap.docs[0].data();
+          if (fbEmail && fbPassword) {
+            if (auth.currentUser?.isAnonymous) await signOut(auth);
+            await signInWithEmailAndPassword(auth, fbEmail, fbPassword);
+          }
+        }
         const store = authStore();
         store.setItem('lager-pin-auth', 'true');
         store.setItem('lager-pin-name', loginName);
