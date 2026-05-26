@@ -437,6 +437,10 @@
           <svg class="s-ico" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="5" cy="4" r="2"/><path d="M1 11c0-2 1.8-3.5 4-3.5s4 1.5 4 3.5"/><path d="M10 5v4M12 7h-4" stroke-linecap="round"/></svg>
           Mitarbeiter
         </div>
+        <div class="sidebar-item" id="nav-anleitung" onclick="showSection('anleitung')">
+          <svg class="s-ico" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="1" width="10" height="12" rx="1.2"/><path d="M4 4h6M4 6.5h6M4 9h4"/></svg>
+          Anleitungen
+        </div>
         <div class="sidebar-item" onclick="window.location.href='scanner.html'">
           <svg class="s-ico" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 5V3h2M11 5V3H9M3 9v2h2M11 9v2H9M5 5v4M7 4v6M9 5v4"/></svg>
           Charge-Scanner
@@ -964,6 +968,18 @@
 
       </section>
 
+      <!-- ── ANLEITUNGEN ── -->
+      <section class="content-section" id="section-anleitung">
+        <div class="page-header">
+          <div class="page-title">Anleitungen</div>
+          <div class="page-sub">Screenshots für die Mitarbeiter-Anleitungen hochladen</div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px;" id="anleitung-list">
+          <div class="loading-state"><div class="spinner"></div></div>
+        </div>
+        <input type="file" id="help-foto-input" accept="image/*" style="display:none" onchange="uploadHelpFoto(this)">
+      </section>
+
     </main>
   </div>
 
@@ -1147,7 +1163,7 @@
     }
 
     // ── Navigation ──
-    const moreSheetSections = ['artikel','bereiche','fotos','ss-fotos','statistik','pin','analytics','sessions','verfallskalender','rollen','mitarbeiter'];
+    const moreSheetSections = ['artikel','bereiche','fotos','ss-fotos','statistik','pin','analytics','sessions','verfallskalender','rollen','mitarbeiter','anleitung'];
 
     window.showSection = function(name) {
       document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
@@ -1167,6 +1183,7 @@
       }
       if (name === 'statistik') renderStatistik();
       if (name === 'ss-fotos') renderSsFotos();
+      if (name === 'anleitung') renderAnleitung();
       if (name === 'analytics') renderAnalytics();
       if (name === 'verfallskalender') renderVerfallskalender();
       if (name === 'rollen') loadRollen();
@@ -2825,6 +2842,91 @@
       document.body.appendChild(t);
       setTimeout(() => t.remove(), 3000);
     }
+
+    // ── ANLEITUNGEN ──
+    const HELP_ITEMS = [
+      { id: 'lagersuche',      icon: '🔍', title: 'Lagersuche',                   sub: 'Artikel, Bestände und Lagerorte durchsuchen' },
+      { id: 'verfallsmonitor', icon: '⏳', title: 'Verfallsmonitor',               sub: 'Ablaufdaten aller Chargen im Überblick' },
+      { id: 'lagerbestellung', icon: '📋', title: 'Lagerbestellung (Multi)',        sub: 'Artikel mit Ja/Nein und Menge bestellen' },
+      { id: 'stockswipe',      icon: '👆', title: 'Lagerbestellung (StockSwipe)',   sub: 'Karten swipen – rechts bestellen, links OK' },
+      { id: 'verfallscan',     icon: '📷', title: 'Verfallsscan',                  sub: 'Chargen per Barcode scannen und Verfall erfassen' },
+      { id: 'pin',             icon: '🔑', title: 'PIN ändern',                    sub: 'Persönlichen 4-stelligen PIN aktualisieren' },
+    ];
+
+    let helpImagesPortal = {};
+    let helpFotoTargetId = null;
+
+    async function renderAnleitung() {
+      try {
+        const snap = await getDoc(doc(db, 'config', 'help_images'));
+        if (snap.exists()) helpImagesPortal = snap.data();
+      } catch(e) {}
+
+      const list = document.getElementById('anleitung-list');
+      list.innerHTML = HELP_ITEMS.map(item => {
+        const imgUrl = helpImagesPortal[item.id];
+        return `
+          <div style="background:var(--surface);border:1px solid var(--hairline);border-radius:14px;
+            display:flex;align-items:center;gap:14px;padding:14px 16px;flex-wrap:wrap;">
+            <div style="font-size:1.6rem;flex-shrink:0;width:36px;text-align:center;">${item.icon}</div>
+            <div style="flex:1;min-width:120px;">
+              <div style="font-size:0.88rem;font-weight:600;">${esc(item.title)}</div>
+              <div style="font-size:0.7rem;color:var(--ink-3);margin-top:2px;">${esc(item.sub)}</div>
+            </div>
+            ${imgUrl ? `
+              <img src="${esc(imgUrl)}" alt="${esc(item.title)}"
+                style="width:60px;height:60px;object-fit:cover;border-radius:10px;
+                  border:1px solid var(--hairline);flex-shrink:0;">
+            ` : `
+              <div style="width:60px;height:60px;border-radius:10px;border:1.5px dashed var(--hairline-2);
+                background:var(--surface-2);display:flex;align-items:center;justify-content:center;
+                font-size:1.2rem;flex-shrink:0;color:var(--ink-4);">📷</div>
+            `}
+            <button onclick="triggerHelpFotoUpload('${item.id}')" class="tbl-btn"
+              style="flex-shrink:0;">${imgUrl ? '↺ Ersetzen' : '+ Bild'}</button>
+            ${imgUrl ? `<button onclick="deleteHelpFoto('${item.id}')" class="tbl-btn del" style="flex-shrink:0;">🗑</button>` : ''}
+          </div>`;
+      }).join('');
+    }
+
+    window.triggerHelpFotoUpload = function(id) {
+      helpFotoTargetId = id;
+      document.getElementById('help-foto-input').value = '';
+      document.getElementById('help-foto-input').click();
+    };
+
+    window.uploadHelpFoto = async function(input) {
+      const file = input.files[0];
+      if (!file || !helpFotoTargetId) return;
+      try {
+        const fd = new FormData();
+        fd.append('file', file);
+        fd.append('upload_preset', CLOUDINARY_PRESET);
+        fd.append('folder', 'lagerapp/help');
+        const res  = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, { method: 'POST', body: fd });
+        const data = await res.json();
+        if (!data.secure_url) throw new Error('Upload fehlgeschlagen');
+        await setDoc(doc(db, 'config', 'help_images'), { [helpFotoTargetId]: data.secure_url }, { merge: true });
+        helpImagesPortal[helpFotoTargetId] = data.secure_url;
+        showPortalToast('Bild gespeichert', 'success');
+        renderAnleitung();
+      } catch(e) {
+        showPortalToast('Fehler: ' + e.message, 'error');
+      }
+    };
+
+    window.deleteHelpFoto = async function(id) {
+      const item = HELP_ITEMS.find(x => x.id === id);
+      if (!confirm('Bild für „' + (item?.title || id) + '" löschen?')) return;
+      try {
+        await setDoc(doc(db, 'config', 'help_images'), { [id]: null }, { merge: true });
+        delete helpImagesPortal[id];
+        showPortalToast('Bild gelöscht', 'success');
+        renderAnleitung();
+      } catch(e) {
+        showPortalToast('Fehler: ' + e.message, 'error');
+      }
+    };
 
   </script>
   <script src="../js/pwa.js"></script>

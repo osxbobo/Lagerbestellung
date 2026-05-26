@@ -169,11 +169,15 @@
     .m-tutorial-item {
       display: flex; align-items: center; gap: 10px;
       padding: 11px 14px; border-bottom: 0.5px solid var(--hairline);
+      cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent;
+      transition: background 0.12s;
     }
+    .m-tutorial-item:active { background: var(--surface-2); }
     .m-tutorial-item:last-child { border-bottom: none; }
     .m-tutorial-icon { font-size: 16px; flex-shrink: 0; width: 24px; text-align: center; }
     .m-tutorial-title { font-size: 13px; font-weight: 600; }
     .m-tutorial-sub   { font-size: 11px; color: var(--ink-3); margin-top: 1px; }
+    .m-tutorial-arrow { font-size: 14px; color: var(--ink-4); margin-left: auto; flex-shrink: 0; }
 
     /* ── Letzte Aktivität ── */
     .m-section-label {
@@ -406,47 +410,53 @@
     <div>
       <div class="m-section-label">Anleitung</div>
       <div class="m-tutorial-card">
-        <div class="m-tutorial-item">
+        <div class="m-tutorial-item" onclick="openHelp('lagersuche')">
           <span class="m-tutorial-icon">🔍</span>
           <div>
             <div class="m-tutorial-title">Lagersuche</div>
             <div class="m-tutorial-sub">Artikel, Bestände und Lagerorte durchsuchen</div>
           </div>
+          <span class="m-tutorial-arrow">›</span>
         </div>
-        <div class="m-tutorial-item">
+        <div class="m-tutorial-item" onclick="openHelp('verfallsmonitor')">
           <span class="m-tutorial-icon">⏳</span>
           <div>
             <div class="m-tutorial-title">Verfallsmonitor</div>
             <div class="m-tutorial-sub">Ablaufdaten aller Chargen im Überblick</div>
           </div>
+          <span class="m-tutorial-arrow">›</span>
         </div>
-        <div class="m-tutorial-item">
+        <div class="m-tutorial-item" onclick="openHelp('lagerbestellung')">
           <span class="m-tutorial-icon">📋</span>
           <div>
             <div class="m-tutorial-title">Lagerbestellung (Multi)</div>
             <div class="m-tutorial-sub">Artikel mit Ja/Nein und Menge bestellen</div>
           </div>
+          <span class="m-tutorial-arrow">›</span>
         </div>
-        <div class="m-tutorial-item">
+        <div class="m-tutorial-item" onclick="openHelp('stockswipe')">
           <span class="m-tutorial-icon">👆</span>
           <div>
             <div class="m-tutorial-title">Lagerbestellung (StockSwipe)</div>
             <div class="m-tutorial-sub">Karten nach rechts (bestellen) oder links (genug) swipen</div>
           </div>
+          <span class="m-tutorial-arrow">›</span>
         </div>
-        <div class="m-tutorial-item">
+        <div class="m-tutorial-item" onclick="openHelp('verfallscan')">
           <span class="m-tutorial-icon">📷</span>
           <div>
             <div class="m-tutorial-title">Verfallscan</div>
             <div class="m-tutorial-sub">Chargen per Barcode scannen und Verfall erfassen</div>
           </div>
+          <span class="m-tutorial-arrow">›</span>
         </div>
-        <div class="m-tutorial-item">
+        <div class="m-tutorial-item" onclick="openHelp('pin')">
           <span class="m-tutorial-icon">🔑</span>
           <div>
             <div class="m-tutorial-title">PIN ändern</div>
             <div class="m-tutorial-sub">Persönlichen 4-stelligen PIN aktualisieren</div>
           </div>
+          <span class="m-tutorial-arrow">›</span>
         </div>
       </div>
     </div>
@@ -466,6 +476,48 @@
       </div>
     </div>
 
+  </div>
+
+  <!-- Help Overlay -->
+  <div id="help-overlay" onclick="if(event.target===this)closeHelp()" style="
+    display:none; position:fixed; inset:0; z-index:2000;
+    background:rgba(8,8,12,0.55);
+    backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);">
+    <div style="
+      position:absolute; left:0; right:0; bottom:0;
+      background:var(--surface); border-radius:26px 26px 0 0;
+      max-height:88dvh; overflow-y:auto;
+      padding-bottom:calc(24px + env(safe-area-inset-bottom,0px));
+      box-shadow:0 -8px 32px rgba(0,0,0,.2);"
+      onclick="event.stopPropagation()">
+      <!-- Handle -->
+      <div style="width:40px;height:4px;background:var(--ink-4);border-radius:2px;margin:14px auto 0;"></div>
+      <!-- Header -->
+      <div style="display:flex;align-items:center;gap:12px;padding:18px 20px 0;">
+        <span id="help-icon" style="font-size:1.8rem;line-height:1;flex-shrink:0;"></span>
+        <div style="flex:1;min-width:0;">
+          <div id="help-title" style="font-size:17px;font-weight:700;letter-spacing:-0.3px;"></div>
+          <div style="font-size:12px;color:var(--ink-3);margin-top:2px;">Schritt-für-Schritt Anleitung</div>
+        </div>
+        <button onclick="closeHelp()" style="
+          width:32px;height:32px;border-radius:16px;border:none;
+          background:var(--surface-3);color:var(--ink-2);font-size:15px;
+          display:flex;align-items:center;justify-content:center;
+          cursor:pointer;flex-shrink:0;">✕</button>
+      </div>
+      <!-- Optional Screenshot -->
+      <div id="help-image-wrap" style="display:none;padding:16px 20px 0;">
+        <img id="help-image" alt="Screenshot" style="
+          width:100%;border-radius:14px;
+          border:1px solid var(--hairline);
+          box-shadow:var(--sh-1);display:block;">
+      </div>
+      <!-- Schritte -->
+      <ol id="help-steps" style="
+        padding:20px 20px 4px;
+        display:flex;flex-direction:column;gap:16px;
+        list-style:none;margin:0;"></ol>
+    </div>
   </div>
 
   <!-- PIN Change Modal -->
@@ -673,11 +725,115 @@
       const id = document.getElementById('draft-banner').dataset.draftId;
       if (id) window.location.href = 'check.html?resumeDraft=' + id;
     };
+
+    // ── Help Overlay ──
+    const HELP_DATA = {
+      lagersuche: {
+        title: 'Lagersuche',
+        icon: '🔍',
+        steps: [
+          'Öffne die LAGER//APP — du landest automatisch auf der Lagersuche.',
+          'Tippe einen Artikelnamen, einen Alias oder die Lagerplatznummer (z. B. „S.2.1") in die Suchleiste ein.',
+          'Die Treffer erscheinen sofort darunter. Tippe auf einen Artikel, um Details wie Standort, Menge, MIN und MAX zu sehen.',
+          'Mit dem Kamera-Symbol kannst du ein Foto des Artikels oder des Lagerortes aufrufen.',
+          'Tipp: Die Suche kennt auch Alternativnamen (z. B. „Verbandsmull" statt des offiziellen Namens).',
+        ]
+      },
+      verfallsmonitor: {
+        title: 'Verfallsmonitor',
+        icon: '⏳',
+        steps: [
+          'Melde dich mit Name und PIN an, dann tippe auf „Verfallsmonitor" im Hauptmenü.',
+          'Du siehst alle erfassten Chargen sortiert nach Ablaufdatum — zuerst die kritischsten.',
+          'Rote Einträge laufen in ≤ 30 Tagen ab, grüne sind noch lange haltbar.',
+          'Tippe auf den Filter oben, um nur kritische oder nur sichere Chargen anzuzeigen.',
+          'Eine Charge abgelaufen? Tippe auf das ✕ um sie zu entfernen, nachdem du sie aus dem Lager genommen hast.',
+        ]
+      },
+      lagerbestellung: {
+        title: 'Lagerbestellung (Multi)',
+        icon: '📋',
+        steps: [
+          'Melde dich mit Name und PIN an, dann tippe auf „Lagerbestellung" im Hauptmenü.',
+          'Wähle deinen Bereich (z. B. „Schrank 3"). Mehrere Kollegen können gleichzeitig verschiedene Bereiche bearbeiten.',
+          'Für jeden Artikel siehst du IST-, MIN- und MAX-Menge. Tippe „Bestellen" wenn nachbestellt werden muss, oder „Ausreichend" wenn alles OK ist.',
+          'Bei „Bestellen": Gib die gewünschte Menge ein (Chips oder + / − ) und tippe „Bereich fertig markieren".',
+          'Sobald alle Bereiche erledigt sind, erscheint „Abschließen & Unterschrift". Unterschreibe und tippe „Absenden & Fertig".',
+          'Die Bestellung wird gespeichert und ist im Wachenleiter-Portal sichtbar.',
+        ]
+      },
+      stockswipe: {
+        title: 'StockSwipe',
+        icon: '👆',
+        steps: [
+          'Melde dich mit Name und PIN an, dann tippe auf „StockSwipe" im Hauptmenü.',
+          'Dir werden Artikelkarten einzeln angezeigt. Jede Karte zeigt Foto, Name, Lagerplatz und aktuellen Bestand.',
+          'Wische die Karte nach RECHTS (oder tippe ✓) wenn der Artikel ausreichend vorhanden ist.',
+          'Wische die Karte nach LINKS (oder tippe 🛒) wenn der Artikel bestellt werden muss. Du kannst dann die Menge angeben.',
+          'Am Ende: Unterschreibe und tippe „Absenden". Die Bestellliste wird automatisch gespeichert.',
+          'Tipp: Bei einem Tipp auf die Karte öffnen sich Details mit MIN/MAX-Angaben.',
+        ]
+      },
+      verfallscan: {
+        title: 'Verfallsscan',
+        icon: '📷',
+        steps: [
+          'Melde dich mit Name und PIN an, dann tippe auf „Verfallsscan" im Hauptmenü.',
+          'Erlaube den Kamerazugriff, wenn der Browser danach fragt.',
+          'Halte den Barcode oder QR-Code eines Artikels vor die Kamera — er wird automatisch erkannt.',
+          'Gib das Verfallsdatum und die LOT-Nummer ein und tippe „Speichern".',
+          'Die Charge ist jetzt im Verfallsmonitor sichtbar und wird rechtzeitig als Warnung angezeigt.',
+        ]
+      },
+      pin: {
+        title: 'PIN ändern',
+        icon: '🔑',
+        steps: [
+          'Du musst mit Name und PIN angemeldet sein. Scrolle auf dieser Seite nach unten zum Bereich „Angemeldet als …".',
+          'Tippe auf „PIN ändern".',
+          'Gib zuerst deinen aktuellen (alten) PIN ein.',
+          'Gib danach deinen neuen 4-stelligen PIN ein.',
+          'Bestätige den neuen PIN durch erneute Eingabe.',
+          'Du bekommst eine Bestätigung — ab sofort gilt der neue PIN.',
+          'Wichtig: Den neuen PIN gut merken! Bei Vergessen musst du den Wachenleiter um einen Reset bitten.',
+        ]
+      },
+    };
+
+    let helpImages = {};
+
+    window.openHelp = function(id) {
+      const d = HELP_DATA[id];
+      if (!d) return;
+      document.getElementById('help-icon').textContent  = d.icon;
+      document.getElementById('help-title').textContent = d.title;
+      document.getElementById('help-steps').innerHTML = d.steps.map((s, i) => `
+        <li style="display:flex;gap:12px;align-items:flex-start;">
+          <span style="min-width:24px;height:24px;border-radius:50%;background:var(--brand);color:#fff;
+            font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">${i + 1}</span>
+          <span style="font-size:14px;line-height:1.55;color:var(--ink);">${s}</span>
+        </li>`).join('');
+      const imgUrl = helpImages[id];
+      const wrap = document.getElementById('help-image-wrap');
+      if (imgUrl) {
+        document.getElementById('help-image').src = imgUrl;
+        wrap.style.display = '';
+      } else {
+        wrap.style.display = 'none';
+      }
+      document.getElementById('help-overlay').style.display = 'block';
+      document.body.style.overflow = 'hidden';
+    };
+
+    window.closeHelp = function() {
+      document.getElementById('help-overlay').style.display = 'none';
+      document.body.style.overflow = '';
+    };
   </script>
 
   <script type="module">
     import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-    import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, collection, query, orderBy, limit, onSnapshot, getDocs, doc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
+    import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, collection, query, orderBy, limit, onSnapshot, getDocs, getDoc, doc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
     import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
     import { firebaseConfig } from '../js/firebase-config.js';
 
@@ -690,6 +846,11 @@
       _unsubAuthInit();
       if (!user) signInAnonymously(auth).catch(() => {});
     });
+
+    // ── Help-Bilder laden (fire-and-forget) ──
+    getDoc(doc(db, 'config', 'help_images')).then(snap => {
+      if (snap.exists()) helpImages = snap.data();
+    }).catch(() => {});
 
     // ── Live session ──
     onSnapshot(doc(db, 'bestellungen_session', 'current'), snap => {
