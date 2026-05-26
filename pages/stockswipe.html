@@ -562,6 +562,14 @@
     </div>
   </nav>
 
+  <!-- ── Laufband ── -->
+  <div class="laufband-bar hidden" id="laufband-bar">
+    <div class="laufband-label">Info</div>
+    <div class="laufband-track">
+      <span class="laufband-text" id="laufband-text"></span>
+    </div>
+  </div>
+
   <!-- ── KOLLEGEN-LEISTE (live progress bar) ── -->
   <div id="kollegen-bar" class="hidden" style="background:var(--surface-2);border-bottom:1px solid var(--hairline-2);padding:5px 14px;display:flex;gap:8px;align-items:center;overflow-x:auto;font-size:0.72rem;position:sticky;top:calc(52px + env(safe-area-inset-top,0px));z-index:9;scrollbar-width:none;"></div>
 
@@ -731,7 +739,7 @@
         <input class="pm-display" id="pm-swipe-input" type="number" inputmode="numeric" value="1" min="1">
         <button class="pm-btn plus" onclick="pmAction('plus')">+</button>
       </div>
-      <button class="btn btn-primary btn-full" style="height:52px;margin-top:4px;" onclick="confirmMenge()">✓ Bestätigen</button>
+      <button class="btn btn-primary btn-full" id="menge-confirm-btn" type="button" style="height:52px;margin-top:4px;touch-action:manipulation;" onclick="confirmMenge()">✓ Bestätigen</button>
     </div>
   </div>
 
@@ -1117,6 +1125,18 @@
       } catch(e) { showToast('Fehler: ' + e.message, 'error'); }
       window.location.href = './mitarbeiter.html';
     };
+
+    function loadLaufband() {
+      onSnapshot(doc(db, 'config', 'app'), snap => {
+        const text = snap.exists() ? (snap.data().laufband || '') : '';
+        const bar  = document.getElementById('laufband-bar');
+        const el   = document.getElementById('laufband-text');
+        if (!text.trim()) { bar.classList.add('hidden'); return; }
+        el.textContent = text;
+        el.className = 'laufband-text' + (text.length > 80 ? ' long' : text.length < 30 ? ' short' : '');
+        bar.classList.remove('hidden');
+      });
+    }
 
     function showToast(msg, type = 'success') {
       const t = document.createElement('div');
@@ -1546,6 +1566,15 @@
       });
 
       document.getElementById('menge-backdrop').classList.remove('hidden');
+
+      // Bestätigen-Button: 350ms Sperre nach dem Öffnen (verhindert Doppel-Tap vom Swipe-Trigger)
+      // + touchstart-Handler damit der Button sofort auf Finger-Kontakt reagiert (kein 300ms Delay)
+      const confirmBtn = document.getElementById('menge-confirm-btn');
+      confirmBtn.disabled = true;
+      confirmBtn._touchHandler && confirmBtn.removeEventListener('touchstart', confirmBtn._touchHandler);
+      confirmBtn._touchHandler = (e) => { e.preventDefault(); window.confirmMenge(); };
+      confirmBtn.addEventListener('touchstart', confirmBtn._touchHandler, { passive: false });
+      setTimeout(() => { confirmBtn.disabled = false; }, 350);
     }
 
     window.pmAction = function(action) {
@@ -1790,6 +1819,7 @@
         startSoloHeartbeat();
 
         meineBereiche = alleBereiche.map(b => b.id);
+        loadLaufband();
         await checkForDraft();
         initSwipeMode();
         startAutoSave();

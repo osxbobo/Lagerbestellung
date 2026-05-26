@@ -261,6 +261,14 @@
     </div>
   </header>
 
+  <!-- ── Laufband ── -->
+  <div class="laufband-bar hidden" id="laufband-bar">
+    <div class="laufband-label">Info</div>
+    <div class="laufband-track">
+      <span class="laufband-text" id="laufband-text"></span>
+    </div>
+  </div>
+
   <div class="m-page">
 
     <!-- Greeting -->
@@ -856,6 +864,17 @@
     getDoc(doc(db, 'config', 'help_content')).then(snap => {
       if (snap.exists()) helpContent = snap.data();
     }).catch(() => {});
+
+    // ── Laufband ──
+    onSnapshot(doc(db, 'config', 'app'), snap => {
+      const text = snap.exists() ? (snap.data().laufband || '') : '';
+      const bar  = document.getElementById('laufband-bar');
+      const el   = document.getElementById('laufband-text');
+      if (!text.trim()) { bar.classList.add('hidden'); return; }
+      el.textContent = text;
+      el.className = 'laufband-text' + (text.length > 80 ? ' long' : text.length < 30 ? ' short' : '');
+      bar.classList.remove('hidden');
+    }, () => {});
 
     // ── Live session ──
     onSnapshot(doc(db, 'bestellungen_session', 'current'), snap => {

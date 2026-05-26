@@ -312,6 +312,9 @@
     <button class="bottom-sheet-item" data-section="pin" onclick="showSection('pin');closeBottomSheet()">
       <span class="bottom-sheet-item-icon">🔑</span> PIN ändern
     </button>
+    <button class="bottom-sheet-item" data-section="laufband" onclick="showSection('laufband');closeBottomSheet()">
+      <span class="bottom-sheet-item-icon">📢</span> Laufband
+    </button>
     <button class="bottom-sheet-item" data-section="backup" onclick="showSection('backup');closeBottomSheet()">
       <span class="bottom-sheet-item-icon">💾</span> Backup & Import
     </button>
@@ -371,6 +374,10 @@
         <div class="sidebar-item" id="nav-pin" onclick="showSection('pin')">
           <svg class="s-ico" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="6.5" width="7" height="5.5" rx="1"/><path d="M5 6.5V5a2 2 0 0 1 4 0v1.5"/></svg>
           PIN ändern
+        </div>
+        <div class="sidebar-item" id="nav-laufband" onclick="showSection('laufband')">
+          <svg class="s-ico" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 7h12M1 4h8M1 10h6"/></svg>
+          Laufband
         </div>
         <div class="sidebar-item" onclick="window.location.href='scanner.html'">
           <svg class="s-ico" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4.5V3a1 1 0 0 1 1-1h1.5M8.5 2H11a1 1 0 0 1 1 1v1.5M12 9.5V11a1 1 0 0 1-1 1H9.5M5.5 12H4a1 1 0 0 1-1-1V9.5M4 7h6"/></svg>
@@ -575,6 +582,42 @@
             <div class="pin-key confirm" onclick="savePIN()">✓</div>
           </div>
           <div id="pin-msg" style="font-size:0.78rem;text-align:center;min-height:20px;"></div>
+        </div>
+      </section>
+
+      <!-- ── LAUFBAND ── -->
+      <section class="content-section" id="section-laufband">
+        <div class="page-header">
+          <div class="page-title">Laufband</div>
+          <div class="page-sub">Info-Text der als Ticker oben angezeigt wird (nur für eingeloggte Mitarbeiter)</div>
+        </div>
+        <div style="max-width:560px;display:flex;flex-direction:column;gap:16px;">
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:14px;">
+            <div class="form-group">
+              <label class="form-label">Nachricht / Info-Text</label>
+              <textarea id="laufband-input" class="form-input" rows="3"
+                placeholder="z.B.: Nächste Lagerbestellung: Freitag 08:00 · Bitte alle Kühlmittel prüfen!"
+                style="resize:vertical;line-height:1.5;font-size:0.88rem;"></textarea>
+              <div class="form-hint">Leer lassen um das Laufband auszublenden. Erscheint auf Mitarbeiter-, Check- und StockSwipe-Seite.</div>
+            </div>
+            <!-- Vorschau -->
+            <div id="laufband-preview-wrap" style="display:none;">
+              <div class="form-label" style="margin-bottom:6px;">Vorschau</div>
+              <div style="border-radius:8px;overflow:hidden;">
+                <div class="laufband-bar" style="position:relative;top:auto;">
+                  <div class="laufband-label">Info</div>
+                  <div class="laufband-track" style="height:30px;">
+                    <span class="laufband-text" id="laufband-preview-text" style="animation:none;left:0;transform:translateY(-50%);"></span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;">
+              <button class="btn btn-primary" onclick="saveLaufband()" style="height:38px;padding:0 20px;">💾 Speichern</button>
+              <button class="btn btn-ghost" onclick="clearLaufband()" style="height:38px;padding:0 16px;">✕ Laufband leeren</button>
+            </div>
+            <div id="laufband-msg" style="font-size:0.78rem;min-height:18px;color:var(--ok);"></div>
+          </div>
         </div>
       </section>
 
@@ -1052,7 +1095,7 @@
     }
 
     // ── Navigation ──
-    const moreSheetSections = ['bereiche','fotos','ss-fotos','pin','backup'];
+    const moreSheetSections = ['bereiche','fotos','ss-fotos','pin','backup','laufband'];
 
     window.showSection = function(name) {
       document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
@@ -1603,6 +1646,52 @@
         toast('PIN geändert!');
         setTimeout(() => msg.textContent = '', 3000);
       } catch (e) { toast(e.message, 'error'); }
+    };
+
+    // ── LAUFBAND ──
+    window.saveLaufband = async function() {
+      const text = (document.getElementById('laufband-input').value || '').trim();
+      const msg  = document.getElementById('laufband-msg');
+      try {
+        await setDoc(doc(db, 'config', 'app'), { laufband: text }, { merge: true });
+        msg.style.color = 'var(--green)';
+        msg.textContent = text ? '✅ Laufband gespeichert!' : '✅ Laufband geleert.';
+        toast(text ? 'Laufband gespeichert!' : 'Laufband geleert.');
+        setTimeout(() => msg.textContent = '', 3000);
+      } catch(e) { toast(e.message, 'error'); }
+    };
+
+    window.clearLaufband = async function() {
+      document.getElementById('laufband-input').value = '';
+      updateLaufbandPreview();
+      await window.saveLaufband();
+    };
+
+    function updateLaufbandPreview() {
+      const text    = (document.getElementById('laufband-input').value || '').trim();
+      const wrap    = document.getElementById('laufband-preview-wrap');
+      const preview = document.getElementById('laufband-preview-text');
+      if (text) {
+        preview.textContent = text;
+        wrap.style.display = '';
+      } else {
+        wrap.style.display = 'none';
+      }
+    }
+
+    document.getElementById('laufband-input').addEventListener('input', updateLaufbandPreview);
+
+    // Aktuellen Wert laden wenn Sektion geöffnet wird
+    const _origShowSection = window.showSection;
+    window.showSection = function(name) {
+      _origShowSection(name);
+      if (name === 'laufband') {
+        getDoc(doc(db, 'config', 'app')).then(snap => {
+          const text = snap.exists() ? (snap.data().laufband || '') : '';
+          document.getElementById('laufband-input').value = text;
+          updateLaufbandPreview();
+        }).catch(() => {});
+      }
     };
 
     // ── USERS ──
