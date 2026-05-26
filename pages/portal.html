@@ -1073,14 +1073,16 @@
       <div class="modal-head"><span class="modal-title" id="detail-modal-title">Lagercheck</span><button class="modal-close" onclick="closeDetailModal()">✕</button></div>
       <div class="modal-body" id="detail-modal-body"></div>
       <div class="modal-foot">
-        <button class="btn btn-primary" style="flex:1" onclick="generatePDF()">📄 PDF</button>
+        <button class="btn btn-primary" style="flex:1" id="btn-pdf" onclick="this.disabled=true;this.textContent='Wird erstellt…';generatePDF().catch(e=>{console.error(e);alert('PDF-Fehler: '+e.message);}).finally(()=>{this.disabled=false;this.textContent='📄 PDF';})">📄 PDF</button>
         <button class="btn btn-ghost" onclick="closeDetailModal()">Schließen</button>
       </div>
     </div>
   </div>
 
-  <!-- jsPDF -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <!-- jsPDF (nicht mehr für PDF-Export verwendet, kann entfernt werden wenn nicht anderswo genutzt) -->
+  <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script> -->
+  <!-- pdf-lib: lädt bestehendes PDF und füllt Felder -->
+  <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
 
   <script type="module">
     import { initializeApp, deleteApp }  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
@@ -1088,6 +1090,8 @@
                               from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
     import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, collection, getDocs, doc, getDoc, setDoc, updateDoc, deleteDoc, addDoc, query, orderBy, limit, where, onSnapshot, Timestamp, writeBatch }
                               from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+    import { getStorage, ref as storageRef, getDownloadURL }
+                              from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
     import { firebaseConfig } from "../js/firebase-config.js";
 
     // Theme
@@ -1106,9 +1110,10 @@
 
     // Firebase
 
-    const app  = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db   = initializeFirestore(app, { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) });
+    const app     = initializeApp(firebaseConfig);
+    const auth    = getAuth(app);
+    const db      = initializeFirestore(app, { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) });
+    const storage = getStorage(app);
 
     const CLOUDINARY_CLOUD  = 'dvqug2dcx';
     const CLOUDINARY_PRESET = 'lagerapp_unsigned';
@@ -1689,7 +1694,7 @@
             <td style="padding:10px 14px;font-size:0.75rem;border-bottom:1px solid var(--border);color:${nb>0?'var(--red)':'var(--green)'};">${nb>0?`⚠️ ${nb}`:'✅ Keine'}</td>
             <td style="padding:10px 14px;border-bottom:1px solid var(--border);">
               <div style="display:flex;gap:4px;">
-                <button class="tbl-btn" onclick="event.stopPropagation();quickPDF('${b.id}')">↓ PDF</button>
+                <button class="tbl-btn" onclick="event.stopPropagation();quickPDF('${b.id}',this)">↓ PDF</button>
                 <button class="tbl-btn del" onclick="event.stopPropagation();deleteBestellung('${b.id}')">🗑️</button>
               </div>
             </td>
@@ -1716,7 +1721,7 @@
               <div class="bestellung-meta">${d.toLocaleDateString('de-DE')} · ${d.toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'})}</div>
               ${nb>0?`<div class="bestellung-warn">⚠️ ${nb} Artikel nachbestellen</div>`:'<div style="font-size:0.68rem;color:var(--green);">✅ Alles in Ordnung</div>'}
             </div>
-            <button class="tbl-btn" onclick="event.stopPropagation();quickPDF('${b.id}')">↓ PDF</button>
+            <button class="tbl-btn" onclick="event.stopPropagation();quickPDF('${b.id}',this)">↓ PDF</button>
           </div>`;
       }).join('');
     }
@@ -2422,123 +2427,93 @@
     };
 
     // ── PDF ──
-    window.quickPDF = function(id) {
+    window.quickPDF = function(id, btn) {
       const b = alleBestellungen.find(x => x.id === id);
-      if (b) { currentBest = b; generatePDF(); }
+      if (!b) return;
+      currentBest = b;
+      if (btn) { btn.disabled = true; btn.textContent = '…'; }
+      generatePDF().catch(e => { console.error(e); alert('PDF-Fehler: ' + e.message); })
+                   .finally(() => { if (btn) { btn.disabled = false; btn.textContent = '↓ PDF'; } });
     };
 
-    window.generatePDF = function() {
+    // ── PDF-VORLAGE: Positionsmapping (auto-generiert aus Lagerbestellung_Vorlage.pdf) ──
+    // Format: LP/Name → [seiteIndex(0-basiert), y-Koordinate(Punkte von unten)]
+    const _LP_POS = {"R.1.2.1.":[0,670],"R.1.2.2.":[0,651],"R.1.2.3.":[0,633],"R.1.2.4.":[0,614],"R.1.2.5.":[0,596],"R.1.2.6.":[0,577],"R.1.2.7.":[0,559],"R.1.2.8.":[0,540],"R.1.2.9.":[0,522],"R.1.2.10.":[0,503],"R.1.2.11.":[0,485],"R.1.2.12.":[0,466],"R.2.1.1.":[0,429],"R.2.1.2.":[0,411],"R.2.2.1.":[0,392],"R.2.2.2.":[0,374],"R.2.2.3.":[0,355],"R.2.2.4.":[0,337],"R.2.2.5.":[0,318],"S.1.1.1.1.":[0,281],"S.1.1.1.2.":[0,263],"S.1.1.1.3.":[0,244],"S.1.1.1.4.":[0,226],"S.1.1.1.5.":[0,207],"S.1.1.2.1.":[0,189],"S.1.1.2.2.":[0,170],"S.1.1.3.":[0,152],"S.1.2.1.1.":[0,133],"S.1.2.1.2.":[0,115],"S.1.2.1.3.":[0,96],"S.1.2.1.4.":[0,78],"S.1.2.1.5.":[0,59],"S.1.2.2.1.":[1,735],"S.1.2.2.2.":[1,717],"S.1.2.2.3.":[1,698],"S.1.2.2.4.":[1,680],"S.1.2.2.5.":[1,661],"S.1.2.3.":[1,643],"S.1.2.4.":[1,624],"S.1.3.1.1.":[1,606],"S.1.3.1.2.":[1,587],"S.1.3.1.3.":[1,569],"S.1.3.1.4.":[1,550],"S.1.3.1.5.":[1,532],"S.1.3.2.":[1,513],"S.1.3.3.":[1,495],"S.1.3.4.":[1,476],"S.1.4.1.1.":[1,458],"S.1.4.1.2.":[1,439],"S.1.4.1.3.":[1,421],"S.1.4.1.4.":[1,402],"S.1.4.1.5.":[1,384],"S.1.4.2.":[1,365],"S.1.4.3.":[1,347],"S.1.4.4.":[1,328],"S.1.5.1.":[1,310],"S.1.5.2.":[1,291],"S.1.5.3.":[1,273],"S.1.5.4.":[1,250],"S.2.1.1.1.":[1,97],"S.2.1.1.2.":[1,78],"S.2.1.1.3.":[1,60],"S.2.1.1.4.":[2,735],"S.2.1.1.5.":[2,717],"S.2.1.2.1.":[2,698],"S.2.1.2.2.":[2,680],"S.2.1.2.3.":[2,661],"S.2.1.2.4.":[2,643],"S.2.1.3.":[2,624],"S.2.2.1.1.":[2,587],"S.2.2.2.":[2,495],"S.2.2.3.":[2,476],"S.2.2.4.":[2,458],"S.2.3.1.1.":[2,439],"S.2.3.1.2.":[2,421],"S.2.3.1.3.":[2,402],"S.2.3.1.4.":[2,384],"S.2.3.2.1.":[2,365],"S.2.3.2.2.":[2,347],"S.2.3.2.3.":[2,328],"S.2.3.2.4.":[2,310],"S.2.3.2.5.":[2,291],"S.2.3.3.":[2,273],"S.2.3.4.":[2,254],"S.2.4.1.":[2,236],"S.2.4.2.":[2,217],"S.2.4.3.":[2,199],"S.2.4.4.":[2,180],"S.2.4.5.":[2,162],"S.2.5.1.":[2,143],"S.2.5.2.":[2,125],"S.2.5.3.":[2,106],"S.2.5.4.":[2,88],"S.2.5.5.":[2,69],"S.2.6.1.":[3,735],"S.2.6.2.":[3,717],"S.2.6.3.":[3,698],"S.3.1.1.":[3,661],"S.3.1.2.":[3,643],"S.3.1.3.":[3,624],"S.3.1.4.":[3,606],"S.3.1.5.":[3,587],"S.3.2.1.":[3,569],"S.3.2.2.":[3,550],"S.3.2.3.":[3,532],"S.3.2.4.":[3,513],"S.3.2.5.":[3,495],"S.3.3.1.":[3,476],"S.3.3.2.":[3,458],"S.3.3.3.":[3,439],"S.3.3.4.":[3,421],"S.3.3.5.":[3,402],"S.3.4.1.":[3,384],"S.3.4.2.":[3,365],"S.3.5.1.":[3,347],"S.3.5.2.":[3,328],"S.3.5.3.":[3,310],"S.3.6.1.":[3,291],"S.3.6.2.":[3,273],"S.3.6.3.":[3,254],"S.4.1.1.":[3,217],"S.4.1.2.":[3,199],"S.4.1.3.":[3,180],"S.4.1.4.":[3,162],"S.4.1.5.":[3,143],"S.4.1.6.":[3,125],"S.4.2.1.":[3,106],"S.4.2.2.":[3,88],"S.4.2.3.":[3,69],"S.4.2.4.":[4,735],"S.4.2.5.":[4,717],"S.4.3.1.":[4,698],"S.4.3.2.":[4,680],"S.4.3.3.":[4,661],"S.4.4.1.":[4,643],"S.4.4.2.":[4,624],"S.4.4.3.":[4,606],"S.4.4.4.":[4,587],"S.4.5.1.":[4,569],"S.4.5.2.":[4,550],"S.4.6.1.":[4,532],"S.4.6.2.":[4,513],"S.5.1.1.":[4,476],"S.5.1.2.":[4,458],"S.5.1.3.":[4,439],"S.5.1.4.":[4,421],"S.5.2.1.":[4,402],"S.5.2.2.":[4,384],"S.5.2.3.":[4,365],"S.5.3.1.":[4,347],"S.5.4.1.":[4,328],"S.5.4.2.":[4,310],"S.5.4.3.":[4,291],"S.5.5.1.":[4,273],"S.5.5.2.":[4,254],"S.5.5.3.":[4,236],"S.5.5.4.":[4,219],"S.5.5.5.":[4,201],"S.5.5.6.":[4,182],"S.5.6.1.":[4,162],"S.5.7.1.":[4,143],"S.5.8.1.":[4,69],"S.5.8.2.":[5,735],"S.5.8.3.":[5,717],"S.6.1.1.":[5,680],"S.6.1.2.":[5,661],"S.6.1.3.":[5,643],"S.6.2.1.":[5,624],"S.6.2.2.":[5,606],"S.6.3.1.":[5,587],"S.6.3.2.":[5,569],"S.6.3.3.":[5,550],"S.6.3.4.":[5,532],"S.6.4.1.":[5,513],"S.6.4.2.":[5,495],"S.6.4.3.":[5,476],"S.6.4.4.":[5,458],"S.6.5.1.":[5,439],"S.6.5.2.":[5,421],"S.6.5.3.":[5,402],"S.6.5.4.":[5,384],"S.6.5.5.":[5,365],"S.6.5.6.":[5,347],"S.6.6.1.":[5,328],"S.6.6.2.":[5,310],"S.6.6.3.":[5,291],"S.6.6.4.":[5,273],"S.6.6.5.":[5,254],"S.6.6.6.":[5,236],"S.6.6.7.":[5,217],"S.6.6.8.":[5,199],"S.6.6.9.":[5,180],"S.6.7.1.":[5,162],"S.6.7.2.":[5,143],"S.6.8.1.":[5,125],"S.6.8.2.":[5,106],"S.6.8.3.":[5,88],"S.6.8.4.":[5,69],"S.6.9.1.":[6,735],"S.6.10.1.":[6,717],"S.6.11.1.":[6,698],"M.1.1.":[6,661],"M.1.2.":[6,643],"M.1.3.":[6,624],"S.7.2.2.1.":[6,532],"S.7.2.2.2.":[6,513],"S.7.2.2.3.":[6,495],"S.7.2.3.1.":[6,476],"S.7.2.3.2.":[6,458],"S.7.2.3.3.":[6,439],"S.7.2.4.":[6,421],"S.7.2.5.":[6,402],"S.7.2.6.":[6,384],"S.1.1.1.":[6,347],"S.1.1.2.":[6,328],"S.1.2.1.":[6,310],"S.1.2.2.":[6,291],"L.1.":[6,236],"L.2.":[6,217],"S.1.3.2.1.":[6,106],"S.1.3.2.2.":[6,88],"S.1.3.2.3.":[6,69],"S.1.3.2.4.":[7,735]};
+    const _NAME_POS = {"Handschuhe Gr. S":[0,670],"Handschuhe Gr. M":[0,651],"Handschuhe Gr. L":[0,633],"Handschuhe Gr. XL":[0,614],"Nierenschalen":[0,596],"Infektionsbeutel (Gelb)":[0,577],"Müllbeutel (Blau)":[0,559],"Müllbeutel 15L RTW":[0,540],"Kältekompresse":[0,522],"Kanülen Entsorgungsbox klein":[0,503],"Kanülen Entsorgungsbox groß":[0,485],"Tragetasche Patienteneigentum":[0,466],"Decken":[0,429],"Einmallaken":[0,411],"Papiertücher":[0,392],"Toilettenpapier":[0,374],"Regenschutz Trage":[0,355],"Teddybär":[0,337],"Saugunterlage":[0,318],"Spatel Macintosh Gr. 0":[0,281],"Spatel Miller Gr. 0":[0,263],"Spatel Macintosh Gr. 1":[0,244],"Spatel Miller Gr. 1":[0,226],"Spatel Macintosh Gr. 2":[0,207],"Spatel Macintosh Gr. 3":[0,189],"Spatel Macintosh Gr. 4":[0,170],"Spatel Macintosh Gr. 5":[0,152],"Videolaryngoskop Spatel Gr. 1":[0,133],"Videolaryngoskop Spatel Gr. 2":[0,115],"Videolaryngoskop Spatel Gr. 3":[0,96],"Videolaryngoskop Spatel Gr. 4":[0,78],"Videolaryngoskop Spatel XBlade":[0,59],"Wendel Tubus CH 12":[1,735],"Wendel Tubus CH 14":[1,717],"Wendel Tubus CH 16":[1,698],"Wendel Tubus CH 18":[1,680],"Wendel Tubus CH 20":[1,661],"Wendel Tubus CH 28":[1,643],"Chest Seal":[1,624],"Guedel Tubus Gr. 000 / 4cm":[1,606],"Guedel Tubus Gr. 00 / 5cm":[1,587],"Guedel Tubus Gr. 0 / 6cm":[1,569],"Guedel Tubus Gr. 1 / 7cm":[1,550],"Guedel Tubus Gr. 2 / 8cm":[1,532],"Guedel Tubus Gr. 3 / 9cm":[1,513],"Guedel Tubus Gr. 4 / 10cm":[1,495],"Guedel Tubus Gr. 5 / 11cm":[1,476],"Magenkatherspritze":[1,458],"Magensondenbeutel":[1,439],"Magensonde CH 10":[1,421],"Magensonde CH 16":[1,402],"Oro Sauger":[1,384],"Absaugschlauch mit Fingertip":[1,365],"Absaugbeutel":[1,347],"Fingertip":[1,328],"Handabsauge + Zubehör":[1,310],"Chirurgisches Besteck":[1,291],"Surgicric II (Koniotomie)":[1,273],"ET ohne Cuff Gr. 2,5":[1,97],"ET Mircocuff Gr. 3,0":[1,78],"ET ohne Cuff Gr. 3,5":[1,60],"ET Mircocuff Gr. 3,5":[2,735],"ET Mircocuff Gr. 4,0":[2,717],"ET Mircocuff Gr. 4,5":[2,698],"ET Mircocuff Gr. 5,0":[2,680],"ET Mircocuff Gr. 5,5":[2,661],"ET Mircocuff Gr. 6,0":[2,643],"ET Mircocuff Gr. 7,0":[2,624],"ET Mircocuff Gr. 8,0":[2,606],"iGel Gr. 1":[2,587],"iGel Gr. 1,5":[2,569],"iGel Gr. 2":[2,550],"iGel Gr. 2,5":[2,532],"iGel Gr. 3":[2,513],"iGel Gr. 4":[2,495],"iGel Gr. 5":[2,476],"Peep Einmalventil":[2,458],"Larynxtubus SET Gr.2,5":[2,439],"Larynxtubus SET Gr. 3":[2,421],"Larynxtubus SET Gr. 4":[2,402],"Larynxtubus SET Gr. 5":[2,384],"LAMA Gr. 1":[2,365],"LAMA Gr. 1,5":[2,347],"LAMA Gr. 2":[2,328],"LAMA Gr. 2,5":[2,310],"LAMA Gr. 3":[2,291],"Fixationsband CPAP Erw.":[2,273],"Fixationsband CPAP Kind":[2,254],"Beatmungsfilter Erw.":[2,236],"Thomas Holder Select Erw.":[2,217],"Gänsegurgel":[2,199],"Thomas Holder Select Kind":[2,180],"Beatmungsfilter Kind":[2,162],"Beatmungsmaske CPAP Adult L":[2,143],"Beatmungsmaske CPAP Adult M":[2,125],"Beatmungsmaske CPAP Adult S":[2,106],"Beatmungsmaske CPAP Neo":[2,88],"Beatmungsmaske CPAP Toddler":[2,69],"Beatmungsbeutel Erw.":[3,735],"Beatmungsschlauch Medumat":[3,717],"Beatmungsbeutel Kind":[3,698],"Mini Spike":[3,661],"Aufziehkanüle mit 5 μm Filter":[3,643],"Perfusor Leitung":[3,624],"Rückschlagventil":[3,606],"Sterican Safety Needle 22G":[3,587],"Perfusor Spritze mit Kanüle":[3,569],"Kombistopfen":[3,550],"Dreiwegehahn":[3,532],"Nasalzerstäuber mit 3ml Spritze":[3,513],"Spritze 1ml":[3,495],"Spritze 20ml":[3,476],"Spritze 10ml":[3,458],"Spritze 5ml":[3,439],"Spritze 2ml":[3,421],"Spritze 10ml Luer-Lock-Ansatz":[3,402],"O² Maske Kind":[3,384],"O² Maske Erw.":[3,365],"O² Sicherheitsschlauch":[3,347],"Vernebler T-Stk.":[3,328],"O² Brille":[3,310],"Aerosol-Set Vernebler Kind.":[3,291],"Aerosol-Set Vernebler":[3,273],"Hyperventilationsmaske":[3,254],"Viggo gelb 24G":[3,217],"Viggo blau 22G":[3,199],"Viggo rosa 20G":[3,180],"Viggo grün 18G":[3,162],"Viggo grau 16G":[3,143],"Viggo orange 14G":[3,125],"EZ-IO Nadel Rosa":[3,106],"EZ-IO Nadel Blau":[3,88],"EZ-IO Nadel Gelb":[3,69],"Portnadel 22G":[4,735],"Tourniquet":[4,717],"Viggo Pflaster Leukomed":[4,698],"Wundverband (Pflaster)":[4,680],"Tupfer Mullkompresse":[4,661],"Dreieckstuch":[4,643],"Rettungsdecke":[4,624],"Fixierbinden 4cm x 4cm":[4,606],"Universalbinde":[4,587],"Fixierbinde 10cm x 4cm":[4,569],"Verbandspäckchen":[4,550],"Verbandstuch":[4,532],"Zellstoff-Vlies-Kompresse":[4,513],"Waschlotion C45":[4,476],"Händedesinfektion C22":[4,458],"Sterillium Virugard":[4,439],"Cutasept® 50ml":[4,421],"Desinfektionstücher B45":[4,402],"Hautschutz Creme Lindesa":[4,384],"B4-Konzentrat":[4,365],"Einweg Eimer + Vließtücher":[4,347],"FFP3 Masken (mit Ventil)":[4,328],"FFP2 Masken":[4,310],"MNS Masken":[4,291],"Desinfektionshandschuhe Gr. S":[4,273],"Desinfektionshandschuhe Gr. M":[4,254],"Desinfektionshandschuhe Gr. L":[4,236],"Desinfektionshandschuhe Gr. XL":[4,219],"Sterile Handschuhe Gr. 6,5":[4,201],"Sterile Handschuhe Gr. 8,5":[4,182],"SIC SAC-Brechbeutel":[4,162],"Zahnprothesen Set":[4,143],"Schutzbrille":[4,125],"Einmalurinal (3er Set)":[4,106],"Venenstauer":[4,88],"Schutzoverall Gr. XL":[4,69],"Schutzoverall Gr. XXL":[5,735],"Schutzkittel":[5,717],"Augenspülung (0,9%) grün":[5,680],"Augenspülung (4,9 %) blau":[5,661],"Wasser 0,5l":[5,643],"Infusionsbesteck":[5,624],"Sterofundin 500ml":[5,606],"EKG-Klebeelektroden":[5,587],"C3 EKG Druckerpapier":[5,569],"Defi-Elektroden Erw.":[5,550],"Defi-Elektroden Kind":[5,532],"Kapnometrieadapter":[5,513],"Thermopapier":[5,495],"Leukoplast Hospital":[5,476],"Leukosilk":[5,458],"Ohrthermometer Schutzkappe":[5,439],"BZ-Teststreifen":[5,421],"BZ-Testlösung":[5,402],"BZ-Sicherheitslanzetten":[5,384],"Rasierer Einweg":[5,365],"Elektrogel (Sono)":[5,347],"SpO² Sensor Kind":[5,328],"Celox RAPID Gauze":[5,310],"Thoraxentlastungsnadel 14G":[5,291],"Sterile Mundspatel":[5,273],"Sterile Pinzette":[5,254],"Sterile Chir. Schere":[5,236],"Skalpell Gr. 10":[5,217],"Skalpell Gr. 11":[5,199],"Abnabelungsset":[5,180],"T-POD Beckenschlinge":[5,162],"Heizdecke":[5,143],"Replantat Notfallset Hand":[5,125],"Replantat Notfallset Bein":[5,106],"Verbrennungstuch Metaline kl.":[5,88],"Verbrennungstuch Metaline gr.":[5,69],"Sam Splint":[6,735],"HWS Orthese Erw.":[6,717],"HWS Orthese Kind":[6,698],"Batterien CR2025":[6,532],"Batterien AA":[6,513],"Batterien A23":[6,495],"Öl Pressluftkompressor":[6,476],"CO-Warnmelder":[6,458],"CF-Speicherkarte EKG":[6,439],"A6 Notizblock":[6,421],"Kugelschreiber":[6,402],"Permanentmarker":[6,384],"Scheibenfrostschutz":[6,347],"KÄRCHER Aktivreiniger":[6,328],"B20-Kanister":[6,310],"Staubsauger Zubehör":[6,291],"KÄRCHER Entkalker":[6,273],"Sauerstoffflasche 10l":[6,236],"Sauerstoffflasche 2l":[6,217]};
+    // LP-Nummern die in mehreren Bereichen vorkommen → Name-Lookup bevorzugen
+    const _LP_DUPE = new Set(['S.1.2.3.','S.1.3.1.1.','S.1.3.1.2.','S.1.3.1.3.','S.1.3.1.4.','S.2.1.3.','S.2.2.1.1.','S.5.7.1.']);
+    let _pdfTemplateCache = null;
+
+    function _getArtikelPos(artikel) {
+      if (!_LP_DUPE.has(artikel.lp)) {
+        const p = _LP_POS[artikel.lp];
+        if (p) return p;
+      }
+      return _NAME_POS[artikel.name] || _LP_POS[artikel.lp] || null;
+    }
+
+    window.generatePDF = async function() {
       if (!currentBest) return;
       const b       = currentBest;
-      const { jsPDF } = window.jspdf;
-      const pdf     = new jsPDF();
+      const { PDFDocument, rgb, StandardFonts } = window.PDFLib;
       const datum   = b.datum?.toDate ? b.datum.toDate() : new Date();
       const dateStr = datum.toLocaleDateString('de-DE');
       const timeStr = datum.toLocaleTimeString('de-DE', { hour:'2-digit', minute:'2-digit' });
       const nachbest = b.items || b.nachbestellungen || [];
 
-      let y = 14;
-      pdf.setFillColor(240,240,240);
-      pdf.rect(14, y, 182, 10, 'F');
-      pdf.setDrawColor(150);
-      pdf.rect(14, y, 182, 10);
-      pdf.setFont('helvetica','bold');
-      pdf.setFontSize(13);
-      pdf.setTextColor(0);
-      pdf.text('Lagerbestellung Rettungswache Malmsheim', 105, y+7, { align:'center' });
-      y += 14;
+      // Template laden (nach erstem Abruf gecached)
+      if (!_pdfTemplateCache) {
+        const url  = await getDownloadURL(storageRef(storage, 'Lagerbestellung_Rettungswache_Malmsheim_2026_Formular.pdf'));
+        const resp = await fetch(url);
+        _pdfTemplateCache = await resp.arrayBuffer();
+      }
+      const pdfDoc = await PDFDocument.load(_pdfTemplateCache);
+      const font   = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+      const pages  = pdfDoc.getPages();
+      const red    = rgb(0.72, 0, 0);
+      const black  = rgb(0, 0, 0);
 
-      const COL = { lp:14, produkt:42, min:128, max:148, hinweis:163, bestellen:183 };
-      const ROW_H = 7;
-
-      function drawHeader() {
-        pdf.setFillColor(50,50,50);
-        pdf.rect(14, y, 182, ROW_H, 'F');
-        pdf.setFont('helvetica','bold');
-        pdf.setFontSize(8);
-        pdf.setTextColor(255,255,255);
-        pdf.text('LP', COL.lp+1, y+5);
-        pdf.text('Produkt', COL.produkt+1, y+5);
-        pdf.text('MIN', COL.min+1, y+5);
-        pdf.text('MAX', COL.max+1, y+5);
-        pdf.text('Hinweis', COL.hinweis+1, y+5);
-        pdf.text('Bestellen', COL.bestellen-12, y+5);
-        pdf.setTextColor(0);
-        y += ROW_H;
+      // Bestellmengen in "Bestellen"-Spalte einschreiben
+      for (const artikel of alleArtikel) {
+        const pos = _getArtikelPos(artikel);
+        if (!pos) continue;
+        const nb = nachbest.find(x =>
+          x.id === artikel.id || x.artikelId === artikel.id ||
+          x.name === artikel.name || x.artikelName === artikel.name
+        );
+        const bestellt = nb ? true : (b.bestellungen?.[artikel.id]?.bestellen === true);
+        const menge    = nb?.menge ?? b.bestellungen?.[artikel.id]?.menge ?? '';
+        const einheit  = nb?.einheit || artikel.minEinheit || '';
+        if (!bestellt || !menge) continue;
+        const page = pages[pos[0]];
+        if (!page) continue;
+        page.drawText(`${menge} ${einheit}`.trim(), {
+          x: 503,
+          y: pos[1] + 2,
+          size: 8.5,
+          font,
+          color: red,
+        });
       }
 
-      drawHeader();
-      let rowCount = 0;
-
-      for (const bereichObj of alleBereiche) {
-        const bereichArtikel = alleArtikel
-          .filter(a => a.bereich === bereichObj.id)
-          .sort((a, b) => naturalSort(a.lp||'', b.lp||''));
-        if (bereichArtikel.length === 0) continue;
-        if (y > 268) { pdf.addPage(); y = 14; drawHeader(); }
-        pdf.setFillColor(180,180,180);
-        pdf.rect(14, y, 182, ROW_H, 'F');
-        pdf.setDrawColor(150);
-        pdf.rect(14, y, 182, ROW_H);
-        pdf.setFont('helvetica','bold');
-        pdf.setFontSize(8.5);
-        pdf.text(prettyBereich(bereichObj.name), COL.lp+1, y+5);
-        y += ROW_H;
-
-        for (const a of bereichArtikel) {
-          if (y > 268) { pdf.addPage(); y = 14; drawHeader(); }
-          const nb       = nachbest.find(x => x.id === a.id || x.artikelId === a.id || x.name === a.name || x.artikelName === a.name);
-          const bestellt = nb ? true : (b.bestellungen?.[a.id]?.bestellen === true);
-          const menge    = nb?.menge ?? b.bestellungen?.[a.id]?.menge ?? '';
-          const einheit  = nb?.einheit || a.minEinheit || '';
-          if (rowCount%2===0) { pdf.setFillColor(250,250,250); pdf.rect(14,y,182,ROW_H,'F'); }
-          else { pdf.setFillColor(255,255,255); pdf.rect(14,y,182,ROW_H,'F'); }
-          pdf.setDrawColor(200); pdf.rect(14, y, 182, ROW_H);
-          pdf.setDrawColor(220);
-          [COL.produkt, COL.min, COL.max, COL.hinweis, COL.bestellen-12].forEach(x => pdf.line(x, y, x, y+ROW_H));
-          pdf.setFont('helvetica','normal'); pdf.setFontSize(7.5);
-          pdf.setTextColor(80);
-          pdf.text((a.lp||'–').substring(0,12), COL.lp+1, y+5);
-          pdf.setTextColor(0);
-          pdf.text(a.name.length>34?a.name.substring(0,31)+'...':a.name, COL.produkt+1, y+5);
-          if (a.min!=null) pdf.text(`${a.min} ${a.minEinheit||''}`, COL.min+1, y+5);
-          if (a.max!=null) pdf.text(`${a.max} ${a.maxEinheit||''}`, COL.max+1, y+5);
-          pdf.setFontSize(6.5); pdf.setTextColor(80);
-          if (a.hinweis) pdf.text(a.hinweis.substring(0,13), COL.hinweis+1, y+5);
-          pdf.setFontSize(7.5);
-          if (bestellt && menge) { pdf.setFont('helvetica','bold'); pdf.setTextColor(180,0,0); pdf.text(`${menge} ${einheit}`, COL.bestellen-11, y+5); }
-          pdf.setTextColor(0); pdf.setFont('helvetica','normal');
-          y += ROW_H; rowCount++;
-        }
+      // Letzte Seite: Datum, Name, Unterschrift eintragen
+      const last = pages[pages.length - 1];
+      last.drawText(`${dateStr}  ·  ${timeStr} Uhr`, { x: 130, y: 645, size: 9, font, color: black });
+      last.drawText(b.mitarbeiter || '', { x: 165, y: 618, size: 9, font, color: black });
+      if (b.unterschrift) {
+        const pngBytes = Uint8Array.from(atob(b.unterschrift.split(',')[1]), c => c.charCodeAt(0));
+        const img = await pdfDoc.embedPng(pngBytes);
+        last.drawImage(img, { x: 205, y: 577, width: 130, height: 28 });
       }
 
-      y += 8;
-      if (y > 240) { pdf.addPage(); y = 20; }
-      pdf.setDrawColor(150); pdf.rect(14, y, 182, 20);
-      pdf.setFont('helvetica','normal'); pdf.setFontSize(7.5); pdf.setTextColor(0);
-      const leg = [['Stk. = Stück','VE = Verpackungseinheit','K = Kanister'],['Pack = Pack','R = Rolle','Fl. = Flasche'],['S = Schrank','L = Lagerplatz','R = Regal'],['B. = Bögen','','']];
-      leg.forEach((r,i) => { pdf.text(r[0],18,y+5+i*4); pdf.text(r[1],80,y+5+i*4); pdf.text(r[2],150,y+5+i*4); });
-      y += 26;
-      pdf.setFontSize(9);
-      pdf.text('Bestellt am: ', 14, y); pdf.line(45, y, 130, y); pdf.text(`${dateStr} · ${timeStr} Uhr`, 46, y-1);
-      y += 10;
-      pdf.text('Name Besteller*in: ', 14, y); pdf.line(60, y, 160, y); pdf.text(b.mitarbeiter||'', 61, y-1);
-      y += 10;
-      pdf.text('Unterschrift Besteller*in: ', 14, y); pdf.line(72, y, 160, y);
-      if (b.unterschrift) pdf.addImage(b.unterschrift,'PNG',73,y-10,50,14);
-      y += 16;
-      if (y > 260) { pdf.addPage(); y = 20; }
-      pdf.setDrawColor(180,0,0); pdf.setLineWidth(0.5); pdf.rect(14,y,182,12);
-      pdf.setLineWidth(0.2); pdf.setFont('helvetica','bold'); pdf.setFontSize(8.5); pdf.setTextColor(180,0,0);
-      pdf.text('Hinweis = nur den Bestand im Regal über den Schränken kontrollieren und ggf. bestellen!', 105, y+8, { align:'center' });
-      const pc = pdf.getNumberOfPages();
-      for (let i=1; i<=pc; i++) {
-        pdf.setPage(i); pdf.setFont('helvetica','normal'); pdf.setFontSize(7.5); pdf.setTextColor(100);
-        pdf.text(`Erstellt: ${dateStr}`,14,291);
-        pdf.text(`Seite ${i} von ${pc}`,105,291,{align:'center'});
-        pdf.text(`Stand: ${dateStr}`,196,291,{align:'right'});
-      }
-      pdf.save(`Lagerbestellung_${(b.mitarbeiter||'').replace(/\s/g,'_')}_${dateStr.replace(/\./g,'-')}.pdf`);
+      // Download
+      const pdfBytes = await pdfDoc.save();
+      const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `Lagerbestellung_${(b.mitarbeiter||'').replace(/\s/g,'_')}_${dateStr.replace(/\./g,'-')}.pdf`;
+      a.click();
+      URL.revokeObjectURL(a.href);
     };
 
 
