@@ -1,5 +1,6 @@
 {
   "hosting": {
+    "site": "lagerbestellung-19970",
     "public": ".",
     "ignore": [
       "firebase.json",
