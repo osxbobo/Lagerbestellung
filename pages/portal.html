@@ -1090,7 +1090,7 @@
                               from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
     import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, collection, getDocs, doc, getDoc, setDoc, updateDoc, deleteDoc, addDoc, query, orderBy, limit, where, onSnapshot, Timestamp, writeBatch }
                               from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-    import { getStorage, ref as storageRef, getDownloadURL }
+    import { getStorage, ref as storageRef, getDownloadURL, getBytes }
                               from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
     import { firebaseConfig } from "../js/firebase-config.js";
 
@@ -2462,11 +2462,11 @@
       const nachbest = b.items || b.nachbestellungen || [];
 
       // Template laden (nach erstem Abruf gecached)
+      // getBytes() nutzt Firebase SDK direkt → kein CORS-Problem
       if (!_pdfTemplateCache) {
-        const url  = await getDownloadURL(storageRef(storage, 'vorlagen/lagerbestellung_vorlage.pdf'));
-        const resp = await fetch(url);
-        if (!resp.ok) throw new Error(`Vorlage nicht gefunden (${resp.status})`);
-        _pdfTemplateCache = await resp.arrayBuffer();
+        const ref   = storageRef(storage, 'vorlagen/lagerbestellung_vorlage.pdf');
+        const bytes = await getBytes(ref);
+        _pdfTemplateCache = bytes.buffer;
       }
       const pdfDoc = await PDFDocument.load(_pdfTemplateCache, { ignoreEncryption: true });
       const font   = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
