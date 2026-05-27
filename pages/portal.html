@@ -2462,11 +2462,11 @@
       const nachbest = b.items || b.nachbestellungen || [];
 
       // Template laden (nach erstem Abruf gecached)
-      // getBytes() nutzt Firebase SDK direkt → kein CORS-Problem
+      // Hosting-relative URL → gleiche Origin, kein CORS, kein Auth nötig
       if (!_pdfTemplateCache) {
-        const ref   = storageRef(storage, 'vorlagen/lagerbestellung_vorlage.pdf');
-        const bytes = await getBytes(ref);
-        _pdfTemplateCache = bytes.buffer;
+        const resp = await fetch('../vorlagen/lagerbestellung_vorlage.pdf');
+        if (!resp.ok) throw new Error(`Vorlage nicht gefunden (${resp.status})`);
+        _pdfTemplateCache = await resp.arrayBuffer();
       }
       const pdfDoc = await PDFDocument.load(_pdfTemplateCache, { ignoreEncryption: true });
       const font   = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
