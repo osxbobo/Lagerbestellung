@@ -12,7 +12,9 @@
       "README.md",
       "*.png",
       "*.PNG",
-      "mockup.html"
+      "mockup.html",
+      "vorlagen/**",
+      "cors.json"
     ],
     "rewrites": [
       {

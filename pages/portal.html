@@ -2462,9 +2462,10 @@
       const nachbest = b.items || b.nachbestellungen || [];
 
       // Template laden (nach erstem Abruf gecached)
-      // Hosting-relative URL → gleiche Origin, kein CORS, kein Auth nötig
+      // getDownloadURL → CORS via cors.json auf dem Bucket konfiguriert
       if (!_pdfTemplateCache) {
-        const resp = await fetch('../vorlagen/lagerbestellung_vorlage.pdf');
+        const url  = await getDownloadURL(storageRef(storage, 'vorlagen/lagerbestellung_vorlage.pdf'));
+        const resp = await fetch(url);
         if (!resp.ok) throw new Error(`Vorlage nicht gefunden (${resp.status})`);
         _pdfTemplateCache = await resp.arrayBuffer();
       }
