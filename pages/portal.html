@@ -2463,7 +2463,7 @@
 
       // Template laden (nach erstem Abruf gecached)
       if (!_pdfTemplateCache) {
-        const url  = await getDownloadURL(storageRef(storage, 'vorlagen/lagerbestellung_vorlage.pdf'));
+        const url  = await getDownloadURL(storageRef(storage, 'vorlagen/lagerbestellung_vorlage.pdf.pdf'));
         const resp = await fetch(url);
         _pdfTemplateCache = await resp.arrayBuffer();
       }
