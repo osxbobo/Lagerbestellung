@@ -2462,10 +2462,9 @@
       const nachbest = b.items || b.nachbestellungen || [];
 
       // Template laden (nach erstem Abruf gecached)
-      // getDownloadURL → CORS via cors.json auf dem Bucket konfiguriert
+      // Direkt von Firebase Hosting (gleiche Origin) → kein CORS, kein Safari-Problem
       if (!_pdfTemplateCache) {
-        const url  = await getDownloadURL(storageRef(storage, 'vorlagen/lagerbestellung_vorlage.pdf'));
-        const resp = await fetch(url);
+        const resp = await fetch('../vorlagen/lagerbestellung_vorlage.pdf');
         if (!resp.ok) throw new Error(`Vorlage nicht gefunden (${resp.status})`);
         _pdfTemplateCache = await resp.arrayBuffer();
       }
