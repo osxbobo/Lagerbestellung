@@ -300,6 +300,9 @@
     <button class="bottom-sheet-item" onclick="window.location.href='../index.html'">
       <span class="bottom-sheet-item-icon">🔍</span> Zur Lagersuche
     </button>
+    <button class="bottom-sheet-item" data-section="lieferanten" onclick="showSection('lieferanten');closeBottomSheet()">
+      <span>🚚</span> Lieferanten-Zuweisung
+    </button>
     <button class="bottom-sheet-item" data-section="bereiche" onclick="showSection('bereiche');closeBottomSheet()">
       <span class="bottom-sheet-item-icon">🏠</span> Bereiche
     </button>
@@ -356,6 +359,10 @@
         <div class="sidebar-item" id="nav-fotos" onclick="showSection('fotos')">
           <svg class="s-ico" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V4z"/><circle cx="7" cy="7" r="2"/><path d="M10 4h.01"/></svg>
           Fotos &amp; Bilder
+        </div>
+        <div class="sidebar-item" id="nav-lieferanten" onclick="showSection('lieferanten')">
+          <svg class="s-ico" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 11V5l6-3 6 3v6"/><path d="M7 2v9M4 7h6"/><rect x="4.5" y="8" width="5" height="3" rx="0.5"/></svg>
+          Lieferanten
         </div>
         <div class="sidebar-item" id="nav-ss-fotos" onclick="showSection('ss-fotos')">
           <svg class="s-ico" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1.5" y="2.5" width="8" height="11" rx="1"/><rect x="4.5" y="0.5" width="8" height="11" rx="1"/></svg>
@@ -814,6 +821,49 @@
 
       </section>
 
+      <!-- LIEFERANTEN-ZUWEISUNG -->
+      <section class="content-section" id="section-lieferanten">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+          <div>
+            <div style="font-size:1.1rem;font-weight:700;">🚚 Lieferanten-Zuweisung</div>
+            <div style="font-size:0.78rem;color:var(--muted);margin-top:2px;">Jedem Artikel den Lieferanten und das Formular-Feld zuweisen</div>
+          </div>
+          <button class="btn btn-primary" onclick="saveLieferantenBatch()" id="btn-lief-save" disabled>💾 Alle speichern</button>
+        </div>
+        <div style="font-size:0.78rem;color:var(--muted);margin-bottom:12px;">
+          Nur Artikel mit gesetztem Lieferanten werden in die Bestell-PDFs übernommen. Das Formular-Feld entspricht dem AcroForm-Feldnamen in der PDF-Vorlage (z. B. <code>bestellmenge_pos3</code>).
+        </div>
+        <div class="table-wrap">
+          <div class="table-header">
+            <input type="text" class="form-input table-search" id="lief-search" placeholder="Artikel suchen…" oninput="filterLieferantenTabelle()">
+            <select class="form-input" style="max-width:180px;" id="lief-filter-lieferant" onchange="filterLieferantenTabelle()">
+              <option value="">Alle Lieferanten</option>
+              <option value="">— kein —</option>
+              <option value="ekg">Meßmer (EKG)</option>
+              <option value="ezio">Teleflex (EZ-IO)</option>
+              <option value="hygiene">Orochemie (Hygiene)</option>
+              <option value="apotheke">Klinikum (Apotheke)</option>
+              <option value="thermopapier">medDV (Thermopapier)</option>
+              <option value="sauerstoff">Kraiss &amp; Friz (O₂)</option>
+              <option value="vokranken">Kohlhammer (VO)</option>
+              <option value="radecker">Radecker</option>
+            </select>
+          </div>
+          <div style="overflow-x:auto;">
+            <table id="lief-table">
+              <thead>
+                <tr>
+                  <th style="padding:10px 16px;text-align:left;font-size:0.72rem;color:var(--muted);border-bottom:1px solid var(--hairline);">Artikel</th>
+                  <th style="padding:10px 16px;text-align:left;font-size:0.72rem;color:var(--muted);border-bottom:1px solid var(--hairline);min-width:170px;">Lieferant</th>
+                  <th style="padding:10px 16px;text-align:left;font-size:0.72rem;color:var(--muted);border-bottom:1px solid var(--hairline);min-width:160px;">Formular-Feld</th>
+                </tr>
+              </thead>
+              <tbody id="lief-table-body"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
     </main>
   </div>
 
@@ -872,6 +922,26 @@
         <div class="form-group">
           <label class="form-label">Hinweis</label>
           <input type="text" class="form-input" id="edit-hinweis" placeholder="z.B. Siehe R.3.1.4.">
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Lieferant</label>
+            <select class="form-input" id="edit-lieferant">
+              <option value="">— kein —</option>
+              <option value="ekg">Meßmer (EKG)</option>
+              <option value="ezio">Teleflex (EZ-IO)</option>
+              <option value="hygiene">Orochemie (Hygiene)</option>
+              <option value="apotheke">Klinikum (Apotheke)</option>
+              <option value="thermopapier">medDV (Thermopapier)</option>
+              <option value="sauerstoff">Kraiss &amp; Friz (O₂)</option>
+              <option value="vokranken">Kohlhammer (VO)</option>
+              <option value="radecker">Radecker</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Formular-Feld</label>
+            <input type="text" class="form-input" id="edit-formularfeld" placeholder="bestellmenge_pos1">
+          </div>
         </div>
       </div>
       <div class="modal-foot">
@@ -1095,7 +1165,7 @@
     }
 
     // ── Navigation ──
-    const moreSheetSections = ['bereiche','fotos','ss-fotos','pin','backup','laufband'];
+    const moreSheetSections = ['bereiche','fotos','ss-fotos','pin','backup','laufband','lieferanten'];
 
     window.showSection = function(name) {
       document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
@@ -1104,6 +1174,7 @@
       document.querySelectorAll('.bottom-sheet-item').forEach(s => s.classList.remove('active'));
       document.getElementById(`section-${name}`).classList.add('active');
       if (name === 'ss-fotos') renderSsFotos();
+      if (name === 'lieferanten') renderLieferantenTabelle();
       const navItem = document.getElementById(`nav-${name}`);
       if (navItem) navItem.classList.add('active');
       const bottomTab = document.querySelector(`.bottom-tab[data-section="${name}"]`);
@@ -1233,11 +1304,14 @@
         document.getElementById('edit-minE').value      = a.minEinheit || '';
         document.getElementById('edit-max').value       = a.max ?? '';
         document.getElementById('edit-maxE').value      = a.maxEinheit || '';
-        document.getElementById('edit-aliases').value   = (a.aliases || []).join(', ');
-        document.getElementById('edit-hinweis').value   = a.hinweis || '';
+        document.getElementById('edit-aliases').value      = (a.aliases || []).join(', ');
+        document.getElementById('edit-hinweis').value      = a.hinweis || '';
+        document.getElementById('edit-lieferant').value    = a.lieferant || '';
+        document.getElementById('edit-formularfeld').value = a.formularFeld || '';
       } else {
         document.getElementById('artikel-modal-title').textContent = 'Neuer Artikel';
-        ['edit-id','edit-name','edit-lp','edit-location','edit-min','edit-minE','edit-max','edit-maxE','edit-aliases','edit-hinweis'].forEach(id => { document.getElementById(id).value = ''; });
+        ['edit-id','edit-name','edit-lp','edit-location','edit-min','edit-minE','edit-max','edit-maxE','edit-aliases','edit-hinweis','edit-formularfeld'].forEach(id => { document.getElementById(id).value = ''; });
+        document.getElementById('edit-lieferant').value = '';
       }
       modal.classList.remove('hidden');
     };
@@ -1258,8 +1332,10 @@
         minEinheit:  document.getElementById('edit-minE').value.trim(),
         max:         parseFloat(document.getElementById('edit-max').value) || null,
         maxEinheit:  document.getElementById('edit-maxE').value.trim(),
-        aliases:     document.getElementById('edit-aliases').value.split(',').map(s => s.trim()).filter(Boolean),
-        hinweis:     document.getElementById('edit-hinweis').value.trim(),
+        aliases:      document.getElementById('edit-aliases').value.split(',').map(s => s.trim()).filter(Boolean),
+        hinweis:      document.getElementById('edit-hinweis').value.trim(),
+        lieferant:    document.getElementById('edit-lieferant').value || '',
+        formularFeld: document.getElementById('edit-formularfeld').value.trim(),
       };
 
       try {
@@ -2089,6 +2165,71 @@
         toast(e.message, 'error');
         document.getElementById('btn-bilder-import-start').disabled = false;
       }
+    };
+
+    // ── LIEFERANTEN-ZUWEISUNG ──
+    const LIEFERANTEN_NAMEN = {
+      ekg: 'Meßmer (EKG)', ezio: 'Teleflex (EZ-IO)', hygiene: 'Orochemie (Hygiene)',
+      apotheke: 'Klinikum (Apotheke)', thermopapier: 'medDV (Thermopapier)',
+      sauerstoff: 'Kraiss & Friz (O₂)', vokranken: 'Kohlhammer (VO)', radecker: 'Radecker',
+    };
+
+    let _liefChanges = {};
+
+    window.renderLieferantenTabelle = function() {
+      _liefChanges = {};
+      document.getElementById('btn-lief-save').disabled = true;
+      filterLieferantenTabelle();
+    };
+
+    window.filterLieferantenTabelle = function() {
+      const q    = (document.getElementById('lief-search')?.value || '').toLowerCase();
+      const lief = document.getElementById('lief-filter-lieferant')?.value || '';
+      const tbody = document.getElementById('lief-table-body');
+      if (!tbody) return;
+      const filtered = alleArtikel.filter(a =>
+        (!q || a.name.toLowerCase().includes(q)) &&
+        (!lief || (a.lieferant || '') === lief)
+      );
+      tbody.innerHTML = filtered.map(a => `
+        <tr style="border-bottom:1px solid var(--hairline);">
+          <td style="padding:8px 16px;font-size:0.82rem;">${esc(a.name)}<br><span style="font-size:0.68rem;color:var(--muted);">${esc(a.lp||'')}</span></td>
+          <td style="padding:8px 16px;">
+            <select class="form-input" style="font-size:0.78rem;" onchange="onLiefChange('${a.id}','lieferant',this.value)">
+              <option value="" ${!a.lieferant?'selected':''}>— kein —</option>
+              ${Object.entries(LIEFERANTEN_NAMEN).map(([k,v])=>`<option value="${k}" ${a.lieferant===k?'selected':''}>${v}</option>`).join('')}
+            </select>
+          </td>
+          <td style="padding:8px 16px;">
+            <input type="text" class="form-input" style="font-size:0.78rem;" value="${esc(a.formularFeld||'')}" placeholder="bestellmenge_pos1" oninput="onLiefChange('${a.id}','formularFeld',this.value)">
+          </td>
+        </tr>`).join('');
+    };
+
+    window.onLiefChange = function(id, field, value) {
+      if (!_liefChanges[id]) _liefChanges[id] = {};
+      _liefChanges[id][field] = value;
+      const a = alleArtikel.find(x => x.id === id);
+      if (a) a[field] = value;
+      document.getElementById('btn-lief-save').disabled = false;
+    };
+
+    window.saveLieferantenBatch = async function() {
+      const btn = document.getElementById('btn-lief-save');
+      btn.disabled = true; btn.textContent = 'Wird gespeichert…';
+      try {
+        const batch = writeBatch(db);
+        for (const [id, changes] of Object.entries(_liefChanges)) {
+          batch.update(doc(db, 'artikel', id), changes);
+          const a = alleArtikel.find(x => x.id === id);
+          if (a) Object.assign(a, changes);
+        }
+        const count = Object.keys(_liefChanges).length;
+        await batch.commit();
+        _liefChanges = {};
+        toast(`✅ ${count} Artikel gespeichert`);
+      } catch(e) { toast(e.message, 'error'); btn.disabled = false; }
+      btn.textContent = '💾 Alle speichern';
     };
 
     // Init

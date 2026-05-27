@@ -13,7 +13,6 @@
       "*.png",
       "*.PNG",
       "mockup.html",
-      "vorlagen/**",
       "cors.json"
     ],
     "rewrites": [
