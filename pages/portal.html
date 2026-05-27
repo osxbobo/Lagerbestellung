@@ -2468,7 +2468,7 @@
         if (!resp.ok) throw new Error(`Vorlage nicht gefunden (${resp.status})`);
         _pdfTemplateCache = await resp.arrayBuffer();
       }
-      const pdfDoc = await PDFDocument.load(_pdfTemplateCache);
+      const pdfDoc = await PDFDocument.load(_pdfTemplateCache, { ignoreEncryption: true });
       const font   = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
       const pages  = pdfDoc.getPages();
       const red    = rgb(0.72, 0, 0);
