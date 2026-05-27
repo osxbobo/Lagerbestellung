@@ -828,7 +828,10 @@
             <div style="font-size:1.1rem;font-weight:700;">🚚 Lieferanten-Zuweisung</div>
             <div style="font-size:0.78rem;color:var(--muted);margin-top:2px;">Jedem Artikel den Lieferanten und das Formular-Feld zuweisen</div>
           </div>
-          <button class="btn btn-primary" onclick="saveLieferantenBatch()" id="btn-lief-save" disabled>💾 Alle speichern</button>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn btn-ghost" onclick="autoAssignRadecker()" id="btn-lief-auto">🔄 Radecker Auto-Assign</button>
+            <button class="btn btn-primary" onclick="saveLieferantenBatch()" id="btn-lief-save" disabled>💾 Alle speichern</button>
+          </div>
         </div>
         <div style="font-size:0.78rem;color:var(--muted);margin-bottom:12px;">
           Nur Artikel mit gesetztem Lieferanten werden in die Bestell-PDFs übernommen. Das Formular-Feld entspricht dem AcroForm-Feldnamen in der PDF-Vorlage (z. B. <code>bestellmenge_pos3</code>).
@@ -2230,6 +2233,202 @@
         toast(`✅ ${count} Artikel gespeichert`);
       } catch(e) { toast(e.message, 'error'); btn.disabled = false; }
       btn.textContent = '💾 Alle speichern';
+    };
+
+    window.autoAssignRadecker = function() {
+      if (!alleArtikel || alleArtikel.length === 0) { toast('Artikel noch nicht geladen', 'error'); return; }
+      function radField(idx) {
+        const p = idx <= 50 ? 1 : idx <= 114 ? 2 : idx <= 178 ? 3 : 4;
+        return `bestellmenge_p${p}_${idx}`;
+      }
+      // [keywords[], excelIdx] — ALL keywords must appear in lowercased article name
+      // More specific entries first to take priority
+      const MAP = [
+        // Desinfektionshandschuhe ULTRA (vor normalen Handschuhen)
+        [['desinfektionshandschuhe','gr. s'], 77], [['desinfektionshandschuhe','gr. m'], 78],
+        [['desinfektionshandschuhe','gr. l'], 79], [['desinfektionshandschuhe','gr. xl'], 80],
+        // Handschuhe Nitril Standard
+        [['handschuhe','gr. s'], 73], [['handschuhe','gr. m'], 74],
+        [['handschuhe','gr. l'], 75], [['handschuhe','gr. xl'], 76],
+        // iGel Plus (vor iGel)
+        [['igel','plus','gr. 3'], 90], [['igel','plus','gr. 4'], 91], [['igel','plus','gr. 5'], 92],
+        // iGel
+        [['igel','gr. 1,5'], 87], [['igel','gr. 2,5'], 89],
+        [['igel','gr. 1'], 86], [['igel','gr. 2'], 88],
+        // Magill-Zange
+        [['magill','groß'], 116], [['magill','klein'], 117],
+        // Müllbeutel
+        [['müllbeutel','blau'], 122], [['müllbeutel','120'], 122], [['müllbeutel','15'], 121],
+        // Endotrachealtubus — ohne Cuff zuerst (spezifischer)
+        [['tubus','ohne','2,5'], 42], [['tubus','ohne','3,5'], 43],
+        [['tubus','3,0'], 44], [['tubus','3,5'], 45], [['tubus','4,0'], 46], [['tubus','4,5'], 47],
+        [['tubus','5,0'], 49], [['tubus','5,5'], 50], [['tubus','6,0'], 51],
+        [['tubus','7,0'], 52], [['tubus','8,0'], 53],
+        // Guedel
+        [['guedel','gr. 4'], 62], [['guedel','gr. 5'], 63], [['guedel','gr. 6'], 64],
+        [['guedel','gr. 7'], 65], [['guedel','gr. 8'], 66], [['guedel','gr. 9'], 67],
+        [['guedel','gr. 10'], 68], [['guedel','gr. 11'], 69],
+        // Absaugkatheter
+        [['absaugkatheter','ch.6'], 1], [['absaugkatheter','ch 6'], 1],
+        [['absaugkatheter','ch.14'], 2], [['absaugkatheter','ch 14'], 2],
+        [['absaugkatheter','ch.16'], 3], [['absaugkatheter','ch 16'], 3],
+        // Larynxmaske
+        [['larynxmaske','1,0'], 102], [['larynxmaske','1,5'], 103], [['larynxmaske','2,0'], 104],
+        [['larynxmaske','2,5'], 105], [['larynxmaske','3,0'], 106], [['larynxmaske','4,0'], 107],
+        [['larynxmaske','5,0'], 108],
+        [['larynxmaske','gr. 1'], 102], [['larynxmaske','gr. 2'], 104], [['larynxmaske','gr. 3'], 106],
+        [['larynxmaske','gr. 4'], 107], [['larynxmaske','gr. 5'], 108],
+        // Beatmungsmaske CPAP (Größe via Artikel-Nr.-Suffix)
+        [['cpap','maske','951'], 15], [['cpap','maske','953'], 16], [['cpap','maske','954'], 17],
+        [['cpap','maske','955'], 18], [['cpap','maske','956'], 19],
+        // Aerosol/Vernebler
+        [['aerosol','erw'], 5], [['aerosol','kind'], 6],
+        [['vernebler','erw'], 5], [['vernebler','kind'], 6],
+        // Beatmungsbeutel
+        [['beatmungsbeutel','erw'], 11], [['beatmungsbeutel','kind'], 12],
+        // Beatmungsfilter
+        [['iso-gard'], 13], [['beatmungsfilter','intersurgical'], 14],
+        // Blutdruckmessgerät (Kleinkind vor Kind)
+        [['blutdruck','bein'], 21], [['blutdruck','kleinkind'], 24],
+        [['blutdruck','kind'], 23], [['blutdruck','erw'], 22],
+        // Fixationsband CPAP
+        [['fixationsband','erw'], 57], [['fixationsband','kind'], 58],
+        // Laryngoskop-Griff
+        [['laryngoskop','erw'], 100], [['laryngoskop','kind'], 101],
+        // Macintosh Spatel
+        [['macintosh','dahlhausen'], 157],
+        [['macintosh','resq','1'], 158], [['macintosh','resq','2'], 159],
+        [['macintosh','resq','3'], 160], [['macintosh','resq','4'], 161],
+        [['macintosh','resq','5'], 162],
+        [['macintosh','gr. 1'], 158], [['macintosh','gr. 2'], 159], [['macintosh','gr. 3'], 160],
+        [['macintosh','gr. 4'], 161], [['macintosh','gr. 5'], 162],
+        // Miller Spatel
+        [['miller','gr. 0'], 155], [['miller','gr. 1'], 156],
+        [['miller',' 0'], 155], [['miller',' 1'], 156],
+        // Replantat-Set
+        [['replantat','groß'], 146], [['replantat','klein'], 147],
+        // Skalpell
+        [['skalpell','10'], 153], [['skalpell','11'], 154],
+        // Spritzen
+        [['luer-lock'], 111], [['injekt-f'], 163], [['injekt f'], 163],
+        [['discardit','1'], 164], [['discardit','5'], 165],
+        [['discardit','10'], 166], [['discardit','20'], 167],
+        // Thomas Holder
+        [['thomas holder','select'], 174], [['thomas holder','erw'], 174],
+        [['thomas holder','pediatric'], 175], [['thomas holder','kind'], 175],
+        // Videolaryngoskop / McGRATH
+        [['mcgrath','akku'], 191], [['videolaryngoskop','akku'], 191],
+        [['mcgrath','spatel','072'], 192], [['mcgrath','spatel','017'], 193],
+        [['mcgrath','spatel','005'], 194], [['mcgrath','spatel','013'], 195],
+        [['mcgrath','x blade'], 196], [['mcgrath','x-blade'], 196],
+        [['mcgrath','gerät'], 190],
+        // Viggo (längere Nummern zuerst)
+        [['viggo','pflaster'], 203], [['viggo','leukomed'], 203],
+        [['viggo','14g'], 201], [['viggo','16g'], 199], [['viggo','18g'], 200],
+        [['viggo','20g'], 202], [['viggo','22g'], 197], [['viggo','24g'], 198],
+        [['viggo','14'], 201], [['viggo','16'], 199], [['viggo','18'], 200],
+        [['viggo','20'], 202], [['viggo','22'], 197], [['viggo','24'], 198],
+        // Wendel Tubus
+        [['wendel','12'], 204], [['wendel','14'], 205], [['wendel','16'], 206],
+        [['wendel','18'], 207], [['wendel','20'], 208], [['wendel','28'], 209],
+        // O2-Maske
+        [['sauerstoffmaske','erw'], 128], [['sauerstoffmaske','kind'], 129],
+        [['o2-maske','erw'], 128], [['o2-maske','kind'], 129],
+        [['o2','maske','erw'], 128], [['o2','maske','kind'], 129],
+        // Magensonde
+        [['magensonde','mit mandrin'], 114], [['magensonde','mit'], 114],
+        [['magensonde','ohne'], 113],
+        // HWS-Orthese
+        [['hws','erw'], 82], [['hws','kind'], 83],
+        // Augenspülung
+        [['augenspülung','nacl'], 8], [['augenspülung','0,9'], 8],
+        [['augenspülung','ph'], 9], [['augenspülung','phosphat'], 9],
+        // Mullkompressen (spezifisch vor allgemein)
+        [['mullkompressen','8x8'], 120], [['mullkompressen','5x5'], 181],
+        [['tupfer','5x5'], 181],
+        // Verbrennungstuch (Betttuch spezifischer zuerst)
+        [['verbrennungstuch','betttuch'], 187], [['aluderm','betttuch'], 187],
+        // Handabsaugpumpe Zubehör vor Set
+        [['handabsaugpumpe','zubehör'], 72], [['handabsaugpumpe'], 71],
+        // Decken
+        [['decke','sommer'], 33], [['decken','sommer'], 33],
+        [['decke','winter'], 34], [['decken','winter'], 34],
+        // Verbandpäckchen
+        [['verbandpäckchen','groß'], 185],
+        // Einzelwort-Matches (eindeutige Produkte)
+        [['absaugbeutel'], 0], [['absaugschlauch'], 4], [['aufziehkanüle'], 7],
+        [['beatmungsschlauch'], 10], [['beckenschlinge'], 20], [['celox'], 25],
+        [['chest seal'], 26], [['foxseal'], 26], [['chirurgisches besteck'], 27],
+        [['eingaswarngerät'], 28], [['co-warngerät'], 28],
+        [['schnelltest','covid'], 29], [['covid','test'], 29],
+        [['cuffdruckmesser'], 30], [['cutasept'], 31], [['ypsipor'], 32],
+        [['dreiecktuch'], 35], [['dreiecktücher'], 35], [['dreiwegehahn'], 36],
+        [['druckinfusion'], 37], [['easy splint'], 38], [['einmallaken'], 39],
+        [['klebeelektroden'], 40], [['elektrodengel'], 41],
+        [['mandrin','asid'], 48], [['einführungsmandrin'], 48],
+        [['ffp2'], 54], [['ffp3'], 55], [['fingertipp'], 56],
+        [['gänsegurgel'], 61], [['haix'], 70],
+        [['lindesa'], 81], [['hyperventilationsmaske'], 84], [['sterican'], 85],
+        [['intrafix'], 93], [['infusionssystem'], 93],
+        [['kältekompresse'], 94], [['kühlkompresse'], 94], [['kältebeutel'], 94],
+        [['kontamed'], 95], [['sani 200'], 96], [['multi-safe','200'], 96],
+        [['kindersicher'], 97], [['kleiderschere'], 98], [['kombistopfen'], 99],
+        [['leukoplast'], 109], [['leukosilk'], 110], [['katherspritze'], 112],
+        [['magensondenbeutel'], 115], [['ringmagnet'], 118], [['schrittmachermagnet'], 118],
+        [['mini-spike'], 119], [['minispike'], 119],
+        [['mundschutz'], 123], [['op-maske'], 123], [['mund-nasen-schutz'], 123],
+        [['mundspatel'], 124], [['nabelklemme'], 125],
+        [['nasalzerstäuber'], 126], [['mad100'], 126],
+        [['nierenschale'], 127],
+        [['sicherheitsschlauch'], 130], [['o2-sicherheitsschlauch'], 130],
+        [['nasensonde'], 131], [['o2-brille'], 131], [['sauerstoffbrille'], 131],
+        [['ohrthermometer','braun'], 132],
+        [['thermometerfilter'], 133], [['meßfilter'], 133], [['ohrfilter'], 133],
+        [['oro-sauger'], 134], [['orosauger'], 134],
+        [['peep','ventil'], 135], [['peepventil'], 135],
+        [['perfusor','leitung'], 136], [['perfusorleitung'], 136],
+        [['perfusor','spritze'], 137], [['perfusorspritze'], 137],
+        [['pinkelbeutel'], 138], [['pinzette'], 139], [['portkanüle'], 140],
+        [['pulsoximeter'], 141], [['pulsoxy'], 141], [['pulsox'], 141],
+        [['pupillenleuchte'], 142], [['rasierer'], 143], [['heizdecke'], 144],
+        [['regenschutz'], 145], [['rettungsdecke'], 148],
+        [['rückschlagventil'], 149], [['infuvalve'], 149],
+        [['saugunterlage'], 150], [['brechbeutel'], 151], [['silberwindel'], 152],
+        [['schere','steril'], 168], [['chirurgische schere'], 168],
+        [['sterillium'], 171], [['virugard'], 171], [['stethoskop'], 172],
+        [['s-guide'], 173], [['intubationshilfe'], 173],
+        [['thoraxentlastungsnadel'], 176], [['angiocath'], 176],
+        [['thoraxdrainage'], 177], [['tourniquet'], 178],
+        [['patienteneigentum'], 179], [['tragetasche','patient'], 179],
+        [['tragetuch'], 180],
+        [['universalbinde'], 182], [['koniotomie'], 183], [['surgicric'], 183],
+        [['venenstauer'], 184], [['verbandtuch'], 186],
+        [['verbrennungstuch'], 188], [['aluderm'], 188],
+        [['cirrus'], 189], [['videolaryngoskop'], 190],
+        [['yankauer'], 210], [['zahnprothese'], 211], [['reflexschild'], 212],
+        [['tupfer'], 181],
+      ];
+
+      let count = 0;
+      for (const a of alleArtikel) {
+        if (a.lieferant && a.lieferant !== '' && a.lieferant !== 'radecker') continue;
+        const nameLow = (a.name || '').toLowerCase();
+        for (const [keywords, idx] of MAP) {
+          if (keywords.every(k => nameLow.includes(k))) {
+            const feld = radField(idx);
+            if (a.lieferant !== 'radecker' || a.formularFeld !== feld) {
+              onLiefChange(a.id, 'lieferant', 'radecker');
+              onLiefChange(a.id, 'formularFeld', feld);
+              count++;
+            }
+            break;
+          }
+        }
+      }
+      filterLieferantenTabelle();
+      toast(count > 0
+        ? `🔄 ${count} Artikel Radecker zugeordnet – bitte prüfen & speichern`
+        : 'Keine neuen Zuordnungen gefunden');
     };
 
     // Init

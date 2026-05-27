@@ -2531,7 +2531,7 @@
       thermopapier: { name: 'medDV (Thermopapier)', template: '../vorlagen/Bestellformular_Thermopapier_Malmsheim_Formular.pdf' },
       sauerstoff:   { name: 'Kraiss & Friz (O₂)',   template: '../vorlagen/Bestellformular-Lieferung-Malmsheim.pdf' },
       vokranken:    { name: 'Kohlhammer (VO)',       template: '../vorlagen/Bestellformular_VO_Krankenbefoerderung_Malmsheim_Formular.pdf' },
-      radecker:     { name: 'Radecker',              template: null },
+      radecker:     { name: 'Radecker',              template: '../vorlagen/Sanitaetsmaterial_Bestellliste_Radecker_Malmsheim_Formular.pdf' },
     };
     const _liefTemplateCache = {};
 
@@ -2579,45 +2579,21 @@
           }
         }
 
-        let pdfBytes;
-
-        if (lieferantKey === 'radecker' || !lief.template) {
-          // Radecker: einfache Textliste generieren
-          const pdfDoc = await PDFDocument.create();
-          const font   = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
-          const fontR  = await pdfDoc.embedFont(StandardFonts.Helvetica);
-          const page   = pdfDoc.addPage([595, 842]);
-          const red    = rgb(0.72, 0, 0);
-          const black  = rgb(0, 0, 0);
-          const gray   = rgb(0.4, 0.4, 0.4);
-          page.drawText('Bestellliste – Radecker', { x: 50, y: 790, size: 16, font, color: black });
-          page.drawText(`Datum: ${(b.datum?.toDate ? b.datum.toDate() : new Date()).toLocaleDateString('de-DE')}`, { x: 50, y: 768, size: 9, font: fontR, color: gray });
-          let y = 740;
-          for (const { art, menge } of bestellteArtikel) {
-            if (y < 60) { break; }
-            page.drawText(`${menge}x`, { x: 50, y, size: 9, font, color: red });
-            page.drawText(art.name, { x: 90, y, size: 9, font: fontR, color: black });
-            if (art.minEinheit) page.drawText(art.minEinheit, { x: 460, y, size: 9, font: fontR, color: gray });
-            y -= 18;
-          }
-          pdfBytes = await pdfDoc.save();
-        } else {
-          // Formular befüllen
-          if (!_liefTemplateCache[lieferantKey]) {
-            const resp = await fetch(lief.template);
-            if (!resp.ok) throw new Error(`Vorlage nicht geladen (${resp.status})`);
-            _liefTemplateCache[lieferantKey] = await resp.arrayBuffer();
-          }
-          const pdfDoc = await PDFDocument.load(_liefTemplateCache[lieferantKey], { ignoreEncryption: true });
-          const form   = pdfDoc.getForm();
-          for (const { art, menge } of bestellteArtikel) {
-            try {
-              form.getTextField(art.formularFeld).setText(String(menge));
-            } catch(e) { console.warn('Feld nicht gefunden:', art.formularFeld); }
-          }
-          form.flatten();
-          pdfBytes = await pdfDoc.save();
+        // Template laden (gecacht)
+        if (!_liefTemplateCache[lieferantKey]) {
+          const resp = await fetch(lief.template);
+          if (!resp.ok) throw new Error(`Vorlage nicht geladen (${resp.status})`);
+          _liefTemplateCache[lieferantKey] = await resp.arrayBuffer();
         }
+        const pdfDoc = await PDFDocument.load(_liefTemplateCache[lieferantKey], { ignoreEncryption: true });
+        const form   = pdfDoc.getForm();
+        for (const { art, menge } of bestellteArtikel) {
+          try {
+            form.getTextField(art.formularFeld).setText(String(menge));
+          } catch(e) { console.warn('Feld nicht gefunden:', art.formularFeld); }
+        }
+        form.flatten();
+        const pdfBytes = await pdfDoc.save();
 
         const blob = new Blob([pdfBytes], { type: 'application/pdf' });
         const a = document.createElement('a');
