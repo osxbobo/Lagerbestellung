@@ -21,9 +21,9 @@
     .laufband-bar.hidden { display:none !important; }
     .laufband-label { font-family:var(--font-mono); font-size:10px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; padding:0 10px; background:rgba(0,0,0,.18); height:100%; display:flex; align-items:center; flex-shrink:0; border-right:1px solid rgba(255,255,255,.2); white-space:nowrap; }
     .laufband-track { flex:1; overflow:hidden; height:100%; display:flex; align-items:center; }
-    .laufband-text { display:inline-block; font-size:12px; font-weight:600; white-space:nowrap; flex-shrink:0; padding:0 60px; animation:lb-scroll 22s linear infinite; }
-    .laufband-text.long  { animation-duration:34s; }
-    .laufband-text.short { animation-duration:14s; }
+    .laufband-text { display:inline-block; font-size:12px; font-weight:600; white-space:nowrap; flex-shrink:0; padding:0 60px; animation:lb-scroll 22s linear -11s infinite; }
+    .laufband-text.long  { animation-duration:34s; animation-delay:-17s; }
+    .laufband-text.short { animation-duration:14s; animation-delay:-7s; }
     @keyframes lb-scroll { from { transform:translateX(100vw); } to { transform:translateX(-100%); } }
 
     /* ── Nav ── */
@@ -263,6 +263,10 @@
     </button>
     <span class="la-wordmark" style="font-size:14px;">LAGER<span class="slash">//</span>APP</span>
     <div class="m-nav-right">
+      <button id="wl-nav-btn" class="m-panel-btn" onclick="openWlLogin()" style="display:none;">
+        <svg viewBox="0 0 20 20" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="7" r="3"/><path d="M4 17c0-3.3 2.7-6 6-6s6 2.7 6 6"/><path d="M14 9v4M16 11h-4"/></svg>
+        Wachenleiter
+      </button>
       <a id="panel-back-btn" class="m-panel-btn" href="portal.html">
         <svg viewBox="0 0 20 20" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="16" height="13" rx="2"/><path d="M6 7h8M6 10h5"/></svg>
         Panel
@@ -691,6 +695,14 @@
       document.getElementById('auth-guest').classList.remove('hidden');
     }
 
+    // ── WL-Button (zeigen wenn PIN-Auth aber kein Wachenleiter-Login) ──
+    (function() {
+      const role  = sessionStorage.getItem('lager-portal-role');
+      const pinOk = authGet('lager-pin-auth');
+      const btn   = document.getElementById('wl-nav-btn');
+      if (btn && !role && pinOk === 'true') btn.style.display = 'inline-flex';
+    })();
+
     // ── Panel-Back-Button ──
     (function() {
       const role = sessionStorage.getItem('lager-portal-role');
@@ -1080,6 +1092,99 @@
         _pc3 = ''; updateDots('pc-cdot', '');
       }
     }
+  </script>
+
+  <!-- Wachenleiter Login Modal -->
+  <div id="wl-login-wall" onclick="if(event.target===this)closeWlLogin()" style="
+    display:none; position:fixed; inset:0; z-index:2000;
+    background:rgba(8,8,12,0.55);
+    backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);">
+    <div style="
+      position:absolute; left:0; right:0; bottom:0;
+      background:var(--surface); border-radius:26px 26px 0 0;
+      padding:14px 20px calc(32px + env(safe-area-inset-bottom,0px));
+      box-shadow:0 -8px 32px rgba(0,0,0,.2);"
+      onclick="event.stopPropagation()">
+      <div style="width:40px;height:4px;background:var(--ink-4);border-radius:2px;margin:0 auto 20px;"></div>
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
+        <div style="width:44px;height:44px;border-radius:12px;flex-shrink:0;background:var(--brand-soft);color:var(--brand);display:flex;align-items:center;justify-content:center;box-shadow:inset 0 0 0 1px var(--brand-soft-2);">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+        </div>
+        <div>
+          <div style="font-size:17px;font-weight:700;letter-spacing:-0.3px;">Wachenleiter-Login</div>
+          <div style="font-size:12px;color:var(--ink-3);margin-top:2px;">E-Mail und Passwort eingeben</div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:12px;">
+        <input type="email" id="wl-email" placeholder="E-Mail-Adresse" autocomplete="email" style="
+          width:100%;height:48px;border-radius:12px;background:var(--surface-2);
+          border:1.5px solid var(--hairline-2);padding:0 14px;
+          font-family:var(--font-ui);font-size:15px;color:var(--ink);outline:none;box-sizing:border-box;"
+          onfocus="this.style.borderColor='var(--brand)'" onblur="this.style.borderColor='var(--hairline-2)'">
+        <input type="password" id="wl-password" placeholder="Passwort" autocomplete="current-password" style="
+          width:100%;height:48px;border-radius:12px;background:var(--surface-2);
+          border:1.5px solid var(--hairline-2);padding:0 14px;
+          font-family:var(--font-ui);font-size:15px;color:var(--ink);outline:none;box-sizing:border-box;"
+          onfocus="this.style.borderColor='var(--brand)'" onblur="this.style.borderColor='var(--hairline-2)'"
+          onkeydown="if(event.key==='Enter')doWlLogin()">
+      </div>
+      <div id="wl-error" style="font-size:12px;color:var(--crit);min-height:18px;margin-bottom:10px;text-align:center;"></div>
+      <div style="display:flex;gap:10px;">
+        <button onclick="closeWlLogin()" style="flex:0 0 110px;height:48px;border-radius:var(--r-md);border:none;background:var(--surface);color:var(--ink-2);cursor:pointer;font-family:var(--font-ui);font-size:14px;font-weight:500;box-shadow:inset 0 0 0 1px var(--hairline-2);">Abbrechen</button>
+        <button id="wl-login-btn" onclick="doWlLogin()" style="flex:1;height:48px;border-radius:var(--r-md);background:var(--brand);color:white;border:none;font-family:var(--font-ui);font-size:14px;font-weight:600;cursor:pointer;box-shadow:0 1px 0 rgba(255,255,255,.2) inset,0 6px 14px rgba(242,107,46,.28);">Anmelden</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
+    import { getAuth, signInWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+    import { firebaseConfig } from '../js/firebase-config.js';
+
+    const _app  = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
+    const _auth = getAuth(_app);
+
+    window.openWlLogin = function() {
+      document.getElementById('wl-email').value    = '';
+      document.getElementById('wl-password').value = '';
+      document.getElementById('wl-error').textContent = '';
+      const btn = document.getElementById('wl-login-btn');
+      btn.disabled = false; btn.textContent = 'Anmelden';
+      document.getElementById('wl-login-wall').style.display = 'block';
+      document.body.style.overflow = 'hidden';
+      setTimeout(() => document.getElementById('wl-email').focus(), 150);
+    };
+
+    window.closeWlLogin = function() {
+      document.getElementById('wl-login-wall').style.display = 'none';
+      document.body.style.overflow = '';
+    };
+
+    window.doWlLogin = async function() {
+      const email    = document.getElementById('wl-email').value.trim();
+      const password = document.getElementById('wl-password').value;
+      const btn      = document.getElementById('wl-login-btn');
+      const errEl    = document.getElementById('wl-error');
+      if (!email || !password) { errEl.textContent = 'E-Mail und Passwort erforderlich'; return; }
+      btn.disabled = true; btn.textContent = 'Anmelden…';
+      errEl.textContent = '';
+      try {
+        await signInWithEmailAndPassword(_auth, email, password);
+        sessionStorage.setItem('lager-portal-role', 'wachenleiter');
+        closeWlLogin();
+        window.location.href = 'portal.html';
+      } catch(e) {
+        btn.disabled = false; btn.textContent = 'Anmelden';
+        const map = {
+          'auth/invalid-credential': 'E-Mail oder Passwort falsch',
+          'auth/user-not-found':     'Kein Konto mit dieser E-Mail',
+          'auth/wrong-password':     'Falsches Passwort',
+          'auth/invalid-email':      'Ungültige E-Mail-Adresse',
+          'auth/too-many-requests':  'Zu viele Versuche – kurz warten',
+        };
+        errEl.textContent = map[e.code] || 'Fehler: ' + e.message;
+      }
+    };
   </script>
 
   <script src="../js/pwa.js"></script>

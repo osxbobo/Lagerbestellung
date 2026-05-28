@@ -19,9 +19,9 @@
     .laufband-bar.hidden { display:none !important; }
     .laufband-label { font-family:var(--font-mono); font-size:10px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; padding:0 10px; background:rgba(0,0,0,.18); height:100%; display:flex; align-items:center; flex-shrink:0; border-right:1px solid rgba(255,255,255,.2); white-space:nowrap; }
     .laufband-track { flex:1; overflow:hidden; height:100%; display:flex; align-items:center; }
-    .laufband-text { display:inline-block; font-size:12px; font-weight:600; white-space:nowrap; flex-shrink:0; padding:0 60px; animation:lb-scroll 22s linear infinite; }
-    .laufband-text.long  { animation-duration:34s; }
-    .laufband-text.short { animation-duration:14s; }
+    .laufband-text { display:inline-block; font-size:12px; font-weight:600; white-space:nowrap; flex-shrink:0; padding:0 60px; animation:lb-scroll 22s linear -11s infinite; }
+    .laufband-text.long  { animation-duration:34s; animation-delay:-17s; }
+    .laufband-text.short { animation-duration:14s; animation-delay:-7s; }
     @keyframes lb-scroll { from { transform:translateX(100vw); } to { transform:translateX(-100%); } }
 
     /* ── Navbar ── */
@@ -319,7 +319,7 @@
 
 <!-- ── Navbar ── -->
 <nav class="c-nav">
-  <button class="c-nav-back" onclick="history.back()">←</button>
+  <button class="c-nav-back" onclick="navBack()">←</button>
   <span class="c-nav-title">Lagerbestellung</span>
   <span class="c-nav-user" id="nav-user"></span>
   <button class="c-theme" id="theme-toggle" onclick="toggleTheme()">🌙</button>
@@ -844,6 +844,14 @@
   }
 
   window.goJoin = function() { showScreen('join'); renderJoin(); };
+
+  window.navBack = function() {
+    if (!document.getElementById('screen-check').classList.contains('hidden')) {
+      cancelBereich();
+    } else {
+      window.location.href = 'mitarbeiter.html';
+    }
+  };
 
   /* ── Pick & lock bereich (Transaction) ── */
   window.pickBereich = async function(bereichId) {

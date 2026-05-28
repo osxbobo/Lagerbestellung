@@ -753,6 +753,13 @@
         .filter(a => a.bereich === id)
         .sort((a,b) => naturalSort(a.lp||'', b.lp||''));
 
+      // Sync filter chips
+      document.querySelectorAll('.la-filter-chip').forEach(c => {
+        const match = c.dataset.filter === name;
+        c.classList.toggle('active', match);
+        if (match) c.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+      });
+
       document.getElementById('bereiche-section').classList.add('hidden');
       document.getElementById('search-results').classList.remove('hidden');
       document.getElementById('empty-state').classList.add('hidden');
@@ -913,6 +920,14 @@
       }
     }
 
+    // ── Wheel → horizontal scroll for filter chips ──
+    document.getElementById('filter-chips').addEventListener('wheel', e => {
+      if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+        e.preventDefault();
+        document.getElementById('filter-chips').scrollLeft += e.deltaY;
+      }
+    }, { passive: false });
+
     // ── Start ──
     loadData();
   </script>
@@ -930,8 +945,8 @@
 
     // ── AuthPill ──
     function updateAuthPill() {
-      const pinAuth  = sessionStorage.getItem('lager-pin-auth');
-      const pinName  = sessionStorage.getItem('lager-pin-name') || '';
+      const pinAuth  = sessionStorage.getItem('lager-pin-auth') || localStorage.getItem('lager-pin-auth');
+      const pinName  = sessionStorage.getItem('lager-pin-name') || localStorage.getItem('lager-pin-name') || '';
       const fbUser   = auth.currentUser;
       const isWl     = fbUser && !fbUser.isAnonymous;
       const isMa     = pinAuth === 'true';
