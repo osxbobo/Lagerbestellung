@@ -1163,6 +1163,11 @@
     });
 
     window.doLogout = async function() {
+      ['lager-pin-auth','lager-pin-name','lager-employee-id','lager-portal-role'].forEach(k => {
+        sessionStorage.removeItem(k);
+        localStorage.removeItem(k);
+      });
+      localStorage.removeItem('lager-keep-login');
       await signOut(auth);
       window.location.href = 'login.html';
     };
