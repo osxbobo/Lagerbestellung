@@ -1072,12 +1072,9 @@
     <div class="modal-box">
       <div class="modal-head"><span class="modal-title" id="detail-modal-title">Lagercheck</span><button class="modal-close" onclick="closeDetailModal()">✕</button></div>
       <div class="modal-body" id="detail-modal-body"></div>
-      <div class="modal-foot" style="flex-direction:column;gap:8px;align-items:stretch;">
-        <div style="display:flex;gap:8px;">
-          <button class="btn btn-primary" style="flex:1" id="btn-pdf" onclick="this.disabled=true;this.textContent='Wird erstellt…';generatePDF().catch(e=>{console.error(e);alert('PDF-Fehler: '+e.message);}).finally(()=>{this.disabled=false;this.textContent='📄 Intern';})">📄 Intern</button>
-          <button class="btn btn-ghost" onclick="closeDetailModal()">Schließen</button>
-        </div>
-        <div id="lief-pdf-buttons" style="display:flex;flex-wrap:wrap;gap:6px;"></div>
+      <div class="modal-foot">
+        <button class="btn btn-primary" style="flex:1" id="btn-pdf" onclick="this.disabled=true;this.textContent='Wird erstellt…';generatePDF().catch(e=>{console.error(e);alert('PDF-Fehler: '+e.message);}).finally(()=>{this.disabled=false;this.textContent='📄 PDF';})">📄 PDF</button>
+        <button class="btn btn-ghost" onclick="closeDetailModal()">Schließen</button>
       </div>
     </div>
   </div>
@@ -2412,7 +2409,6 @@
             </div>
           </div>` : '<div class="alert alert-success">✅ Alle Artikel ausreichend</div>'}
         ${b.unterschrift?`<div><div class="section-label mb-8">Unterschrift</div><img src="${b.unterschrift}" style="width:100%;border-radius:8px;border:1px solid var(--border);background:var(--surface2);"></div>`:''}`;
-      renderLiefPdfButtons(b);
       document.getElementById('detail-modal').classList.remove('hidden');
     };
 
@@ -2521,94 +2517,6 @@
       URL.revokeObjectURL(a.href);
     };
 
-
-    // ── LIEFERANTEN-BESTELLFORMULARE ──
-    const LIEFERANTEN = {
-      ekg:          { name: 'Meßmer (EKG)',        template: '../vorlagen/Bestellformular_EKG_Zubehoer_Malmsheim_Formular.pdf' },
-      ezio:         { name: 'Teleflex (EZ-IO)',     template: '../vorlagen/Bestellformular_EZ-IO_Zubehoer_Malmsheim_Formular.pdf' },
-      hygiene:      { name: 'Orochemie (Hygiene)',  template: '../vorlagen/Bestellvorlage_Hygieneartikel_Rettungswache_Malmsheim_Formular.pdf' },
-      apotheke:     { name: 'Klinikum (Apotheke)',  template: '../vorlagen/Abgangsprofil_DRK_Malmsheim_Formular.pdf' },
-      thermopapier: { name: 'medDV (Thermopapier)', template: '../vorlagen/Bestellformular_Thermopapier_Malmsheim_Formular.pdf' },
-      sauerstoff:   { name: 'Kraiss & Friz (O₂)',   template: '../vorlagen/Bestellformular-Lieferung-Malmsheim.pdf' },
-      vokranken:    { name: 'Kohlhammer (VO)',       template: '../vorlagen/Bestellformular_VO_Krankenbefoerderung_Malmsheim_Formular.pdf' },
-      radecker:     { name: 'Radecker',              template: '../vorlagen/Sanitaetsmaterial_Bestellliste_Radecker_Malmsheim_Formular.pdf' },
-    };
-    const _liefTemplateCache = {};
-
-    function renderLiefPdfButtons(b) {
-      const container = document.getElementById('lief-pdf-buttons');
-      if (!container) return;
-      const nb = b.items || b.nachbestellungen || [];
-      // Welche Lieferanten haben Artikel in dieser Bestellung?
-      const liefSet = new Set();
-      for (const item of nb) {
-        const art = alleArtikel.find(a =>
-          a.id === item.id || a.id === item.artikelId ||
-          a.name === (item.artikelName || item.name)
-        );
-        if (art?.lieferant) liefSet.add(art.lieferant);
-      }
-      if (liefSet.size === 0) { container.innerHTML = ''; return; }
-      container.innerHTML = [...liefSet].map(key => {
-        const lief = LIEFERANTEN[key];
-        if (!lief) return '';
-        return `<button class="btn btn-ghost" style="font-size:0.78rem;padding:6px 12px;"
-          onclick="generateLieferantPDF('${key}',this)">↓ ${lief.name}</button>`;
-      }).join('');
-    }
-
-    window.generateLieferantPDF = async function(lieferantKey, btn) {
-      if (!currentBest) return;
-      const lief = LIEFERANTEN[lieferantKey];
-      if (!lief) return;
-      if (btn) { btn.disabled = true; btn.textContent = '…'; }
-      try {
-        const { PDFDocument, StandardFonts, rgb } = window.PDFLib;
-        const b  = currentBest;
-        const nb = b.items || b.nachbestellungen || [];
-
-        // Artikel dieses Lieferanten aus der Bestellung filtern
-        const bestellteArtikel = [];
-        for (const item of nb) {
-          const art = alleArtikel.find(a =>
-            a.id === item.id || a.id === item.artikelId ||
-            a.name === (item.artikelName || item.name)
-          );
-          if (art?.lieferant === lieferantKey && art.formularFeld) {
-            bestellteArtikel.push({ art, menge: item.menge || item.ist || 1 });
-          }
-        }
-
-        // Template laden (gecacht)
-        if (!_liefTemplateCache[lieferantKey]) {
-          const resp = await fetch(lief.template);
-          if (!resp.ok) throw new Error(`Vorlage nicht geladen (${resp.status})`);
-          _liefTemplateCache[lieferantKey] = await resp.arrayBuffer();
-        }
-        const pdfDoc = await PDFDocument.load(_liefTemplateCache[lieferantKey], { ignoreEncryption: true });
-        const form   = pdfDoc.getForm();
-        for (const { art, menge } of bestellteArtikel) {
-          try {
-            form.getTextField(art.formularFeld).setText(String(menge));
-          } catch(e) { console.warn('Feld nicht gefunden:', art.formularFeld); }
-        }
-        form.flatten();
-        const pdfBytes = await pdfDoc.save();
-
-        const blob = new Blob([pdfBytes], { type: 'application/pdf' });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        const datum = (b.datum?.toDate ? b.datum.toDate() : new Date()).toLocaleDateString('de-DE').replace(/\./g,'-');
-        a.download = `Bestellung_${lieferantKey}_${datum}.pdf`;
-        a.click();
-        URL.revokeObjectURL(a.href);
-      } catch(e) {
-        console.error(e);
-        alert('PDF-Fehler: ' + e.message);
-      } finally {
-        if (btn) { btn.disabled = false; btn.textContent = `↓ ${lief.name}`; }
-      }
-    };
 
     // ── STATISTIK ──
 
