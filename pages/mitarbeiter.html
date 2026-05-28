@@ -1138,7 +1138,7 @@
 
   <script type="module">
     import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-    import { getAuth, signInWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
+    import { getAuth, signInWithEmailAndPassword, signOut } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
     import { firebaseConfig } from '../js/firebase-config.js';
 
     const _app  = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
@@ -1184,6 +1184,13 @@
         };
         errEl.textContent = map[e.code] || 'Fehler: ' + e.message;
       }
+    };
+
+    // Sign out of Firebase on logout so login.html auth guard doesn't redirect back
+    const _baseLogout = window.doLogout;
+    window.doLogout = async function() {
+      try { await signOut(_auth); } catch (_) {}
+      _baseLogout();
     };
   </script>
 
