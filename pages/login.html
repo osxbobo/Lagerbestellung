@@ -876,18 +876,8 @@
           loginName  = empDoc.data().vorname + ' ' + empDoc.data().nachname;
           employeeId = empDoc.id;
         } else {
-          const cfg = await withTimeout(getDoc(doc(db, 'config', 'app')));
-          const stationPin = cfg.exists() ? cfg.data().pin : null;
-          if (!stationPin || _pin !== stationPin) {
-            _attempts++;
-            if (_attempts >= 5) {
-              _lockedUntil = Date.now() + 60000; _attempts = 0;
-              fail('Zu viele Versuche – bitte 60s warten');
-            } else {
-              fail(`Falscher PIN – noch ${5 - _attempts} Versuch(e)`);
-            }
-            return;
-          }
+          fail('Name nicht gefunden – bitte beim Wachenleiter melden');
+          return;
         }
 
         _attempts = 0;
@@ -994,18 +984,8 @@
           loginName  = empDoc.data().vorname + ' ' + empDoc.data().nachname;
           employeeId = empDoc.id;
         } else {
-          const cfg = await withTimeout(getDoc(doc(db, 'config', 'app')));
-          const stationPin = cfg.exists() ? cfg.data().pin : null;
-          if (!stationPin || _dskPin !== stationPin) {
-            _dskAttempts++;
-            if (_dskAttempts >= 5) {
-              _dskLockedUntil = Date.now() + 60000; _dskAttempts = 0;
-              fail('Zu viele Versuche – bitte 60s warten');
-            } else {
-              fail(`Falscher PIN – noch ${5 - _dskAttempts} Versuch(e)`);
-            }
-            return;
-          }
+          fail('Name nicht gefunden – bitte beim Wachenleiter melden');
+          return;
         }
 
         _dskAttempts = 0;
