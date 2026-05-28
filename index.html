@@ -957,22 +957,13 @@
       const labelEl  = document.getElementById('auth-pill-label');
       const linkEl   = document.getElementById('auth-pill-link');
 
-      if (isWl) {
-        guestEl.style.display = 'none';
-        userEl.style.display  = 'block';
-        avatarEl.textContent  = (fbUser.email || 'W').charAt(0).toUpperCase();
-        labelEl.textContent   = 'Portal öffnen';
-        linkEl.href           = 'pages/portal.html';
-        const nameWrap = document.getElementById('greeting-name-wrap');
-        if (nameWrap) nameWrap.style.display = 'none';
-      } else if (isMa) {
+      if (isMa) {
         guestEl.style.display = 'none';
         userEl.style.display  = 'block';
         const initials = pinName.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase() || 'MA';
         avatarEl.textContent  = initials;
         labelEl.textContent   = 'Mitarbeiter-Hub';
         linkEl.href           = 'pages/mitarbeiter.html';
-        // Also update greeting
         const vorname   = pinName.split(' ')[0];
         const nameWrap  = document.getElementById('greeting-name-wrap');
         const greetEl   = document.getElementById('greeting-name');
@@ -980,6 +971,14 @@
           greetEl.textContent    = vorname;
           nameWrap.style.display = 'inline';
         }
+      } else if (isWl) {
+        guestEl.style.display = 'none';
+        userEl.style.display  = 'block';
+        avatarEl.textContent  = (fbUser.email || 'W').charAt(0).toUpperCase();
+        labelEl.textContent   = 'Portal öffnen';
+        linkEl.href           = 'pages/portal.html';
+        const nameWrap = document.getElementById('greeting-name-wrap');
+        if (nameWrap) nameWrap.style.display = 'none';
       } else {
         guestEl.style.display = 'block';
         userEl.style.display  = 'none';

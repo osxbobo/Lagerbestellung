@@ -779,7 +779,7 @@
     function redirectByRole(role) {
       if (role === 'admin')             window.location.href = 'admin.html';
       else if (role === 'wachenleiter') window.location.href = 'portal.html';
-      else window.location.href = returnUrl || '../index.html';
+      else signOut(auth).catch(() => {}); // PIN-Session abgelaufen → Firebase löschen, Login-Seite normal zeigen
     }
 
     // ── Tab switching (exposed for inline handlers) ──
