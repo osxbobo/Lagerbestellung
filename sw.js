@@ -9,43 +9,42 @@
 // → Browser erkennt automatisch die neue Version und lädt alles neu
 const CACHE_VERSION = 'v166';
 const CACHE_NAME    = `lagerapp-${CACHE_VERSION}`;
-const BASE_PATH     = '';
 
-// Dateien die offline verfügbar sein sollen
+// Dateien die offline verfügbar sein sollen (relativ zum SW-Scope)
 const CACHE_FILES = [
-  `${BASE_PATH}/`,
-  `${BASE_PATH}/index.html`,
-  `${BASE_PATH}/pages/check.html`,
-  `${BASE_PATH}/pages/login.html`,
-  `${BASE_PATH}/pages/mitarbeiter.html`,
-  `${BASE_PATH}/pages/portal.html`,
-  `${BASE_PATH}/pages/admin.html`,
-  `${BASE_PATH}/pages/scanner.html`,
-  `${BASE_PATH}/pages/stockswipe.html`,
-  `${BASE_PATH}/pages/verfallmonitor.html`,
-  `${BASE_PATH}/css/main.css`,
-  `${BASE_PATH}/css/index.css`,
-  `${BASE_PATH}/css/portal.css`,
-  `${BASE_PATH}/css/admin.css`,
-  `${BASE_PATH}/css/check.css`,
-  `${BASE_PATH}/css/login.css`,
-  `${BASE_PATH}/css/mitarbeiter.css`,
-  `${BASE_PATH}/css/scanner.css`,
-  `${BASE_PATH}/css/stockswipe.css`,
-  `${BASE_PATH}/css/verfallmonitor.css`,
-  `${BASE_PATH}/js/firebase-config.js`,
-  `${BASE_PATH}/js/search.js`,
-  `${BASE_PATH}/js/theme.js`,
-  `${BASE_PATH}/js/pwa.js`,
-  `${BASE_PATH}/js/portal.js`,
-  `${BASE_PATH}/js/admin.js`,
-  `${BASE_PATH}/js/check.js`,
-  `${BASE_PATH}/js/login.js`,
-  `${BASE_PATH}/js/mitarbeiter.js`,
-  `${BASE_PATH}/js/scanner.js`,
-  `${BASE_PATH}/js/stockswipe.js`,
-  `${BASE_PATH}/js/verfallmonitor.js`,
-  `${BASE_PATH}/manifest.json`,
+  './',
+  'index.html',
+  'pages/check.html',
+  'pages/login.html',
+  'pages/mitarbeiter.html',
+  'pages/portal.html',
+  'pages/admin.html',
+  'pages/scanner.html',
+  'pages/stockswipe.html',
+  'pages/verfallmonitor.html',
+  'css/main.css',
+  'css/index.css',
+  'css/portal.css',
+  'css/admin.css',
+  'css/check.css',
+  'css/login.css',
+  'css/mitarbeiter.css',
+  'css/scanner.css',
+  'css/stockswipe.css',
+  'css/verfallmonitor.css',
+  'js/firebase-config.js',
+  'js/search.js',
+  'js/theme.js',
+  'js/pwa.js',
+  'js/portal.js',
+  'js/admin.js',
+  'js/check.js',
+  'js/login.js',
+  'js/mitarbeiter.js',
+  'js/scanner.js',
+  'js/stockswipe.js',
+  'js/verfallmonitor.js',
+  'manifest.json',
 ];
 
 // ── INSTALL ──
@@ -122,7 +121,7 @@ self.addEventListener('fetch', event => {
           return response;
         })
         .catch(() => caches.match(event.request)
-          .then(cached => cached || caches.match(`${BASE_PATH}/index.html`))
+          .then(cached => cached || caches.match('index.html'))
         )
     );
   } else {
@@ -150,10 +149,10 @@ self.addEventListener('push', event => {
 
   const options = {
     body:    data.body    || '',
-    icon:    `${BASE_PATH}/icons/icon-192.png`,
-    badge:   `${BASE_PATH}/icons/icon-192.png`,
+    icon:    'icons/icon-192.png',
+    badge:   'icons/icon-192.png',
     tag:     data.tag     || 'lagerapp',
-    data:    data.url     || `${BASE_PATH}/`,
+    data:    data.url     || '.',
     vibrate: [200, 100, 200],
     actions: data.actions || [],
     requireInteraction: data.urgent || false,
@@ -168,7 +167,7 @@ self.addEventListener('push', event => {
 self.addEventListener('notificationclick', event => {
   event.notification.close();
 
-  const url = event.notification.data || `${BASE_PATH}/`;
+  const url = event.notification.data || '.';
 
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true })
@@ -263,9 +262,9 @@ self.addEventListener('message', event => {
     const { title, body, url, urgent } = event.data;
     self.registration.showNotification(title, {
       body,
-      icon:    `${BASE_PATH}/icons/icon-192.png`,
-      badge:   `${BASE_PATH}/icons/icon-192.png`,
-      data:    url || `${BASE_PATH}/pages/portal.html`,
+      icon:    'icons/icon-192.png',
+      badge:   'icons/icon-192.png',
+      data:    url || 'pages/portal.html',
       vibrate: [200, 100, 200],
       requireInteraction: urgent || false,
     });

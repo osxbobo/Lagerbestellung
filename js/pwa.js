@@ -8,9 +8,7 @@ const PWA = {
     if (!('serviceWorker' in navigator)) return;
 
     try {
-      const reg = await navigator.serviceWorker.register('/sw.js', {
-        scope: '/'
-      });
+      const reg = await navigator.serviceWorker.register('sw.js');
 
       console.log('✅ Service Worker registriert');
 
