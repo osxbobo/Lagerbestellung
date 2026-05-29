@@ -600,8 +600,28 @@ body { min-height: 100vh; display: flex; flex-direction: column; }
 }
 
 @media (max-width: 520px) {
-  .lagerapp-overlay { align-items: flex-start; padding: 16px; }
-  .lagerapp-popup { padding: 28px 20px; border-radius: 28px; max-height: none; overflow-y: visible; }
-  .preview-images img { width: 100%; border-radius: 18px; }
-  .lagerapp-overlay .close-btn { top: 16px; right: 16px; width: 40px; height: 40px; font-size: 22px; }
+  .lagerapp-overlay { align-items: flex-start; padding: 10px; }
+  .lagerapp-popup { padding: 20px 16px; border-radius: 24px; max-height: none; overflow-y: visible; }
+  .lagerapp-overlay .close-btn { top: 12px; right: 12px; width: 34px; height: 34px; font-size: 18px; }
+
+  .lagerapp-popup h1 { font-size: 26px; margin-bottom: 18px; }
+
+  .preview-images { gap: 10px; margin-bottom: 18px; }
+  .preview-images img { width: 46%; border-radius: 14px; }
+
+  .features-box { padding: 14px; border-radius: 18px; margin-bottom: 16px; }
+  .features-box h2 { font-size: 15px; margin-bottom: 12px; }
+
+  .popup-feature { padding: 12px; gap: 12px; border-radius: 14px; margin-bottom: 10px; }
+  .popup-icon { min-width: 40px; height: 40px; border-radius: 10px; font-size: 20px; }
+  .popup-feature strong { font-size: 14px; }
+  .popup-feature p { font-size: 12px; }
+
+  .popup-info-section { padding-top: 14px; }
+  .popup-info-box { gap: 12px; margin-bottom: 14px; }
+  .popup-info-icon { min-width: 40px; height: 40px; font-size: 20px; }
+  .popup-info-box strong { font-size: 13px; }
+  .popup-info-box p { font-size: 12px; }
+
+  .popup-start-btn { padding: 16px; font-size: 16px; margin-top: 8px; }
 }
