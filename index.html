@@ -11,413 +11,97 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>LAGER//APP – Rettungswache Malmsheim</title>
   <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/index.css">
   <script src="https://unpkg.com/@zxing/library@0.19.1/umd/index.min.js"></script>
-  <style>
-    /* ── Page Layout ── */
-    body { min-height: 100vh; display: flex; flex-direction: column; }
-
-    /* ── Navbar ── */
-    .la-nav {
-      position: sticky; top: 0; z-index: 100;
-      background: var(--glass-bg-strong);
-      border-bottom: 0.5px solid var(--hairline);
-      backdrop-filter: blur(24px) saturate(180%);
-      -webkit-backdrop-filter: blur(24px) saturate(180%);
-      padding: 0 20px; height: 52px;
-      display: flex; align-items: center; justify-content: space-between;
-    }
-
-    /* ── Hero Header ── */
-    .la-hero {
-      padding: 32px 20px 0;
-    }
-    .la-greeting {
-      font-size: clamp(26px, 6vw, 36px);
-      font-weight: 700;
-      letter-spacing: -0.03em;
-      line-height: 1.1;
-      margin-top: 14px;
-    }
-    .la-greeting-sub { font-size: 13px; color: var(--ink-3); margin-top: 5px; }
-
-    /* ── Search ── */
-    .la-search-wrap {
-      position: relative; display: flex; align-items: center;
-      height: 52px; margin-top: 18px;
-      background: var(--surface);
-      border-radius: 16px;
-      box-shadow: var(--sh-2), inset 0 0 0 1px var(--hairline);
-    }
-    .la-search-icon {
-      position: absolute; left: 16px;
-      color: var(--ink-3); pointer-events: none; display: flex;
-    }
-    .la-search-input {
-      width: 100%; height: 100%;
-      background: transparent; border: none; outline: none;
-      padding: 0 48px 0 46px;
-      font-family: var(--font-ui); font-size: 15px; color: var(--ink);
-    }
-    .la-search-input::placeholder { color: var(--ink-3); }
-    .la-search-scan {
-      position: absolute; right: 12px;
-      width: 30px; height: 30px; border-radius: 8px;
-      background: var(--brand-soft); color: var(--brand);
-      display: flex; align-items: center; justify-content: center;
-      border: none; cursor: pointer; flex-shrink: 0;
-    }
-    .la-search-clear {
-      position: absolute; right: 12px;
-      background: none; border: none; color: var(--ink-3);
-      font-size: 18px; cursor: pointer; padding: 4px 8px; border-radius: 6px;
-    }
-
-    /* ── Filter Chips ── */
-    .la-filters {
-      display: flex; gap: 6px;
-      margin-top: 12px; overflow-x: auto;
-      padding-bottom: 2px; -webkit-overflow-scrolling: touch;
-      scrollbar-width: none;
-    }
-    .la-filters::-webkit-scrollbar { display: none; }
-    .la-filter-chip {
-      padding: 6px 14px; border-radius: 999px; font-size: 12px; font-weight: 500;
-      white-space: nowrap; cursor: pointer; border: none; transition: all .15s;
-      touch-action: manipulation;
-    }
-    .la-filter-chip.active {
-      background: var(--ink); color: var(--bg);
-    }
-    .la-filter-chip:not(.active) {
-      background: var(--surface); color: var(--ink-2);
-      box-shadow: inset 0 0 0 1px var(--hairline);
-    }
-
-    /* ── Status/sync bar ── */
-    .la-sync-pill {
-      display: flex; align-items: center; gap: 4px;
-      padding: 4px 10px; border-radius: 999px;
-      background: var(--ok-soft); color: var(--ok);
-      font-size: 11px; font-family: var(--font-mono); font-weight: 500;
-    }
-    .la-sync-pill .dot {
-      width: 6px; height: 6px; border-radius: 50%; background: var(--ok);
-    }
-    .la-bell-btn {
-      width: 36px; height: 36px; border-radius: 18px;
-      background: var(--surface); border: none; cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      box-shadow: inset 0 0 0 1px var(--hairline);
-      color: var(--ink-2);
-    }
-
-    /* ── Main ── */
-    .la-main {
-      flex: 1; padding: 0 20px 100px;
-    }
-
-    /* ── Section header ── */
-    .la-sec-head {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 22px 0 10px;
-    }
-    .la-sec-label { font-size: 11px; font-weight: 600; color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.06em; }
-    .la-sec-link  { font-size: 12px; color: var(--ink-3); display: flex; align-items: center; gap: 4px; }
-
-    /* ── Bereiche Grid ── */
-    .la-bereiche-grid {
-      display: grid; grid-template-columns: 1fr 1fr; gap: 10px;
-    }
-    .la-bereich-card {
-      background: var(--surface); border-radius: 18px;
-      padding: 14px;
-      box-shadow: var(--sh-1), inset 0 0 0 0.5px var(--hairline);
-      display: flex; flex-direction: column; gap: 10px;
-      cursor: pointer; transition: transform .15s, box-shadow .15s;
-      -webkit-tap-highlight-color: transparent; touch-action: manipulation;
-    }
-    .la-bereich-card:active { transform: scale(0.97); }
-    .la-bereich-top { display: flex; justify-content: space-between; align-items: flex-start; }
-    .la-bereich-num { font-family: var(--font-mono); font-size: 11px; color: var(--ink-3); }
-    .la-bereich-tile {
-      width: 36px; height: 36px; border-radius: 9px;
-      display: flex; align-items: center; justify-content: center;
-      font-family: var(--font-mono); font-size: 13px; font-weight: 600;
-    }
-    .la-bereich-name { font-size: 14px; font-weight: 600; line-height: 1.2; }
-    .la-bereich-sub  { font-size: 11px; color: var(--ink-3); margin-top: 2px; }
-    .la-bereich-bottom { display: flex; align-items: center; justify-content: space-between; margin-top: auto; }
-    .la-bereich-count { font-family: var(--font-mono); font-size: 11px; color: var(--ink-2); }
-    .la-bereich-dots { display: flex; gap: 3px; }
-    .la-bereich-dots span { width: 6px; height: 6px; border-radius: 3px; }
-
-    /* ── Search Results ── */
-    .la-results { display: flex; flex-direction: column; gap: 10px; }
-    .la-result-card {
-      background: var(--surface); border-radius: 16px;
-      padding: 14px; display: flex; gap: 12px; align-items: flex-start;
-      box-shadow: var(--sh-1), inset 0 0 0 0.5px var(--hairline);
-      cursor: default;
-    }
-    .la-result-photo {
-      width: 56px; height: 56px; border-radius: 12px;
-      overflow: hidden; flex-shrink: 0;
-      background: var(--surface-2);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 22px; cursor: pointer; transition: opacity .15s;
-    }
-    .la-result-photo:active { opacity: 0.8; }
-    .la-result-photo img { width: 100%; height: 100%; object-fit: cover; }
-    .la-result-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 5px; }
-    .la-result-name { font-size: 15px; font-weight: 600; line-height: 1.3; }
-    .la-result-name mark {
-      background: rgba(242,107,46,.18); color: var(--brand);
-      border-radius: 3px; padding: 0 2px;
-    }
-    .la-result-bereich { font-size: 12px; color: var(--ink-3); }
-    .la-result-location { display: flex; align-items: center; gap: 8px; margin-top: 4px; }
-
-    /* ── Back button ── */
-    .la-back-btn {
-      display: flex; align-items: center; gap: 8px; margin-bottom: 14px;
-      background: var(--surface); border: none; border-radius: var(--r-sm);
-      padding: 8px 14px; cursor: pointer;
-      color: var(--ink-2); font-family: var(--font-ui); font-size: 13px; font-weight: 500;
-      box-shadow: inset 0 0 0 1px var(--hairline);
-      touch-action: manipulation;
-    }
-
-    /* ── Empty ── */
-    .la-empty {
-      text-align: center; padding: 48px 20px;
-      display: flex; flex-direction: column; align-items: center; gap: 8px;
-    }
-    .la-empty-icon { font-size: 2.5rem; opacity: 0.4; }
-    .la-empty-title { font-size: 16px; font-weight: 600; color: var(--ink-2); }
-    .la-empty-sub   { font-size: 13px; color: var(--ink-3); }
-
-    /* ── Loading ── */
-    .la-loading { display: flex; align-items: center; justify-content: center; gap: 10px; padding: 40px; }
-
-    /* ── Footer ── */
-    .la-footer {
-      border-top: 0.5px solid var(--hairline);
-      padding: 16px 20px;
-      text-align: center;
-    }
-
-    /* ── Photo Modal ── */
-    .la-modal-backdrop {
-      position: fixed; inset: 0; z-index: 1000;
-      background: rgba(0,0,0,0.72);
-      backdrop-filter: blur(8px);
-      display: flex; align-items: center; justify-content: center; padding: 20px;
-    }
-    .la-modal-box {
-      background: var(--surface); border-radius: var(--r-xl);
-      overflow: hidden; max-width: 480px; width: 100%;
-      box-shadow: var(--sh-3);
-    }
-    .la-modal-header {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 14px 18px; border-bottom: 0.5px solid var(--hairline);
-    }
-    .la-modal-title { font-size: 14px; font-weight: 600; }
-    .la-modal-close {
-      background: var(--surface-3); border: none; color: var(--ink-2);
-      width: 28px; height: 28px; border-radius: 14px; font-size: 14px;
-      cursor: pointer; display: flex; align-items: center; justify-content: center;
-    }
-    .la-modal-img { width: 100%; max-height: 400px; object-fit: contain; background: var(--surface-2); display: block; }
-
-    /* ── PIN Modal ── */
-    .la-pin-backdrop {
-      position: fixed; inset: 0; z-index: 2000;
-      background: rgba(0,0,0,0.65);
-      backdrop-filter: blur(8px);
-      display: flex; align-items: center; justify-content: center; padding: 20px;
-    }
-    .la-pin-box {
-      background: var(--surface); border-radius: var(--r-xl);
-      padding: 28px 24px; width: 100%; max-width: 340px;
-      box-shadow: var(--sh-3);
-    }
-    .la-pin-header {
-      display: flex; justify-content: space-between; align-items: center;
-      margin-bottom: 22px;
-    }
-    .la-pin-title { font-size: 17px; font-weight: 700; }
-    .la-pin-sub   { font-size: 12px; color: var(--ink-3); margin-top: 2px; }
-    .la-pin-close {
-      width: 32px; height: 32px; border-radius: 16px;
-      background: var(--surface-3); border: none; cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      color: var(--ink-3); font-size: 15px;
-    }
-    .la-name-field {
-      display: flex; align-items: center; gap: 10px;
-      height: 48px; padding: 0 14px;
-      background: var(--surface-2); border-radius: 14px;
-      box-shadow: inset 0 0 0 1px var(--hairline); margin-bottom: 22px;
-    }
-    .la-name-input {
-      flex: 1; background: none; border: none; outline: none;
-      font-family: var(--font-ui); font-size: 15px; font-weight: 500; color: var(--ink);
-    }
-    .la-name-input::placeholder { color: var(--ink-3); }
-    .la-pin-dots { display: flex; gap: 14px; justify-content: center; margin-bottom: 24px; }
-    .la-pin-dot {
-      width: 16px; height: 16px; border-radius: 8px;
-      border: 2px solid var(--ink-4); background: transparent;
-      transition: all .15s;
-    }
-    .la-pin-dot.filled { background: var(--brand); border-color: var(--brand); transform: scale(1.1); }
-    .la-pin-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-    .la-pin-key {
-      aspect-ratio: 1; border-radius: 14px;
-      background: var(--surface-2); border: none;
-      font-family: var(--font-mono); font-size: 22px; font-weight: 500;
-      color: var(--ink); cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      box-shadow: var(--sh-1), inset 0 0 0 0.5px var(--hairline);
-      transition: transform .1s, background .1s; touch-action: manipulation;
-    }
-    .la-pin-key:active { transform: scale(0.91); background: var(--surface-3); }
-    .la-pin-key.confirm { background: var(--brand); color: white; box-shadow: 0 6px 14px rgba(242,107,46,.3); }
-    .la-pin-key.del { color: var(--ink-3); }
-    .la-pin-error { text-align: center; font-size: 12px; color: var(--crit); min-height: 20px; margin-top: 12px; }
-
-    /* ── Lager Scan Animations ── */
-    @keyframes lsPulse { 0%,100%{opacity:1;} 50%{opacity:0.3;} }
-    @keyframes lsScanline { 0%,100%{top:10%;} 50%{top:84%;} }
-
-    /* ── Desktop ── */
-    @media (min-width: 768px) {
-      .la-hero { padding: 40px 0 0; max-width: 700px; margin: 0 auto; }
-      .la-main  { max-width: 700px; margin: 0 auto; }
-      .la-bereiche-grid { grid-template-columns: repeat(3, 1fr); }
-    }
-    @media (min-width: 1024px) {
-      .la-bereiche-grid { grid-template-columns: repeat(4, 1fr); }
-    }
-
-    /* Legacy compat for JS-generated result cards */
-    .result-card {
-      background: var(--surface); border-radius: 16px;
-      padding: 14px; display: flex; gap: 14px; align-items: flex-start;
-      box-shadow: var(--sh-1), inset 0 0 0 0.5px var(--hairline);
-    }
-    .result-photo {
-      width: 56px; height: 56px; border-radius: 12px;
-      overflow: hidden; flex-shrink: 0;
-      background: var(--surface-2);
-      display: flex; align-items: center; justify-content: center;
-      font-size: 22px; cursor: pointer;
-    }
-    .result-photo img { width: 100%; height: 100%; object-fit: cover; }
-    .result-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
-    .result-name { font-size: 15px; font-weight: 600; line-height: 1.3; }
-    .result-name mark { background: rgba(242,107,46,.18); color: var(--brand); border-radius: 3px; padding: 0 2px; }
-    .result-location-big { display: flex; flex-direction: column; gap: 3px; }
-    .result-bereich-big { font-size: 12px; color: var(--ink-3); }
-    .result-lp-big { font-size: 13px; color: var(--brand); font-weight: 600; letter-spacing: 0.02em; font-family: var(--font-mono); }
-    .result-photo-placeholder { font-size: 22px; }
-    .result-info { flex: 1; min-width: 0; }
-    .result-location { display: flex; flex-direction: column; gap: 2px; margin-top: 4px; }
-    .result-bereich { font-size: 12px; color: var(--ink-3); }
-    .result-lp { font-size: 12px; color: var(--brand); font-family: var(--font-mono); }
-    .photo-placeholder { font-size: 22px; }
-  </style>
 </head>
 <body>
 
   <!-- ── NAVBAR ── -->
   <header class="la-nav">
-    <div style="display:flex;align-items:center;gap:10px;">
-      <span class="la-wordmark" style="font-size:15px;">
+    <div class="nav-left">
+      <span class="la-wordmark">
         LAGER<span class="slash">//</span>APP
-        <span class="dot" id="sync-dot" title="Live"></span>
+        <span class="dot hidden" id="sync-dot" title="Live"></span>
       </span>
     </div>
-    <div style="display:flex;align-items:center;gap:8px;">
-      <div class="la-sync-pill hide-mobile" id="sync-pill" style="display:none;">
+    <div class="nav-right">
+      <div class="la-sync-pill hide-mobile hidden" id="sync-pill">
         <span class="dot"></span>
         <span>Synchron</span>
       </div>
-      <button class="la-bell-btn" id="theme-toggle" onclick="toggleTheme()" title="Hell/Dunkel">☀️</button>
-      <!-- AuthPill -->
-      <div id="auth-pill-guest" style="display:none;">
-        <a href="pages/login.html" style="
-          display:inline-flex;align-items:center;gap:6px;
-          height:34px;padding:0 12px;border-radius:999px;
-          background:var(--surface);color:var(--ink-2);
-          box-shadow:inset 0 0 0 1px var(--hairline);
-          font-size:12px;font-weight:600;text-decoration:none;
-          font-family:var(--font-ui);">
-          <svg viewBox="0 0 20 20" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="8" width="14" height="10" rx="2"/><path d="M7 8V6a3 3 0 0 1 6 0v2"/></svg>
+      <button class="la-bell-btn" id="theme-toggle" title="Hell/Dunkel">☀️</button>
+
+      <!-- Auth-Pill: Gast -->
+      <div id="auth-pill-guest" class="hidden">
+        <a href="pages/login.html" class="auth-pill-link">
+          <svg viewBox="0 0 20 20" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <rect x="3" y="8" width="14" height="10" rx="2"/>
+            <path d="M7 8V6a3 3 0 0 1 6 0v2"/>
+          </svg>
           Anmelden
         </a>
       </div>
-      <div id="auth-pill-user" style="display:none;">
-        <a id="auth-pill-link" href="pages/mitarbeiter.html" style="
-          display:inline-flex;align-items:center;gap:7px;
-          height:34px;padding:0 10px 0 6px;border-radius:999px;
-          background:var(--surface);color:var(--ink);
-          box-shadow:inset 0 0 0 1px var(--hairline);
-          font-size:12px;font-weight:600;text-decoration:none;
-          font-family:var(--font-ui);">
-          <span id="auth-pill-avatar" style="
-            width:22px;height:22px;border-radius:11px;
-            background:var(--brand-soft);color:var(--brand);
-            display:flex;align-items:center;justify-content:center;
-            font-size:9px;font-weight:700;font-family:var(--font-mono);
-            flex-shrink:0;"></span>
+
+      <!-- Auth-Pill: Angemeldet -->
+      <div id="auth-pill-user" class="hidden">
+        <a id="auth-pill-link" href="pages/mitarbeiter.html" class="auth-pill-link auth-pill-link--user">
+          <span id="auth-pill-avatar" class="auth-pill-avatar"></span>
           <span id="auth-pill-label">Hub</span>
         </a>
       </div>
     </div>
   </header>
 
+  <!-- ── OFFLINE-BANNER ── -->
+  <div id="offline-banner" class="offline-banner hidden"></div>
+
   <!-- ── HERO ── -->
   <div class="la-hero">
     <div class="la-greeting">
-      Was suchst du<span id="greeting-name-wrap" style="display:none;">, <span style="color:var(--ink-3);" id="greeting-name"></span></span>?
+      Was suchst du<span id="greeting-name-wrap" class="hidden">,
+        <span class="greeting-name-accent" id="greeting-name"></span></span>?
     </div>
     <div class="la-greeting-sub" id="status-text">Datenbank wird geladen…</div>
 
-    <!-- Search -->
+    <!-- Suche -->
     <div class="la-search-wrap">
       <span class="la-search-icon">
-        <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><circle cx="9" cy="9" r="6"/><path d="m17 17-3.5-3.5"/></svg>
+        <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round">
+          <circle cx="9" cy="9" r="6"/>
+          <path d="m17 17-3.5-3.5"/>
+        </svg>
       </span>
       <input type="text" id="search-input" class="la-search-input"
         placeholder="Artikel, LP, Alias…"
         autocomplete="off" autocorrect="off" spellcheck="false">
-      <button class="la-search-scan hidden" id="search-clear" onclick="clearSearch()">✕</button>
+      <button class="la-search-scan hidden" id="search-clear">✕</button>
       <button class="la-search-scan" id="scan-btn" title="QR/Barcode scannen">
-        <svg viewBox="0 0 20 20" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><path d="M3 7V4h3M17 7V4h-3M3 13v3h3M17 13v3h-3"/><path d="M3 10h14"/></svg>
+        <svg viewBox="0 0 20 20" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round">
+          <path d="M3 7V4h3M17 7V4h-3M3 13v3h3M17 13v3h-3"/>
+          <path d="M3 10h14"/>
+        </svg>
       </button>
     </div>
 
-    <!-- Filters (dynamisch aus Firestore Bereichen generiert) -->
+    <!-- Filter-Chips (dynamisch via JS) -->
     <div class="la-filters" id="filter-chips">
-      <button class="la-filter-chip active" data-filter="all" onclick="filterChip(this,'all')">Alle</button>
+      <button class="la-filter-chip active" data-filter="all">Alle</button>
     </div>
   </div>
 
   <!-- ── MAIN ── -->
   <main class="la-main">
 
-    <!-- Loading -->
+    <!-- Laden -->
     <div id="loading-state" class="la-loading">
       <div class="spinner"></div>
-      <span style="font-size:13px;color:var(--ink-3);">Verbinde mit Firebase…</span>
+      <span class="loading-text">Verbinde mit Firebase…</span>
     </div>
 
-    <!-- Results -->
+    <!-- Ergebnisse -->
     <div id="search-results" class="la-results hidden"></div>
 
-    <!-- Empty -->
+    <!-- Leer-Zustand -->
     <div id="empty-state" class="la-empty hidden">
       <div class="la-empty-icon">🔍</div>
       <div class="la-empty-title">Kein Artikel gefunden</div>
@@ -430,7 +114,9 @@
         <span class="la-sec-label">Bereiche</span>
         <span class="la-sec-link" id="bereiche-count-label">
           <span id="bereiche-total">–</span> gesamt
-          <svg viewBox="0 0 20 20" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 5l5 5-5 5"/></svg>
+          <svg viewBox="0 0 20 20" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M8 5l5 5-5 5"/>
+          </svg>
         </span>
       </div>
       <div class="la-bereiche-grid" id="bereiche-grid"></div>
@@ -440,583 +126,224 @@
 
   <!-- ── FOOTER ── -->
   <footer class="la-footer">
-    <span style="font-size:11px;color:var(--ink-3);font-family:var(--font-mono);">
-      LAGER//APP · DRK Rettungswache Malmsheim · 2026
-    </span>
+    <span class="footer-credit">LAGER//APP · DRK Rettungswache Malmsheim · 2026</span>
   </footer>
 
-  <!-- ── PHOTO MODAL ── -->
-  <div id="photo-modal" class="la-modal-backdrop hidden" onclick="if(event.target===this)closeModal()">
+  <!-- ── FOTO-MODAL ── -->
+  <div id="photo-modal" class="la-modal-backdrop hidden">
     <div class="la-modal-box">
       <div class="la-modal-header">
         <span id="modal-title" class="la-modal-title"></span>
-        <button class="la-modal-close" onclick="closeModal()">✕</button>
+        <button class="la-modal-close">✕</button>
       </div>
       <img id="modal-img" class="la-modal-img" src="" alt="">
-      <div style="padding:10px 18px 14px;font-size:11px;color:var(--ink-3);font-family:var(--font-mono);text-align:center;">Soll-Zustand Lagerort</div>
+      <div class="modal-caption">Soll-Zustand Lagerort</div>
     </div>
   </div>
 
-  <!-- ── LAGER SCAN OVERLAY (Lagerort-Suche per Kamera) ── -->
-  <div id="lager-scan-overlay" style="display:none;position:fixed;inset:0;z-index:500;background:#000;flex-direction:column;">
-    <div style="flex:1;position:relative;overflow:hidden;min-height:0;">
-      <video id="lager-scan-video" style="width:100%;height:100%;object-fit:cover;display:block;" playsinline autoplay muted></video>
-      <div style="position:absolute;top:max(14px,env(safe-area-inset-top));left:14px;right:14px;display:flex;align-items:center;gap:8px;pointer-events:none;z-index:10;">
-        <div style="flex:1;height:36px;padding:0 14px;border-radius:999px;display:flex;align-items:center;gap:8px;background:rgba(14,14,18,.72);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);border:0.5px solid rgba(255,255,255,.10);color:rgba(255,255,255,.9);font-size:12px;font-weight:500;font-family:var(--font-ui);">
-          <span style="width:7px;height:7px;border-radius:50%;flex-shrink:0;background:var(--brand);box-shadow:0 0 7px var(--brand);animation:lsPulse 1.8s ease infinite;"></span>
+  <!-- ── LAGER-SCAN OVERLAY (Lagerort-Suche per Kamera) ── -->
+  <div id="lager-scan-overlay" class="lager-scan-overlay hidden">
+    <div class="ls-video-wrap">
+      <video id="lager-scan-video" class="ls-video" playsinline autoplay muted></video>
+
+      <!-- Status-Leiste oben -->
+      <div class="ls-header">
+        <div class="ls-status-pill">
+          <span class="ls-pulse-dot"></span>
           <span id="lager-scan-status">Artikel-Code scannen</span>
         </div>
-        <button onclick="closeLagerScan()" style="pointer-events:all;flex-shrink:0;width:36px;height:36px;border-radius:50%;border:0.5px solid rgba(255,255,255,.10);background:rgba(14,14,18,.72);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);color:rgba(255,255,255,.85);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;">✕</button>
+        <button id="lager-scan-close" class="ls-close-btn">✕</button>
       </div>
-      <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;pointer-events:none;">
-        <div style="position:relative;width:240px;height:240px;">
-          <svg style="position:absolute;top:0;left:0;width:32px;height:32px;" viewBox="0 0 32 32" fill="none"><path d="M0 24V0h24" stroke="#F26B2E" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          <svg style="position:absolute;top:0;right:0;width:32px;height:32px;" viewBox="0 0 32 32" fill="none"><path d="M32 24V0H8" stroke="#F26B2E" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          <svg style="position:absolute;bottom:0;left:0;width:32px;height:32px;" viewBox="0 0 32 32" fill="none"><path d="M0 8v24h24" stroke="#F26B2E" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          <svg style="position:absolute;bottom:0;right:0;width:32px;height:32px;" viewBox="0 0 32 32" fill="none"><path d="M32 8v24H8" stroke="#F26B2E" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          <div style="position:absolute;left:10px;right:10px;height:2px;background:var(--brand);box-shadow:0 0 24px 6px rgba(242,107,46,.6);border-radius:1px;animation:lsScanline 2s ease-in-out infinite;"></div>
+
+      <!-- Suchraster -->
+      <div class="ls-vf-wrap">
+        <div class="ls-vf">
+          <svg class="ls-corner ls-corner--tl" viewBox="0 0 32 32" fill="none">
+            <path d="M0 24V0h24" stroke="#F26B2E" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <svg class="ls-corner ls-corner--tr" viewBox="0 0 32 32" fill="none">
+            <path d="M32 24V0H8" stroke="#F26B2E" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <svg class="ls-corner ls-corner--bl" viewBox="0 0 32 32" fill="none">
+            <path d="M0 8v24h24" stroke="#F26B2E" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <svg class="ls-corner ls-corner--br" viewBox="0 0 32 32" fill="none">
+            <path d="M32 8v24H8" stroke="#F26B2E" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <div class="ls-scanline"></div>
         </div>
-        <div style="font-family:var(--font-mono);font-size:11px;font-weight:600;color:rgba(255,255,255,.45);letter-spacing:0.08em;text-transform:uppercase;">Code zentrieren · Halten</div>
+        <div class="ls-code-hint">Code zentrieren · Halten</div>
       </div>
     </div>
-    <div style="background:rgba(12,14,18,.88);backdrop-filter:blur(28px) saturate(160%);-webkit-backdrop-filter:blur(28px) saturate(160%);border-top:0.5px solid rgba(255,255,255,.10);border-radius:26px 26px 0 0;padding:14px 20px;padding-bottom:max(24px,env(safe-area-inset-bottom));">
-      <div style="width:36px;height:4px;border-radius:2px;background:rgba(255,255,255,.22);margin:0 auto 16px;"></div>
-      <div id="lager-scan-hint" style="text-align:center;font-size:13px;color:rgba(255,255,255,.4);padding:8px 0 4px;font-family:var(--font-ui);">Barcode oder LP-Etikett vor die Kamera halten</div>
-      <div id="lager-scan-result" style="display:none;gap:14px;align-items:center;">
-        <div id="lager-scan-photo" style="width:60px;height:60px;border-radius:12px;flex-shrink:0;background:rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;font-size:1.4rem;overflow:hidden;">📦</div>
-        <div style="flex:1;min-width:0;">
-          <div id="lager-scan-art-name" style="font-size:15px;font-weight:700;color:rgba(255,255,255,.92);margin-bottom:6px;font-family:var(--font-ui);"></div>
-          <div id="lager-scan-lp" style="font-family:var(--font-mono);font-size:20px;font-weight:700;color:var(--brand);letter-spacing:0.02em;"></div>
-          <div id="lager-scan-bereich" style="font-size:12px;color:rgba(255,255,255,.45);margin-top:3px;font-family:var(--font-ui);"></div>
+
+    <!-- Ergebnis-Panel unten -->
+    <div class="ls-bottom">
+      <div class="ls-drag-handle"></div>
+      <div id="lager-scan-hint" class="ls-hint-text">Barcode oder LP-Etikett vor die Kamera halten</div>
+
+      <div id="lager-scan-result" class="ls-result hidden">
+        <div id="lager-scan-photo" class="ls-result-photo">📦</div>
+        <div class="ls-result-info">
+          <div id="lager-scan-art-name" class="ls-art-name"></div>
+          <div id="lager-scan-lp"       class="ls-lp"></div>
+          <div id="lager-scan-bereich"  class="ls-bereich"></div>
         </div>
       </div>
-      <div id="lager-scan-not-found" style="display:none;text-align:center;padding:8px 0 4px;">
-        <div style="font-size:1.4rem;margin-bottom:6px;">❓</div>
-        <div style="font-size:13px;color:rgba(255,255,255,.5);font-family:var(--font-ui);">Artikel nicht gefunden</div>
-        <div id="lager-scan-raw" style="font-family:var(--font-mono);font-size:10px;color:rgba(255,255,255,.3);margin-top:4px;"></div>
+
+      <div id="lager-scan-not-found" class="ls-not-found hidden">
+        <div class="ls-not-found-icon">❓</div>
+        <div class="ls-not-found-text">Artikel nicht gefunden</div>
+        <div id="lager-scan-raw" class="ls-raw"></div>
       </div>
     </div>
   </div>
 
-  <!-- ── LOGIN WALL (bottom-sheet, shown when guest taps protected action) ── -->
-  <div id="login-wall" onclick="if(event.target===this)closeLoginWall()" style="
-    display:none; position:fixed; inset:0; z-index:2000;
-    background:rgba(8,8,12,0.55);
-    backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);">
-    <div style="
-      position:absolute; left:0; right:0; bottom:0;
-      background:var(--surface); border-radius:26px 26px 0 0;
-      padding:14px 20px calc(28px + env(safe-area-inset-bottom,0px));
-      box-shadow:0 -8px 32px rgba(0,0,0,.2);"
-      onclick="event.stopPropagation()">
-      <div style="width:40px;height:4px;background:var(--ink-4);border-radius:2px;margin:0 auto 20px;"></div>
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
-        <div style="
-          width:48px;height:48px;border-radius:14px;flex-shrink:0;
-          background:var(--brand-soft);color:var(--brand);
-          display:flex;align-items:center;justify-content:center;
-          box-shadow:inset 0 0 0 1px var(--brand-soft-2);">
-          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+  <!-- ── LOGIN-WALL (Bottom-Sheet bei geschützten Aktionen) ── -->
+  <div id="login-wall" class="login-wall-backdrop hidden">
+    <div class="login-wall-sheet">
+      <div class="login-wall-handle"></div>
+
+      <div class="login-wall-header">
+        <div class="login-wall-icon">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="5" y="11" width="14" height="9" rx="2"/>
+            <path d="M8 11V8a4 4 0 0 1 8 0v3"/>
+          </svg>
         </div>
         <div>
-          <div style="font-size:18px;font-weight:700;letter-spacing:-0.3px;">Anmelden erforderlich</div>
-          <div style="font-size:13px;color:var(--ink-3);margin-top:2px;" id="login-wall-context">für diese Aktion</div>
+          <div class="login-wall-title">Anmelden erforderlich</div>
+          <div class="login-wall-context-text" id="login-wall-context">für diese Aktion</div>
         </div>
       </div>
-      <div style="
-        padding:10px 12px;border-radius:12px;margin-bottom:18px;
-        background:var(--surface-2);box-shadow:inset 0 0 0 1px var(--hairline);
-        font-size:12px;color:var(--ink-2);line-height:1.5;">
+
+      <div class="login-wall-info">
         Lagersuche bleibt für alle offen. Anmeldung mit <strong>Name + PIN</strong> nur für
         Bestellungen, Verfallsscan und Bestand-Bearbeitung.
       </div>
-      <div style="display:flex;gap:10px;">
-        <button onclick="closeLoginWall()" style="
-          flex:0 0 110px;height:48px;border-radius:var(--r-md);border:none;
-          background:var(--surface);color:var(--ink-2);cursor:pointer;
-          font-family:var(--font-ui);font-size:14px;font-weight:500;
-          box-shadow:inset 0 0 0 1px var(--hairline-2);">Abbrechen</button>
-        <a id="login-wall-btn" href="pages/login.html?tab=mitarbeiter" style="
-          flex:1;height:48px;border-radius:var(--r-md);
-          background:var(--brand);color:white;text-decoration:none;
-          font-family:var(--font-ui);font-size:14px;font-weight:600;
-          display:flex;align-items:center;justify-content:center;gap:8px;
-          box-shadow:0 1px 0 rgba(255,255,255,.2) inset,0 6px 14px rgba(242,107,46,.28);">
-          <svg viewBox="0 0 20 20" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="14" height="10" rx="2"/><path d="M7 8V6a3 3 0 0 1 6 0v2"/></svg>
+
+      <div class="login-wall-actions">
+        <button id="login-wall-cancel" class="login-wall-cancel">Abbrechen</button>
+        <a id="login-wall-btn" href="pages/login.html?tab=mitarbeiter" class="login-wall-cta">
+          <svg viewBox="0 0 20 20" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="8" width="14" height="10" rx="2"/>
+            <path d="M7 8V6a3 3 0 0 1 6 0v2"/>
+          </svg>
           Mit Name &amp; PIN anmelden
         </a>
       </div>
-      <div style="text-align:center;margin-top:14px;font-size:12px;color:var(--ink-3);">
-        Kein PIN? <strong style="color:var(--brand);">Wachenleiter fragen</strong>
+
+      <div class="login-wall-footer">
+        Kein PIN? <strong class="login-wall-brand">Wachenleiter fragen</strong>
       </div>
     </div>
   </div>
 
-  <!-- Firebase + App Logic -->
-  <script type="module">
-    import { initializeApp }    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getFirestore, collection, getDocs, query, orderBy }
-                                from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-    import { firebaseConfig }   from "./js/firebase-config.js";
+  <!-- ── VERSION 3.0 POPUP ── -->
+  <div class="lagerapp-overlay" id="version-popup-overlay">
+    <div class="lagerapp-popup">
 
-    // ── Theme ──
-    const savedTheme   = localStorage.getItem('lager-theme');
-    const prefersDark  = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const initialTheme = savedTheme || (prefersDark ? 'dark' : 'light');
-    document.documentElement.setAttribute('data-theme', initialTheme);
-    document.getElementById('theme-toggle').textContent = initialTheme === 'dark' ? '☀️' : '🌙';
+      <button class="close-btn" id="popup-close-btn">×</button>
 
-    window.toggleTheme = function() {
-      const current = document.documentElement.getAttribute('data-theme');
-      const next    = current === 'dark' ? 'light' : 'dark';
-      document.documentElement.setAttribute('data-theme', next);
-      localStorage.setItem('lager-theme', next);
-      document.getElementById('theme-toggle').textContent = next === 'dark' ? '☀️' : '🌙';
-    };
+      <h1>
+        Viel Spaß bei<br>
+        <span>Version 3.0</span>
+      </h1>
 
-    // ── Firebase ──
-    const app = initializeApp(firebaseConfig);
-    const db  = getFirestore(app);
+      <div class="preview-images">
+        <img src="icons/produktkarte.png" alt="Produktkarte" onerror="this.parentElement.style.display='none'">
+        <img src="icons/verfallscheck.png" alt="Verfallscheck" onerror="this.parentElement.style.display='none'">
+      </div>
 
-    let alleArtikel    = [];
-    let alleBereiche   = [];
-    let searchTimer    = null;
-    let activeFilter   = 'all';
-    let bereichFilter  = null;
+      <div class="features-box">
 
-    // Tint colors for bereiche
-    const TINTS = ['tint-rose','tint-blue','tint-violet','tint-green','tint-slate','tint-amber'];
+        <h2>✨ Neu in Version 3.0</h2>
 
-    function prettyBereich(name) {
-      return String(name ?? '').replace(/^Lager\s*[-–]\s*/i, '').trim();
-    }
-
-    // ── Daten laden ──
-    async function loadData() {
-      try {
-        const [bereicheSnap, artikelSnap] = await Promise.all([
-          getDocs(query(collection(db, 'bereiche'), orderBy('reihenfolge'))),
-          getDocs(collection(db, 'artikel')),
-        ]);
-
-        alleBereiche = bereicheSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-        alleArtikel  = artikelSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-
-        document.getElementById('loading-state').classList.add('hidden');
-        document.getElementById('bereiche-section').classList.remove('hidden');
-        document.getElementById('status-text').textContent =
-          `Rettungswache Malmsheim · ${alleArtikel.length} Artikel`;
-        document.getElementById('bereiche-total').textContent = alleBereiche.length;
-        document.getElementById('sync-pill').style.display = 'flex';
-        document.getElementById('sync-dot').style.display = 'inline-block';
-
-        renderBereiche();
-        renderFilterChips();
-
-      } catch (e) {
-        document.getElementById('loading-state').innerHTML =
-          `<div style="color:var(--crit);font-size:13px;padding:20px;">Fehler: ${e.message}</div>`;
-      }
-    }
-
-    // ── Bereiche ──
-    function renderBereiche() {
-      document.getElementById('bereiche-grid').innerHTML = alleBereiche.map((b, i) => {
-        const count  = alleArtikel.filter(a => a.bereich === b.id).length;
-        const letter = (b.name || '?').charAt(0).toUpperCase();
-        const tint   = TINTS[i % TINTS.length];
-        const num    = String(i + 1).padStart(2, '0');
-        return `
-          <div class="la-bereich-card" onclick="filterByBereich('${b.id}','${b.name.replace(/'/g,"\\'")}')"
-               data-bereich-name="${b.name}">
-            <div class="la-bereich-top">
-              <div class="la-photo ${tint} la-bereich-tile">${letter}</div>
-              <div class="la-bereich-num">${num}</div>
-            </div>
-            <div>
-              <div class="la-bereich-name">${prettyBereich(b.name)}</div>
-              ${b.sub ? `<div class="la-bereich-sub">${b.sub}</div>` : ''}
-            </div>
-            <div class="la-bereich-bottom">
-              <div class="la-bereich-count">${count} Artikel</div>
-              <div class="la-bereich-dots">
-                <span style="background:var(--ok)"></span>
-                <span style="background:var(--low)"></span>
-              </div>
-            </div>
-          </div>`;
-      }).join('');
-    }
-
-    // ── Filter chips (dynamisch aus Bereichen generiert) ──
-    function renderFilterChips() {
-      const chipContainer = document.getElementById('filter-chips');
-      chipContainer.innerHTML = '<button class="la-filter-chip active" data-filter="all" onclick="filterChip(this,\'all\')">Alle</button>';
-      alleBereiche.forEach(b => {
-        const btn = document.createElement('button');
-        btn.className = 'la-filter-chip';
-        btn.dataset.filter = b.name;
-        btn.textContent = prettyBereich(b.name);
-        btn.onclick = () => filterChip(btn, b.name);
-        chipContainer.appendChild(btn);
-      });
-    }
-
-    window.filterChip = function(el, filter) {
-      document.querySelectorAll('.la-filter-chip').forEach(c => c.classList.remove('active'));
-      el.classList.add('active');
-      activeFilter = filter;
-
-      if (filter === 'all') {
-        showBereiche();
-        return;
-      }
-
-      const bereich = alleBereiche.find(b => b.name === filter);
-      if (bereich) {
-        filterByBereich(bereich.id, bereich.name);
-      }
-    };
-
-    // ── Search ──
-    function doSearch(q) {
-      const lower = q.toLowerCase().trim();
-      if (!lower) { clearSearch(); return; }
-
-      const results = alleArtikel.filter(a =>
-        a.name?.toLowerCase().includes(lower) ||
-        a.aliases?.some(al => al.toLowerCase().includes(lower)) ||
-        a.lp?.toLowerCase().includes(lower)
-      );
-
-      renderResults(results, lower);
-    }
-
-    function naturalSort(a, b) {
-      const seg = s => (s||'').split(/[.\-]/).map(x => isNaN(x) ? x : parseInt(x,10));
-      const A = seg(a), B = seg(b);
-      for (let i = 0; i < Math.max(A.length, B.length); i++) {
-        const va = A[i] ?? '', vb = B[i] ?? '';
-        if (va < vb) return -1;
-        if (va > vb) return  1;
-      }
-      return 0;
-    }
-
-    function renderResults(results, q) {
-      document.getElementById('bereiche-section').classList.add('hidden');
-      document.getElementById('empty-state').classList.add('hidden');
-      document.getElementById('search-results').classList.add('hidden');
-
-      document.getElementById('status-text').textContent =
-        `${results.length} Treffer für „${q}"`;
-
-      if (results.length === 0) {
-        document.getElementById('empty-state').classList.remove('hidden');
-        return;
-      }
-
-      function hl(text, q) {
-        if (!q || !text) return text || '';
-        return text.replace(new RegExp(`(${q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})`, 'gi'),
-          '<mark>$1</mark>');
-      }
-
-      const sorted = [...results].sort((a,b) => naturalSort(a.lp||'', b.lp||''));
-      const container = document.getElementById('search-results');
-      container.innerHTML = sorted.map(a => {
-        const b = alleBereiche.find(x => x.id === a.bereich);
-        return `
-          <div class="result-card fade-in">
-            <div class="result-photo" onclick="openPhoto('${(a.fotoUrl||'').replace(/'/g,"\\'")}','${a.name.replace(/'/g,"\\'")}')">
-              ${a.fotoUrl
-                ? `<img src="${a.fotoUrl}" alt="${a.name}" loading="lazy">`
-                : `<div class="result-photo-placeholder">📦</div>`}
-            </div>
-            <div class="result-body">
-              <div class="result-name">${hl(a.name, q)}</div>
-              <div class="result-location-big">
-                ${b ? `<span class="result-bereich-big">${prettyBereich(b.name)}</span>` : ''}
-                <span class="result-lp-big">📍 ${a.lp || (a.location||'').replace(/\./g,' · ')}</span>
-              </div>
-              ${a.aliases?.length ? `<div style="font-size:11px;color:var(--ink-3);margin-top:2px;">${a.aliases.slice(0,3).join(' · ')}</div>` : ''}
-            </div>
-          </div>`;
-      }).join('');
-
-      container.classList.remove('hidden');
-    }
-
-    // ── Public functions ──
-    window.filterByBereich = function(id, name) {
-      const bereichArtikel = alleArtikel
-        .filter(a => a.bereich === id)
-        .sort((a,b) => naturalSort(a.lp||'', b.lp||''));
-
-      // Sync filter chips
-      document.querySelectorAll('.la-filter-chip').forEach(c => {
-        const match = c.dataset.filter === name;
-        c.classList.toggle('active', match);
-        if (match) c.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-      });
-
-      document.getElementById('bereiche-section').classList.add('hidden');
-      document.getElementById('search-results').classList.remove('hidden');
-      document.getElementById('empty-state').classList.add('hidden');
-      document.getElementById('status-text').textContent =
-        `${bereichArtikel.length} Artikel · ${prettyBereich(name)}`;
-
-      const container = document.getElementById('search-results');
-      container.innerHTML = bereichArtikel.map(a => `
-        <div class="result-card fade-in">
-          <div class="result-photo" onclick="openPhoto('${(a.fotoUrl||'').replace(/'/g,"\\'")}','${a.name.replace(/'/g,"\\'")}')">
-            ${a.fotoUrl ? `<img src="${a.fotoUrl}" alt="${a.name}" loading="lazy">` : '<div class="result-photo-placeholder">📦</div>'}
+        <div class="popup-feature">
+          <div class="popup-icon popup-icon--orange">📅</div>
+          <div>
+            <strong>Verfallscheck</strong>
+            <p>Du hast jeden Tag die Kontrolle, ob etwas abläuft.</p>
           </div>
-          <div class="result-body">
-            <div class="result-name">${a.name}</div>
-            <div class="result-location-big">
-              <span class="result-bereich-big">${prettyBereich(name)}</span>
-              <span class="result-lp-big">📍 ${a.lp || (a.location||'').replace(/\./g,' · ')}</span>
-            </div>
+        </div>
+
+        <div class="popup-feature">
+          <div class="popup-icon popup-icon--green">👥</div>
+          <div>
+            <strong>Gruppen Bestellungen</strong>
+            <p>Du kannst mit der kompletten Schicht zeitgleich und live das Lager bestellen.</p>
           </div>
-        </div>`).join('');
-    };
+        </div>
 
-    window.showBereiche = function() {
-      document.getElementById('search-results').classList.add('hidden');
-      document.getElementById('empty-state').classList.add('hidden');
-      document.getElementById('bereiche-section').classList.remove('hidden');
-      document.getElementById('status-text').textContent =
-        `Rettungswache Malmsheim · ${alleArtikel.length} Artikel`;
-    };
+        <div class="popup-feature">
+          <div class="popup-icon popup-icon--blue">👉</div>
+          <div>
+            <strong>StockSwipe</strong>
+            <p>Bestelle das Lager alleine im Tinder Style.</p>
+          </div>
+        </div>
 
-    window.clearSearch = function() {
-      document.getElementById('search-input').value = '';
-      document.getElementById('search-results').classList.add('hidden');
-      document.getElementById('empty-state').classList.add('hidden');
-      document.getElementById('bereiche-section').classList.remove('hidden');
-      document.getElementById('status-text').textContent =
-        `Rettungswache Malmsheim · ${alleArtikel.length} Artikel`;
-      document.getElementById('search-clear').classList.add('hidden');
-      // Show scan btn again
-      document.getElementById('scan-btn').classList.remove('hidden');
-    };
+        <div class="popup-feature">
+          <div class="popup-icon popup-icon--purple">📦</div>
+          <div>
+            <strong>Verfall Scanner</strong>
+            <p>Scanne schnell und unkompliziert neue Ware ein, um lästiges Prüfen auf Verfall zu vermeiden.</p>
+          </div>
+        </div>
 
-    window.openPhoto = function(url, name) {
-      if (!url) return;
-      document.getElementById('modal-img').src   = url;
-      document.getElementById('modal-title').textContent = name;
-      document.getElementById('photo-modal').classList.remove('hidden');
-    };
+      </div>
 
-    window.closeModal = function() {
-      document.getElementById('photo-modal').classList.add('hidden');
-    };
+      <div class="popup-info-section">
+        <div class="popup-info-box">
+          <div class="popup-info-icon popup-info-icon--orange">🔒</div>
+          <div>
+            <strong>Noch sicherer mit eigenen Zugangsdaten.</strong>
+            <p>Frage gleich deinen Wachenleiter.</p>
+          </div>
+        </div>
 
-    // ── Search input ──
-    document.getElementById('search-input').addEventListener('input', e => {
-      const val = e.target.value;
-      const hasTxt = !!val;
-      document.getElementById('search-clear').classList.toggle('hidden', !hasTxt);
-      document.getElementById('scan-btn').classList.toggle('hidden', hasTxt);
-      clearTimeout(searchTimer);
-      searchTimer = setTimeout(() => doSearch(val), 200);
-    });
+        <div class="popup-info-box">
+          <div class="popup-info-icon popup-info-icon--green">🟢</div>
+          <div>
+            <strong>Hast du Fehler gefunden?</strong>
+            <p>Dann ab damit in den WhatsApp Channel.</p>
+          </div>
+        </div>
+      </div>
 
-    // ── Lager Scan (Lagerort-Suche per Kamera, kein Login nötig) ──
-    let lagerScanReader = null;
+      <button class="popup-start-btn" id="popup-start-btn">
+        Alles klar, los geht's!
+      </button>
 
-    function extractGTIN(raw) {
-      const s = raw.replace(/[\x00-\x1F\x7F]/g, '').trim();
-      if (s.includes('(')) {
-        const g = s.match(/\(01\)(\d{14})/);
-        return g ? g[1] : null;
-      }
-      if (/^\d{13}$/.test(s)) return '0' + s;
-      if (/^\d{14}$/.test(s)) return s;
-      if (s.startsWith('01') && s.length >= 16) return s.substring(2, 16);
-      return null;
-    }
+    </div>
+  </div>
 
-    window.openLagerScan = function() {
-      const overlay = document.getElementById('lager-scan-overlay');
-      overlay.style.display = 'flex';
-      document.body.style.overflow = 'hidden';
-      document.getElementById('lager-scan-hint').style.display = 'block';
-      document.getElementById('lager-scan-result').style.display = 'none';
-      document.getElementById('lager-scan-not-found').style.display = 'none';
-      document.getElementById('lager-scan-status').textContent = 'Artikel-Code scannen';
-      startLagerScan();
-    };
+  <script>
+    (function () {
+      const VERSION_KEY = 'lagerapp-popup-seen-v3';
+      const overlay = document.getElementById('version-popup-overlay');
 
-    async function startLagerScan() {
-      try {
-        const hints = new Map();
-        hints.set(ZXing.DecodeHintType.POSSIBLE_FORMATS, [
-          ZXing.BarcodeFormat.EAN_13,
-          ZXing.BarcodeFormat.CODE_128,
-          ZXing.BarcodeFormat.QR_CODE,
-          ZXing.BarcodeFormat.DATA_MATRIX,
-        ]);
-        lagerScanReader = new ZXing.BrowserMultiFormatReader(hints);
-        await lagerScanReader.decodeFromConstraints(
-          { video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } } },
-          'lager-scan-video',
-          result => { if (result) onLagerScan(result.getText()); }
-        );
-      } catch(e) {
-        document.getElementById('lager-scan-status').textContent =
-          e.name === 'NotAllowedError' ? 'Kamera verweigert' : 'Kamera nicht verfügbar';
-      }
-    }
-
-    window.closeLagerScan = function() {
-      document.getElementById('lager-scan-overlay').style.display = 'none';
-      document.body.style.overflow = '';
-      if (lagerScanReader) { try { lagerScanReader.reset(); } catch(e) {} lagerScanReader = null; }
-      const v = document.getElementById('lager-scan-video');
-      if (v?.srcObject) { v.srcObject.getTracks().forEach(t => t.stop()); v.srcObject = null; }
-      window._lastLagerScan = null;
-    };
-
-    function onLagerScan(raw) {
-      if (!raw || raw.trim().length < 3) return;
-      const rawTrimmed = raw.trim();
-      if (window._lastLagerScan === rawTrimmed) return;
-      window._lastLagerScan = rawTrimmed;
-      setTimeout(() => { if (window._lastLagerScan === rawTrimmed) window._lastLagerScan = null; }, 2000);
-      if (navigator.vibrate) navigator.vibrate(80);
-
-      const gtin = extractGTIN(rawTrimmed);
-      let found = null;
-      if (gtin) {
-        found = alleArtikel.find(a =>
-          a.gtin === gtin || (Array.isArray(a.gtins) && a.gtins.includes(gtin))
-        );
-      }
-      if (!found) {
-        found = alleArtikel.find(a =>
-          a.lp && a.lp.toLowerCase() === rawTrimmed.toLowerCase()
-        );
+      // Popup nur einmal pro Version anzeigen
+      if (localStorage.getItem(VERSION_KEY)) {
+        overlay.style.display = 'none';
       }
 
-      document.getElementById('lager-scan-hint').style.display = 'none';
-      const resultEl    = document.getElementById('lager-scan-result');
-      const notFoundEl  = document.getElementById('lager-scan-not-found');
-
-      if (found) {
-        const b = alleBereiche.find(x => x.id === found.bereich);
-        document.getElementById('lager-scan-art-name').textContent = found.name;
-        document.getElementById('lager-scan-lp').textContent = '📍 ' + (found.lp || '–');
-        document.getElementById('lager-scan-bereich').textContent = b ? prettyBereich(b.name) : '';
-        const photoEl = document.getElementById('lager-scan-photo');
-        photoEl.innerHTML = found.fotoUrl ? `<img src="${found.fotoUrl}" alt="" style="width:100%;height:100%;object-fit:cover;">` : '📦';
-        resultEl.style.display = 'flex';
-        notFoundEl.style.display = 'none';
-      } else {
-        document.getElementById('lager-scan-raw').textContent = rawTrimmed.substring(0, 50);
-        resultEl.style.display = 'none';
-        notFoundEl.style.display = 'block';
+      function closePopup() {
+        overlay.style.display = 'none';
+        localStorage.setItem(VERSION_KEY, '1');
       }
-    }
 
-    // ── Wheel → horizontal scroll for filter chips ──
-    document.getElementById('filter-chips').addEventListener('wheel', e => {
-      if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
-        e.preventDefault();
-        document.getElementById('filter-chips').scrollLeft += e.deltaY;
-      }
-    }, { passive: false });
+      document.getElementById('popup-close-btn').addEventListener('click', closePopup);
+      document.getElementById('popup-start-btn').addEventListener('click', closePopup);
 
-    // ── Start ──
-    loadData();
+      // Klick auf den Hintergrund schließt auch
+      overlay.addEventListener('click', function (e) {
+        if (e.target === overlay) closePopup();
+      });
+    })();
   </script>
 
-  <!-- Auth + Login Wall JS -->
-  <script type="module">
-    import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-    import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-    import { getFirestore, doc, getDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
-    import { firebaseConfig } from './js/firebase-config.js';
-
-    const app  = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db   = getFirestore(app);
-
-    // ── AuthPill ──
-    function updateAuthPill() {
-      const pinAuth  = sessionStorage.getItem('lager-pin-auth') || localStorage.getItem('lager-pin-auth');
-      const pinName  = sessionStorage.getItem('lager-pin-name') || localStorage.getItem('lager-pin-name') || '';
-      const fbUser   = auth.currentUser;
-      const isWl     = fbUser && !fbUser.isAnonymous;
-      const isMa     = pinAuth === 'true';
-
-      const guestEl  = document.getElementById('auth-pill-guest');
-      const userEl   = document.getElementById('auth-pill-user');
-      const avatarEl = document.getElementById('auth-pill-avatar');
-      const labelEl  = document.getElementById('auth-pill-label');
-      const linkEl   = document.getElementById('auth-pill-link');
-
-      if (isMa) {
-        guestEl.style.display = 'none';
-        userEl.style.display  = 'block';
-        const initials = pinName.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase() || 'MA';
-        avatarEl.textContent  = initials;
-        labelEl.textContent   = 'Mitarbeiter-Hub';
-        linkEl.href           = 'pages/mitarbeiter.html';
-        const vorname   = pinName.split(' ')[0];
-        const nameWrap  = document.getElementById('greeting-name-wrap');
-        const greetEl   = document.getElementById('greeting-name');
-        if (nameWrap && greetEl && vorname) {
-          greetEl.textContent    = vorname;
-          nameWrap.style.display = 'inline';
-        }
-      } else if (isWl) {
-        guestEl.style.display = 'none';
-        userEl.style.display  = 'block';
-        avatarEl.textContent  = (fbUser.email || 'W').charAt(0).toUpperCase();
-        labelEl.textContent   = 'Portal öffnen';
-        linkEl.href           = 'pages/portal.html';
-        const nameWrap = document.getElementById('greeting-name-wrap');
-        if (nameWrap) nameWrap.style.display = 'none';
-      } else {
-        guestEl.style.display = 'block';
-        userEl.style.display  = 'none';
-        const nameWrap = document.getElementById('greeting-name-wrap');
-        if (nameWrap) nameWrap.style.display = 'none';
-      }
-    }
-
-    onAuthStateChanged(auth, () => updateAuthPill());
-    updateAuthPill();
-
-    // Scan-button: Lagerort-Suche, kein Login nötig
-    document.getElementById('scan-btn').addEventListener('click', () => {
-      window.openLagerScan();
-    });
-
-    // ── Login Wall ──
-    window.openLoginWall = function(context, returnUrl) {
-      const ctxEl = document.getElementById('login-wall-context');
-      const btn   = document.getElementById('login-wall-btn');
-      if (ctxEl) ctxEl.textContent = context || 'für diese Aktion';
-      const ret = returnUrl ? encodeURIComponent(returnUrl) : '';
-      if (btn) btn.href = 'pages/login.html?tab=mitarbeiter' + (ret ? '&return=' + ret : '');
-      document.getElementById('login-wall').style.display = 'block';
-      document.body.style.overflow = 'hidden';
-    };
-
-    window.closeLoginWall = function() {
-      document.getElementById('login-wall').style.display = 'none';
-      document.body.style.overflow = '';
-    };
-
-    // Keep openPinModal as an alias for backwards-compat with any remaining calls
-    window.openPinModal = function() {
-      window.openLoginWall('für die Lagerbestellung', new URL('pages/mitarbeiter.html', window.location.href).pathname);
-    };
-  </script>
-
+  <!-- Einziges Modul für diese Seite -->
+  <script type="module" src="js/search.js"></script>
   <script src="js/pwa.js"></script>
 </body>
 </html>

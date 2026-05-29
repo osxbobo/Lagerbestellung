@@ -7,7 +7,7 @@
 // Diese Nummer bei jedem GitHub Upload um 1 erhöhen
 // z.B. v2, v3, v4 ...
 // → Browser erkennt automatisch die neue Version und lädt alles neu
-const CACHE_VERSION = 'v153';
+const CACHE_VERSION = 'v156';
 const CACHE_NAME    = `lagerapp-${CACHE_VERSION}`;
 const BASE_PATH     = '/lagerapp_alpha';
 
@@ -25,8 +25,26 @@ const CACHE_FILES = [
   `${BASE_PATH}/pages/verfallmonitor.html`,
   `${BASE_PATH}/css/main.css`,
   `${BASE_PATH}/css/index.css`,
+  `${BASE_PATH}/css/portal.css`,
+  `${BASE_PATH}/css/admin.css`,
+  `${BASE_PATH}/css/check.css`,
+  `${BASE_PATH}/css/login.css`,
+  `${BASE_PATH}/css/mitarbeiter.css`,
+  `${BASE_PATH}/css/scanner.css`,
+  `${BASE_PATH}/css/stockswipe.css`,
+  `${BASE_PATH}/css/verfallmonitor.css`,
   `${BASE_PATH}/js/firebase-config.js`,
+  `${BASE_PATH}/js/search.js`,
+  `${BASE_PATH}/js/theme.js`,
   `${BASE_PATH}/js/pwa.js`,
+  `${BASE_PATH}/js/portal.js`,
+  `${BASE_PATH}/js/admin.js`,
+  `${BASE_PATH}/js/check.js`,
+  `${BASE_PATH}/js/login.js`,
+  `${BASE_PATH}/js/mitarbeiter.js`,
+  `${BASE_PATH}/js/scanner.js`,
+  `${BASE_PATH}/js/stockswipe.js`,
+  `${BASE_PATH}/js/verfallmonitor.js`,
   `${BASE_PATH}/manifest.json`,
 ];
 
@@ -183,10 +201,61 @@ async function checkVerfall() {
   });
 }
 
+// ── INDEXEDDB – Firestore-Artikeldaten-Cache ──
+// Ermöglicht Stale-while-revalidate und vollständigen Offline-Betrieb.
+// Seiten schreiben via postMessage('CACHE_ARTIKEL'), lesen via 'GET_CACHED_ARTIKEL'.
+
+const IDB_NAME    = 'lagerapp-offline';
+const IDB_VERSION = 1;
+const IDB_STORE   = 'artikel-cache';
+
+function openIDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(IDB_NAME, IDB_VERSION);
+    req.onupgradeneeded = e => e.target.result.createObjectStore(IDB_STORE);
+    req.onsuccess = e => resolve(e.target.result);
+    req.onerror   = ()  => reject(req.error);
+  });
+}
+
+async function saveToIDB(data) {
+  const idb = await openIDB();
+  return new Promise((resolve, reject) => {
+    const tx = idb.transaction(IDB_STORE, 'readwrite');
+    tx.objectStore(IDB_STORE).put(data, 'main');
+    tx.oncomplete = resolve;
+    tx.onerror    = () => reject(tx.error);
+  });
+}
+
+async function readFromIDB() {
+  const idb = await openIDB();
+  return new Promise((resolve, reject) => {
+    const tx  = idb.transaction(IDB_STORE, 'readonly');
+    const req = tx.objectStore(IDB_STORE).get('main');
+    req.onsuccess = () => resolve(req.result ?? null);
+    req.onerror   = () => reject(req.error);
+  });
+}
+
 // ── MESSAGE HANDLER ──
 self.addEventListener('message', event => {
   if (event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
+  }
+
+  // Artikeldaten aus Firestore im IndexedDB-Cache speichern (Stale-while-revalidate)
+  if (event.data.type === 'CACHE_ARTIKEL') {
+    saveToIDB(event.data.data).catch(err =>
+      console.warn('[SW] IndexedDB-Schreibfehler:', err)
+    );
+  }
+
+  // Gecachte Artikeldaten zurückliefern (Offline-Fallback)
+  if (event.data.type === 'GET_CACHED_ARTIKEL') {
+    readFromIDB()
+      .then(cached => event.ports[0].postMessage(cached))
+      .catch(() => event.ports[0].postMessage(null));
   }
 
   // Benachrichtigung direkt vom Client senden
