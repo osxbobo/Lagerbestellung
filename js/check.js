@@ -444,6 +444,7 @@ async function pickBereich(bereichId) {
     await loadWarenkorb();
     renderCheck();
     showScreen('check');
+    window.scrollTo({ top: 0, behavior: 'instant' });
 
   } catch(e) {
     toast(e.message, 'error');

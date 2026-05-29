@@ -329,9 +329,9 @@
         // Delete the session document
         await deleteDoc(doc(db, 'bestellungen_session', 'current'));
 
-        showToast('Session wurde zurückgesetzt', 'success');
+        showPortalToast('Session wurde zurückgesetzt', 'success');
       } catch(e) {
-        showToast('Fehler: ' + e.message, 'error');
+        showPortalToast('Fehler: ' + e.message, 'error');
       }
     };
 
@@ -346,9 +346,9 @@
       const text = document.getElementById('laufband-input')?.value.trim() || '';
       try {
         await setDoc(doc(db, 'config', 'app'), { laufband: text }, { merge: true });
-        showToast('Laufband gespeichert', 'success');
+        showPortalToast('Laufband gespeichert', 'success');
       } catch(e) {
-        showToast('Fehler: ' + e.message, 'error');
+        showPortalToast('Fehler: ' + e.message, 'error');
       }
     };
 
@@ -358,9 +358,9 @@
       updateLaufbandPreview();
       try {
         await setDoc(doc(db, 'config', 'app'), { laufband: '' }, { merge: true });
-        showToast('Laufband gelöscht', 'success');
+        showPortalToast('Laufband gelöscht', 'success');
       } catch(e) {
-        showToast('Fehler: ' + e.message, 'error');
+        showPortalToast('Fehler: ' + e.message, 'error');
       }
     };
 
@@ -826,7 +826,7 @@
       const i = alleArtikel.findIndex(x => x.id === artikelId);
       if (i >= 0) alleArtikel[i].chargen = chargen;
 
-      showToast('Charge gespeichert ✅');
+      showPortalToast('Charge gespeichert ✅');
       renderChargen();
     };
 
