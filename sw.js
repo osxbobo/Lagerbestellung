@@ -7,9 +7,9 @@
 // Diese Nummer bei jedem GitHub Upload um 1 erhöhen
 // z.B. v2, v3, v4 ...
 // → Browser erkennt automatisch die neue Version und lädt alles neu
-const CACHE_VERSION = 'v159';
+const CACHE_VERSION = 'v160';
 const CACHE_NAME    = `lagerapp-${CACHE_VERSION}`;
-const BASE_PATH     = '/lagerapp_alpha';
+const BASE_PATH     = '';
 
 // Dateien die offline verfügbar sein sollen
 const CACHE_FILES = [
@@ -175,7 +175,7 @@ self.addEventListener('notificationclick', event => {
       .then(clientList => {
         // Existierendes Fenster fokussieren
         for (const client of clientList) {
-          if (client.url.includes('lagerapp_alpha') && 'focus' in client) {
+          if (client.url.includes('lagerbestellung-19970.web.app') && 'focus' in client) {
             return client.focus().then(() => client.navigate(url));
           }
         }

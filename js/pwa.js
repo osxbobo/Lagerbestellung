@@ -8,8 +8,8 @@ const PWA = {
     if (!('serviceWorker' in navigator)) return;
 
     try {
-      const reg = await navigator.serviceWorker.register('/lagerapp_alpha/sw.js', {
-        scope: '/lagerapp_alpha/'
+      const reg = await navigator.serviceWorker.register('/sw.js', {
+        scope: '/'
       });
 
       console.log('✅ Service Worker registriert');
@@ -97,11 +97,11 @@ const PWA = {
     if (kritisch.length > 0) {
       const namen = kritisch.slice(0,3).map(x => `${x.name} (${x.days <= 0 ? 'ABGELAUFEN' : x.days + ' Tage'})`).join(', ');
       await PWA.notify(`🔴 ${kritisch.length} Artikel kritisch!`, namen,
-        '/lagerapp_alpha/pages/portal.html', true);
+        '/pages/portal.html', true);
     } else if (bald.length > 0) {
       const namen = bald.slice(0,3).map(x => `${x.name} (${x.days} Tage)`).join(', ');
       await PWA.notify(`🟡 ${bald.length} Artikel laufen bald ab`, namen,
-        '/lagerapp_alpha/pages/portal.html');
+        '/pages/portal.html');
     }
   },
 
@@ -113,7 +113,7 @@ const PWA = {
       anzahl > 0
         ? `${mitarbeiter} hat ${anzahl} Artikel zum Bestellen gemeldet`
         : `${mitarbeiter} – alles in Ordnung ✅`,
-      '/lagerapp_alpha/pages/portal.html',
+      '/pages/portal.html',
     );
   },
 
