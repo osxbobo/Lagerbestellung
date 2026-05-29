@@ -14,9 +14,9 @@ const auth = getAuth(app);
 
 // ── Theme ──
 initTheme();
-// Sync icon for .s-theme button (theme.js uses #theme-toggle, this page uses .s-theme)
+// Sync icon for theme button
 (function syncThemeIcon() {
-  const btn = document.querySelector('.s-theme');
+  const btn = document.getElementById('theme-btn');
   if (!btn) return;
   const t = document.documentElement.getAttribute('data-theme') || 'dark';
   btn.textContent = t === 'dark' ? '☀️' : '🌙';
@@ -28,11 +28,11 @@ function esc(s) {
 }
 
 // ── Nav event listeners ──
-document.querySelector('.s-back').addEventListener('click', () => history.back());
-document.querySelector('.s-theme').addEventListener('click', () => {
+document.querySelector('.m-back')?.addEventListener('click', () => history.back());
+document.getElementById('theme-btn')?.addEventListener('click', () => {
   toggleTheme();
   const t = document.documentElement.getAttribute('data-theme') || 'dark';
-  document.querySelector('.s-theme').textContent = t === 'dark' ? '☀️' : '🌙';
+  document.getElementById('theme-btn').textContent = t === 'dark' ? '☀️' : '🌙';
 });
 
 // ── State ──

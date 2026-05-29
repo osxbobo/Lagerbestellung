@@ -29,7 +29,7 @@ function esc(s) {
 }
 
 // ── Nav event listeners ──
-document.querySelector('.vm-nav-back').addEventListener('click', () => history.back());
+document.querySelector('.m-back').addEventListener('click', () => history.back());
 document.getElementById('theme-btn').addEventListener('click', () => {
   toggleTheme();
   const t = document.documentElement.getAttribute('data-theme') || 'dark';
