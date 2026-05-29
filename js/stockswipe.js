@@ -16,6 +16,7 @@ import {
 /* ── Theme ──────────────────────────────────── */
 initTheme();
 document.getElementById('theme-btn')?.addEventListener('click', toggleTheme);
+document.querySelector('.m-back')?.addEventListener('click', () => { window.location.href = './mitarbeiter.html'; });
 
 /* ── Firebase ───────────────────────────────── */
 let db;
