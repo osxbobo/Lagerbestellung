@@ -15,7 +15,7 @@ import {
 
 /* ── Theme ──────────────────────────────────── */
 initTheme();
-document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
+document.getElementById('theme-btn')?.addEventListener('click', toggleTheme);
 
 /* ── Firebase ───────────────────────────────── */
 let db;
