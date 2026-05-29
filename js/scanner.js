@@ -57,7 +57,8 @@ onAuthStateChanged(auth, async user => {
   const name = user?.displayName || user?.email
     || sessionStorage.getItem('lager-pin-name') || localStorage.getItem('lager-pin-name')
     || localStorage.getItem('lager-saved-name') || '';
-  document.getElementById('nav-user').textContent = name;
+  const navUser = document.getElementById('nav-user');
+  if (navUser) navUser.textContent = name;
   await load();
   if (localStorage.getItem('camera-auto-start') === '1') startCam();
 });

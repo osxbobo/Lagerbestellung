@@ -89,7 +89,8 @@ function authGet(key) { return sessionStorage.getItem(key) || localStorage.getIt
     document.getElementById('screen-pin').classList.add('hidden');
     userName   = name;
     employeeId = empId || btoa(unescape(encodeURIComponent(name))).replace(/[^a-zA-Z0-9]/g, '').substring(0, 20);
-    document.getElementById('nav-user').textContent = userName;
+    const navUserEl = document.getElementById('nav-user');
+    if (navUserEl) navUserEl.textContent = userName;
     const _auth = getAuth(app);
     const authReady = (async () => {
       const _u = await new Promise(resolve => {

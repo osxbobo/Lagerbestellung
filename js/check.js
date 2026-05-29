@@ -115,7 +115,8 @@ function authGet(key) { return sessionStorage.getItem(key) || localStorage.getIt
     || btoa(unescape(encodeURIComponent(name))).replace(/[^a-zA-Z0-9]/g, '').substring(0, 20)
     || name.replace(/\s+/g, '_');
 
-  document.getElementById('nav-user').textContent = name;
+  const navUser = document.getElementById('nav-user');
+  if (navUser) navUser.textContent = name;
 
   const authReady = (async () => {
     const _authUser = await new Promise(resolve => {
