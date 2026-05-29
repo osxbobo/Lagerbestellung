@@ -11,258 +11,28 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Admin – LAGER//APP</title>
   <link rel="stylesheet" href="../css/main.css">
-  <style>
-    * { box-sizing: border-box; }
-    body { font-family: var(--font-ui); background: var(--bg); color: var(--ink); }
-    .admin-page { min-height: 100dvh; display: flex; flex-direction: column; }
-
-    /* ── NAV ── */
-    .a-nav {
-      position: sticky; top: 0; z-index: 200;
-      display: flex; align-items: center; gap: 10px;
-      padding: env(safe-area-inset-top, 0px) 16px 0;
-      background: var(--glass-bg-strong);
-      backdrop-filter: blur(24px) saturate(180%);
-      -webkit-backdrop-filter: blur(24px) saturate(180%);
-      border-bottom: 1px solid var(--hairline);
-      height: calc(52px + env(safe-area-inset-top, 0px));
-    }
-    .a-wordmark { font-family: var(--font-mono); font-weight: 600; font-size: 0.9rem; color: var(--brand); letter-spacing: -0.01em; }
-    .a-wordmark .slash { color: var(--ink-3); }
-    .a-nav-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
-    .a-nav-user  { font-size: 0.72rem; color: var(--ink-3); font-family: var(--font-mono); }
-    .a-badge {
-      display: none; padding: 3px 8px; border-radius: var(--r-pill);
-      background: var(--crit); color: #fff;
-      font-size: 0.6rem; font-weight: 700; font-family: var(--font-mono);
-      letter-spacing: 0.06em;
-    }
-    @media (min-width: 640px) { .a-badge { display: inline-flex; } }
-    .a-btn {
-      height: 32px; padding: 0 12px; border-radius: 8px;
-      border: 1px solid var(--hairline-2); background: var(--surface-2);
-      color: var(--ink-2); font-family: var(--font-ui); font-size: 0.78rem; font-weight: 500;
-      cursor: pointer; transition: border-color 0.15s, color 0.15s; text-decoration: none;
-      display: inline-flex; align-items: center;
-    }
-    .a-btn:hover { border-color: var(--brand); color: var(--brand); }
-    .a-btn.logout:hover { border-color: var(--crit); color: var(--crit); }
-    .a-theme {
-      width: 32px; height: 32px; border-radius: 8px;
-      border: 1px solid var(--hairline-2); background: var(--surface-2);
-      cursor: pointer; font-size: 0.9rem; display: flex; align-items: center; justify-content: center;
-    }
-    .a-menu-btn {
-      display: none; width: 34px; height: 34px; border-radius: 8px;
-      border: 1px solid var(--hairline-2); background: var(--surface-2);
-      color: var(--ink-2); cursor: pointer; font-size: 1rem;
-      align-items: center; justify-content: center; flex-shrink: 0;
-    }
-    @media (max-width: 768px) { .a-menu-btn { display: flex; } }
-    @media (max-width: 768px) { .a-lager-link { display: none; } }
-    @media (max-width: 768px) { .a-ma-link { display: none; } }
-
-    /* ── LAYOUT ── */
-    .admin-layout { display: flex; flex: 1; }
-
-    /* ── SIDEBAR ── */
-    .admin-sidebar {
-      width: 232px; flex-shrink: 0;
-      background: var(--surface-2);
-      border-right: 0.5px solid var(--hairline);
-      display: flex; flex-direction: column;
-      position: sticky; top: 52px;
-      height: calc(100dvh - 52px);
-      overflow-y: auto;
-    }
-    .sidebar-workspace {
-      display: flex; align-items: center; gap: 8px;
-      padding: 14px 12px 8px;
-    }
-    .sidebar-ws-icon {
-      width: 22px; height: 22px; border-radius: 6px;
-      background: var(--crit); color: #fff;
-      display: flex; align-items: center; justify-content: center;
-      font-family: var(--font-mono); font-size: 11px; font-weight: 700;
-      flex-shrink: 0;
-    }
-    .sidebar-ws-name { font-size: 12px; font-weight: 600; color: var(--ink); }
-    .sidebar-ws-sub  { font-size: 10px; color: var(--ink-3); font-family: var(--font-mono); }
-
-    .sidebar-nav { padding: 4px 8px; display: flex; flex-direction: column; flex: 1; }
-
-    .sidebar-item {
-      display: flex; align-items: center; gap: 9px;
-      height: 30px; padding: 0 8px;
-      border-radius: 6px; border: 1px solid transparent;
-      font-size: 13px; font-weight: 500; color: var(--ink-2);
-      cursor: pointer; text-decoration: none;
-      transition: background 0.12s, color 0.12s;
-    }
-    .sidebar-item:hover  { background: var(--surface-3); color: var(--ink); }
-    .sidebar-item.active { background: var(--surface-3); color: var(--ink); }
-    .sidebar-item.active .s-ico { color: var(--brand); }
-    .sidebar-item .s-ico { width: 14px; height: 14px; flex-shrink: 0; color: var(--ink-3); }
-
-    .sidebar-section-label {
-      font-size: 11px; font-weight: 500; color: var(--ink-3);
-      text-transform: uppercase; letter-spacing: 0.06em;
-      padding: 12px 8px 4px;
-    }
-    .sidebar-bottom { padding: 8px; border-top: 0.5px solid var(--hairline); }
-    .sidebar-user-pill {
-      display: flex; align-items: center; gap: 8px;
-      padding: 7px 8px; border-radius: 8px;
-      background: var(--surface-3); border: 1px solid var(--hairline);
-    }
-    .sidebar-user-avatar {
-      width: 22px; height: 22px; border-radius: 50%;
-      background: var(--crit); color: #fff;
-      display: flex; align-items: center; justify-content: center;
-      font-size: 10px; font-weight: 700; flex-shrink: 0;
-    }
-    .sidebar-user-name { font-size: 12px; font-weight: 600; color: var(--ink); flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .sidebar-user-role { font-size: 10px; color: var(--ink-3); font-family: var(--font-mono); }
-    .sidebar-logout-btn {
-      width: 24px; height: 24px; border-radius: 6px; border: 1px solid var(--hairline-2);
-      background: none; color: var(--ink-3); cursor: pointer; font-size: 0.75rem;
-      display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-      transition: border-color 0.15s, color 0.15s;
-    }
-    .sidebar-logout-btn:hover { border-color: var(--crit); color: var(--crit); }
-
-    /* ── CONTENT ── */
-    .admin-content { flex: 1; padding: 24px; overflow-x: hidden; min-width: 0; }
-    .content-section { display: none; }
-    .content-section.active { display: block; }
-
-    /* ── PAGE HEADER ── */
-    .page-header { margin-bottom: 24px; }
-    .page-title { font-size: 1.2rem; font-weight: 700; margin-bottom: 4px; }
-    .page-sub   { font-size: 0.82rem; color: var(--ink-2); }
-
-    /* ── STATS ROW ── */
-    .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 24px; }
-    .stat-card { background: var(--surface); border: 1px solid var(--hairline); border-radius: 10px; padding: 14px; }
-    .stat-num  { font-size: 1.5rem; font-weight: 700; font-family: var(--font-mono); }
-    .stat-lbl  { font-size: 0.62rem; color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.12em; font-family: var(--font-mono); margin-top: 3px; }
-
-    /* ── TABLE ── */
-    .table-wrap { background: var(--surface); border: 1px solid var(--hairline); border-radius: 14px; overflow: hidden; }
-    .table-header { padding: 12px 16px; border-bottom: 1px solid var(--hairline); display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
-    .table-search { flex: 1; min-width: 200px; }
-
-    table { width: 100%; border-collapse: collapse; }
-    th { padding: 10px 14px; text-align: left; font-size: 0.65rem; color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.10em; font-family: var(--font-mono); border-bottom: 1px solid var(--hairline); background: var(--surface-2); }
-    td { padding: 10px 14px; font-size: 0.82rem; border-bottom: 1px solid var(--hairline); vertical-align: middle; color: var(--ink); }
-    tr:last-child td { border-bottom: none; }
-    tr:hover td { background: var(--surface-2); }
-
-    .td-name { font-weight: 600; max-width: 200px; }
-    .td-loc  { font-family: var(--font-mono); font-size: 0.72rem; color: var(--brand); }
-    .td-minmax { font-family: var(--font-mono); font-size: 0.7rem; }
-    .td-actions { display: flex; gap: 6px; }
-
-    .tbl-btn { padding: 4px 10px; border-radius: 6px; border: 1px solid var(--hairline-2); background: var(--surface-2); color: var(--ink-2); font-size: 0.68rem; cursor: pointer; transition: all 0.15s; font-family: var(--font-mono); }
-    .tbl-btn:hover { border-color: var(--brand); color: var(--brand); }
-    .tbl-btn.del:hover { border-color: var(--crit); color: var(--crit); }
-
-    /* ── MODAL ── */
-    .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.72); backdrop-filter: blur(8px); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 20px; }
-    .modal-box { background: var(--surface); border: 1px solid var(--hairline); border-radius: 20px; width: 100%; max-width: 520px; max-height: 90vh; display: flex; flex-direction: column; box-shadow: var(--sh-3); }
-    .modal-head { padding: 16px 20px; border-bottom: 1px solid var(--hairline); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
-    .modal-title { font-size: 0.95rem; font-weight: 700; }
-    .modal-close { background: none; border: none; color: var(--ink-3); font-size: 1.1rem; cursor: pointer; padding: 4px 8px; border-radius: 6px; }
-    .modal-close:hover { color: var(--ink); }
-    .modal-body { padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 14px; }
-    .modal-foot { padding: 14px 20px; border-top: 1px solid var(--hairline); display: flex; gap: 8px; flex-shrink: 0; }
-
-    /* ── FORM ── */
-    .form-group { display: flex; flex-direction: column; gap: 6px; }
-    .form-label { font-size: 0.72rem; font-weight: 600; color: var(--ink-2); }
-    .form-input { background: var(--surface-2); border: 1.5px solid var(--hairline-2); border-radius: 9px; padding: 9px 12px; font-family: var(--font-ui); font-size: 0.88rem; color: var(--ink); outline: none; transition: border-color 0.15s; width: 100%; }
-    .form-input:focus { border-color: var(--brand); }
-    .form-input::placeholder { color: var(--ink-4); }
-    .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    .form-hint { font-size: 0.65rem; color: var(--ink-3); font-family: var(--font-mono); }
-
-    /* ── BEREICHE ── */
-    .bereich-list { display: flex; flex-direction: column; gap: 8px; }
-    .bereich-item { background: var(--surface); border: 1px solid var(--hairline); border-radius: 12px; padding: 12px 16px; display: flex; align-items: center; gap: 12px; }
-    .bereich-icon { font-size: 1.2rem; }
-    .bereich-name { flex: 1; font-size: 0.85rem; font-weight: 600; }
-    .bereich-count { font-size: 0.68rem; color: var(--ink-3); font-family: var(--font-mono); }
-
-    /* ── PIN ── */
-    .pin-section { background: var(--surface); border: 1px solid var(--hairline); border-radius: 16px; padding: 24px; max-width: 400px; display: flex; flex-direction: column; gap: 16px; }
-    .pin-dots-row { display: flex; gap: 12px; justify-content: center; padding: 8px 0; }
-    .pin-dot { width: 13px; height: 13px; border-radius: 50%; border: 2px solid var(--hairline-2); transition: all 0.15s; }
-    .pin-dot.filled { background: var(--brand); border-color: var(--brand); }
-    .pin-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-    .pin-key { aspect-ratio: 1; border-radius: 10px; border: 1px solid var(--hairline-2); background: var(--surface-2); color: var(--ink); font-family: var(--font-mono); font-size: 1.1rem; font-weight: 600; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; justify-content: center; touch-action: manipulation; }
-    .pin-key:hover { border-color: var(--brand); color: var(--brand); }
-    .pin-key:active { transform: scale(0.94); }
-    .pin-key.confirm { background: var(--brand); border-color: var(--brand); color: #fff; }
-    .pin-key.del { color: var(--ink-3); }
-
-    /* ── USERS ── */
-    .user-list { display: flex; flex-direction: column; gap: 8px; }
-    .user-item { background: var(--surface); border: 1px solid var(--hairline); border-radius: 12px; padding: 14px 16px; display: flex; align-items: center; gap: 12px; }
-    .user-avatar { width: 36px; height: 36px; border-radius: 50%; background: var(--surface-2); border: 1px solid var(--hairline); display: flex; align-items: center; justify-content: center; font-size: 0.9rem; font-weight: 600; flex-shrink: 0; font-family: var(--font-mono); color: var(--brand); }
-    .user-info { flex: 1; min-width: 0; }
-    .user-email { font-size: 0.82rem; font-weight: 600; }
-    .user-name  { font-size: 0.7rem; color: var(--ink-3); margin-top: 1px; }
-
-    /* ── FOTO UPLOAD ── */
-    .foto-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; }
-    .foto-card { background: var(--surface); border: 1px solid var(--hairline); border-radius: 12px; overflow: hidden; position: relative; }
-    .foto-card img { width: 100%; height: 120px; object-fit: cover; }
-    .foto-placeholder { width: 100%; height: 120px; background: var(--surface-2); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; }
-    .foto-name { padding: 8px 10px; font-size: 0.72rem; font-weight: 600; }
-    .foto-upload-btn { width: 100%; padding: 6px; background: var(--surface-2); border: none; border-top: 1px solid var(--hairline); color: var(--brand); font-size: 0.68rem; cursor: pointer; font-family: var(--font-mono); }
-    .foto-upload-btn:hover { background: var(--surface-3); }
-
-    /* ── TOAST ── */
-    .toast { position: fixed; bottom: 24px; right: 24px; background: var(--surface); border: 1px solid var(--hairline); border-radius: 12px; padding: 12px 16px; font-size: 0.82rem; box-shadow: var(--sh-3); z-index: 2000; display: flex; align-items: center; gap: 8px; animation: slideUp 0.3s ease; }
-    .toast.success { border-color: var(--ok); color: var(--ok); }
-    .toast.error   { border-color: var(--crit); color: var(--crit); }
-    @media (max-width: 768px) { .toast { bottom: 76px; } }
-
-    @keyframes slideUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
-    @keyframes fadeIn  { from { opacity: 0; transform: translateY(4px); } }
-
-    /* ── LOADING ── */
-    .loading-state { display: flex; align-items: center; justify-content: center; gap: 12px; padding: 40px; color: var(--ink-3); }
-    .empty-state   { text-align: center; padding: 40px; color: var(--ink-3); font-size: 0.85rem; }
-
-    .hidden { display: none !important; }
-
-    @media (max-width: 768px) {
-      .admin-sidebar { display: none; }
-      .admin-content { padding: 16px; padding-bottom: 76px; }
-    }
-  </style>
+  <link rel="stylesheet" href="../css/admin.css">
 </head>
 <body class="admin-page">
 
   <!-- NAVBAR -->
   <nav class="a-nav">
-    <button class="a-menu-btn" onclick="openBottomSheet()" aria-label="Menü">☰</button>
+    <button class="a-menu-btn" data-action="open-bottom-sheet" aria-label="Menü">☰</button>
     <div class="a-wordmark">LAGER<span class="slash">//</span>APP</div>
     <div class="a-nav-right">
       <span id="nav-user" class="a-nav-user"></span>
       <span class="a-badge">ADMIN</span>
-      <button class="a-btn a-ma-link" onclick="goToMitarbeiter()">
+      <button class="a-btn a-ma-link" data-action="go-to-mitarbeiter">
         <svg viewBox="0 0 20 20" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="7" r="3"/><path d="M4 17c0-3.3 2.7-6 6-6s6 2.7 6 6"/></svg>
         Mitarbeiter
       </button>
-      <a href="../index.html" class="a-btn a-lager-link" style="text-decoration:none;">
+      <a href="../index.html" class="a-btn a-lager-link">
         <svg viewBox="0 0 20 20" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5l-5 5 5 5"/></svg>
         Lagersuche
       </a>
-      <a href="portal.html" class="a-btn" style="text-decoration:none;">Portal</a>
-      <button class="a-btn logout" onclick="doLogout()">Abmelden</button>
-      <button class="a-theme" id="theme-toggle" onclick="toggleTheme()">☀️</button>
+      <a href="portal.html" class="a-btn">Portal</a>
+      <button class="a-btn logout" data-action="logout">Abmelden</button>
+      <button class="a-theme" id="theme-toggle">☀️</button>
     </div>
   </nav>
 
@@ -271,57 +41,57 @@
 
   <!-- BOTTOM NAV (Mobile) -->
   <nav class="bottom-nav hidden" id="bottom-nav">
-    <button class="bottom-tab active" data-section="dashboard" onclick="showSection('dashboard')">
+    <button class="bottom-tab active" data-section="dashboard" data-action="show-section">
       <span class="bottom-tab-icon">📊</span>
       <span class="bottom-tab-label">Dashboard</span>
     </button>
-    <button class="bottom-tab" data-section="artikel" onclick="showSection('artikel')">
+    <button class="bottom-tab" data-section="artikel" data-action="show-section">
       <span class="bottom-tab-icon">📦</span>
       <span class="bottom-tab-label">Artikel</span>
     </button>
-    <button class="bottom-tab" data-section="users" onclick="showSection('users')">
+    <button class="bottom-tab" data-section="users" data-action="show-section">
       <span class="bottom-tab-icon">👥</span>
       <span class="bottom-tab-label">Accounts</span>
     </button>
-    <button class="bottom-tab" id="bottom-more-tab" onclick="openBottomSheet()">
+    <button class="bottom-tab" id="bottom-more-tab" data-action="open-bottom-sheet">
       <span class="bottom-tab-icon">⋯</span>
       <span class="bottom-tab-label">Mehr</span>
     </button>
   </nav>
 
   <!-- BOTTOM SHEET -->
-  <div class="bottom-sheet-backdrop hidden" id="bottom-sheet-backdrop" onclick="closeBottomSheet()"></div>
+  <div class="bottom-sheet-backdrop hidden" id="bottom-sheet-backdrop" data-action="close-bottom-sheet"></div>
   <div class="bottom-sheet" id="bottom-sheet">
     <div class="bottom-sheet-handle"></div>
     <div class="bottom-sheet-title">Navigation</div>
-    <button class="bottom-sheet-item" onclick="goToMitarbeiter()">
+    <button class="bottom-sheet-item" data-action="go-to-mitarbeiter">
       <span class="bottom-sheet-item-icon">👤</span> Zum Mitarbeiterbereich
     </button>
-    <button class="bottom-sheet-item" onclick="window.location.href='../index.html'">
+    <button class="bottom-sheet-item" data-action="goto-lager">
       <span class="bottom-sheet-item-icon">🔍</span> Zur Lagersuche
     </button>
-    <button class="bottom-sheet-item" data-section="lieferanten" onclick="showSection('lieferanten');closeBottomSheet()">
+    <button class="bottom-sheet-item" data-section="lieferanten" data-action="show-section">
       <span>🚚</span> Lieferanten-Zuweisung
     </button>
-    <button class="bottom-sheet-item" data-section="bereiche" onclick="showSection('bereiche');closeBottomSheet()">
+    <button class="bottom-sheet-item" data-section="bereiche" data-action="show-section">
       <span class="bottom-sheet-item-icon">🏠</span> Bereiche
     </button>
-    <button class="bottom-sheet-item" data-section="fotos" onclick="showSection('fotos');closeBottomSheet()">
+    <button class="bottom-sheet-item" data-section="fotos" data-action="show-section">
       <span class="bottom-sheet-item-icon">📸</span> Fotos & Bilder
     </button>
-    <button class="bottom-sheet-item" data-section="ss-fotos" onclick="showSection('ss-fotos');closeBottomSheet()">
+    <button class="bottom-sheet-item" data-section="ss-fotos" data-action="show-section">
       <span class="bottom-sheet-item-icon">🃏</span> StockSwipe Fotos
     </button>
-    <button class="bottom-sheet-item" data-section="pin" onclick="showSection('pin');closeBottomSheet()">
+    <button class="bottom-sheet-item" data-section="pin" data-action="show-section">
       <span class="bottom-sheet-item-icon">🔑</span> PIN ändern
     </button>
-    <button class="bottom-sheet-item" data-section="laufband" onclick="showSection('laufband');closeBottomSheet()">
+    <button class="bottom-sheet-item" data-section="laufband" data-action="show-section">
       <span class="bottom-sheet-item-icon">📢</span> Laufband
     </button>
-    <button class="bottom-sheet-item" data-section="backup" onclick="showSection('backup');closeBottomSheet()">
+    <button class="bottom-sheet-item" data-section="backup" data-action="show-section">
       <span class="bottom-sheet-item-icon">💾</span> Backup & Import
     </button>
-    <button class="bottom-sheet-item" onclick="window.location.href='scanner.html'">
+    <button class="bottom-sheet-item" data-action="goto-scanner">
       <span class="bottom-sheet-item-icon">📷</span> Charge-Scanner
     </button>
   </div>
@@ -342,55 +112,55 @@
 
       <nav class="sidebar-nav">
         <div class="sidebar-section-label">Übersicht</div>
-        <div class="sidebar-item active" id="nav-dashboard" onclick="showSection('dashboard')">
+        <div class="sidebar-item active" id="nav-dashboard" data-action="show-section" data-section="dashboard">
           <svg class="s-ico" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="1" width="5" height="5" rx="1"/><rect x="8" y="1" width="5" height="5" rx="1"/><rect x="1" y="8" width="5" height="5" rx="1"/><rect x="8" y="8" width="5" height="5" rx="1"/></svg>
           Dashboard
         </div>
 
         <div class="sidebar-section-label">Lager</div>
-        <div class="sidebar-item" id="nav-artikel" onclick="showSection('artikel')">
+        <div class="sidebar-item" id="nav-artikel" data-action="show-section" data-section="artikel">
           <svg class="s-ico" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M7 1.5l5 3v5l-5 3-5-3v-5l5-3z"/><path d="M2 4.5l5 3 5-3M7 7.5V13"/></svg>
           Artikelverwaltung
         </div>
-        <div class="sidebar-item" id="nav-bereiche" onclick="showSection('bereiche')">
+        <div class="sidebar-item" id="nav-bereiche" data-action="show-section" data-section="bereiche">
           <svg class="s-ico" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 6.5 7 2.5l5 4V12a1 1 0 0 1-1 1H8.5v-3h-3v3H3a1 1 0 0 1-1-1V6.5z"/></svg>
           Bereiche
         </div>
-        <div class="sidebar-item" id="nav-fotos" onclick="showSection('fotos')">
+        <div class="sidebar-item" id="nav-fotos" data-action="show-section" data-section="fotos">
           <svg class="s-ico" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V4z"/><circle cx="7" cy="7" r="2"/><path d="M10 4h.01"/></svg>
           Fotos &amp; Bilder
         </div>
-        <div class="sidebar-item" id="nav-lieferanten" onclick="showSection('lieferanten')">
+        <div class="sidebar-item" id="nav-lieferanten" data-action="show-section" data-section="lieferanten">
           <svg class="s-ico" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 11V5l6-3 6 3v6"/><path d="M7 2v9M4 7h6"/><rect x="4.5" y="8" width="5" height="3" rx="0.5"/></svg>
           Lieferanten
         </div>
-        <div class="sidebar-item" id="nav-ss-fotos" onclick="showSection('ss-fotos')">
+        <div class="sidebar-item" id="nav-ss-fotos" data-action="show-section" data-section="ss-fotos">
           <svg class="s-ico" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1.5" y="2.5" width="8" height="11" rx="1"/><rect x="4.5" y="0.5" width="8" height="11" rx="1"/></svg>
           StockSwipe Fotos
         </div>
 
         <div class="sidebar-section-label">System</div>
-        <div class="sidebar-item" id="nav-users" onclick="showSection('users')">
+        <div class="sidebar-item" id="nav-users" data-action="show-section" data-section="users">
           <svg class="s-ico" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="5.5" cy="4.5" r="2.5"/><path d="M1 12c.5-2.5 2-3.5 4.5-3.5s4 1 4.5 3.5"/><path d="M10 2a2.5 2.5 0 0 1 0 5M12.5 12c-.3-2-1.5-3-2.5-3.5"/></svg>
           Accounts
         </div>
-        <div class="sidebar-item" id="nav-backup" onclick="showSection('backup')">
+        <div class="sidebar-item" id="nav-backup" data-action="show-section" data-section="backup">
           <svg class="s-ico" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 10v1.5a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V10"/><path d="M7 2v8M5 8l2 2 2-2"/></svg>
           Backup &amp; Import
         </div>
-        <div class="sidebar-item" id="nav-pin" onclick="showSection('pin')">
+        <div class="sidebar-item" id="nav-pin" data-action="show-section" data-section="pin">
           <svg class="s-ico" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="6.5" width="7" height="5.5" rx="1"/><path d="M5 6.5V5a2 2 0 0 1 4 0v1.5"/></svg>
           PIN ändern
         </div>
-        <div class="sidebar-item" id="nav-laufband" onclick="showSection('laufband')">
+        <div class="sidebar-item" id="nav-laufband" data-action="show-section" data-section="laufband">
           <svg class="s-ico" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 7h12M1 4h8M1 10h6"/></svg>
           Laufband
         </div>
-        <div class="sidebar-item" onclick="window.location.href='scanner.html'">
+        <div class="sidebar-item" data-action="goto-scanner">
           <svg class="s-ico" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4.5V3a1 1 0 0 1 1-1h1.5M8.5 2H11a1 1 0 0 1 1 1v1.5M12 9.5V11a1 1 0 0 1-1 1H9.5M5.5 12H4a1 1 0 0 1-1-1V9.5M4 7h6"/></svg>
           Charge-Scanner
         </div>
-        <div class="sidebar-item" onclick="window.location.href='portal.html'">
+        <div class="sidebar-item" data-action="goto-portal">
           <svg class="s-ico" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="12" height="9" rx="1.5"/><path d="M1 6h12M5 6v6"/></svg>
           Wachenleiter-Portal
         </div>
@@ -399,11 +169,11 @@
       <div class="sidebar-bottom">
         <div class="sidebar-user-pill">
           <div class="sidebar-user-avatar" id="sidebar-user-avatar">A</div>
-          <div style="flex:1;min-width:0;">
+          <div class="sidebar-user-info">
             <div class="sidebar-user-name" id="sidebar-user-name">Admin</div>
             <div class="sidebar-user-role">Administrator</div>
           </div>
-          <button class="sidebar-logout-btn" onclick="doLogout()" title="Abmelden">↪</button>
+          <button class="sidebar-logout-btn" data-action="logout" title="Abmelden">↪</button>
         </div>
       </div>
     </aside>
@@ -417,7 +187,7 @@
           <div class="page-title">Dashboard</div>
           <div class="page-sub">Übersicht aller wichtigen Kennzahlen</div>
         </div>
-        <div class="kpi-grid" style="margin-bottom:24px;">
+        <div class="kpi-grid dashboard-kpi-row">
           <div class="kpi-card kpi-orange">
             <div class="kpi-body">
               <div class="kpi-value" id="stat-artikel">–</div>
@@ -448,7 +218,7 @@
           </div>
         </div>
         <div class="table-wrap">
-          <div style="padding:14px 16px;border-bottom:1px solid var(--border);font-size:0.8rem;font-weight:600;">Letzte Lagerchecks</div>
+          <div class="dashboard-last-checks-header">Letzte Lagerchecks</div>
           <div id="dashboard-bestellungen"><div class="loading-state"><div class="spinner"></div></div></div>
         </div>
       </section>
@@ -456,18 +226,20 @@
       <!-- ── ARTIKEL ── -->
       <section class="content-section" id="section-artikel">
         <div class="page-header">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;">
-            <div>
+          <div class="artikel-header-row">
+            <div class="artikel-header-inner">
               <div class="page-title">Artikelverwaltung</div>
               <div class="page-sub">Artikel hinzufügen, bearbeiten und löschen</div>
             </div>
-            <button class="btn btn-primary" onclick="openArtikelModal(null)" style="flex-shrink:0;">+ Neuer Artikel</button>
+            <div class="artikel-new-btn-wrap">
+              <button class="btn btn-primary" data-action="open-artikel-modal">+ Neuer Artikel</button>
+            </div>
           </div>
         </div>
         <div class="table-wrap">
           <div class="table-header">
-            <input type="text" class="form-input table-search" id="artikel-search" placeholder="🔍 Artikel suchen..." oninput="filterArtikel(this.value)">
-            <select class="form-input" id="bereich-filter" onchange="filterArtikel()" style="max-width:200px;">
+            <input type="text" class="form-input table-search" id="artikel-search" placeholder="🔍 Artikel suchen..." data-action="filter-artikel-search">
+            <select class="form-input" id="bereich-filter" data-action="filter-bereich" style="max-width:200px;">
               <option value="">Alle Bereiche</option>
             </select>
           </div>
@@ -493,12 +265,12 @@
       <!-- ── BEREICHE ── -->
       <section class="content-section" id="section-bereiche">
         <div class="page-header">
-          <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+          <div class="bereiche-header-row">
             <div>
               <div class="page-title">Bereiche verwalten</div>
               <div class="page-sub">Schränke, Regale und Lagerorte</div>
             </div>
-            <button class="btn btn-primary" onclick="openBereichModal(null)" style="flex-shrink:0;">+ Neuer Bereich</button>
+            <button class="btn btn-primary" data-action="open-bereich-modal" style="flex-shrink:0;">+ Neuer Bereich</button>
           </div>
         </div>
         <div class="bereich-list" id="bereich-list">
@@ -512,26 +284,26 @@
           <div class="page-title">Fotos & Referenzbilder</div>
           <div class="page-sub">Produktfotos und Lagerort-Fotos hochladen oder löschen</div>
         </div>
-        <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center;">
-          <input type="text" id="foto-search" class="form-input" placeholder="Name oder LP suchen…" oninput="renderFotoSection()" style="flex:1;min-width:140px;">
-          <select id="foto-filter" class="form-input" onchange="renderFotoSection()" style="width:auto;">
+        <div class="fotos-filter-row">
+          <input type="text" id="foto-search" class="form-input filter-text" placeholder="Name oder LP suchen…" data-action="filter-foto">
+          <select id="foto-filter" class="form-input filter-select" data-action="filter-foto">
             <option value="alle">Alle Artikel</option>
             <option value="ohne-produkt">Ohne Produktfoto</option>
             <option value="ohne-lager">Ohne Lagerortfoto</option>
             <option value="ohne-beide">Ohne beide Fotos</option>
             <option value="vollstaendig">Vollständig</option>
           </select>
-          <select id="foto-bereich" class="form-input" onchange="renderFotoSection()" style="width:auto;">
+          <select id="foto-bereich" class="form-input filter-select" data-action="filter-foto">
             <option value="">Alle Bereiche</option>
           </select>
-          <select id="foto-sort" class="form-input" onchange="renderFotoSection()" style="width:auto;">
+          <select id="foto-sort" class="form-input filter-select" data-action="filter-foto">
             <option value="name">Name</option>
             <option value="lp">Lagerort</option>
           </select>
         </div>
         <div class="section-label mb-12" id="foto-grid-label">Artikel</div>
         <div class="foto-grid" id="foto-grid"></div>
-        <input type="file" id="foto-file-input" accept="image/*" style="display:none" onchange="uploadFotoFromGrid()">
+        <input type="file" id="foto-file-input" accept="image/*" class="hidden">
       </section>
 
       <!-- ── STOCKSWIPE FOTOS ── -->
@@ -540,20 +312,20 @@
           <div class="page-title">StockSwipe Fotos</div>
           <div class="page-sub">Karten-Fotos für StockSwipe separat verwalten (überschreibt nicht das allgemeine Produktfoto)</div>
         </div>
-        <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center;">
-          <input type="text" id="ss-foto-search" class="form-input" placeholder="Artikel suchen…" oninput="renderSsFotos()" style="flex:1;min-width:160px;">
-          <select id="ss-foto-filter" class="form-input" onchange="renderSsFotos()" style="width:auto;">
+        <div class="ss-fotos-filter-row">
+          <input type="text" id="ss-foto-search" class="form-input filter-text" placeholder="Artikel suchen…" data-action="filter-ss-foto">
+          <select id="ss-foto-filter" class="form-input filter-select" data-action="filter-ss-foto">
             <option value="alle">Alle Artikel</option>
             <option value="ohne-ss">Ohne StockSwipe-Foto</option>
             <option value="mit-ss">Mit StockSwipe-Foto</option>
           </select>
-          <select id="ss-foto-bereich" class="form-input" onchange="renderSsFotos()" style="width:auto;">
+          <select id="ss-foto-bereich" class="form-input filter-select" data-action="filter-ss-foto">
             <option value="">Alle Bereiche</option>
           </select>
         </div>
         <div class="section-label mb-12" id="ss-foto-grid-label">Artikel</div>
         <div class="foto-grid" id="ss-foto-grid"></div>
-        <input type="file" id="ss-foto-file-input" accept="image/*" style="display:none" onchange="uploadSsFoto()">
+        <input type="file" id="ss-foto-file-input" accept="image/*" class="hidden">
       </section>
 
       <!-- ── PIN ── -->
@@ -565,7 +337,7 @@
         <div class="pin-section">
           <div class="alert alert-info" style="font-size:0.78rem;">
             Aktueller PIN: <strong id="current-pin-display" class="mono">****</strong>
-            <button onclick="togglePinVisibility()" style="background:none;border:none;color:var(--accent2);cursor:pointer;font-size:0.72rem;margin-left:8px;">Anzeigen</button>
+            <button data-action="toggle-pin-visibility" class="pin-visibility-btn">Anzeigen</button>
           </div>
           <div class="section-label">Neuen PIN eingeben</div>
           <div class="pin-dots-row">
@@ -575,18 +347,18 @@
             <div class="pin-dot" id="pdot-3"></div>
           </div>
           <div class="pin-grid">
-            <div class="pin-key" onclick="adminPinKey('1')">1</div>
-            <div class="pin-key" onclick="adminPinKey('2')">2</div>
-            <div class="pin-key" onclick="adminPinKey('3')">3</div>
-            <div class="pin-key" onclick="adminPinKey('4')">4</div>
-            <div class="pin-key" onclick="adminPinKey('5')">5</div>
-            <div class="pin-key" onclick="adminPinKey('6')">6</div>
-            <div class="pin-key" onclick="adminPinKey('7')">7</div>
-            <div class="pin-key" onclick="adminPinKey('8')">8</div>
-            <div class="pin-key" onclick="adminPinKey('9')">9</div>
-            <div class="pin-key del" onclick="adminPinDel()">⌫</div>
-            <div class="pin-key" onclick="adminPinKey('0')">0</div>
-            <div class="pin-key confirm" onclick="savePIN()">✓</div>
+            <div class="pin-key" data-action="pin-key" data-digit="1">1</div>
+            <div class="pin-key" data-action="pin-key" data-digit="2">2</div>
+            <div class="pin-key" data-action="pin-key" data-digit="3">3</div>
+            <div class="pin-key" data-action="pin-key" data-digit="4">4</div>
+            <div class="pin-key" data-action="pin-key" data-digit="5">5</div>
+            <div class="pin-key" data-action="pin-key" data-digit="6">6</div>
+            <div class="pin-key" data-action="pin-key" data-digit="7">7</div>
+            <div class="pin-key" data-action="pin-key" data-digit="8">8</div>
+            <div class="pin-key" data-action="pin-key" data-digit="9">9</div>
+            <div class="pin-key del" data-action="pin-del">⌫</div>
+            <div class="pin-key" data-action="pin-key" data-digit="0">0</div>
+            <div class="pin-key confirm" data-action="save-pin">✓</div>
           </div>
           <div id="pin-msg" style="font-size:0.78rem;text-align:center;min-height:20px;"></div>
         </div>
@@ -598,8 +370,8 @@
           <div class="page-title">Laufband</div>
           <div class="page-sub">Info-Text der als Ticker oben angezeigt wird (nur für eingeloggte Mitarbeiter)</div>
         </div>
-        <div style="max-width:560px;display:flex;flex-direction:column;gap:16px;">
-          <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:14px;">
+        <div class="laufband-section-wrap">
+          <div class="laufband-card">
             <div class="form-group">
               <label class="form-label">Nachricht / Info-Text</label>
               <textarea id="laufband-input" class="form-input" rows="3"
@@ -610,18 +382,18 @@
             <!-- Vorschau -->
             <div id="laufband-preview-wrap" style="display:none;">
               <div class="form-label" style="margin-bottom:6px;">Vorschau</div>
-              <div style="border-radius:8px;overflow:hidden;">
-                <div style="display:flex;align-items:center;height:32px;background:var(--brand);color:#fff;overflow:hidden;">
-                  <div style="font-family:var(--font-mono);font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:0 10px;background:rgba(0,0,0,.18);height:100%;display:flex;align-items:center;flex-shrink:0;border-right:1px solid rgba(255,255,255,.2);white-space:nowrap;">Info</div>
-                  <div style="flex:1;overflow:hidden;height:100%;display:flex;align-items:center;padding:0 12px;">
+              <div class="laufband-preview-inner">
+                <div class="laufband-preview-bar">
+                  <div class="laufband-preview-badge">Info</div>
+                  <div class="laufband-preview-text-wrap">
                     <span id="laufband-preview-text" style="font-size:12px;font-weight:600;white-space:nowrap;"></span>
                   </div>
                 </div>
               </div>
             </div>
-            <div style="display:flex;gap:10px;flex-wrap:wrap;">
-              <button class="btn btn-primary" onclick="saveLaufband()" style="height:38px;padding:0 20px;">💾 Speichern</button>
-              <button class="btn btn-ghost" onclick="clearLaufband()" style="height:38px;padding:0 16px;">✕ Laufband leeren</button>
+            <div class="laufband-actions">
+              <button class="btn btn-primary" data-action="save-laufband" style="height:38px;padding:0 20px;">💾 Speichern</button>
+              <button class="btn btn-ghost" data-action="clear-laufband" style="height:38px;padding:0 16px;">✕ Laufband leeren</button>
             </div>
             <div id="laufband-msg" style="font-size:0.78rem;min-height:18px;color:var(--ok);"></div>
           </div>
@@ -636,9 +408,9 @@
         </div>
 
         <!-- Neuen Benutzer anlegen -->
-        <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px;">
-          <div style="font-size:0.85rem;font-weight:700;margin-bottom:14px;">➕ Neuen Benutzer anlegen</div>
-          <div style="display:flex;flex-direction:column;gap:10px;">
+        <div class="users-new-card">
+          <div class="users-new-card-title">➕ Neuen Benutzer anlegen</div>
+          <div class="users-new-form">
             <div class="form-group">
               <label class="form-label">Name</label>
               <input type="text" class="form-input" id="new-user-name" placeholder="Max Mustermann">
@@ -660,14 +432,14 @@
               </select>
             </div>
             <div id="new-user-msg" style="font-size:0.78rem;min-height:20px;"></div>
-            <button class="btn btn-primary" onclick="createNewUser()" style="width:100%;">
+            <button class="btn btn-primary" data-action="create-new-user" style="width:100%;">
               👤 Benutzer anlegen
             </button>
           </div>
         </div>
 
         <!-- Bestehende Benutzer -->
-        <div style="font-size:0.85rem;font-weight:700;margin-bottom:10px;">Bestehende Accounts</div>
+        <div class="users-existing-title">Bestehende Accounts</div>
         <div class="user-list" id="user-list">
           <div class="loading-state"><div class="spinner"></div></div>
         </div>
@@ -681,46 +453,45 @@
         </div>
 
         <!-- EXPORT -->
-        <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px;">
-          <div style="font-size:0.9rem;font-weight:700;margin-bottom:6px;">📤 Datenbank exportieren</div>
-          <div style="font-size:0.8rem;color:var(--text2);margin-bottom:16px;">
+        <div class="backup-card">
+          <div class="backup-card-title">📤 Datenbank exportieren</div>
+          <div class="backup-card-sub">
             Exportiert alle Artikel, Bereiche und Konfiguration als JSON-Datei. Ideal als Backup oder zur Übertragung auf eine andere Wache.
           </div>
-          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:16px;">
-            <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center;">
-              <div style="font-size:1.3rem;font-weight:700;font-family:'IBM Plex Mono',monospace;" id="export-artikel-count">–</div>
-              <div style="font-size:0.62rem;color:var(--muted);font-family:'IBM Plex Mono',monospace;text-transform:uppercase;margin-top:2px;">Artikel</div>
+          <div class="backup-stats-grid">
+            <div class="backup-stat-cell">
+              <div class="backup-stat-num" id="export-artikel-count">–</div>
+              <div class="backup-stat-lbl">Artikel</div>
             </div>
-            <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center;">
-              <div style="font-size:1.3rem;font-weight:700;font-family:'IBM Plex Mono',monospace;" id="export-bereiche-count">–</div>
-              <div style="font-size:0.62rem;color:var(--muted);font-family:'IBM Plex Mono',monospace;text-transform:uppercase;margin-top:2px;">Bereiche</div>
+            <div class="backup-stat-cell">
+              <div class="backup-stat-num" id="export-bereiche-count">–</div>
+              <div class="backup-stat-lbl">Bereiche</div>
             </div>
-            <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center;">
-              <div style="font-size:1.3rem;font-weight:700;font-family:'IBM Plex Mono',monospace;" id="export-bestellungen-count">–</div>
-              <div style="font-size:0.62rem;color:var(--muted);font-family:'IBM Plex Mono',monospace;text-transform:uppercase;margin-top:2px;">Bestellungen</div>
+            <div class="backup-stat-cell">
+              <div class="backup-stat-num" id="export-bestellungen-count">–</div>
+              <div class="backup-stat-lbl">Bestellungen</div>
             </div>
           </div>
-          <div style="display:flex;gap:10px;flex-wrap:wrap;">
-            <button class="btn btn-primary" onclick="exportDB('komplett')">📥 Komplett exportieren</button>
-            <button class="btn btn-ghost" onclick="exportDB('artikel')">📦 Nur Artikel</button>
-            <button class="btn btn-ghost" onclick="exportDB('chargen')">🗄️ Nur Chargen</button>
+          <div class="backup-actions">
+            <button class="btn btn-primary" data-action="export-db" data-typ="komplett">📥 Komplett exportieren</button>
+            <button class="btn btn-ghost" data-action="export-db" data-typ="artikel">📦 Nur Artikel</button>
+            <button class="btn btn-ghost" data-action="export-db" data-typ="chargen">🗄️ Nur Chargen</button>
           </div>
         </div>
 
         <!-- IMPORT -->
-        <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px;">
-          <div style="font-size:0.9rem;font-weight:700;margin-bottom:6px;">📤 Datenbank importieren</div>
-          <div style="font-size:0.8rem;color:var(--text2);margin-bottom:16px;">
+        <div class="backup-card">
+          <div class="backup-card-title">📤 Datenbank importieren</div>
+          <div class="backup-card-sub">
             Importiert eine zuvor exportierte JSON-Datei. Wähle ob bestehende Daten ersetzt oder ergänzt werden sollen.
           </div>
 
           <div style="display:flex;flex-direction:column;gap:12px;">
-            <div style="background:var(--surface2);border:2px dashed var(--border);border-radius:10px;padding:24px;text-align:center;cursor:pointer;" 
-              onclick="document.getElementById('import-file').click()" id="drop-zone">
-              <div style="font-size:2rem;margin-bottom:8px;">📁</div>
-              <div style="font-size:0.85rem;font-weight:600;margin-bottom:4px;">JSON-Datei auswählen</div>
-              <div style="font-size:0.72rem;color:var(--muted);">oder hier reinziehen</div>
-              <input type="file" id="import-file" accept=".json" style="display:none" onchange="loadImportFile(this)">
+            <div class="backup-drop-zone" data-action="open-import-file" id="drop-zone">
+              <div class="backup-drop-zone-icon">📁</div>
+              <div class="backup-drop-zone-title">JSON-Datei auswählen</div>
+              <div class="backup-drop-zone-hint">oder hier reinziehen</div>
+              <input type="file" id="import-file" accept=".json" class="hidden">
             </div>
 
             <div id="import-preview" class="hidden" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px;">
@@ -728,14 +499,14 @@
               <div id="import-preview-content"></div>
             </div>
 
-            <div style="display:flex;flex-direction:column;gap:8px;">
-              <div style="font-size:0.78rem;font-weight:600;">Import-Modus:</div>
-              <label style="display:flex;align-items:center;gap:8px;font-size:0.82rem;cursor:pointer;">
-                <input type="radio" name="import-mode" value="merge" checked> 
+            <div class="backup-import-mode">
+              <div class="backup-import-mode-title">Import-Modus:</div>
+              <label>
+                <input type="radio" name="import-mode" value="merge" data-action="import-mode" checked>
                 <span><strong>Ergänzen</strong> – Neue Artikel hinzufügen, bestehende behalten</span>
               </label>
-              <label style="display:flex;align-items:center;gap:8px;font-size:0.82rem;cursor:pointer;">
-                <input type="radio" name="import-mode" value="replace">
+              <label>
+                <input type="radio" name="import-mode" value="replace" data-action="import-mode">
                 <span><strong>Ersetzen</strong> – Alle bestehenden Daten werden überschrieben</span>
               </label>
             </div>
@@ -746,11 +517,11 @@
 
             <div id="import-progress" class="hidden" style="display:flex;flex-direction:column;gap:8px;">
               <div class="progress-wrap"><div class="progress-fill" id="import-progress-fill" style="width:0%"></div></div>
-              <div style="font-size:0.72rem;color:var(--muted);font-family:'IBM Plex Mono',monospace;text-align:right;" id="import-progress-text">0%</div>
-              <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px;height:120px;overflow-y:auto;font-family:'IBM Plex Mono',monospace;font-size:0.65rem;line-height:1.6;" id="import-log"></div>
+              <div class="backup-progress-text" id="import-progress-text">0%</div>
+              <div class="backup-progress-log" id="import-log"></div>
             </div>
 
-            <button class="btn btn-primary" id="btn-import-start" onclick="startImport()" disabled 
+            <button class="btn btn-primary" id="btn-import-start" data-action="start-import" disabled
               style="opacity:0.4;">
               🚀 Import starten
             </button>
@@ -758,42 +529,41 @@
         </div>
 
         <!-- BILDER EXPORT -->
-        <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px;">
-          <div style="font-size:0.9rem;font-weight:700;margin-bottom:6px;">🖼️ Artikelbilder exportieren</div>
-          <div style="font-size:0.8rem;color:var(--text2);margin-bottom:16px;">
+        <div class="backup-card">
+          <div class="backup-card-title">🖼️ Artikelbilder exportieren</div>
+          <div class="backup-card-sub">
             Lädt alle Produkt- und Lagerfotos als ZIP-Archiv herunter. Die Dateien sind eindeutig nach Lagerplatznummer beschriftet und können wieder importiert werden.
           </div>
-          <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:16px;">
-            <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center;">
-              <div style="font-size:1.3rem;font-weight:700;font-family:'IBM Plex Mono',monospace;" id="bilder-export-produkt-count">–</div>
-              <div style="font-size:0.62rem;color:var(--muted);font-family:'IBM Plex Mono',monospace;text-transform:uppercase;margin-top:2px;">Produktfotos</div>
+          <div class="bilder-stats-grid">
+            <div class="backup-stat-cell">
+              <div class="backup-stat-num" id="bilder-export-produkt-count">–</div>
+              <div class="backup-stat-lbl">Produktfotos</div>
             </div>
-            <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:12px;text-align:center;">
-              <div style="font-size:1.3rem;font-weight:700;font-family:'IBM Plex Mono',monospace;" id="bilder-export-lager-count">–</div>
-              <div style="font-size:0.62rem;color:var(--muted);font-family:'IBM Plex Mono',monospace;text-transform:uppercase;margin-top:2px;">Lagerfotos</div>
+            <div class="backup-stat-cell">
+              <div class="backup-stat-num" id="bilder-export-lager-count">–</div>
+              <div class="backup-stat-lbl">Lagerfotos</div>
             </div>
           </div>
           <div id="bilder-export-progress" class="hidden" style="display:flex;flex-direction:column;gap:8px;margin-bottom:12px;">
             <div class="progress-wrap"><div class="progress-fill" id="bilder-export-progress-fill" style="width:0%"></div></div>
-            <div style="font-size:0.72rem;color:var(--muted);font-family:'IBM Plex Mono',monospace;text-align:right;" id="bilder-export-progress-text">0%</div>
-            <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px;height:100px;overflow-y:auto;font-family:'IBM Plex Mono',monospace;font-size:0.65rem;line-height:1.6;" id="bilder-export-log"></div>
+            <div class="backup-progress-text" id="bilder-export-progress-text">0%</div>
+            <div class="backup-progress-log" style="height:100px;" id="bilder-export-log"></div>
           </div>
-          <button class="btn btn-primary" onclick="exportBilder()">🖼️ Bilder als ZIP exportieren</button>
+          <button class="btn btn-primary" data-action="export-bilder">🖼️ Bilder als ZIP exportieren</button>
         </div>
 
         <!-- BILDER IMPORT -->
-        <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px;">
-          <div style="font-size:0.9rem;font-weight:700;margin-bottom:6px;">🖼️ Artikelbilder importieren</div>
-          <div style="font-size:0.8rem;color:var(--text2);margin-bottom:16px;">
+        <div class="backup-card">
+          <div class="backup-card-title">🖼️ Artikelbilder importieren</div>
+          <div class="backup-card-sub">
             Importiert Bilder aus einem zuvor exportierten ZIP-Archiv. Die Fotos werden anhand der Lagerplatznummer den richtigen Artikeln zugeordnet.
           </div>
           <div style="display:flex;flex-direction:column;gap:12px;">
-            <div style="background:var(--surface2);border:2px dashed var(--border);border-radius:10px;padding:24px;text-align:center;cursor:pointer;"
-              onclick="document.getElementById('bilder-import-file').click()" id="bilder-drop-zone">
-              <div style="font-size:2rem;margin-bottom:8px;">🗜️</div>
-              <div style="font-size:0.85rem;font-weight:600;margin-bottom:4px;">ZIP-Datei auswählen</div>
-              <div style="font-size:0.72rem;color:var(--muted);">oder hier reinziehen</div>
-              <input type="file" id="bilder-import-file" accept=".zip" style="display:none" onchange="loadBilderImportFile(this)">
+            <div class="backup-drop-zone" data-action="open-bilder-import-file" id="bilder-drop-zone">
+              <div class="backup-drop-zone-icon">🗜️</div>
+              <div class="backup-drop-zone-title">ZIP-Datei auswählen</div>
+              <div class="backup-drop-zone-hint">oder hier reinziehen</div>
+              <input type="file" id="bilder-import-file" accept=".zip" class="hidden">
             </div>
 
             <div id="bilder-import-preview" class="hidden" style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:16px;">
@@ -803,19 +573,19 @@
 
             <div id="bilder-import-progress" class="hidden" style="display:flex;flex-direction:column;gap:8px;">
               <div class="progress-wrap"><div class="progress-fill" id="bilder-import-progress-fill" style="width:0%"></div></div>
-              <div style="font-size:0.72rem;color:var(--muted);font-family:'IBM Plex Mono',monospace;text-align:right;" id="bilder-import-progress-text">0%</div>
-              <div style="background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px;height:120px;overflow-y:auto;font-family:'IBM Plex Mono',monospace;font-size:0.65rem;line-height:1.6;" id="bilder-import-log"></div>
+              <div class="backup-progress-text" id="bilder-import-progress-text">0%</div>
+              <div class="backup-progress-log" id="bilder-import-log"></div>
             </div>
 
-            <button class="btn btn-primary" id="btn-bilder-import-start" onclick="startBilderImport()" disabled style="opacity:0.4;">
+            <button class="btn btn-primary" id="btn-bilder-import-start" data-action="start-bilder-import" disabled style="opacity:0.4;">
               🚀 Bilder importieren
             </button>
           </div>
         </div>
 
         <!-- HISTORY -->
-        <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;">
-          <div style="font-size:0.9rem;font-weight:700;margin-bottom:6px;">🕐 Letzte Backups</div>
+        <div class="backup-card">
+          <div class="backup-card-title">🕐 Letzte Backups</div>
           <div id="backup-history" style="font-size:0.82rem;color:var(--muted);">Noch keine Backups erstellt</div>
         </div>
 
@@ -823,23 +593,23 @@
 
       <!-- LIEFERANTEN-ZUWEISUNG -->
       <section class="content-section" id="section-lieferanten">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+        <div class="lief-section-header">
           <div>
-            <div style="font-size:1.1rem;font-weight:700;">🚚 Lieferanten-Zuweisung</div>
-            <div style="font-size:0.78rem;color:var(--muted);margin-top:2px;">Jedem Artikel den Lieferanten und das Formular-Feld zuweisen</div>
+            <div class="lief-section-title">🚚 Lieferanten-Zuweisung</div>
+            <div class="lief-section-sub">Jedem Artikel den Lieferanten und das Formular-Feld zuweisen</div>
           </div>
-          <div style="display:flex;gap:8px;flex-wrap:wrap;">
-            <button class="btn btn-ghost" onclick="autoAssignRadecker()" id="btn-lief-auto">🔄 Radecker Auto-Assign</button>
-            <button class="btn btn-primary" onclick="saveLieferantenBatch()" id="btn-lief-save" disabled>💾 Alle speichern</button>
+          <div class="lief-section-actions">
+            <button class="btn btn-ghost" data-action="lief-auto" id="btn-lief-auto">🔄 Radecker Auto-Assign</button>
+            <button class="btn btn-primary" data-action="lief-save" id="btn-lief-save" disabled>💾 Alle speichern</button>
           </div>
         </div>
-        <div style="font-size:0.78rem;color:var(--muted);margin-bottom:12px;">
+        <div class="lief-section-hint">
           Nur Artikel mit gesetztem Lieferanten werden in die Bestell-PDFs übernommen. Das Formular-Feld entspricht dem AcroForm-Feldnamen in der PDF-Vorlage (z. B. <code>bestellmenge_pos3</code>).
         </div>
         <div class="table-wrap">
           <div class="table-header">
-            <input type="text" class="form-input table-search" id="lief-search" placeholder="Artikel suchen…" oninput="filterLieferantenTabelle()">
-            <select class="form-input" style="max-width:180px;" id="lief-filter-lieferant" onchange="filterLieferantenTabelle()">
+            <input type="text" class="form-input table-search" id="lief-search" placeholder="Artikel suchen…" data-action="filter-lief">
+            <select class="form-input lief-filter-wrap" id="lief-filter-lieferant" data-action="filter-lief" data-field="">
               <option value="">Alle Lieferanten</option>
               <option value="">— kein —</option>
               <option value="ekg">Meßmer (EKG)</option>
@@ -856,9 +626,9 @@
             <table id="lief-table">
               <thead>
                 <tr>
-                  <th style="padding:10px 16px;text-align:left;font-size:0.72rem;color:var(--muted);border-bottom:1px solid var(--hairline);">Artikel</th>
-                  <th style="padding:10px 16px;text-align:left;font-size:0.72rem;color:var(--muted);border-bottom:1px solid var(--hairline);min-width:170px;">Lieferant</th>
-                  <th style="padding:10px 16px;text-align:left;font-size:0.72rem;color:var(--muted);border-bottom:1px solid var(--hairline);min-width:160px;">Formular-Feld</th>
+                  <th>Artikel</th>
+                  <th style="min-width:170px;">Lieferant</th>
+                  <th style="min-width:160px;">Formular-Feld</th>
                 </tr>
               </thead>
               <tbody id="lief-table-body"></tbody>
@@ -871,11 +641,11 @@
   </div>
 
   <!-- ── ARTIKEL MODAL ── -->
-  <div id="artikel-modal" class="modal hidden" onclick="if(event.target===this)closeArtikelModal()">
+  <div id="artikel-modal" class="modal hidden">
     <div class="modal-box">
       <div class="modal-head">
         <span class="modal-title" id="artikel-modal-title">Artikel bearbeiten</span>
-        <button class="modal-close" onclick="closeArtikelModal()">✕</button>
+        <button class="modal-close" data-action="close-artikel-modal">✕</button>
       </div>
       <div class="modal-body">
         <input type="hidden" id="edit-id">
@@ -948,18 +718,18 @@
         </div>
       </div>
       <div class="modal-foot">
-        <button class="btn btn-primary" style="flex:1" onclick="saveArtikel()">💾 Speichern</button>
-        <button class="btn btn-ghost" onclick="closeArtikelModal()">Abbrechen</button>
+        <button class="btn btn-primary" style="flex:1" data-action="save-artikel">💾 Speichern</button>
+        <button class="btn btn-ghost" data-action="close-artikel-modal">Abbrechen</button>
       </div>
     </div>
   </div>
 
   <!-- ── BEREICH MODAL ── -->
-  <div id="bereich-modal" class="modal hidden" onclick="if(event.target===this)closeBereichModal()">
+  <div id="bereich-modal" class="modal hidden">
     <div class="modal-box" style="max-width:400px;">
       <div class="modal-head">
         <span class="modal-title" id="bereich-modal-title">Bereich bearbeiten</span>
-        <button class="modal-close" onclick="closeBereichModal()">✕</button>
+        <button class="modal-close" data-action="close-bereich-modal">✕</button>
       </div>
       <div class="modal-body">
         <input type="hidden" id="bereich-edit-id">
@@ -973,1470 +743,14 @@
         </div>
       </div>
       <div class="modal-foot">
-        <button class="btn btn-primary" style="flex:1" onclick="saveBereich()">💾 Speichern</button>
-        <button class="btn btn-ghost" onclick="closeBereichModal()">Abbrechen</button>
+        <button class="btn btn-primary" style="flex:1" data-action="save-bereich">💾 Speichern</button>
+        <button class="btn btn-ghost" data-action="close-bereich-modal">Abbrechen</button>
       </div>
     </div>
   </div>
 
-  <!-- Firebase + Storage -->
-  <script type="module">
-    import { initializeApp }  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-    import { getAuth, onAuthStateChanged, signOut }
-                              from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-    import { getFirestore, collection, getDocs, doc, getDoc, setDoc, addDoc, updateDoc, deleteDoc, writeBatch, query, orderBy, limit }
-                              from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-    import { firebaseConfig } from "../js/firebase-config.js";
-
-
-    // ── Theme ──
-    const savedTheme  = localStorage.getItem('lager-theme');
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const theme       = savedTheme || (prefersDark ? 'dark' : 'light');
-    document.documentElement.setAttribute('data-theme', theme);
-    document.getElementById('theme-toggle').textContent = theme === 'dark' ? '☀️' : '🌙';
-    window.toggleTheme = function() {
-      const cur = document.documentElement.getAttribute('data-theme');
-      const next = cur === 'dark' ? 'light' : 'dark';
-      document.documentElement.setAttribute('data-theme', next);
-      localStorage.setItem('lager-theme', next);
-      document.getElementById('theme-toggle').textContent = next === 'dark' ? '☀️' : '🌙';
-    };
-
-    // ── Firebase ──
-
-    const app     = initializeApp(firebaseConfig);
-    const auth    = getAuth(app);
-    const db      = getFirestore(app);
-    // Cloudinary config
-    const CLOUDINARY_CLOUD = 'dvqug2dcx';
-    const CLOUDINARY_PRESET = 'lagerapp_unsigned';
-
-    let alleArtikel  = [];
-    let alleBereiche = [];
-    let alleUsers    = [];
-    let currentPin   = '1234';
-    let newPinValue  = '';
-    let pinVisible   = false;
-
-    // ── Auth ──
-    onAuthStateChanged(auth, async user => {
-      if (!user || user.isAnonymous) { window.location.href = 'login.html?tab=wachenleiter'; return; }
-      const userSnap = await getDoc(doc(db, 'users', user.uid));
-      const role     = userSnap.exists() ? userSnap.data().role : null;
-      if (role !== 'admin' && role !== 'wachenleiter') { window.location.href = 'login.html?tab=wachenleiter'; return; }
-      const displayName = userSnap.data()?.name || user.email;
-      window._adminDisplayName = displayName;
-      document.getElementById('nav-user').textContent = user.email;
-      document.getElementById('auth-loading').classList.add('hidden');
-      document.getElementById('admin-layout').classList.remove('hidden');
-      document.getElementById('bottom-nav').classList.remove('hidden');
-      const sidebarName = document.getElementById('sidebar-user-name');
-      if (sidebarName) sidebarName.textContent = displayName;
-      const sidebarAvatar = document.getElementById('sidebar-user-avatar');
-      if (sidebarAvatar) sidebarAvatar.textContent = (displayName[0] || 'A').toUpperCase();
-
-      // Benutzer-Bereich nur für Admin sichtbar
-      if (role !== 'admin') {
-        const navUsers = document.getElementById('nav-users');
-        if (navUsers) navUsers.style.display = 'none';
-        // Benutzer anlegen Formular verstecken
-        const usersSection = document.getElementById('section-users');
-        if (usersSection) {
-          const addForm = usersSection.querySelector('div[style*="border-radius:12px"]');
-          if (addForm) addForm.style.display = 'none';
-        }
-      }
-
-      await loadAll();
-    });
-
-    window.doLogout = async function() {
-      await signOut(auth);
-      window.location.href = 'login.html';
-    };
-
-    window.goToMitarbeiter = function() {
-      const name = window._adminDisplayName || document.getElementById('nav-user').textContent;
-      sessionStorage.setItem('lager-pin-auth', 'true');
-      sessionStorage.setItem('lager-portal-role', 'admin');
-      if (name) sessionStorage.setItem('lager-pin-name', name);
-      window.location.href = 'mitarbeiter.html';
-    };
-
-    // ── Neuen Benutzer anlegen ──
-    window.createNewUser = async function() {
-      const name     = document.getElementById('new-user-name').value.trim();
-      const email    = document.getElementById('new-user-email').value.trim();
-      const password = document.getElementById('new-user-password').value;
-      const role     = document.getElementById('new-user-role').value;
-      const msg      = document.getElementById('new-user-msg');
-
-      if (!name || !email || !password) {
-        msg.style.color = 'var(--red)';
-        msg.textContent = '❌ Bitte alle Felder ausfüllen.';
-        return;
-      }
-
-      if (password.length < 6) {
-        msg.style.color = 'var(--red)';
-        msg.textContent = '❌ Passwort muss mindestens 6 Zeichen haben.';
-        return;
-      }
-
-      msg.style.color = 'var(--accent2)';
-      msg.textContent = '⏳ Benutzer wird angelegt...';
-
-      try {
-        // Neuen User in Firebase Auth anlegen
-        // Wir nutzen die REST API damit der aktuelle Admin nicht ausgeloggt wird
-        const apiKey = 'AIzaSyD1YY-cFQxyykfYQYPORwulzuF8t6Wgid4';
-        const res = await fetch(
-          `https://identitytoolkit.googleapis.com/v1/accounts:signUp?key=${apiKey}`,
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, password, returnSecureToken: true }),
-          }
-        );
-
-        const data = await res.json();
-
-        if (data.error) {
-          const msgs = {
-            'EMAIL_EXISTS':           'Diese E-Mail ist bereits registriert.',
-            'INVALID_EMAIL':          'Ungültige E-Mail-Adresse.',
-            'WEAK_PASSWORD':          'Passwort zu schwach (min. 6 Zeichen).',
-            'OPERATION_NOT_ALLOWED':  'E-Mail/Passwort Login ist nicht aktiviert.',
-          };
-          throw new Error(msgs[data.error.message] || data.error.message);
-        }
-
-        const uid = data.localId;
-
-        // Rolle in Firestore speichern
-        await setDoc(doc(db, 'users', uid), {
-          name, email, role,
-          createdAt: new Date().toISOString(),
-        });
-
-        // Lokal hinzufügen
-        alleUsers.push({ id: uid, name, email, role });
-        renderUsers();
-
-        // Felder leeren
-        ['new-user-name','new-user-email','new-user-password'].forEach(id => {
-          document.getElementById(id).value = '';
-        });
-
-        msg.style.color = 'var(--green)';
-        msg.textContent = `✅ ${name} wurde erfolgreich angelegt!`;
-        toast(`${name} angelegt!`);
-        setTimeout(() => msg.textContent = '', 4000);
-
-      } catch(e) {
-        msg.style.color = 'var(--red)';
-        msg.textContent = '❌ ' + e.message;
-      }
-    };
-
-    // ── Load All ──
-    async function loadAll() {
-      const [bSnap, aSnap, bestSnap, uSnap, configSnap] = await Promise.all([
-        getDocs(query(collection(db, 'bereiche'), orderBy('reihenfolge'))),
-        getDocs(collection(db, 'artikel')),
-        getDocs(query(collection(db, 'bestellungen'), orderBy('datum', 'desc'), limit(5))),
-        getDocs(collection(db, 'users')),
-        getDoc(doc(db, 'config', 'app')),
-      ]);
-
-      alleBereiche = bSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-      alleArtikel  = aSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-      alleUsers    = uSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-      if (configSnap.exists()) currentPin = configSnap.data().pin || '1234';
-
-      const bestellungen = bestSnap.docs.map(d => ({ id: d.id, ...d.data() }));
-
-      renderDashboard(bestellungen);
-      renderArtikelTable(alleArtikel);
-      renderBereiche();
-      renderUsers();
-      renderFotoSection();
-      populateBereichFilter();
-      populateFotoArtikelSelect();
-      populateSsBereichFilter();
-    }
-
-    // ── Navigation ──
-    const moreSheetSections = ['bereiche','fotos','ss-fotos','pin','backup','laufband','lieferanten'];
-
-    window.showSection = function(name) {
-      document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
-      document.querySelectorAll('.sidebar-item').forEach(s => s.classList.remove('active'));
-      document.querySelectorAll('.bottom-tab').forEach(s => s.classList.remove('active'));
-      document.querySelectorAll('.bottom-sheet-item').forEach(s => s.classList.remove('active'));
-      document.getElementById(`section-${name}`).classList.add('active');
-      if (name === 'ss-fotos') renderSsFotos();
-      if (name === 'lieferanten') renderLieferantenTabelle();
-      const navItem = document.getElementById(`nav-${name}`);
-      if (navItem) navItem.classList.add('active');
-      const bottomTab = document.querySelector(`.bottom-tab[data-section="${name}"]`);
-      if (bottomTab) {
-        bottomTab.classList.add('active');
-      } else if (moreSheetSections.includes(name)) {
-        document.getElementById('bottom-more-tab').classList.add('active');
-        const sheetItem = document.querySelector(`.bottom-sheet-item[data-section="${name}"]`);
-        if (sheetItem) sheetItem.classList.add('active');
-      }
-    };
-
-    window.openBottomSheet = function() {
-      document.getElementById('bottom-sheet-backdrop').classList.remove('hidden');
-      document.getElementById('bottom-sheet-backdrop').classList.add('open');
-      document.getElementById('bottom-sheet').classList.add('open');
-    };
-
-    window.closeBottomSheet = function() {
-      document.getElementById('bottom-sheet-backdrop').classList.remove('open');
-      document.getElementById('bottom-sheet').classList.remove('open');
-      setTimeout(() => document.getElementById('bottom-sheet-backdrop').classList.add('hidden'), 300);
-    };
-
-    function esc(str) {
-      return String(str ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-    }
-    function prettyBereich(name) {
-      return String(name ?? '').replace(/^Lager\s*[-–]\s*/i, '').trim();
-    }
-
-    // ── Toast ──
-    function toast(msg, type = 'success') {
-      const t = document.createElement('div');
-      t.className = `toast ${type}`;
-      t.textContent = (type === 'success' ? '✅ ' : '❌ ') + msg;
-      document.body.appendChild(t);
-      setTimeout(() => t.remove(), 3000);
-    }
-
-    // ── DASHBOARD ──
-    function renderDashboard(bestellungen) {
-      document.getElementById('stat-artikel').textContent      = alleArtikel.length;
-      document.getElementById('stat-bereiche').textContent     = alleBereiche.length;
-      document.getElementById('stat-bestellungen').textContent = bestellungen.length;
-      document.getElementById('stat-ohne-foto').textContent    = alleArtikel.filter(a => !a.fotoUrl).length;
-
-      const tbody = document.getElementById('dashboard-bestellungen');
-      if (bestellungen.length === 0) {
-        tbody.innerHTML = '<div style="padding:20px;text-align:center;color:var(--muted);font-size:0.82rem;">Noch keine Lagerchecks</div>';
-        return;
-      }
-      tbody.innerHTML = `<table style="width:100%;border-collapse:collapse;">
-        <thead><tr>
-          <th style="padding:8px 14px;text-align:left;font-size:0.62rem;color:var(--muted);text-transform:uppercase;font-family:'IBM Plex Mono',monospace;background:var(--surface2);border-bottom:1px solid var(--border);">Mitarbeiter</th>
-          <th style="padding:8px 14px;text-align:left;font-size:0.62rem;color:var(--muted);text-transform:uppercase;font-family:'IBM Plex Mono',monospace;background:var(--surface2);border-bottom:1px solid var(--border);">Datum</th>
-          <th style="padding:8px 14px;text-align:left;font-size:0.62rem;color:var(--muted);text-transform:uppercase;font-family:'IBM Plex Mono',monospace;background:var(--surface2);border-bottom:1px solid var(--border);">Nachbestell.</th>
-        </tr></thead>
-        <tbody>${bestellungen.map(b => {
-          const d = b.datum?.toDate ? b.datum.toDate() : new Date();
-          const nb = b.nachbestellungen?.length || 0;
-          return `<tr>
-            <td style="padding:10px 14px;font-size:0.82rem;font-weight:600;border-bottom:1px solid var(--border);">${b.mitarbeiter||'–'}</td>
-            <td style="padding:10px 14px;font-size:0.75rem;font-family:'IBM Plex Mono',monospace;color:var(--muted);border-bottom:1px solid var(--border);">${d.toLocaleDateString('de-DE')}</td>
-            <td style="padding:10px 14px;font-size:0.75rem;border-bottom:1px solid var(--border);color:${nb>0?'var(--red)':'var(--green)'};">${nb > 0 ? `⚠️ ${nb}` : '✅ Keine'}</td>
-          </tr>`;
-        }).join('')}</tbody>
-      </table>`;
-    }
-
-    // ── ARTIKEL TABLE ──
-    function renderArtikelTable(data) {
-      const tbody = document.getElementById('artikel-tbody');
-      tbody.innerHTML = data.map(a => {
-        const b = alleBereiche.find(x => x.id === a.bereich);
-        return `<tr>
-          <td data-label="Artikel" class="td-name">${a.name}</td>
-          <td data-label="Standort" class="td-loc">${a.location || '–'}<br><span style="color:var(--muted);font-size:0.62rem;">${b?.name || a.bereich || '–'}</span></td>
-          <td data-label="MIN / MAX" class="td-minmax">${a.min ?? '–'} ${a.minEinheit||''} / ${a.max ?? '–'} ${a.maxEinheit||''}</td>
-          <td data-label="Foto">${a.fotoUrl ? '<span style="color:var(--green);font-size:0.75rem;">✅ Foto</span>' : '<span style="color:var(--muted);font-size:0.75rem;">Kein Foto</span>'}</td>
-          <td data-label="Aktionen" class="td-actions">
-            <button class="tbl-btn" onclick="openArtikelModal('${a.id}')">✏️ Edit</button>
-            <button class="tbl-btn del" onclick="deleteArtikel('${a.id}','${a.name.replace(/'/g,"\\'")}')">🗑️</button>
-          </td>
-        </tr>`;
-      }).join('') || '<tr><td colspan="5" style="padding:20px;text-align:center;color:var(--muted);">Keine Artikel gefunden</td></tr>';
-    }
-
-    window.filterArtikel = function(val) {
-      const q = (val || document.getElementById('artikel-search').value || '').toLowerCase();
-      const bereich = document.getElementById('bereich-filter').value;
-      const filtered = alleArtikel.filter(a =>
-        (!q || a.name?.toLowerCase().includes(q) || a.lp?.toLowerCase().includes(q)) &&
-        (!bereich || a.bereich === bereich)
-      );
-      renderArtikelTable(filtered);
-    };
-
-    function populateBereichFilter() {
-      const sel = document.getElementById('bereich-filter');
-      alleBereiche.forEach(b => {
-        const opt = document.createElement('option');
-        opt.value = b.id; opt.textContent = prettyBereich(b.name);
-        sel.appendChild(opt);
-      });
-    }
-
-    // ── ARTIKEL MODAL ──
-    window.openArtikelModal = function(id) {
-      const modal = document.getElementById('artikel-modal');
-      const sel   = document.getElementById('edit-bereich');
-      sel.innerHTML = '';
-      alleBereiche.forEach(b => {
-        const o = document.createElement('option'); o.value = b.id; o.textContent = prettyBereich(b.name);
-        sel.appendChild(o);
-      });
-
-      if (id) {
-        const a = alleArtikel.find(x => x.id === id);
-        document.getElementById('artikel-modal-title').textContent = 'Artikel bearbeiten';
-        document.getElementById('edit-id').value        = a.id;
-        document.getElementById('edit-name').value      = a.name || '';
-        document.getElementById('edit-lp').value        = a.lp || '';
-        document.getElementById('edit-location').value  = a.location || '';
-        document.getElementById('edit-bereich').value   = a.bereich || '';
-        document.getElementById('edit-min').value       = a.min ?? '';
-        document.getElementById('edit-minE').value      = a.minEinheit || '';
-        document.getElementById('edit-max').value       = a.max ?? '';
-        document.getElementById('edit-maxE').value      = a.maxEinheit || '';
-        document.getElementById('edit-aliases').value      = (a.aliases || []).join(', ');
-        document.getElementById('edit-hinweis').value      = a.hinweis || '';
-        document.getElementById('edit-lieferant').value    = a.lieferant || '';
-        document.getElementById('edit-formularfeld').value = a.formularFeld || '';
-      } else {
-        document.getElementById('artikel-modal-title').textContent = 'Neuer Artikel';
-        ['edit-id','edit-name','edit-lp','edit-location','edit-min','edit-minE','edit-max','edit-maxE','edit-aliases','edit-hinweis','edit-formularfeld'].forEach(id => { document.getElementById(id).value = ''; });
-        document.getElementById('edit-lieferant').value = '';
-      }
-      modal.classList.remove('hidden');
-    };
-
-    window.closeArtikelModal = () => document.getElementById('artikel-modal').classList.add('hidden');
-
-    window.saveArtikel = async function() {
-      const id      = document.getElementById('edit-id').value;
-      const name    = document.getElementById('edit-name').value.trim();
-      if (!name) { toast('Name ist Pflichtfeld', 'error'); return; }
-
-      const data = {
-        name,
-        lp:          document.getElementById('edit-lp').value.trim(),
-        location:    document.getElementById('edit-location').value.trim(),
-        bereich:     document.getElementById('edit-bereich').value,
-        min:         parseFloat(document.getElementById('edit-min').value) || null,
-        minEinheit:  document.getElementById('edit-minE').value.trim(),
-        max:         parseFloat(document.getElementById('edit-max').value) || null,
-        maxEinheit:  document.getElementById('edit-maxE').value.trim(),
-        aliases:      document.getElementById('edit-aliases').value.split(',').map(s => s.trim()).filter(Boolean),
-        hinweis:      document.getElementById('edit-hinweis').value.trim(),
-        lieferant:    document.getElementById('edit-lieferant').value || '',
-        formularFeld: document.getElementById('edit-formularfeld').value.trim(),
-      };
-
-      try {
-        if (id) {
-          await updateDoc(doc(db, 'artikel', id), data);
-          const idx = alleArtikel.findIndex(a => a.id === id);
-          if (idx >= 0) alleArtikel[idx] = { ...alleArtikel[idx], ...data };
-          toast('Artikel aktualisiert');
-        } else {
-          const ref = await addDoc(collection(db, 'artikel'), { ...data, fotoUrl: '', chargen: [], aktiv: true });
-          alleArtikel.push({ id: ref.id, ...data, fotoUrl: '', chargen: [] });
-          toast('Artikel hinzugefügt');
-        }
-        closeArtikelModal();
-        filterArtikel();
-        document.getElementById('stat-artikel').textContent = alleArtikel.length;
-      } catch (e) { toast(e.message, 'error'); }
-    };
-
-    window.deleteArtikel = async function(id, name) {
-      if (!confirm(`„${name}" wirklich löschen?`)) return;
-      try {
-        await deleteDoc(doc(db, 'artikel', id));
-        alleArtikel = alleArtikel.filter(a => a.id !== id);
-        filterArtikel();
-        toast('Artikel gelöscht');
-        document.getElementById('stat-artikel').textContent = alleArtikel.length;
-      } catch (e) { toast(e.message, 'error'); }
-    };
-
-    // ── BEREICHE ──
-    function renderBereiche() {
-      const list = document.getElementById('bereich-list');
-      list.innerHTML = alleBereiche.map(b => {
-        const count = alleArtikel.filter(a => a.bereich === b.id).length;
-        return `
-          <div class="bereich-item">
-            <div class="bereich-icon">${getBereichIcon(b.name)}</div>
-            <div style="flex:1;">
-              <div class="bereich-name">${esc(prettyBereich(b.name))}</div>
-              <div class="bereich-count">${count} Artikel · Reihenfolge: ${b.reihenfolge}</div>
-            </div>
-            <button class="tbl-btn" onclick="openBereichModal('${b.id}')">✏️ Edit</button>
-          </div>`;
-      }).join('');
-    }
-
-    function getBereichIcon(name) {
-      const n = name.toLowerCase();
-      if (n.includes('schrank')) return '🗄️';
-      if (n.includes('regal'))   return '📦';
-      if (n.includes('sauer'))   return '🫧';
-      if (n.includes('büro'))    return '📋';
-      if (n.includes('küche'))   return '🍽️';
-      if (n.includes('wasch'))   return '🚿';
-      if (n.includes('mpg'))     return '🔋';
-      if (n.includes('medika'))  return '💊';
-      return '📁';
-    }
-
-    window.openBereichModal = function(id) {
-      if (id) {
-        const b = alleBereiche.find(x => x.id === id);
-        document.getElementById('bereich-modal-title').textContent = 'Bereich bearbeiten';
-        document.getElementById('bereich-edit-id').value           = b.id;
-        document.getElementById('bereich-edit-name').value         = b.name;
-        document.getElementById('bereich-edit-reihenfolge').value  = b.reihenfolge;
-      } else {
-        document.getElementById('bereich-modal-title').textContent = 'Neuer Bereich';
-        document.getElementById('bereich-edit-id').value           = '';
-        document.getElementById('bereich-edit-name').value         = '';
-        document.getElementById('bereich-edit-reihenfolge').value  = alleBereiche.length + 1;
-      }
-      document.getElementById('bereich-modal').classList.remove('hidden');
-    };
-
-    window.closeBereichModal = () => document.getElementById('bereich-modal').classList.add('hidden');
-
-    window.saveBereich = async function() {
-      const id   = document.getElementById('bereich-edit-id').value;
-      const name = document.getElementById('bereich-edit-name').value.trim();
-      const reihenfolge = parseInt(document.getElementById('bereich-edit-reihenfolge').value) || 99;
-      if (!name) { toast('Name ist Pflichtfeld', 'error'); return; }
-
-      try {
-        if (id) {
-          await updateDoc(doc(db, 'bereiche', id), { name, reihenfolge });
-          const idx = alleBereiche.findIndex(b => b.id === id);
-          if (idx >= 0) alleBereiche[idx] = { ...alleBereiche[idx], name, reihenfolge };
-          toast('Bereich aktualisiert');
-        } else {
-          const slug = name.toLowerCase().replace(/\s+/g,'-').replace(/[äöüß]/g,c=>({ä:'ae',ö:'oe',ü:'ue',ß:'ss'}[c])).replace(/[^a-z0-9-]/g,'');
-          await setDoc(doc(db, 'bereiche', slug), { name, reihenfolge, aktiv: true });
-          alleBereiche.push({ id: slug, name, reihenfolge, aktiv: true });
-          toast('Bereich hinzugefügt');
-        }
-        closeBereichModal();
-        alleBereiche.sort((a,b) => a.reihenfolge - b.reihenfolge);
-        renderBereiche();
-      } catch (e) { toast(e.message, 'error'); }
-    };
-
-    // ── FOTOS ──
-    function populateFotoArtikelSelect() {
-      const sel = document.getElementById('foto-artikel-select');
-      sel.innerHTML = '<option value="">-- Artikel wählen --</option>';
-      [...alleArtikel].sort((a,b) => (a.name||'').localeCompare(b.name||'')).forEach(a => {
-        const opt = document.createElement('option');
-        opt.value = a.id;
-        opt.textContent = a.lp ? `${a.lp} – ${a.name}` : a.name;
-        sel.appendChild(opt);
-      });
-    }
-
-    function naturalSort(a, b) {
-      const seg = s => s.split(/[\.\-]/).map(x => isNaN(x) ? x : parseInt(x, 10));
-      const sa = seg(a), sb = seg(b);
-      for (let i = 0; i < Math.max(sa.length, sb.length); i++) {
-        const x = sa[i] ?? '', y = sb[i] ?? '';
-        if (x < y) return -1;
-        if (x > y) return  1;
-      }
-      return 0;
-    }
-
-    // Merkt sich welcher Foto-Typ gerade hochgeladen wird
-    let currentFotoType = 'produkt';
-
-    let fotoUploadTargetId = null;
-    let fotoUploadType = 'produkt';
-
-    function populateFotoBereichFilter() {
-      const sel = document.getElementById('foto-bereich');
-      if (!sel) return;
-      while (sel.options.length > 1) sel.remove(1);
-      alleBereiche.forEach(b => {
-        const o = document.createElement('option');
-        o.value = b.id; o.textContent = prettyBereich(b.name);
-        sel.appendChild(o);
-      });
-    }
-
-    window.triggerFotoUpload = function(id, type) {
-      fotoUploadTargetId = id;
-      fotoUploadType = type;
-      const inp = document.getElementById('foto-file-input');
-      inp.value = '';
-      inp.click();
-    };
-
-    window.uploadFotoFromGrid = async function() {
-      const file = document.getElementById('foto-file-input').files[0];
-      if (!file || !fotoUploadTargetId) return;
-      toast('Foto wird hochgeladen…');
-      try {
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('upload_preset', CLOUDINARY_PRESET);
-        formData.append('folder', 'lagerapp/artikel');
-        const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, { method: 'POST', body: formData });
-        if (!res.ok) throw new Error('Upload fehlgeschlagen');
-        const data = await res.json();
-        const field = fotoUploadType === 'lager' ? 'lagerFotoUrl' : 'fotoUrl';
-        await updateDoc(doc(db, 'artikel', fotoUploadTargetId), { [field]: data.secure_url });
-        const idx = alleArtikel.findIndex(a => a.id === fotoUploadTargetId);
-        if (idx >= 0) alleArtikel[idx][field] = data.secure_url;
-        renderFotoSection();
-        toast('Foto gespeichert ✅');
-      } catch(e) { toast(e.message, 'error'); }
-    };
-
-    window.deleteFotoFromGrid = async function(id, type) {
-      if (!confirm('Foto wirklich löschen?')) return;
-      const field = type === 'lager' ? 'lagerFotoUrl' : 'fotoUrl';
-      try {
-        await updateDoc(doc(db, 'artikel', id), { [field]: '' });
-        const idx = alleArtikel.findIndex(a => a.id === id);
-        if (idx >= 0) alleArtikel[idx][field] = '';
-        renderFotoSection();
-        toast('Foto gelöscht');
-      } catch(e) { toast(e.message, 'error'); }
-    };
-
-    window.updateArtikelLP = async function(id, lp) {
-      try {
-        await updateDoc(doc(db, 'artikel', id), { lp });
-        const idx = alleArtikel.findIndex(a => a.id === id);
-        if (idx >= 0) alleArtikel[idx].lp = lp;
-        toast('LP gespeichert');
-      } catch(e) { toast(e.message, 'error'); }
-    };
-
-    function getLpOptions(currentLp) {
-      const lps = [...new Set(alleArtikel.map(a => a.lp).filter(Boolean))].sort((a,b) => naturalSort(a,b));
-      return lps.map(lp => `<option value="${esc(lp)}"${lp === currentLp ? ' selected' : ''}>${esc(lp)}</option>`).join('');
-    }
-
-    window.renderFotoSection = function renderFotoSection() {
-      const grid    = document.getElementById('foto-grid');
-      const search  = (document.getElementById('foto-search')?.value  || '').toLowerCase();
-      const filter  = document.getElementById('foto-filter')?.value   || 'alle';
-      const bereich = document.getElementById('foto-bereich')?.value  || '';
-      const sort    = document.getElementById('foto-sort')?.value     || 'name';
-
-      let items = alleArtikel.filter(a => {
-        const matchSearch  = !search || (a.name||'').toLowerCase().includes(search) || (a.lp||'').toLowerCase().includes(search);
-        const matchFilter  = filter === 'ohne-produkt' ? !a.fotoUrl
-                           : filter === 'ohne-lager'   ? !a.lagerFotoUrl
-                           : filter === 'ohne-beide'   ? !a.fotoUrl && !a.lagerFotoUrl
-                           : filter === 'vollstaendig' ? !!a.fotoUrl && !!a.lagerFotoUrl
-                           : true;
-        const matchBereich = !bereich || a.bereich === bereich;
-        return matchSearch && matchFilter && matchBereich;
-      });
-
-      if (sort === 'lp') items.sort((a,b) => naturalSort(a.lp||'', b.lp||''));
-      else               items.sort((a,b) => (a.name||'').localeCompare(b.name||''));
-
-      document.getElementById('stat-ohne-foto').textContent = alleArtikel.filter(a => !a.fotoUrl).length;
-      document.getElementById('foto-grid-label').textContent = `${items.length} Artikel`;
-      items = items.slice(0, 60);
-
-      grid.innerHTML = items.map(a => {
-        const short = a.name.length > 24 ? a.name.substring(0,21) + '…' : a.name;
-        const slotP = a.fotoUrl
-          ? `<img src="${esc(a.fotoUrl)}" style="width:100%;height:110px;object-fit:cover;display:block;" loading="lazy">`
-          : `<div style="width:100%;height:110px;background:var(--surface2);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;"><span style="font-size:1.8rem;">📦</span><span style="font-size:0.58rem;color:var(--muted);">Kein Produktfoto</span></div>`;
-        const slotL = a.lagerFotoUrl
-          ? `<img src="${esc(a.lagerFotoUrl)}" style="width:100%;height:110px;object-fit:cover;display:block;" loading="lazy">`
-          : `<div style="width:100%;height:110px;background:var(--surface3);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;"><span style="font-size:1.8rem;">🗄️</span><span style="font-size:0.58rem;color:var(--muted);">Kein Lagerortfoto</span></div>`;
-        const delP = a.fotoUrl
-          ? `<button onclick="deleteFotoFromGrid('${esc(a.id)}','produkt')" style="padding:6px 10px;background:none;border:none;color:var(--red);cursor:pointer;font-size:0.85rem;flex-shrink:0;" title="Löschen">🗑</button>`
-          : '';
-        const delL = a.lagerFotoUrl
-          ? `<button onclick="deleteFotoFromGrid('${esc(a.id)}','lager')" style="padding:6px 10px;background:none;border:none;color:var(--red);cursor:pointer;font-size:0.85rem;flex-shrink:0;" title="Löschen">🗑</button>`
-          : '';
-        return `
-          <div class="foto-card">
-            ${slotP}
-            <div style="display:flex;align-items:center;border-top:1px solid var(--border);">
-              <button class="foto-upload-btn" style="flex:1;border:none;text-align:left;" onclick="triggerFotoUpload('${esc(a.id)}','produkt')">📸 Produktfoto</button>
-              ${delP}
-            </div>
-            <div style="border-top:1px solid var(--border);">${slotL}</div>
-            <div style="display:flex;align-items:center;border-top:1px solid var(--border);">
-              <button class="foto-upload-btn" style="flex:1;border:none;text-align:left;" onclick="triggerFotoUpload('${esc(a.id)}','lager')">🗄️ Lagerortfoto</button>
-              ${delL}
-            </div>
-            <div class="foto-name" style="padding-bottom:4px;">
-              ${esc(short)}
-            </div>
-            <div style="padding:0 8px 8px;">
-              <select onchange="updateArtikelLP('${esc(a.id)}', this.value)"
-                style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:4px 6px;font-size:0.68rem;color:var(--accent2);font-family:'IBM Plex Mono',monospace;cursor:pointer;">
-                <option value="">— kein LP —</option>
-                ${getLpOptions(a.lp)}
-              </select>
-            </div>
-          </div>`;
-      }).join('') || '<div class="empty-state">Keine Artikel gefunden</div>';
-    };
-
-    // ── STOCKSWIPE FOTOS ──
-    let ssFotoTargetId = null;
-
-    function populateSsBereichFilter() {
-      const sel = document.getElementById('ss-foto-bereich');
-      if (!sel) return;
-      while (sel.options.length > 1) sel.remove(1);
-      alleBereiche.forEach(b => {
-        const o = document.createElement('option');
-        o.value = b.id; o.textContent = prettyBereich(b.name);
-        sel.appendChild(o);
-      });
-    }
-
-    window.renderSsFotos = function() {
-      const grid    = document.getElementById('ss-foto-grid');
-      if (!grid) return;
-      const search  = (document.getElementById('ss-foto-search')?.value || '').toLowerCase();
-      const filter  = document.getElementById('ss-foto-filter')?.value  || 'alle';
-      const bereich = document.getElementById('ss-foto-bereich')?.value || '';
-
-      let items = alleArtikel.filter(a => {
-        const matchSearch  = !search || (a.name||'').toLowerCase().includes(search) || (a.lp||'').toLowerCase().includes(search);
-        const matchFilter  = filter === 'ohne-ss' ? !a.stockswipeFotoUrl
-                           : filter === 'mit-ss'  ?  !!a.stockswipeFotoUrl
-                           : true;
-        const matchBereich = !bereich || a.bereich === bereich;
-        return matchSearch && matchFilter && matchBereich;
-      });
-      items.sort((a, b) => (a.name||'').localeCompare(b.name||''));
-
-      document.getElementById('ss-foto-grid-label').textContent = `${items.length} Artikel`;
-
-      grid.innerHTML = items.map(a => {
-        const short     = a.name.length > 26 ? a.name.substring(0,23) + '…' : a.name;
-        const hasSsFoto = !!a.stockswipeFotoUrl;
-        const photoSlot = hasSsFoto
-          ? `<img src="${esc(a.stockswipeFotoUrl)}" style="width:100%;height:120px;object-fit:cover;display:block;" loading="lazy">`
-          : (a.fotoUrl
-              ? `<div style="position:relative;"><img src="${esc(a.fotoUrl)}" style="width:100%;height:120px;object-fit:cover;display:block;filter:grayscale(0.4);opacity:0.7;" loading="lazy"><div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.35);font-size:0.6rem;color:white;font-family:'IBM Plex Mono',monospace;letter-spacing:0.05em;">STANDARD FOTO</div></div>`
-              : `<div style="width:100%;height:120px;background:var(--surface2);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;"><span style="font-size:2rem;">📦</span><span style="font-size:0.62rem;color:var(--muted);">Kein Foto</span></div>`
-            );
-        return `
-          <div class="foto-card">
-            ${photoSlot}
-            <div class="foto-name">
-              ${a.lp ? `<div style="font-size:0.6rem;color:var(--accent2);margin-bottom:2px;font-family:'IBM Plex Mono',monospace;">${esc(a.lp)}</div>` : ''}
-              ${esc(short)}
-              ${hasSsFoto ? '<div style="font-size:0.58rem;color:var(--green);margin-top:2px;">✓ StockSwipe-Foto</div>' : ''}
-            </div>
-            <button class="foto-upload-btn" onclick="triggerSsFotoUpload('${esc(a.id)}')">
-              🃏 StockSwipe-Foto ${hasSsFoto ? 'ändern' : 'hochladen'}
-            </button>
-          </div>`;
-      }).join('') || '<div class="empty-state">Keine Artikel gefunden</div>';
-    };
-
-    window.triggerSsFotoUpload = function(id) {
-      ssFotoTargetId = id;
-      const inp = document.getElementById('ss-foto-file-input');
-      inp.value = '';
-      inp.click();
-    };
-
-    window.uploadSsFoto = async function() {
-      const file = document.getElementById('ss-foto-file-input').files[0];
-      if (!file || !ssFotoTargetId) return;
-      toast('StockSwipe-Foto wird hochgeladen…');
-      try {
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('upload_preset', CLOUDINARY_PRESET);
-        formData.append('folder', 'lagerapp/stockswipe');
-        const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD}/image/upload`, { method: 'POST', body: formData });
-        if (!res.ok) throw new Error('Upload fehlgeschlagen');
-        const data = await res.json();
-        await updateDoc(doc(db, 'artikel', ssFotoTargetId), { stockswipeFotoUrl: data.secure_url });
-        const idx = alleArtikel.findIndex(a => a.id === ssFotoTargetId);
-        if (idx >= 0) alleArtikel[idx].stockswipeFotoUrl = data.secure_url;
-        renderSsFotos();
-        toast('StockSwipe-Foto gespeichert ✅');
-      } catch(e) { toast(e.message, 'error'); }
-    };
-
-    // ── PIN ──
-    window.togglePinVisibility = function() {
-      pinVisible = !pinVisible;
-      document.getElementById('current-pin-display').textContent = pinVisible ? currentPin : '****';
-    };
-
-    window.adminPinKey = function(digit) {
-      if (newPinValue.length >= 4) return;
-      newPinValue += digit;
-      updatePinDots();
-    };
-
-    window.adminPinDel = function() {
-      newPinValue = newPinValue.slice(0,-1);
-      updatePinDots();
-    };
-
-    function updatePinDots() {
-      for (let i = 0; i < 4; i++) {
-        document.getElementById(`pdot-${i}`).classList.toggle('filled', i < newPinValue.length);
-      }
-    }
-
-    window.savePIN = async function() {
-      const msg = document.getElementById('pin-msg');
-      if (newPinValue.length < 4) {
-        msg.style.color = 'var(--red)';
-        msg.textContent = 'Bitte 4-stelligen PIN eingeben.';
-        return;
-      }
-      try {
-        await updateDoc(doc(db, 'config', 'app'), { pin: newPinValue });
-        currentPin  = newPinValue;
-        newPinValue = '';
-        updatePinDots();
-        msg.style.color = 'var(--green)';
-        msg.textContent = '✅ PIN gespeichert!';
-        toast('PIN geändert!');
-        setTimeout(() => msg.textContent = '', 3000);
-      } catch (e) { toast(e.message, 'error'); }
-    };
-
-    // ── LAUFBAND ──
-    window.saveLaufband = async function() {
-      const text = (document.getElementById('laufband-input').value || '').trim();
-      const msg  = document.getElementById('laufband-msg');
-      try {
-        await setDoc(doc(db, 'config', 'app'), { laufband: text }, { merge: true });
-        msg.style.color = 'var(--green)';
-        msg.textContent = text ? '✅ Laufband gespeichert!' : '✅ Laufband geleert.';
-        toast(text ? 'Laufband gespeichert!' : 'Laufband geleert.');
-        setTimeout(() => msg.textContent = '', 3000);
-      } catch(e) { toast(e.message, 'error'); }
-    };
-
-    window.clearLaufband = async function() {
-      document.getElementById('laufband-input').value = '';
-      updateLaufbandPreview();
-      await window.saveLaufband();
-    };
-
-    function updateLaufbandPreview() {
-      const text    = (document.getElementById('laufband-input').value || '').trim();
-      const wrap    = document.getElementById('laufband-preview-wrap');
-      const preview = document.getElementById('laufband-preview-text');
-      if (text) {
-        preview.textContent = text;
-        wrap.style.display = '';
-      } else {
-        wrap.style.display = 'none';
-      }
-    }
-
-    document.getElementById('laufband-input').addEventListener('input', updateLaufbandPreview);
-
-    // Aktuellen Laufband-Text beim Laden einmalig aus Firestore holen
-    getDoc(doc(db, 'config', 'app')).then(snap => {
-      const text = snap.exists() ? (snap.data().laufband || '') : '';
-      document.getElementById('laufband-input').value = text;
-      updateLaufbandPreview();
-    }).catch(() => {});
-
-    // ── USERS ──
-    function renderUsers() {
-      const list = document.getElementById('user-list');
-      const roleLabels = { admin: 'ADMIN', wachenleiter: 'WACHENLEITER' };
-      const roleColors = { admin: 'badge-orange', wachenleiter: 'badge-blue' };
-
-      list.innerHTML = alleUsers.map(u => `
-        <div class="user-item">
-          <div class="user-avatar">${u.role === 'admin' ? '👑' : '🧑‍💼'}</div>
-          <div class="user-info">
-            <div class="user-email">${u.email}</div>
-            <div class="user-name">${u.name || ''}</div>
-          </div>
-          <span class="badge ${roleColors[u.role] || 'badge-blue'}">${roleLabels[u.role] || u.role}</span>
-          <select class="form-input" style="max-width:160px;font-size:0.78rem;" onchange="changeRole('${u.id}',this.value)">
-            <option value="wachenleiter" ${u.role==='wachenleiter'?'selected':''}>Wachenleiter</option>
-            <option value="admin" ${u.role==='admin'?'selected':''}>Admin</option>
-          </select>
-        </div>`).join('') || '<div style="padding:20px;text-align:center;color:var(--muted);">Keine Accounts gefunden</div>';
-    }
-
-    window.changeRole = async function(uid, role) {
-      try {
-        await updateDoc(doc(db, 'users', uid), { role });
-        const idx = alleUsers.findIndex(u => u.id === uid);
-        if (idx >= 0) alleUsers[idx].role = role;
-        toast('Rolle geändert');
-        renderUsers();
-      } catch (e) { toast(e.message, 'error'); }
-    };
-
-    // ── Backup Funktionen global verfügbar machen ──
-    window.exportDB = async function(typ) {
-      toast('Export wird erstellt...');
-      try {
-        const timestamp = new Date().toISOString().split('T')[0];
-        let exportObj = { exportiert: new Date().toISOString(), typ, version: '1.0' };
-        let filename = '';
-
-        if (typ === 'komplett' || typ === 'artikel') {
-          const aSnap = await getDocs(collection(db, 'artikel'));
-          exportObj.artikel = aSnap.docs.map(d => ({ _id: d.id, ...d.data() }));
-          document.getElementById('export-artikel-count').textContent = exportObj.artikel.length;
-        }
-        if (typ === 'komplett') {
-          const bSnap = await getDocs(query(collection(db, 'bereiche'), orderBy('reihenfolge')));
-          exportObj.bereiche = bSnap.docs.map(d => ({ _id: d.id, ...d.data() }));
-          document.getElementById('export-bereiche-count').textContent = exportObj.bereiche.length;
-          const cSnap = await getDoc(doc(db, 'config', 'app'));
-          if (cSnap.exists()) exportObj.config = cSnap.data();
-          const bestSnap = await getDocs(query(collection(db, 'bestellungen'), orderBy('datum', 'desc')));
-          exportObj.bestellungen = bestSnap.docs.map(d => ({
-            _id: d.id, ...d.data(),
-            datum: d.data().datum?.toDate?.().toISOString() || d.data().datum,
-          }));
-          document.getElementById('export-bestellungen-count').textContent = exportObj.bestellungen.length;
-          filename = `lagerapp_backup_${timestamp}.json`;
-        } else if (typ === 'artikel') {
-          filename = `lagerapp_artikel_${timestamp}.json`;
-        } else if (typ === 'chargen') {
-          const aSnap = await getDocs(collection(db, 'artikel'));
-          exportObj.artikel = aSnap.docs.map(d => ({ _id: d.id, ...d.data() }))
-            .filter(a => a.chargen && a.chargen.length > 0)
-            .map(a => ({ _id: a._id, name: a.name, gtin: a.gtin, gtins: a.gtins, chargen: a.chargen }));
-          filename = `lagerapp_chargen_${timestamp}.json`;
-        }
-
-        const blob = new Blob([JSON.stringify(exportObj, null, 2)], { type: 'application/json' });
-        const url  = URL.createObjectURL(blob);
-        const a    = document.createElement('a');
-        a.href = url; a.download = filename; a.click();
-        URL.revokeObjectURL(url);
-
-        // History speichern
-        const hist = JSON.parse(localStorage.getItem('lagerapp-backups') || '[]');
-        hist.unshift({ datum: new Date().toISOString(), filename });
-        localStorage.setItem('lagerapp-backups', JSON.stringify(hist.slice(0, 5)));
-        renderBackupHistory();
-        toast('✅ ' + filename);
-      } catch(e) { toast(e.message, 'error'); }
-    };
-
-    function sanitizeLP(lp) {
-      return (lp || 'unbekannt').replace(/\./g, '-').replace(/\//g, '_').replace(/\s+/g, '_');
-    }
-
-    function extFromUrl(url) {
-      try {
-        const path = new URL(url).pathname;
-        const m = path.match(/\.(jpg|jpeg|png|webp|gif)(\?|$)/i);
-        return m ? m[1].toLowerCase() : 'jpg';
-      } catch { return 'jpg'; }
-    }
-
-    window.exportBilder = async function() {
-      if (typeof JSZip === 'undefined') { toast('JSZip nicht geladen', 'error'); return; }
-      const logEl   = document.getElementById('bilder-export-log');
-      const progEl  = document.getElementById('bilder-export-progress-fill');
-      const textEl  = document.getElementById('bilder-export-progress-text');
-      const progBox = document.getElementById('bilder-export-progress');
-      progBox.classList.remove('hidden');
-      logEl.innerHTML = '';
-
-      function log(msg, color = 'var(--text2)') {
-        const d = document.createElement('div');
-        d.style.color = color; d.textContent = msg;
-        logEl.appendChild(d); logEl.scrollTop = logEl.scrollHeight;
-      }
-      function setProgress(pct) {
-        progEl.style.width = pct + '%';
-        textEl.textContent = Math.round(pct) + '%';
-      }
-
-      try {
-        log('📦 Lade Artikel aus Firestore...');
-        const snap = await getDocs(collection(db, 'artikel'));
-        const artikel = snap.docs.map(d => ({ _id: d.id, ...d.data() }));
-
-        const withFoto  = artikel.filter(a => a.fotoUrl);
-        const withLager = artikel.filter(a => a.lagerFotoUrl);
-        document.getElementById('bilder-export-produkt-count').textContent = withFoto.length;
-        document.getElementById('bilder-export-lager-count').textContent   = withLager.length;
-
-        const totalImages = withFoto.length + withLager.length;
-        if (totalImages === 0) { toast('Keine Bilder vorhanden', 'error'); return; }
-
-        log(`🖼️ ${totalImages} Bilder werden heruntergeladen...`);
-        const zip      = new JSZip();
-        const manifest = [];
-        let done = 0;
-
-        for (const a of artikel) {
-          const lpSafe = sanitizeLP(a.lp);
-
-          for (const typ of ['produkt', 'lager']) {
-            const url = typ === 'produkt' ? a.fotoUrl : a.lagerFotoUrl;
-            if (!url) continue;
-            try {
-              const resp = await fetch(url);
-              if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-              const blob     = await resp.blob();
-              const ext      = extFromUrl(url);
-              const filename = `${lpSafe}_${typ}.${ext}`;
-              zip.file(filename, blob);
-              manifest.push({ filename, lp: a.lp, artikelId: a._id, name: a.name, typ });
-              done++;
-              setProgress(done / totalImages * 95);
-              log(`   ✅ ${filename}`, 'var(--green)');
-            } catch(e) {
-              log(`   ⚠️ ${a.name} (${typ}): ${e.message}`, 'var(--yellow)');
-              done++;
-              setProgress(done / totalImages * 95);
-            }
-          }
-        }
-
-        zip.file('manifest.json', JSON.stringify(manifest, null, 2));
-        log('🗜️ ZIP wird erstellt...');
-        const blob      = await zip.generateAsync({ type: 'blob' }, meta => setProgress(95 + meta.percent * 0.05));
-        const timestamp = new Date().toISOString().split('T')[0];
-        const filename  = `lagerapp_bilder_${timestamp}.zip`;
-        const url       = URL.createObjectURL(blob);
-        const a         = document.createElement('a');
-        a.href = url; a.download = filename; a.click();
-        URL.revokeObjectURL(url);
-        setProgress(100);
-        log(`🎉 ${filename} (${manifest.length} Bilder)`, 'var(--green)');
-        toast('✅ ' + filename);
-      } catch(e) { log('❌ ' + e.message, 'var(--red)'); toast(e.message, 'error'); }
-    };
-
-    function renderBackupHistory() {
-      const el   = document.getElementById('backup-history');
-      if (!el) return;
-      const hist = JSON.parse(localStorage.getItem('lagerapp-backups') || '[]');
-      if (hist.length === 0) { el.textContent = 'Noch keine Backups erstellt'; return; }
-      el.innerHTML = hist.map(h => `
-        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:0.78rem;">
-          <span style="font-family:'IBM Plex Mono',monospace;font-size:0.72rem;">${h.filename}</span>
-          <span style="color:var(--muted);">${new Date(h.datum).toLocaleDateString('de-DE')}</span>
-        </div>`).join('');
-    }
-
-    window.loadImportFile = function(input) {
-      const file = input.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = e => {
-        try {
-          window._importData = JSON.parse(e.target.result);
-          const infos = [];
-          if (window._importData.artikel)      infos.push(`📦 ${window._importData.artikel.length} Artikel`);
-          if (window._importData.bereiche)     infos.push(`🏠 ${window._importData.bereiche.length} Bereiche`);
-          if (window._importData.bestellungen) infos.push(`📋 ${window._importData.bestellungen.length} Bestellungen`);
-          if (window._importData.config)       infos.push(`⚙️ Config`);
-          document.getElementById('import-preview').classList.remove('hidden');
-          document.getElementById('import-preview-content').innerHTML = `
-            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
-              ${infos.map(i => `<span class="badge badge-blue">${i}</span>`).join('')}
-            </div>
-            <div style="font-size:0.72rem;color:var(--muted);">
-              Exportiert: ${window._importData.exportiert ? new Date(window._importData.exportiert).toLocaleString('de-DE') : 'Unbekannt'}
-            </div>`;
-          const btn = document.getElementById('btn-import-start');
-          btn.disabled = false; btn.style.opacity = '1';
-          document.getElementById('drop-zone').style.borderColor = 'var(--green)';
-        } catch(e) { toast('Ungültige Datei: ' + e.message, 'error'); }
-      };
-      reader.readAsText(file);
-    };
-
-    window.startImport = async function() {
-      const importData = window._importData;
-      if (!importData) return;
-      const mode    = document.querySelector('input[name="import-mode"]:checked').value;
-      const logEl   = document.getElementById('import-log');
-      const progEl  = document.getElementById('import-progress-fill');
-      const textEl  = document.getElementById('import-progress-text');
-      document.getElementById('import-progress').classList.remove('hidden');
-      document.getElementById('btn-import-start').disabled = true;
-      logEl.innerHTML = '';
-
-      function log(msg, color = 'var(--text2)') {
-        const d = document.createElement('div');
-        d.style.color = color; d.textContent = msg;
-        logEl.appendChild(d); logEl.scrollTop = logEl.scrollHeight;
-      }
-      function setProgress(pct) {
-        progEl.style.width = pct + '%';
-        textEl.textContent = Math.round(pct) + '%';
-      }
-
-      try {
-        if (mode === 'replace') {
-          log('🗑️ Lösche bestehende Daten...');
-          if (importData.artikel) {
-            const aSnap = await getDocs(collection(db, 'artikel'));
-            if (aSnap.size > 0) {
-              const b = writeBatch(db);
-              aSnap.docs.forEach(d => b.delete(d.ref));
-              await b.commit();
-            }
-            log(`   ✅ ${aSnap.size} Artikel gelöscht`, 'var(--yellow)');
-          }
-          if (importData.bereiche) {
-            const bSnap = await getDocs(collection(db, 'bereiche'));
-            if (bSnap.size > 0) {
-              const b = writeBatch(db);
-              bSnap.docs.forEach(d => b.delete(d.ref));
-              await b.commit();
-            }
-            log(`   ✅ ${bSnap.size} Bereiche gelöscht`, 'var(--yellow)');
-          }
-        }
-
-        const total = (importData.artikel?.length || 0) + (importData.bereiche?.length || 0);
-        let done = 0;
-
-        if (importData.artikel?.length > 0) {
-          log('📦 Importiere Artikel...');
-          for (let i = 0; i < importData.artikel.length; i += 400) {
-            const b     = writeBatch(db);
-            const chunk = importData.artikel.slice(i, i + 400);
-            for (const a of chunk) {
-              const { _id, ...data } = a;
-              const r = _id ? doc(db, 'artikel', _id) : doc(collection(db, 'artikel'));
-              b.set(r, data, { merge: mode === 'merge' });
-              done++; setProgress(total > 0 ? done/total*100 : 50);
-            }
-            await b.commit();
-            log(`   ✅ ${Math.min(i+400, importData.artikel.length)} / ${importData.artikel.length}`, 'var(--green)');
-          }
-        }
-
-        if (importData.bereiche?.length > 0) {
-          log('🏠 Importiere Bereiche...');
-          for (const be of importData.bereiche) {
-            const { _id, ...data } = be;
-            const r = _id ? doc(db, 'bereiche', _id) : doc(collection(db, 'bereiche'));
-            await setDoc(r, data, { merge: mode === 'merge' });
-            done++; setProgress(total > 0 ? done/total*100 : 75);
-          }
-          log(`   ✅ ${importData.bereiche.length} Bereiche`, 'var(--green)');
-        }
-
-        if (importData.config) {
-          await setDoc(doc(db, 'config', 'app'), importData.config, { merge: true });
-          log('   ✅ Config importiert', 'var(--green)');
-        }
-
-        setProgress(100);
-        log('🎉 Import abgeschlossen!', 'var(--green)');
-        toast('Import abgeschlossen ✅');
-        await loadAll();
-
-      } catch(e) {
-        log('❌ ' + e.message, 'var(--red)');
-        toast(e.message, 'error');
-        document.getElementById('btn-import-start').disabled = false;
-      }
-    };
-
-    window.loadBilderImportFile = async function(input) {
-      const file = input.files[0];
-      if (!file) return;
-      if (typeof JSZip === 'undefined') { toast('JSZip nicht geladen', 'error'); return; }
-      try {
-        const zip = await JSZip.loadAsync(file);
-        const manifestFile = zip.file('manifest.json');
-        if (!manifestFile) { toast('Ungültiges ZIP: manifest.json fehlt', 'error'); return; }
-        const manifest = JSON.parse(await manifestFile.async('string'));
-        const produktCount = manifest.filter(e => e.typ === 'produkt').length;
-        const lagerCount   = manifest.filter(e => e.typ === 'lager').length;
-        window._bilderImportData = { manifest, zip };
-        document.getElementById('bilder-import-preview').classList.remove('hidden');
-        document.getElementById('bilder-import-preview-content').innerHTML = `
-          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px;">
-            <span class="badge badge-blue">📦 ${produktCount} Produktfotos</span>
-            <span class="badge badge-blue">🗄️ ${lagerCount} Lagerfotos</span>
-          </div>
-          <div style="font-size:0.72rem;color:var(--muted);">${manifest.length} Bilder in ${file.name}</div>`;
-        const btn = document.getElementById('btn-bilder-import-start');
-        btn.disabled = false; btn.style.opacity = '1';
-        document.getElementById('bilder-drop-zone').style.borderColor = 'var(--green)';
-      } catch(e) { toast('Ungültige Datei: ' + e.message, 'error'); }
-    };
-
-    window.startBilderImport = async function() {
-      const data = window._bilderImportData;
-      if (!data) return;
-      const { manifest, zip } = data;
-      const logEl  = document.getElementById('bilder-import-log');
-      const progEl = document.getElementById('bilder-import-progress-fill');
-      const textEl = document.getElementById('bilder-import-progress-text');
-      document.getElementById('bilder-import-progress').classList.remove('hidden');
-      document.getElementById('btn-bilder-import-start').disabled = true;
-      logEl.innerHTML = '';
-
-      function log(msg, color = 'var(--text2)') {
-        const d = document.createElement('div');
-        d.style.color = color; d.textContent = msg;
-        logEl.appendChild(d); logEl.scrollTop = logEl.scrollHeight;
-      }
-      function setProgress(pct) {
-        progEl.style.width = pct + '%';
-        textEl.textContent = Math.round(pct) + '%';
-      }
-
-      try {
-        log('📋 Lade Artikel aus Firestore...');
-        const snap   = await getDocs(collection(db, 'artikel'));
-        const lpMap  = {};
-        snap.docs.forEach(d => { if (d.data().lp) lpMap[d.data().lp] = d.id; });
-
-        const total = manifest.length;
-        let done = 0, ok = 0, skipped = 0;
-
-        for (const entry of manifest) {
-          const { filename, lp, artikelId, name, typ } = entry;
-          const docId = lpMap[lp] || artikelId;
-          if (!docId) {
-            log(`   ⚠️ Kein Artikel für LP "${lp}" gefunden – übersprungen`, 'var(--yellow)');
-            skipped++; done++; setProgress(done / total * 100); continue;
-          }
-
-          const zipEntry = zip.file(filename);
-          if (!zipEntry) {
-            log(`   ⚠️ Datei "${filename}" nicht im ZIP – übersprungen`, 'var(--yellow)');
-            skipped++; done++; setProgress(done / total * 100); continue;
-          }
-
-          try {
-            const blob = await zipEntry.async('blob');
-            const fd   = new FormData();
-            fd.append('file', blob, filename);
-            fd.append('upload_preset', 'lagerapp_unsigned');
-            fd.append('folder', 'lagerapp/artikel');
-            const res    = await fetch('https://api.cloudinary.com/v1_1/dvqug2dcx/image/upload', { method: 'POST', body: fd });
-            const result = await res.json();
-            if (!result.secure_url) throw new Error(result.error?.message || 'Upload fehlgeschlagen');
-
-            const field = typ === 'produkt' ? 'fotoUrl' : 'lagerFotoUrl';
-            await updateDoc(doc(db, 'artikel', docId), { [field]: result.secure_url });
-            log(`   ✅ ${name} → ${typ}`, 'var(--green)');
-            ok++;
-          } catch(e) {
-            log(`   ❌ ${name} (${typ}): ${e.message}`, 'var(--red)');
-            skipped++;
-          }
-          done++; setProgress(done / total * 100);
-        }
-
-        setProgress(100);
-        log(`🎉 Fertig: ${ok} importiert, ${skipped} übersprungen`, 'var(--green)');
-        toast(`✅ ${ok} Bilder importiert`);
-        await loadAll();
-      } catch(e) {
-        log('❌ ' + e.message, 'var(--red)');
-        toast(e.message, 'error');
-        document.getElementById('btn-bilder-import-start').disabled = false;
-      }
-    };
-
-    // ── LIEFERANTEN-ZUWEISUNG ──
-    const LIEFERANTEN_NAMEN = {
-      ekg: 'Meßmer (EKG)', ezio: 'Teleflex (EZ-IO)', hygiene: 'Orochemie (Hygiene)',
-      apotheke: 'Klinikum (Apotheke)', thermopapier: 'medDV (Thermopapier)',
-      sauerstoff: 'Kraiss & Friz (O₂)', vokranken: 'Kohlhammer (VO)', radecker: 'Radecker',
-    };
-
-    let _liefChanges = {};
-
-    window.renderLieferantenTabelle = function() {
-      _liefChanges = {};
-      document.getElementById('btn-lief-save').disabled = true;
-      filterLieferantenTabelle();
-    };
-
-    window.filterLieferantenTabelle = function() {
-      const q    = (document.getElementById('lief-search')?.value || '').toLowerCase();
-      const lief = document.getElementById('lief-filter-lieferant')?.value || '';
-      const tbody = document.getElementById('lief-table-body');
-      if (!tbody) return;
-      const filtered = alleArtikel.filter(a =>
-        (!q || a.name.toLowerCase().includes(q)) &&
-        (!lief || (a.lieferant || '') === lief)
-      );
-      tbody.innerHTML = filtered.map(a => `
-        <tr style="border-bottom:1px solid var(--hairline);">
-          <td style="padding:8px 16px;font-size:0.82rem;">${esc(a.name)}<br><span style="font-size:0.68rem;color:var(--muted);">${esc(a.lp||'')}</span></td>
-          <td style="padding:8px 16px;">
-            <select class="form-input" style="font-size:0.78rem;" onchange="onLiefChange('${a.id}','lieferant',this.value)">
-              <option value="" ${!a.lieferant?'selected':''}>— kein —</option>
-              ${Object.entries(LIEFERANTEN_NAMEN).map(([k,v])=>`<option value="${k}" ${a.lieferant===k?'selected':''}>${v}</option>`).join('')}
-            </select>
-          </td>
-          <td style="padding:8px 16px;">
-            <input type="text" class="form-input" style="font-size:0.78rem;" value="${esc(a.formularFeld||'')}" placeholder="bestellmenge_pos1" oninput="onLiefChange('${a.id}','formularFeld',this.value)">
-          </td>
-        </tr>`).join('');
-    };
-
-    window.onLiefChange = function(id, field, value) {
-      if (!_liefChanges[id]) _liefChanges[id] = {};
-      _liefChanges[id][field] = value;
-      const a = alleArtikel.find(x => x.id === id);
-      if (a) a[field] = value;
-      document.getElementById('btn-lief-save').disabled = false;
-    };
-
-    window.saveLieferantenBatch = async function() {
-      const btn = document.getElementById('btn-lief-save');
-      btn.disabled = true; btn.textContent = 'Wird gespeichert…';
-      try {
-        const batch = writeBatch(db);
-        for (const [id, changes] of Object.entries(_liefChanges)) {
-          batch.update(doc(db, 'artikel', id), changes);
-          const a = alleArtikel.find(x => x.id === id);
-          if (a) Object.assign(a, changes);
-        }
-        const count = Object.keys(_liefChanges).length;
-        await batch.commit();
-        _liefChanges = {};
-        toast(`✅ ${count} Artikel gespeichert`);
-      } catch(e) { toast(e.message, 'error'); btn.disabled = false; }
-      btn.textContent = '💾 Alle speichern';
-    };
-
-    window.autoAssignRadecker = function() {
-      if (!alleArtikel || alleArtikel.length === 0) { toast('Artikel noch nicht geladen', 'error'); return; }
-      function radField(idx) {
-        const p = idx <= 50 ? 1 : idx <= 114 ? 2 : idx <= 178 ? 3 : 4;
-        return `bestellmenge_p${p}_${idx}`;
-      }
-      // [keywords[], excelIdx] — ALL keywords must appear in lowercased article name
-      // More specific entries first to take priority
-      const MAP = [
-        // Desinfektionshandschuhe ULTRA (vor normalen Handschuhen)
-        [['desinfektionshandschuhe','gr. s'], 77], [['desinfektionshandschuhe','gr. m'], 78],
-        [['desinfektionshandschuhe','gr. l'], 79], [['desinfektionshandschuhe','gr. xl'], 80],
-        // Handschuhe Nitril Standard
-        [['handschuhe','gr. s'], 73], [['handschuhe','gr. m'], 74],
-        [['handschuhe','gr. l'], 75], [['handschuhe','gr. xl'], 76],
-        // iGel Plus (vor iGel)
-        [['igel','plus','gr. 3'], 90], [['igel','plus','gr. 4'], 91], [['igel','plus','gr. 5'], 92],
-        // iGel
-        [['igel','gr. 1,5'], 87], [['igel','gr. 2,5'], 89],
-        [['igel','gr. 1'], 86], [['igel','gr. 2'], 88],
-        // Magill-Zange
-        [['magill','groß'], 116], [['magill','klein'], 117],
-        // Müllbeutel
-        [['müllbeutel','blau'], 122], [['müllbeutel','120'], 122], [['müllbeutel','15'], 121],
-        // Endotrachealtubus — ohne Cuff zuerst (spezifischer)
-        [['tubus','ohne','2,5'], 42], [['tubus','ohne','3,5'], 43],
-        [['tubus','3,0'], 44], [['tubus','3,5'], 45], [['tubus','4,0'], 46], [['tubus','4,5'], 47],
-        [['tubus','5,0'], 49], [['tubus','5,5'], 50], [['tubus','6,0'], 51],
-        [['tubus','7,0'], 52], [['tubus','8,0'], 53],
-        // Guedel
-        [['guedel','gr. 4'], 62], [['guedel','gr. 5'], 63], [['guedel','gr. 6'], 64],
-        [['guedel','gr. 7'], 65], [['guedel','gr. 8'], 66], [['guedel','gr. 9'], 67],
-        [['guedel','gr. 10'], 68], [['guedel','gr. 11'], 69],
-        // Absaugkatheter
-        [['absaugkatheter','ch.6'], 1], [['absaugkatheter','ch 6'], 1],
-        [['absaugkatheter','ch.14'], 2], [['absaugkatheter','ch 14'], 2],
-        [['absaugkatheter','ch.16'], 3], [['absaugkatheter','ch 16'], 3],
-        // Larynxmaske
-        [['larynxmaske','1,0'], 102], [['larynxmaske','1,5'], 103], [['larynxmaske','2,0'], 104],
-        [['larynxmaske','2,5'], 105], [['larynxmaske','3,0'], 106], [['larynxmaske','4,0'], 107],
-        [['larynxmaske','5,0'], 108],
-        [['larynxmaske','gr. 1'], 102], [['larynxmaske','gr. 2'], 104], [['larynxmaske','gr. 3'], 106],
-        [['larynxmaske','gr. 4'], 107], [['larynxmaske','gr. 5'], 108],
-        // Beatmungsmaske CPAP (Größe via Artikel-Nr.-Suffix)
-        [['cpap','maske','951'], 15], [['cpap','maske','953'], 16], [['cpap','maske','954'], 17],
-        [['cpap','maske','955'], 18], [['cpap','maske','956'], 19],
-        // Aerosol/Vernebler
-        [['aerosol','erw'], 5], [['aerosol','kind'], 6],
-        [['vernebler','erw'], 5], [['vernebler','kind'], 6],
-        // Beatmungsbeutel
-        [['beatmungsbeutel','erw'], 11], [['beatmungsbeutel','kind'], 12],
-        // Beatmungsfilter
-        [['iso-gard'], 13], [['beatmungsfilter','intersurgical'], 14],
-        // Blutdruckmessgerät (Kleinkind vor Kind)
-        [['blutdruck','bein'], 21], [['blutdruck','kleinkind'], 24],
-        [['blutdruck','kind'], 23], [['blutdruck','erw'], 22],
-        // Fixationsband CPAP
-        [['fixationsband','erw'], 57], [['fixationsband','kind'], 58],
-        // Laryngoskop-Griff
-        [['laryngoskop','erw'], 100], [['laryngoskop','kind'], 101],
-        // Macintosh Spatel
-        [['macintosh','dahlhausen'], 157],
-        [['macintosh','resq','1'], 158], [['macintosh','resq','2'], 159],
-        [['macintosh','resq','3'], 160], [['macintosh','resq','4'], 161],
-        [['macintosh','resq','5'], 162],
-        [['macintosh','gr. 1'], 158], [['macintosh','gr. 2'], 159], [['macintosh','gr. 3'], 160],
-        [['macintosh','gr. 4'], 161], [['macintosh','gr. 5'], 162],
-        // Miller Spatel
-        [['miller','gr. 0'], 155], [['miller','gr. 1'], 156],
-        [['miller',' 0'], 155], [['miller',' 1'], 156],
-        // Replantat-Set
-        [['replantat','groß'], 146], [['replantat','klein'], 147],
-        // Skalpell
-        [['skalpell','10'], 153], [['skalpell','11'], 154],
-        // Spritzen
-        [['luer-lock'], 111], [['injekt-f'], 163], [['injekt f'], 163],
-        [['discardit','1'], 164], [['discardit','5'], 165],
-        [['discardit','10'], 166], [['discardit','20'], 167],
-        // Thomas Holder
-        [['thomas holder','select'], 174], [['thomas holder','erw'], 174],
-        [['thomas holder','pediatric'], 175], [['thomas holder','kind'], 175],
-        // Videolaryngoskop / McGRATH
-        [['mcgrath','akku'], 191], [['videolaryngoskop','akku'], 191],
-        [['mcgrath','spatel','072'], 192], [['mcgrath','spatel','017'], 193],
-        [['mcgrath','spatel','005'], 194], [['mcgrath','spatel','013'], 195],
-        [['mcgrath','x blade'], 196], [['mcgrath','x-blade'], 196],
-        [['mcgrath','gerät'], 190],
-        // Viggo (längere Nummern zuerst)
-        [['viggo','pflaster'], 203], [['viggo','leukomed'], 203],
-        [['viggo','14g'], 201], [['viggo','16g'], 199], [['viggo','18g'], 200],
-        [['viggo','20g'], 202], [['viggo','22g'], 197], [['viggo','24g'], 198],
-        [['viggo','14'], 201], [['viggo','16'], 199], [['viggo','18'], 200],
-        [['viggo','20'], 202], [['viggo','22'], 197], [['viggo','24'], 198],
-        // Wendel Tubus
-        [['wendel','12'], 204], [['wendel','14'], 205], [['wendel','16'], 206],
-        [['wendel','18'], 207], [['wendel','20'], 208], [['wendel','28'], 209],
-        // O2-Maske
-        [['sauerstoffmaske','erw'], 128], [['sauerstoffmaske','kind'], 129],
-        [['o2-maske','erw'], 128], [['o2-maske','kind'], 129],
-        [['o2','maske','erw'], 128], [['o2','maske','kind'], 129],
-        // Magensonde
-        [['magensonde','mit mandrin'], 114], [['magensonde','mit'], 114],
-        [['magensonde','ohne'], 113],
-        // HWS-Orthese
-        [['hws','erw'], 82], [['hws','kind'], 83],
-        // Augenspülung
-        [['augenspülung','nacl'], 8], [['augenspülung','0,9'], 8],
-        [['augenspülung','ph'], 9], [['augenspülung','phosphat'], 9],
-        // Mullkompressen (spezifisch vor allgemein)
-        [['mullkompressen','8x8'], 120], [['mullkompressen','5x5'], 181],
-        [['tupfer','5x5'], 181],
-        // Verbrennungstuch (Betttuch spezifischer zuerst)
-        [['verbrennungstuch','betttuch'], 187], [['aluderm','betttuch'], 187],
-        // Handabsaugpumpe Zubehör vor Set
-        [['handabsaugpumpe','zubehör'], 72], [['handabsaugpumpe'], 71],
-        // Decken
-        [['decke','sommer'], 33], [['decken','sommer'], 33],
-        [['decke','winter'], 34], [['decken','winter'], 34],
-        // Verbandpäckchen
-        [['verbandpäckchen','groß'], 185],
-        // Einzelwort-Matches (eindeutige Produkte)
-        [['absaugbeutel'], 0], [['absaugschlauch'], 4], [['aufziehkanüle'], 7],
-        [['beatmungsschlauch'], 10], [['beckenschlinge'], 20], [['celox'], 25],
-        [['chest seal'], 26], [['foxseal'], 26], [['chirurgisches besteck'], 27],
-        [['eingaswarngerät'], 28], [['co-warngerät'], 28],
-        [['schnelltest','covid'], 29], [['covid','test'], 29],
-        [['cuffdruckmesser'], 30], [['cutasept'], 31], [['ypsipor'], 32],
-        [['dreiecktuch'], 35], [['dreiecktücher'], 35], [['dreiwegehahn'], 36],
-        [['druckinfusion'], 37], [['easy splint'], 38], [['einmallaken'], 39],
-        [['klebeelektroden'], 40], [['elektrodengel'], 41],
-        [['mandrin','asid'], 48], [['einführungsmandrin'], 48],
-        [['ffp2'], 54], [['ffp3'], 55], [['fingertipp'], 56],
-        [['gänsegurgel'], 61], [['haix'], 70],
-        [['lindesa'], 81], [['hyperventilationsmaske'], 84], [['sterican'], 85],
-        [['intrafix'], 93], [['infusionssystem'], 93],
-        [['kältekompresse'], 94], [['kühlkompresse'], 94], [['kältebeutel'], 94],
-        [['kontamed'], 95], [['sani 200'], 96], [['multi-safe','200'], 96],
-        [['kindersicher'], 97], [['kleiderschere'], 98], [['kombistopfen'], 99],
-        [['leukoplast'], 109], [['leukosilk'], 110], [['katherspritze'], 112],
-        [['magensondenbeutel'], 115], [['ringmagnet'], 118], [['schrittmachermagnet'], 118],
-        [['mini-spike'], 119], [['minispike'], 119],
-        [['mundschutz'], 123], [['op-maske'], 123], [['mund-nasen-schutz'], 123],
-        [['mundspatel'], 124], [['nabelklemme'], 125],
-        [['nasalzerstäuber'], 126], [['mad100'], 126],
-        [['nierenschale'], 127],
-        [['sicherheitsschlauch'], 130], [['o2-sicherheitsschlauch'], 130],
-        [['nasensonde'], 131], [['o2-brille'], 131], [['sauerstoffbrille'], 131],
-        [['ohrthermometer','braun'], 132],
-        [['thermometerfilter'], 133], [['meßfilter'], 133], [['ohrfilter'], 133],
-        [['oro-sauger'], 134], [['orosauger'], 134],
-        [['peep','ventil'], 135], [['peepventil'], 135],
-        [['perfusor','leitung'], 136], [['perfusorleitung'], 136],
-        [['perfusor','spritze'], 137], [['perfusorspritze'], 137],
-        [['pinkelbeutel'], 138], [['pinzette'], 139], [['portkanüle'], 140],
-        [['pulsoximeter'], 141], [['pulsoxy'], 141], [['pulsox'], 141],
-        [['pupillenleuchte'], 142], [['rasierer'], 143], [['heizdecke'], 144],
-        [['regenschutz'], 145], [['rettungsdecke'], 148],
-        [['rückschlagventil'], 149], [['infuvalve'], 149],
-        [['saugunterlage'], 150], [['brechbeutel'], 151], [['silberwindel'], 152],
-        [['schere','steril'], 168], [['chirurgische schere'], 168],
-        [['sterillium'], 171], [['virugard'], 171], [['stethoskop'], 172],
-        [['s-guide'], 173], [['intubationshilfe'], 173],
-        [['thoraxentlastungsnadel'], 176], [['angiocath'], 176],
-        [['thoraxdrainage'], 177], [['tourniquet'], 178],
-        [['patienteneigentum'], 179], [['tragetasche','patient'], 179],
-        [['tragetuch'], 180],
-        [['universalbinde'], 182], [['koniotomie'], 183], [['surgicric'], 183],
-        [['venenstauer'], 184], [['verbandtuch'], 186],
-        [['verbrennungstuch'], 188], [['aluderm'], 188],
-        [['cirrus'], 189], [['videolaryngoskop'], 190],
-        [['yankauer'], 210], [['zahnprothese'], 211], [['reflexschild'], 212],
-        [['tupfer'], 181],
-      ];
-
-      let count = 0;
-      for (const a of alleArtikel) {
-        if (a.lieferant && a.lieferant !== '' && a.lieferant !== 'radecker') continue;
-        const nameLow = (a.name || '').toLowerCase();
-        for (const [keywords, idx] of MAP) {
-          if (keywords.every(k => nameLow.includes(k))) {
-            const feld = radField(idx);
-            if (a.lieferant !== 'radecker' || a.formularFeld !== feld) {
-              onLiefChange(a.id, 'lieferant', 'radecker');
-              onLiefChange(a.id, 'formularFeld', feld);
-              count++;
-            }
-            break;
-          }
-        }
-      }
-      filterLieferantenTabelle();
-      toast(count > 0
-        ? `🔄 ${count} Artikel Radecker zugeordnet – bitte prüfen & speichern`
-        : 'Keine neuen Zuordnungen gefunden');
-    };
-
-    // Init
-    renderBackupHistory();
-
-  </script>
-
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script type="module" src="../js/admin.js"></script>
   <script src="../js/pwa.js"></script>
 </body>
 </html>

@@ -11,259 +11,17 @@
   <link rel="manifest" href="../manifest.json">
   <link rel="apple-touch-icon" href="/lagerapp_alpha/icons/icon-192.png">
   <link rel="stylesheet" href="../css/main.css">
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body { min-height: 100dvh; display: flex; flex-direction: column; background: var(--bg); color: var(--ink); font-family: var(--font-ui); }
-    .hidden { display: none !important; }
-
-    /* ── Laufband ── */
-    .laufband-bar { display:flex; align-items:center; height:32px; background:var(--brand); color:#fff; overflow:hidden; border-bottom:1px solid rgba(0,0,0,.1); flex-shrink:0; }
-    .laufband-bar.hidden { display:none !important; }
-    .laufband-label { font-family:var(--font-mono); font-size:10px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; padding:0 10px; background:rgba(0,0,0,.18); height:100%; display:flex; align-items:center; flex-shrink:0; border-right:1px solid rgba(255,255,255,.2); white-space:nowrap; }
-    .laufband-track { flex:1; overflow:hidden; height:100%; display:flex; align-items:center; }
-    .laufband-text { display:inline-block; font-size:12px; font-weight:600; white-space:nowrap; flex-shrink:0; padding:0 60px; animation:lb-scroll 22s linear -11s infinite; }
-    .laufband-text.long  { animation-duration:34s; animation-delay:-17s; }
-    .laufband-text.short { animation-duration:14s; animation-delay:-7s; }
-    @keyframes lb-scroll { from { transform:translateX(100vw); } to { transform:translateX(-100%); } }
-
-    /* ── Nav ── */
-    .m-nav {
-      position: sticky; top: 0; z-index: 100;
-      background: var(--glass-bg-strong);
-      border-bottom: 0.5px solid var(--hairline);
-      backdrop-filter: blur(24px) saturate(180%);
-      -webkit-backdrop-filter: blur(24px) saturate(180%);
-      padding: env(safe-area-inset-top, 0px) 16px 0;
-      height: calc(52px + env(safe-area-inset-top, 0px));
-      display: flex; align-items: center; gap: 10px;
-    }
-    .m-back {
-      width: 36px; height: 36px; border-radius: 18px;
-      background: var(--surface); border: none; cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      color: var(--ink-2); box-shadow: inset 0 0 0 1px var(--hairline);
-      touch-action: manipulation; flex-shrink: 0;
-    }
-    .m-nav-right { margin-left: auto; display: flex; align-items: center; gap: 8px; }
-    .m-panel-btn {
-      height: 32px; padding: 0 11px; border-radius: 8px;
-      border: 1px solid var(--hairline-2); background: var(--surface-2);
-      color: var(--ink-2); font-family: var(--font-ui); font-size: 0.78rem; font-weight: 500;
-      cursor: pointer; text-decoration: none; display: none;
-      align-items: center; gap: 5px; white-space: nowrap;
-    }
-    .m-panel-btn:active { opacity: 0.75; }
-    .m-theme {
-      width: 36px; height: 36px; border-radius: 18px;
-      background: var(--surface-3); border: none; cursor: pointer;
-      display: flex; align-items: center; justify-content: center; font-size: 15px;
-    }
-
-    /* ── Page ── */
-    .m-page {
-      flex: 1; padding: 24px 16px calc(40px + env(safe-area-inset-bottom,0px));
-      max-width: 500px; width: 100%; margin: 0 auto;
-      display: flex; flex-direction: column; gap: 20px;
-    }
-
-    /* ── Greeting ── */
-    .m-tag {
-      font-family: var(--font-mono); font-size: 11px; font-weight: 600;
-      color: var(--brand); letter-spacing: 0.06em; text-transform: uppercase;
-      margin-bottom: 6px;
-    }
-    .m-title {
-      font-size: 30px; font-weight: 700; letter-spacing: -0.7px; line-height: 1.05;
-    }
-    .m-title-sub { color: var(--ink-3); }
-    .m-sub { font-size: 13px; color: var(--ink-3); margin-top: 6px; display: flex; align-items: center; gap: 8px; }
-    .m-sub-dot { color: var(--ink-4); }
-
-    /* ── Resume-Draft Banner ── */
-    .m-draft-banner {
-      background: var(--surface); border-radius: 18px; padding: 14px;
-      box-shadow: inset 0 0 0 1px var(--brand-soft-2), 0 6px 18px rgba(242,107,46,.08);
-      display: flex; align-items: center; gap: 12px;
-      position: relative; overflow: hidden; cursor: pointer;
-      touch-action: manipulation;
-    }
-    .m-draft-banner::before {
-      content: ''; position: absolute; inset: 0;
-      background: linear-gradient(135deg, var(--brand-soft) 0%, transparent 60%);
-      pointer-events: none;
-    }
-    .m-draft-icon {
-      width: 40px; height: 40px; border-radius: 12px;
-      background: var(--brand); color: white; flex-shrink: 0;
-      display: flex; align-items: center; justify-content: center;
-      box-shadow: 0 6px 12px rgba(242,107,46,.35); position: relative;
-    }
-    .m-draft-body { flex: 1; min-width: 0; position: relative; }
-    .m-draft-label {
-      font-family: var(--font-mono); font-size: 11px; color: var(--brand);
-      font-weight: 600; letter-spacing: 0.06em;
-    }
-    .m-draft-text { font-size: 14px; font-weight: 600; margin-top: 2px; }
-
-    /* ── Live Session Pill ── */
-    .m-session-pill {
-      background: var(--surface); border-radius: 14px; padding: 10px 12px;
-      box-shadow: inset 0 0 0 0.5px var(--hairline);
-      display: flex; align-items: center; gap: 10px;
-    }
-
-    /* ── 2×2 Action Grid ── */
-    .m-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    .m-tile {
-      background: var(--surface); border-radius: 20px; padding: 16px 14px;
-      box-shadow: var(--sh-1), inset 0 0 0 0.5px var(--hairline);
-      display: flex; flex-direction: column; gap: 24px;
-      min-height: 140px; position: relative; cursor: pointer;
-      touch-action: manipulation; border: none; text-align: left;
-      font-family: var(--font-ui); color: var(--ink);
-      transition: transform .12s;
-      text-decoration: none;
-    }
-    .m-tile:active { transform: scale(0.97); }
-    .m-tile-top { display: flex; justify-content: space-between; align-items: flex-start; }
-    .m-tile-icon {
-      width: 44px; height: 44px; border-radius: 12px;
-      display: flex; align-items: center; justify-content: center;
-    }
-    .m-tile-chip {
-      display: inline-flex; align-items: center; gap: 3px;
-      height: 18px; padding: 0 7px; border-radius: 999px;
-      font-family: var(--font-mono); font-size: 9px; font-weight: 600;
-      background: var(--ok-soft); color: var(--ok);
-    }
-    .m-tile-chip svg { flex-shrink: 0; }
-    .m-tile-chip.lock-chip { background: var(--surface-3); color: var(--ink-3); }
-    .m-tile-bottom {}
-    .m-tile-name { font-size: 15px; font-weight: 600; letter-spacing: -0.2px; line-height: 1.2; }
-    .m-tile-sub  { font-size: 11px; color: var(--ink-3); margin-top: 2px; }
-
-    /* ── Auth State Row ── */
-    .m-auth-row {
-      background: var(--surface); border-radius: 16px; padding: 12px 14px;
-      box-shadow: inset 0 0 0 0.5px var(--hairline);
-      display: flex; align-items: center; gap: 12px;
-    }
-    .m-auth-avatar {
-      width: 32px; height: 32px; border-radius: 16px;
-      display: flex; align-items: center; justify-content: center;
-      font-family: var(--font-mono); font-size: 11px; font-weight: 700;
-      flex-shrink: 0;
-    }
-    .m-auth-avatar.guest {
-      background: var(--surface-3); color: var(--ink-3);
-      box-shadow: inset 0 0 0 1px var(--hairline);
-    }
-    .m-auth-body { flex: 1; min-width: 0; }
-    .m-auth-name  { font-size: 13px; font-weight: 600; }
-    .m-auth-status { font-size: 11px; color: var(--ink-3); display: flex; align-items: center; gap: 6px; margin-top: 2px; }
-    .m-auth-dot { width: 5px; height: 5px; border-radius: 3px; background: var(--ok); flex-shrink: 0; }
-    .m-auth-btn {
-      border: none; border-radius: var(--r-sm);
-      font-family: var(--font-ui); font-size: 12px; font-weight: 600;
-      padding: 6px 12px; cursor: pointer; height: 30px;
-      touch-action: manipulation; flex-shrink: 0;
-    }
-    .m-auth-btn.primary { background: var(--brand); color: white; box-shadow: 0 4px 10px rgba(242,107,46,.25); }
-    .m-auth-btn.ghost   { background: var(--surface-3); color: var(--ink-2); }
-
-    /* ── Tutorial card ── */
-    .m-tutorial-card {
-      background: var(--surface); border-radius: 16px;
-      box-shadow: inset 0 0 0 0.5px var(--hairline); overflow: hidden;
-    }
-    .m-tutorial-item {
-      display: flex; align-items: center; gap: 10px;
-      padding: 11px 14px; border-bottom: 0.5px solid var(--hairline);
-      cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent;
-      transition: background 0.12s;
-    }
-    .m-tutorial-item:active { background: var(--surface-2); }
-    .m-tutorial-item:last-child { border-bottom: none; }
-    .m-tutorial-icon { font-size: 16px; flex-shrink: 0; width: 24px; text-align: center; }
-    .m-tutorial-title { font-size: 13px; font-weight: 600; }
-    .m-tutorial-sub   { font-size: 11px; color: var(--ink-3); margin-top: 1px; }
-    .m-tutorial-arrow { font-size: 14px; color: var(--ink-4); margin-left: auto; flex-shrink: 0; }
-
-    /* ── Letzte Aktivität ── */
-    .m-section-label {
-      font-size: 11px; font-weight: 600; color: var(--ink-3);
-      text-transform: uppercase; letter-spacing: 0.06em;
-      margin-bottom: 8px;
-    }
-    .m-activity-list {
-      background: var(--surface); border-radius: 14px;
-      box-shadow: inset 0 0 0 0.5px var(--hairline);
-      overflow: hidden;
-    }
-    .m-activity-row {
-      display: flex; align-items: center; gap: 12px;
-      padding: 12px 14px; border-bottom: 0.5px solid var(--hairline);
-    }
-    .m-activity-row:last-child { border-bottom: none; }
-    .m-activity-chip {
-      width: 22px; height: 22px; border-radius: 11px;
-      display: flex; align-items: center; justify-content: center;
-      font-family: var(--font-mono); font-size: 10px; font-weight: 700;
-      flex-shrink: 0;
-    }
-    .m-activity-chip.ok   { background: var(--ok-soft);   color: var(--ok); }
-    .m-activity-chip.crit { background: var(--crit-soft); color: var(--crit); }
-    .m-activity-chip.low  { background: var(--low-soft);  color: var(--low); }
-    .m-activity-text { font-size: 13px; flex: 1; min-width: 0; }
-    .m-activity-meta { font-size: 10px; color: var(--ink-3); font-family: var(--font-mono); margin-top: 2px; }
-
-    /* ── PIN-Numpad (PIN ändern Sheet) ── */
-    .ln-pin-dot {
-      width: 16px; height: 16px; border-radius: 8px;
-      background: transparent;
-      box-shadow: inset 0 0 0 2px var(--ink-4);
-      transition: background .12s, box-shadow .12s, transform .12s;
-    }
-    .ln-pin-dot.filled {
-      background: var(--brand);
-      box-shadow: inset 0 0 0 2px var(--brand);
-      transform: scale(1.1);
-    }
-    .ln-numpad {
-      display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
-      margin-top: 8px;
-    }
-    .ln-key {
-      height: 54px; border-radius: 14px;
-      background: var(--surface); border: none; cursor: pointer;
-      font-family: var(--font-mono); font-size: 24px; font-weight: 500;
-      color: var(--ink); display: flex; align-items: center; justify-content: center;
-      box-shadow: var(--sh-1), inset 0 0 0 0.5px var(--hairline);
-      transition: transform .1s, background .1s;
-      touch-action: manipulation;
-    }
-    .ln-key:active { transform: scale(0.91); background: var(--surface-3); }
-    .ln-key.cancel {
-      background: transparent; box-shadow: none;
-      font-family: var(--font-ui); font-size: 12px; font-weight: 600;
-      color: var(--ink-3);
-    }
-    .ln-key.del { background: var(--surface); }
-    .ln-pin-error {
-      text-align: center; font-size: 12px; color: var(--crit);
-      min-height: 18px; margin: 6px 0;
-    }
-  </style>
+  <link rel="stylesheet" href="../css/mitarbeiter.css">
 </head>
 <body>
 
   <header class="m-nav">
-    <button class="m-back" onclick="window.location.href='../index.html'" title="Lagersuche">
+    <button class="m-back" title="Lagersuche">
       <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5l-5 5 5 5"/></svg>
     </button>
-    <span class="la-wordmark" style="font-size:14px;">LAGER<span class="slash">//</span>APP</span>
+    <a href="../index.html" class="la-wordmark">LAGER<span class="slash">//</span>APP</a>
     <div class="m-nav-right">
-      <button id="wl-nav-btn" class="m-panel-btn" onclick="openWlLogin()" style="display:none;">
+      <button id="wl-nav-btn" class="m-panel-btn">
         <svg viewBox="0 0 20 20" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="7" r="3"/><path d="M4 17c0-3.3 2.7-6 6-6s6 2.7 6 6"/><path d="M14 9v4M16 11h-4"/></svg>
         Wachenleiter
       </button>
@@ -271,7 +29,7 @@
         <svg viewBox="0 0 20 20" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="16" height="13" rx="2"/><path d="M6 7h8M6 10h5"/></svg>
         Panel
       </a>
-      <button class="m-theme" id="theme-btn" onclick="toggleTheme()">☀️</button>
+      <button class="m-theme" id="theme-btn">☀️</button>
     </div>
   </header>
 
@@ -300,7 +58,7 @@
     </div>
 
     <!-- Resume-Draft Banner (shown when unfinished draft exists) -->
-    <div id="draft-banner" class="m-draft-banner hidden" onclick="resumeDraft()">
+    <div id="draft-banner" class="m-draft-banner hidden">
       <div class="m-draft-icon">
         <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="7"/><path d="M10 6v4l3 2"/></svg>
       </div>
@@ -308,30 +66,25 @@
         <div class="m-draft-label" id="draft-label">OFFENE BESTELLUNG · –</div>
         <div class="m-draft-text"  id="draft-text">–</div>
       </div>
-      <button style="
-        height:32px;padding:0 14px;border-radius:var(--r-sm);border:none;
-        background:var(--brand);color:white;font-family:var(--font-ui);
-        font-size:12px;font-weight:600;cursor:pointer;position:relative;
-        flex-shrink:0;">Fortführen</button>
+      <button class="m-draft-resume-btn">Fortführen</button>
     </div>
 
     <!-- Live Session Pill (when bestellungen_session is active) -->
     <div id="session-pill" class="m-session-pill hidden">
-      <span class="la-chip ok" style="height:20px;flex-shrink:0;"><span class="dot"></span>Live</span>
-      <div style="flex:1;min-width:0;">
-        <div style="font-size:12px;font-weight:500;" id="session-text"></div>
-        <div style="font-size:10px;color:var(--ink-3);font-family:var(--font-mono);margin-top:1px;" id="session-sub"></div>
+      <span class="la-chip ok"><span class="dot"></span>Live</span>
+      <div class="m-session-body">
+        <div class="m-session-text" id="session-text"></div>
+        <div class="m-session-sub"  id="session-sub"></div>
       </div>
-      <a href="check.html" style="
-        font-size:12px;font-weight:600;color:var(--brand);
-        text-decoration:none;flex-shrink:0;">Mitmachen →</a>
+      <a href="check.html" class="m-session-link">Mitmachen →</a>
     </div>
 
     <!-- 2×2 Action Tiles -->
     <div class="m-grid">
 
       <!-- Verfallsmonitor — protected -->
-      <div class="m-tile" id="tile-verfall" onclick="guardedNav('verfallmonitor.html','für den Verfallsmonitor')">
+      <div class="m-tile" id="tile-verfall"
+        data-guarded data-href="verfallmonitor.html" data-guard-context="für den Verfallsmonitor">
         <div class="m-tile-top">
           <div class="m-tile-icon la-photo tint-green">
             <svg width="22" height="22" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="14" height="13" rx="2"/><path d="M3 8h14M7 2v3M13 2v3"/><circle cx="10" cy="13" r="2.5"/><path d="M10 11.5V13l1 1"/></svg>
@@ -348,7 +101,8 @@
       </div>
 
       <!-- Lagerbestellung — protected -->
-      <div class="m-tile" id="tile-check" onclick="guardedNav('check.html','für die Lagerbestellung')">
+      <div class="m-tile" id="tile-check"
+        data-guarded data-href="check.html" data-guard-context="für die Lagerbestellung">
         <div class="m-tile-top">
           <div class="m-tile-icon la-photo tint-rose">
             <svg width="22" height="22" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="12" height="14" rx="2"/><path d="M7 8.5l2 2 4-4M7 14h6"/></svg>
@@ -365,7 +119,8 @@
       </div>
 
       <!-- Verfallsscan — protected -->
-      <div class="m-tile" id="tile-scan" onclick="guardedNav('scanner.html','für den Verfallsscan')">
+      <div class="m-tile" id="tile-scan"
+        data-guarded data-href="scanner.html" data-guard-context="für den Verfallsscan">
         <div class="m-tile-top">
           <div class="m-tile-icon la-photo tint-amber">
             <svg width="22" height="22" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><path d="M3 7V4h3M17 7V4h-3M3 13v3h3M17 13v3h-3"/><path d="M3 10h14"/></svg>
@@ -382,7 +137,8 @@
       </div>
 
       <!-- StockSwipe — protected -->
-      <div class="m-tile" id="tile-swipe" onclick="guardedNav('stockswipe.html','für StockSwipe')">
+      <div class="m-tile" id="tile-swipe"
+        data-guarded data-href="stockswipe.html" data-guard-context="für StockSwipe">
         <div class="m-tile-top">
           <div class="m-tile-icon la-photo tint-violet">
             <svg width="22" height="22" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="14" height="14" rx="3" transform="rotate(-6 10 10)"/><rect x="5" y="5" width="14" height="14" rx="3" transform="rotate(4 12 12)" opacity="0.4"/></svg>
@@ -403,8 +159,8 @@
     <!-- Auth State Row -->
     <div class="m-auth-row">
       <!-- Signed in state -->
-      <div id="auth-signed-in" style="display:contents;">
-        <div class="m-auth-avatar" id="auth-avatar" style="background:#FFD3C1;color:#7A2D0B;">MK</div>
+      <div id="auth-signed-in" class="m-auth-contents">
+        <div class="m-auth-avatar m-auth-avatar--default" id="auth-avatar">MK</div>
         <div class="m-auth-body">
           <div class="m-auth-name" id="auth-name-label">Angemeldet</div>
           <div class="m-auth-status">
@@ -412,17 +168,17 @@
             <span id="auth-status-text">PIN aktiv</span>
           </div>
         </div>
-        <button class="m-auth-btn ghost" id="change-pin-btn" onclick="openPinChange()" style="display:none;">PIN ändern</button>
-        <button class="m-auth-btn ghost" onclick="doLogout()">Abmelden</button>
+        <button class="m-auth-btn ghost hidden" id="change-pin-btn">PIN ändern</button>
+        <button class="m-auth-btn ghost" data-action="logout">Abmelden</button>
       </div>
-      <!-- Guest state (shown when not signed in) -->
-      <div id="auth-guest" class="hidden" style="display:contents;">
+      <!-- Guest state -->
+      <div id="auth-guest" class="hidden m-auth-contents">
         <div class="m-auth-avatar guest">
           <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"><circle cx="10" cy="7" r="3"/><path d="M4 17c1-3 3.5-4 6-4s5 1 6 4"/></svg>
         </div>
         <div class="m-auth-body">
           <div class="m-auth-name">Nicht angemeldet</div>
-          <div class="m-auth-status" style="color:var(--ink-4);">Bestellungen erfordern PIN</div>
+          <div class="m-auth-status m-auth-status--guest">Bestellungen erfordern PIN</div>
         </div>
         <a href="login.html?tab=mitarbeiter" class="m-auth-btn primary">Anmelden</a>
       </div>
@@ -432,7 +188,7 @@
     <div>
       <div class="m-section-label">Anleitung</div>
       <div class="m-tutorial-card">
-        <div class="m-tutorial-item" onclick="openHelp('lagersuche')">
+        <div class="m-tutorial-item" data-help="lagersuche">
           <span class="m-tutorial-icon">🔍</span>
           <div>
             <div class="m-tutorial-title">Lagersuche</div>
@@ -440,7 +196,7 @@
           </div>
           <span class="m-tutorial-arrow">›</span>
         </div>
-        <div class="m-tutorial-item" onclick="openHelp('verfallsmonitor')">
+        <div class="m-tutorial-item" data-help="verfallsmonitor">
           <span class="m-tutorial-icon">⏳</span>
           <div>
             <div class="m-tutorial-title">Verfallsmonitor</div>
@@ -448,7 +204,7 @@
           </div>
           <span class="m-tutorial-arrow">›</span>
         </div>
-        <div class="m-tutorial-item" onclick="openHelp('lagerbestellung')">
+        <div class="m-tutorial-item" data-help="lagerbestellung">
           <span class="m-tutorial-icon">📋</span>
           <div>
             <div class="m-tutorial-title">Lagerbestellung (Multi)</div>
@@ -456,7 +212,7 @@
           </div>
           <span class="m-tutorial-arrow">›</span>
         </div>
-        <div class="m-tutorial-item" onclick="openHelp('stockswipe')">
+        <div class="m-tutorial-item" data-help="stockswipe">
           <span class="m-tutorial-icon">👆</span>
           <div>
             <div class="m-tutorial-title">Lagerbestellung (StockSwipe)</div>
@@ -464,7 +220,7 @@
           </div>
           <span class="m-tutorial-arrow">›</span>
         </div>
-        <div class="m-tutorial-item" onclick="openHelp('verfallscan')">
+        <div class="m-tutorial-item" data-help="verfallscan">
           <span class="m-tutorial-icon">📷</span>
           <div>
             <div class="m-tutorial-title">Verfallscan</div>
@@ -472,7 +228,7 @@
           </div>
           <span class="m-tutorial-arrow">›</span>
         </div>
-        <div class="m-tutorial-item" onclick="openHelp('pin')">
+        <div class="m-tutorial-item" data-help="pin">
           <span class="m-tutorial-icon">🔑</span>
           <div>
             <div class="m-tutorial-title">PIN ändern</div>
@@ -487,7 +243,6 @@
     <div id="activity-section" class="hidden">
       <div class="m-section-label">Letzte Aktivität</div>
       <div class="m-activity-list" id="activity-list">
-        <!-- filled by JS or static fallback -->
         <div class="m-activity-row">
           <div class="m-activity-chip ok">✓</div>
           <div>
@@ -501,699 +256,173 @@
   </div>
 
   <!-- Help Overlay -->
-  <div id="help-overlay" onclick="if(event.target===this)closeHelp()" style="
-    display:none; position:fixed; inset:0; z-index:2000;
-    background:rgba(8,8,12,0.55);
-    backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);">
-    <div style="
-      position:absolute; left:0; right:0; bottom:0;
-      background:var(--surface); border-radius:26px 26px 0 0;
-      max-height:88dvh; overflow-y:auto;
-      padding-bottom:calc(24px + env(safe-area-inset-bottom,0px));
-      box-shadow:0 -8px 32px rgba(0,0,0,.2);"
-      onclick="event.stopPropagation()">
+  <div id="help-overlay" class="m-sheet-overlay">
+    <div class="m-sheet-panel m-sheet-panel--help">
       <!-- Handle -->
-      <div style="width:40px;height:4px;background:var(--ink-4);border-radius:2px;margin:14px auto 0;"></div>
+      <div class="m-sheet-handle m-sheet-handle--top"></div>
       <!-- Header -->
-      <div style="display:flex;align-items:center;gap:12px;padding:18px 20px 0;">
-        <span id="help-icon" style="font-size:1.8rem;line-height:1;flex-shrink:0;"></span>
-        <div style="flex:1;min-width:0;">
-          <div id="help-title" style="font-size:17px;font-weight:700;letter-spacing:-0.3px;"></div>
-          <div style="font-size:12px;color:var(--ink-3);margin-top:2px;">Schritt-für-Schritt Anleitung</div>
+      <div class="help-header">
+        <span id="help-icon" class="help-header-icon"></span>
+        <div class="help-header-body">
+          <div id="help-title" class="help-header-title"></div>
+          <div class="help-header-sub">Schritt-für-Schritt Anleitung</div>
         </div>
-        <button onclick="closeHelp()" style="
-          width:32px;height:32px;border-radius:16px;border:none;
-          background:var(--surface-3);color:var(--ink-2);font-size:15px;
-          display:flex;align-items:center;justify-content:center;
-          cursor:pointer;flex-shrink:0;">✕</button>
+        <button id="help-close-btn" class="help-close-btn">✕</button>
       </div>
       <!-- Optional Screenshot -->
-      <div id="help-image-wrap" style="display:none;padding:16px 20px 0;">
-        <img id="help-image" alt="Screenshot" style="
-          width:100%;border-radius:14px;
-          border:1px solid var(--hairline);
-          box-shadow:var(--sh-1);display:block;">
+      <div id="help-image-wrap" class="help-image-wrap">
+        <img id="help-image" alt="Screenshot" class="help-image">
       </div>
       <!-- Schritte -->
-      <ol id="help-steps" style="
-        padding:20px 20px 4px;
-        display:flex;flex-direction:column;gap:16px;
-        list-style:none;margin:0;"></ol>
+      <ol id="help-steps" class="help-steps"></ol>
     </div>
   </div>
 
   <!-- PIN Change Modal -->
-  <div id="pin-change-wall" onclick="if(event.target===this)closePinChange()" style="
-    display:none; position:fixed; inset:0; z-index:2000;
-    background:rgba(8,8,12,0.55);
-    backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);">
-    <div style="
-      position:absolute; left:0; right:0; bottom:0;
-      background:var(--surface); border-radius:26px 26px 0 0;
-      padding:14px 20px calc(32px + env(safe-area-inset-bottom,0px));
-      box-shadow:0 -8px 32px rgba(0,0,0,.2);"
-      onclick="event.stopPropagation()">
-      <div style="width:40px;height:4px;background:var(--ink-4);border-radius:2px;margin:0 auto 20px;"></div>
+  <div id="pin-change-wall" class="m-sheet-overlay">
+    <div class="m-sheet-panel m-sheet-panel--pin">
+      <div class="m-sheet-handle"></div>
       <div id="pc-step-1">
-        <div style="font-size:17px;font-weight:700;margin-bottom:4px;">PIN ändern</div>
-        <div style="font-size:13px;color:var(--ink-3);margin-bottom:20px;">Schritt 1 von 2 · Aktuellen PIN eingeben</div>
-        <div style="display:flex;justify-content:center;gap:16px;margin-bottom:16px;">
-          <div class="ln-pin-dot" id="pc-dot-0"></div><div class="ln-pin-dot" id="pc-dot-1"></div>
-          <div class="ln-pin-dot" id="pc-dot-2"></div><div class="ln-pin-dot" id="pc-dot-3"></div>
+        <div class="pc-title">PIN ändern</div>
+        <div class="pc-subtitle">Schritt 1 von 2 · Aktuellen PIN eingeben</div>
+        <div class="pc-dots-row">
+          <div class="ln-pin-dot" id="pc-dot-0"></div>
+          <div class="ln-pin-dot" id="pc-dot-1"></div>
+          <div class="ln-pin-dot" id="pc-dot-2"></div>
+          <div class="ln-pin-dot" id="pc-dot-3"></div>
         </div>
         <div class="ln-pin-error" id="pc-error-1"></div>
-        <div class="ln-numpad" style="padding-bottom:0;">
-          <button class="ln-key" onclick="pcKey(1,'1')">1</button><button class="ln-key" onclick="pcKey(1,'2')">2</button><button class="ln-key" onclick="pcKey(1,'3')">3</button>
-          <button class="ln-key" onclick="pcKey(1,'4')">4</button><button class="ln-key" onclick="pcKey(1,'5')">5</button><button class="ln-key" onclick="pcKey(1,'6')">6</button>
-          <button class="ln-key" onclick="pcKey(1,'7')">7</button><button class="ln-key" onclick="pcKey(1,'8')">8</button><button class="ln-key" onclick="pcKey(1,'9')">9</button>
-          <button class="ln-key cancel" onclick="closePinChange()">Abbrechen</button>
-          <button class="ln-key" onclick="pcKey(1,'0')">0</button>
-          <button class="ln-key del" onclick="pcDel(1)"><svg viewBox="0 0 26 20" width="24" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 1h17a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H7L1 10 7 1z"/><path d="M12 6l8 8M20 6l-8 8"/></svg></button>
+        <div class="ln-numpad pc-numpad">
+          <button class="ln-key" data-key="1">1</button>
+          <button class="ln-key" data-key="2">2</button>
+          <button class="ln-key" data-key="3">3</button>
+          <button class="ln-key" data-key="4">4</button>
+          <button class="ln-key" data-key="5">5</button>
+          <button class="ln-key" data-key="6">6</button>
+          <button class="ln-key" data-key="7">7</button>
+          <button class="ln-key" data-key="8">8</button>
+          <button class="ln-key" data-key="9">9</button>
+          <button class="ln-key cancel" data-key="cancel">Abbrechen</button>
+          <button class="ln-key" data-key="0">0</button>
+          <button class="ln-key del" data-key="del">
+            <svg viewBox="0 0 26 20" width="24" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 1h17a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H7L1 10 7 1z"/><path d="M12 6l8 8M20 6l-8 8"/></svg>
+          </button>
         </div>
       </div>
       <!-- Schritt 2: Neuer PIN -->
-      <div id="pc-step-2" style="display:none;">
-        <div style="font-size:17px;font-weight:700;margin-bottom:4px;">PIN ändern</div>
-        <div style="font-size:13px;color:var(--ink-3);margin-bottom:20px;">Schritt 2 von 3 · Neuen PIN eingeben</div>
-        <div style="display:flex;justify-content:center;gap:16px;margin-bottom:16px;">
-          <div class="ln-pin-dot" id="pc-ndot-0"></div><div class="ln-pin-dot" id="pc-ndot-1"></div>
-          <div class="ln-pin-dot" id="pc-ndot-2"></div><div class="ln-pin-dot" id="pc-ndot-3"></div>
+      <div id="pc-step-2" class="hidden">
+        <div class="pc-title">PIN ändern</div>
+        <div class="pc-subtitle">Schritt 2 von 3 · Neuen PIN eingeben</div>
+        <div class="pc-dots-row">
+          <div class="ln-pin-dot" id="pc-ndot-0"></div>
+          <div class="ln-pin-dot" id="pc-ndot-1"></div>
+          <div class="ln-pin-dot" id="pc-ndot-2"></div>
+          <div class="ln-pin-dot" id="pc-ndot-3"></div>
         </div>
         <div class="ln-pin-error" id="pc-error-2"></div>
-        <div class="ln-numpad" style="padding-bottom:0;">
-          <button class="ln-key" onclick="pcKey(2,'1')">1</button><button class="ln-key" onclick="pcKey(2,'2')">2</button><button class="ln-key" onclick="pcKey(2,'3')">3</button>
-          <button class="ln-key" onclick="pcKey(2,'4')">4</button><button class="ln-key" onclick="pcKey(2,'5')">5</button><button class="ln-key" onclick="pcKey(2,'6')">6</button>
-          <button class="ln-key" onclick="pcKey(2,'7')">7</button><button class="ln-key" onclick="pcKey(2,'8')">8</button><button class="ln-key" onclick="pcKey(2,'9')">9</button>
-          <button class="ln-key cancel" onclick="closePinChange()">Abbrechen</button>
-          <button class="ln-key" onclick="pcKey(2,'0')">0</button>
-          <button class="ln-key del" onclick="pcDel(2)"><svg viewBox="0 0 26 20" width="24" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 1h17a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H7L1 10 7 1z"/><path d="M12 6l8 8M20 6l-8 8"/></svg></button>
+        <div class="ln-numpad pc-numpad">
+          <button class="ln-key" data-key="1">1</button>
+          <button class="ln-key" data-key="2">2</button>
+          <button class="ln-key" data-key="3">3</button>
+          <button class="ln-key" data-key="4">4</button>
+          <button class="ln-key" data-key="5">5</button>
+          <button class="ln-key" data-key="6">6</button>
+          <button class="ln-key" data-key="7">7</button>
+          <button class="ln-key" data-key="8">8</button>
+          <button class="ln-key" data-key="9">9</button>
+          <button class="ln-key cancel" data-key="cancel">Abbrechen</button>
+          <button class="ln-key" data-key="0">0</button>
+          <button class="ln-key del" data-key="del">
+            <svg viewBox="0 0 26 20" width="24" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 1h17a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H7L1 10 7 1z"/><path d="M12 6l8 8M20 6l-8 8"/></svg>
+          </button>
         </div>
       </div>
       <!-- Schritt 3: Bestätigen -->
-      <div id="pc-step-3" style="display:none;">
-        <div style="font-size:17px;font-weight:700;margin-bottom:4px;">PIN ändern</div>
-        <div style="font-size:13px;color:var(--ink-3);margin-bottom:20px;">Schritt 3 von 3 · Neuen PIN bestätigen</div>
-        <div style="display:flex;justify-content:center;gap:16px;margin-bottom:16px;">
-          <div class="ln-pin-dot" id="pc-cdot-0"></div><div class="ln-pin-dot" id="pc-cdot-1"></div>
-          <div class="ln-pin-dot" id="pc-cdot-2"></div><div class="ln-pin-dot" id="pc-cdot-3"></div>
+      <div id="pc-step-3" class="hidden">
+        <div class="pc-title">PIN ändern</div>
+        <div class="pc-subtitle">Schritt 3 von 3 · Neuen PIN bestätigen</div>
+        <div class="pc-dots-row">
+          <div class="ln-pin-dot" id="pc-cdot-0"></div>
+          <div class="ln-pin-dot" id="pc-cdot-1"></div>
+          <div class="ln-pin-dot" id="pc-cdot-2"></div>
+          <div class="ln-pin-dot" id="pc-cdot-3"></div>
         </div>
         <div class="ln-pin-error" id="pc-error-3"></div>
-        <div class="ln-numpad" style="padding-bottom:0;">
-          <button class="ln-key" onclick="pcKey(3,'1')">1</button><button class="ln-key" onclick="pcKey(3,'2')">2</button><button class="ln-key" onclick="pcKey(3,'3')">3</button>
-          <button class="ln-key" onclick="pcKey(3,'4')">4</button><button class="ln-key" onclick="pcKey(3,'5')">5</button><button class="ln-key" onclick="pcKey(3,'6')">6</button>
-          <button class="ln-key" onclick="pcKey(3,'7')">7</button><button class="ln-key" onclick="pcKey(3,'8')">8</button><button class="ln-key" onclick="pcKey(3,'9')">9</button>
-          <button class="ln-key cancel" onclick="closePinChange()">Abbrechen</button>
-          <button class="ln-key" onclick="pcKey(3,'0')">0</button>
-          <button class="ln-key del" onclick="pcDel(3)"><svg viewBox="0 0 26 20" width="24" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 1h17a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H7L1 10 7 1z"/><path d="M12 6l8 8M20 6l-8 8"/></svg></button>
+        <div class="ln-numpad pc-numpad">
+          <button class="ln-key" data-key="1">1</button>
+          <button class="ln-key" data-key="2">2</button>
+          <button class="ln-key" data-key="3">3</button>
+          <button class="ln-key" data-key="4">4</button>
+          <button class="ln-key" data-key="5">5</button>
+          <button class="ln-key" data-key="6">6</button>
+          <button class="ln-key" data-key="7">7</button>
+          <button class="ln-key" data-key="8">8</button>
+          <button class="ln-key" data-key="9">9</button>
+          <button class="ln-key cancel" data-key="cancel">Abbrechen</button>
+          <button class="ln-key" data-key="0">0</button>
+          <button class="ln-key del" data-key="del">
+            <svg viewBox="0 0 26 20" width="24" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 1h17a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H7L1 10 7 1z"/><path d="M12 6l8 8M20 6l-8 8"/></svg>
+          </button>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Login Wall (same component as index.html) -->
-  <div id="login-wall" onclick="if(event.target===this)closeLoginWall()" style="
-    display:none; position:fixed; inset:0; z-index:2000;
-    background:rgba(8,8,12,0.55);
-    backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);">
-    <div style="
-      position:absolute; left:0; right:0; bottom:0;
-      background:var(--surface); border-radius:26px 26px 0 0;
-      padding:14px 20px calc(28px + env(safe-area-inset-bottom,0px));
-      box-shadow:0 -8px 32px rgba(0,0,0,.2);"
-      onclick="event.stopPropagation()">
-      <div style="width:40px;height:4px;background:var(--ink-4);border-radius:2px;margin:0 auto 20px;"></div>
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
-        <div style="width:48px;height:48px;border-radius:14px;flex-shrink:0;background:var(--brand-soft);color:var(--brand);display:flex;align-items:center;justify-content:center;box-shadow:inset 0 0 0 1px var(--brand-soft-2);">
+  <!-- Login Wall -->
+  <div id="login-wall" class="m-sheet-overlay">
+    <div class="m-sheet-panel m-sheet-panel--lw">
+      <div class="m-sheet-handle"></div>
+      <div class="lw-header">
+        <div class="lw-icon">
           <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
         </div>
         <div>
-          <div style="font-size:18px;font-weight:700;letter-spacing:-0.3px;">Anmelden erforderlich</div>
-          <div style="font-size:13px;color:var(--ink-3);margin-top:2px;" id="lw-context">für diese Aktion</div>
+          <div class="lw-title">Anmelden erforderlich</div>
+          <div class="lw-sub" id="lw-context">für diese Aktion</div>
         </div>
       </div>
-      <div style="padding:10px 12px;border-radius:12px;margin-bottom:18px;background:var(--surface-2);box-shadow:inset 0 0 0 1px var(--hairline);font-size:12px;color:var(--ink-2);line-height:1.5;">
+      <div class="lw-info">
         Lagersuche bleibt für alle offen. Anmeldung mit <strong>Name + PIN</strong> nur für Bestellungen, Verfallsscan und Bestand-Bearbeitung.
       </div>
-      <div style="display:flex;gap:10px;">
-        <button onclick="closeLoginWall()" style="flex:0 0 110px;height:48px;border-radius:var(--r-md);border:none;background:var(--surface);color:var(--ink-2);cursor:pointer;font-family:var(--font-ui);font-size:14px;font-weight:500;box-shadow:inset 0 0 0 1px var(--hairline-2);">Abbrechen</button>
-        <a id="lw-btn" href="login.html?tab=mitarbeiter" style="flex:1;height:48px;border-radius:var(--r-md);background:var(--brand);color:white;text-decoration:none;font-family:var(--font-ui);font-size:14px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:8px;box-shadow:0 1px 0 rgba(255,255,255,.2) inset,0 6px 14px rgba(242,107,46,.28);">
+      <div class="lw-actions">
+        <button id="lw-cancel-btn" class="lw-cancel-btn">Abbrechen</button>
+        <a id="lw-btn" href="login.html?tab=mitarbeiter" class="lw-login-link">
           <svg viewBox="0 0 20 20" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="14" height="10" rx="2"/><path d="M7 8V6a3 3 0 0 1 6 0v2"/></svg>
           Mit Name &amp; PIN anmelden
         </a>
       </div>
-      <div style="text-align:center;margin-top:14px;font-size:12px;color:var(--ink-3);">
-        Kein PIN? <strong style="color:var(--brand);">Wachenleiter fragen</strong>
+      <div class="lw-footer-note">
+        Kein PIN? <strong class="lw-wl-hint">Wachenleiter fragen</strong>
       </div>
     </div>
   </div>
 
-  <script>
-    // ── Theme ──
-    (function() {
-      const t = localStorage.getItem('lager-theme') ||
-        (window.matchMedia('(prefers-color-scheme:dark)').matches ? 'dark' : 'light');
-      document.documentElement.setAttribute('data-theme', t);
-      const btn = document.getElementById('theme-btn');
-      if (btn) btn.textContent = t === 'dark' ? '☀️' : '🌙';
-    })();
-
-    window.toggleTheme = function() {
-      const t = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-      document.documentElement.setAttribute('data-theme', t);
-      localStorage.setItem('lager-theme', t);
-      document.getElementById('theme-btn').textContent = t === 'dark' ? '☀️' : '🌙';
-    };
-
-    // ── KW ──
-    (function() {
-      const now = new Date();
-      const start = new Date(now.getFullYear(), 0, 1);
-      const kw = Math.ceil(((now - start) / 86400000 + start.getDay() + 1) / 7);
-      document.getElementById('kw-label').textContent = 'KW ' + kw;
-    })();
-
-    // ── Auth state ──
-    function authGet(key) { return sessionStorage.getItem(key) || localStorage.getItem(key); }
-    const pinAuth = authGet('lager-pin-auth');
-    const pinName = authGet('lager-pin-name') || '';
-
-    if (pinAuth === 'true' && pinName) {
-      document.getElementById('user-name').textContent = pinName + '.';
-      const initials = pinName.split(' ').map(w => w[0]).join('').slice(0,2).toUpperCase();
-      document.getElementById('auth-avatar').textContent = initials;
-      document.getElementById('auth-name-label').textContent = 'Angemeldet als ' + pinName;
-      document.getElementById('auth-status-text').textContent = 'PIN aktiv';
-      document.getElementById('auth-signed-in').style.display = 'contents';
-      document.getElementById('auth-guest').classList.add('hidden');
-      document.getElementById('activity-section').classList.remove('hidden');
-      if (authGet('lager-employee-id')) {
-        document.getElementById('change-pin-btn').style.display = '';
-      }
-    } else {
-      document.getElementById('user-name').textContent = 'Gast.';
-      document.getElementById('auth-signed-in').style.display = 'none';
-      document.getElementById('auth-guest').classList.remove('hidden');
-    }
-
-    // ── WL-Button (zeigen wenn PIN-Auth aber kein Wachenleiter-Login) ──
-    (function() {
-      const role  = sessionStorage.getItem('lager-portal-role');
-      const pinOk = authGet('lager-pin-auth');
-      const btn   = document.getElementById('wl-nav-btn');
-      if (btn && !role && pinOk === 'true') btn.style.display = 'inline-flex';
-    })();
-
-    // ── Panel-Back-Button ──
-    (function() {
-      const role = sessionStorage.getItem('lager-portal-role');
-      if (!role) return;
-      const btn = document.getElementById('panel-back-btn');
-      btn.href = role === 'admin' ? 'admin.html' : 'portal.html';
-      btn.textContent = '';
-      btn.insertAdjacentHTML('afterbegin',
-        '<svg viewBox="0 0 20 20" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="16" height="13" rx="2"/><path d="M6 7h8M6 10h5"/></svg> ' +
-        (role === 'admin' ? 'Admin' : 'Wachenleiter')
-      );
-      btn.style.display = 'inline-flex';
-    })();
-
-    // ── Logout ──
-    window.doLogout = function() {
-      ['lager-pin-auth','lager-pin-name','lager-employee-id'].forEach(k => {
-        sessionStorage.removeItem(k);
-        localStorage.removeItem(k);
-      });
-      localStorage.removeItem('lager-keep-login');
-      localStorage.removeItem('lager-saved-name');
-      window.location.href = '../index.html';
-    };
-
-    // ── Protected nav ──
-    window.guardedNav = function(href, context) {
-      if (authGet('lager-pin-auth') === 'true') {
-        window.location.href = href;
-      } else {
-        openLoginWall(context, href);
-      }
-    };
-
-    window.openLoginWall = function(context, returnUrl) {
-      document.getElementById('lw-context').textContent = context || 'für diese Aktion';
-      const ret = returnUrl ? encodeURIComponent(returnUrl) : '';
-      document.getElementById('lw-btn').href =
-        'login.html?tab=mitarbeiter' + (ret ? '&return=' + ret : '');
-      document.getElementById('login-wall').style.display = 'block';
-      document.body.style.overflow = 'hidden';
-    };
-
-    window.closeLoginWall = function() {
-      document.getElementById('login-wall').style.display = 'none';
-      document.body.style.overflow = '';
-    };
-
-    window.resumeDraft = function() {
-      const id = document.getElementById('draft-banner').dataset.draftId;
-      if (id) window.location.href = 'check.html?resumeDraft=' + id;
-    };
-
-    // ── Help Overlay ──
-    const HELP_DATA = {
-      lagersuche: {
-        title: 'Lagersuche',
-        icon: '🔍',
-        steps: [
-          'Öffne die LAGER//APP — du landest automatisch auf der Lagersuche.',
-          'Tippe einen Artikelnamen, einen Alias oder die Lagerplatznummer (z. B. „S.2.1") in die Suchleiste ein.',
-          'Die Treffer erscheinen sofort darunter. Tippe auf einen Artikel, um Details wie Standort, Menge, MIN und MAX zu sehen.',
-          'Mit dem Kamera-Symbol kannst du ein Foto des Artikels oder des Lagerortes aufrufen.',
-          'Tipp: Die Suche kennt auch Alternativnamen (z. B. „Verbandsmull" statt des offiziellen Namens).',
-        ]
-      },
-      verfallsmonitor: {
-        title: 'Verfallsmonitor',
-        icon: '⏳',
-        steps: [
-          'Melde dich mit Name und PIN an, dann tippe auf „Verfallsmonitor" im Hauptmenü.',
-          'Du siehst alle erfassten Chargen sortiert nach Ablaufdatum — zuerst die kritischsten.',
-          'Rote Einträge laufen in ≤ 30 Tagen ab, grüne sind noch lange haltbar.',
-          'Tippe auf den Filter oben, um nur kritische oder nur sichere Chargen anzuzeigen.',
-          'Eine Charge abgelaufen? Tippe auf das ✕ um sie zu entfernen, nachdem du sie aus dem Lager genommen hast.',
-        ]
-      },
-      lagerbestellung: {
-        title: 'Lagerbestellung (Multi)',
-        icon: '📋',
-        steps: [
-          'Melde dich mit Name und PIN an, dann tippe auf „Lagerbestellung" im Hauptmenü.',
-          'Wähle deinen Bereich (z. B. „Schrank 3"). Mehrere Kollegen können gleichzeitig verschiedene Bereiche bearbeiten.',
-          'Für jeden Artikel siehst du IST-, MIN- und MAX-Menge. Tippe „Bestellen" wenn nachbestellt werden muss, oder „Ausreichend" wenn alles OK ist.',
-          'Bei „Bestellen": Gib die gewünschte Menge ein (Chips oder + / − ) und tippe „Bereich fertig markieren".',
-          'Sobald alle Bereiche erledigt sind, erscheint „Abschließen & Unterschrift". Unterschreibe und tippe „Absenden & Fertig".',
-          'Die Bestellung wird gespeichert und ist im Wachenleiter-Portal sichtbar.',
-        ]
-      },
-      stockswipe: {
-        title: 'StockSwipe',
-        icon: '👆',
-        steps: [
-          'Melde dich mit Name und PIN an, dann tippe auf „StockSwipe" im Hauptmenü.',
-          'Dir werden Artikelkarten einzeln angezeigt. Jede Karte zeigt Foto, Name, Lagerplatz und aktuellen Bestand.',
-          'Wische die Karte nach RECHTS (oder tippe ✓) wenn der Artikel ausreichend vorhanden ist.',
-          'Wische die Karte nach LINKS (oder tippe 🛒) wenn der Artikel bestellt werden muss. Du kannst dann die Menge angeben.',
-          'Am Ende: Unterschreibe und tippe „Absenden". Die Bestellliste wird automatisch gespeichert.',
-          'Tipp: Bei einem Tipp auf die Karte öffnen sich Details mit MIN/MAX-Angaben.',
-        ]
-      },
-      verfallscan: {
-        title: 'Verfallsscan',
-        icon: '📷',
-        steps: [
-          'Melde dich mit Name und PIN an, dann tippe auf „Verfallsscan" im Hauptmenü.',
-          'Erlaube den Kamerazugriff, wenn der Browser danach fragt.',
-          'Halte den Barcode oder QR-Code eines Artikels vor die Kamera — er wird automatisch erkannt.',
-          'Gib das Verfallsdatum und die LOT-Nummer ein und tippe „Speichern".',
-          'Die Charge ist jetzt im Verfallsmonitor sichtbar und wird rechtzeitig als Warnung angezeigt.',
-        ]
-      },
-      pin: {
-        title: 'PIN ändern',
-        icon: '🔑',
-        steps: [
-          'Du musst mit Name und PIN angemeldet sein. Scrolle auf dieser Seite nach unten zum Bereich „Angemeldet als …".',
-          'Tippe auf „PIN ändern".',
-          'Gib zuerst deinen aktuellen (alten) PIN ein.',
-          'Gib danach deinen neuen 4-stelligen PIN ein.',
-          'Bestätige den neuen PIN durch erneute Eingabe.',
-          'Du bekommst eine Bestätigung — ab sofort gilt der neue PIN.',
-          'Wichtig: Den neuen PIN gut merken! Bei Vergessen musst du den Wachenleiter um einen Reset bitten.',
-        ]
-      },
-    };
-
-    let helpImages  = {};
-    let helpContent = {};
-
-    window.openHelp = function(id) {
-      const d = HELP_DATA[id];
-      if (!d) return;
-      document.getElementById('help-icon').textContent  = d.icon;
-      document.getElementById('help-title').textContent = d.title;
-      const steps = (helpContent[id] && helpContent[id].length) ? helpContent[id] : d.steps;
-      document.getElementById('help-steps').innerHTML = steps.map((s, i) => `
-        <li style="display:flex;gap:12px;align-items:flex-start;">
-          <span style="min-width:24px;height:24px;border-radius:50%;background:var(--brand);color:#fff;
-            font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;">${i + 1}</span>
-          <span style="font-size:14px;line-height:1.55;color:var(--ink);">${s}</span>
-        </li>`).join('');
-      const imgUrl = helpImages[id];
-      const wrap = document.getElementById('help-image-wrap');
-      if (imgUrl) {
-        document.getElementById('help-image').src = imgUrl;
-        wrap.style.display = '';
-      } else {
-        wrap.style.display = 'none';
-      }
-      document.getElementById('help-overlay').style.display = 'block';
-      document.body.style.overflow = 'hidden';
-    };
-
-    window.closeHelp = function() {
-      document.getElementById('help-overlay').style.display = 'none';
-      document.body.style.overflow = '';
-    };
-  </script>
-
-  <script type="module">
-    import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-    import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, collection, query, orderBy, limit, onSnapshot, getDocs, getDoc, doc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
-    import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-    import { firebaseConfig } from '../js/firebase-config.js';
-
-    const app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
-    const db  = initializeFirestore(app, { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) });
-    const auth = getAuth(app);
-    // Wait for Firebase to restore session from storage before signing in anonymously —
-    // prevents overwriting an active WL/Admin email-password session on page load.
-    const _unsubAuthInit = onAuthStateChanged(auth, user => {
-      _unsubAuthInit();
-      if (!user) signInAnonymously(auth).catch(() => {});
-    });
-
-    // ── Help-Daten laden (fire-and-forget) ──
-    getDoc(doc(db, 'config', 'help_images')).then(snap => {
-      if (snap.exists()) helpImages = snap.data();
-    }).catch(() => {});
-    getDoc(doc(db, 'config', 'help_content')).then(snap => {
-      if (snap.exists()) helpContent = snap.data();
-    }).catch(() => {});
-
-    // ── Laufband ──
-    onSnapshot(doc(db, 'config', 'app'), snap => {
-      const text = snap.exists() ? (snap.data().laufband || '') : '';
-      const bar  = document.getElementById('laufband-bar');
-      const el   = document.getElementById('laufband-text');
-      if (!text.trim()) { bar.classList.add('hidden'); return; }
-      el.textContent = text;
-      el.className = 'laufband-text' + (text.length > 80 ? ' long' : text.length < 30 ? ' short' : '');
-      bar.classList.remove('hidden');
-    }, () => {});
-
-    // ── Live session ──
-    onSnapshot(doc(db, 'bestellungen_session', 'current'), snap => {
-      const pill    = document.getElementById('session-pill');
-      const textEl  = document.getElementById('session-text');
-      const subEl   = document.getElementById('session-sub');
-      if (snap.exists() && snap.data().status === 'aktiv') {
-        const s = snap.data();
-        const namen = (s.teilnehmer || []).map(t => t.name).join(', ');
-        textEl.textContent = namen ? namen + ' mach' + (namen.includes(',') ? 'en' : 't') + ' gerade die Lagerbestellung' : 'Lagerbestellung läuft';
-        const free = Object.values(s.bereichStatus || {}).filter(b => b.status === 'frei').length;
-        subEl.textContent = free > 0 ? free + ' Bereiche frei' : 'Alle Bereiche vergeben';
-        pill.classList.remove('hidden');
-      } else {
-        pill.classList.add('hidden');
-      }
-    }, () => {});
-
-    // ── Letzte Aktivität (last 5 Bestellungen) ──
-    (async () => {
-      // Wait until Firebase auth has a signed-in user (anonymous or otherwise).
-      // onAuthStateChanged fires immediately with the current state — if null we must
-      // wait for the next callback which fires after signInAnonymously completes.
-      if (!auth.currentUser) {
-        await new Promise(resolve => {
-          let unsub;
-          const timer = setTimeout(() => { if (unsub) unsub(); resolve(); }, 6000);
-          unsub = onAuthStateChanged(auth, u => {
-            if (u) { clearTimeout(timer); unsub(); resolve(); }
-          });
-        });
-      }
-
-      const list = document.getElementById('activity-list');
-      try {
-        const q = query(collection(db, 'bestellungen'), orderBy('datum', 'desc'), limit(5));
-        const snap = await getDocs(q);
-        if (!snap.empty) {
-          list.innerHTML = snap.docs.map(d => {
-            const b   = d.data();
-            const dt  = b.datum?.toDate ? b.datum.toDate() : new Date(b.datum || 0);
-            const rel = relTime(dt);
-
-            // Bestellte Artikel zählen (check.html speichert 'items', stockswipe 'nachbestellungen')
-            const orderCount = b.items?.length
-              ?? b.nachbestellungen?.filter(n => n.menge > 0)?.length
-              ?? 0;
-
-            const source = b.quelle === 'stockswipe' ? 'StockSwipe' : 'Lagerbestellung';
-            const tone   = orderCount > 0 ? 'crit' : 'ok';
-            const icon   = orderCount > 0 ? orderCount : '✓';
-
-            return `<div class="m-activity-row">
-              <div class="m-activity-chip ${tone}">${icon}</div>
-              <div style="flex:1;min-width:0;">
-                <div class="m-activity-text">${source} · ${b.mitarbeiter || '–'}</div>
-                <div class="m-activity-meta">${orderCount > 0 ? orderCount + ' Artikel bestellt · ' : 'Nichts zu bestellen · '}${rel}</div>
-              </div>
-            </div>`;
-          }).join('');
-        } else {
-          list.innerHTML = '<div class="m-activity-row"><div class="m-activity-text" style="color:var(--ink-3);font-size:12px;">Noch keine Aktivität</div></div>';
-        }
-      } catch(e) {
-        console.error('[mitarbeiter] bestellungen query:', e.code, e.message);
-        list.innerHTML = '<div class="m-activity-row"><div class="m-activity-text" style="color:var(--ink-3);font-size:12px;">Aktivität nicht verfügbar</div></div>';
-      }
-    })();
-
-    function relTime(d) {
-      const diff = Date.now() - d.getTime();
-      if (diff < 60000)    return 'gerade eben';
-      if (diff < 3600000)  return Math.round(diff/60000) + ' min';
-      if (diff < 86400000) return Math.round(diff/3600000) + ' h';
-      return d.toLocaleDateString('de-DE');
-    }
-  </script>
-
-  <script type="module">
-    import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-    import { getFirestore, doc, getDoc, updateDoc } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
-    import { getAuth, signInAnonymously } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-    import { firebaseConfig } from '../js/firebase-config.js';
-
-    const app  = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
-    const db   = getFirestore(app);
-    const auth = getAuth(app);
-
-    async function sha256(str) {
-      const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
-      return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
-    }
-
-    function setStep(n) {
-      [1, 2, 3].forEach(i =>
-        document.getElementById(`pc-step-${i}`).style.display = i === n ? '' : 'none'
-      );
-    }
-
-    function updateDots(prefix, val) {
-      for (let i = 0; i < 4; i++)
-        document.getElementById(`${prefix}-${i}`)?.classList.toggle('filled', i < val.length);
-    }
-
-    let _pc1 = '', _pc2 = '', _pc3 = '';
-
-    window.openPinChange = function() {
-      _pc1 = ''; _pc2 = ''; _pc3 = '';
-      updateDots('pc-dot',  '');
-      updateDots('pc-ndot', '');
-      updateDots('pc-cdot', '');
-      document.getElementById('pc-error-1').textContent = '';
-      document.getElementById('pc-error-2').textContent = '';
-      document.getElementById('pc-error-3').textContent = '';
-      setStep(1);
-      document.getElementById('pin-change-wall').style.display = 'block';
-      document.body.style.overflow = 'hidden';
-    };
-
-    window.closePinChange = function() {
-      document.getElementById('pin-change-wall').style.display = 'none';
-      document.body.style.overflow = '';
-    };
-
-    window.pcKey = function(step, d) {
-      if (step === 1) {
-        if (_pc1.length >= 4) return;
-        _pc1 += d; updateDots('pc-dot', _pc1);
-        if (_pc1.length === 4) setTimeout(verifyCurrentPin, 150);
-      } else if (step === 2) {
-        if (_pc2.length >= 4) return;
-        _pc2 += d; updateDots('pc-ndot', _pc2);
-        if (_pc2.length === 4) setTimeout(() => setStep(3), 150);
-      } else {
-        if (_pc3.length >= 4) return;
-        _pc3 += d; updateDots('pc-cdot', _pc3);
-        if (_pc3.length === 4) setTimeout(saveNewPin, 150);
-      }
-    };
-
-    window.pcDel = function(step) {
-      if (step === 1) { _pc1 = _pc1.slice(0,-1); updateDots('pc-dot',  _pc1); }
-      if (step === 2) { _pc2 = _pc2.slice(0,-1); updateDots('pc-ndot', _pc2); }
-      if (step === 3) { _pc3 = _pc3.slice(0,-1); updateDots('pc-cdot', _pc3); }
-    };
-
-    async function verifyCurrentPin() {
-      const empId = authGet('lager-employee-id');
-      if (!empId) {
-        document.getElementById('pc-error-1').textContent = 'Kein persönlicher Account – PIN-Änderung nicht möglich';
-        _pc1 = ''; updateDots('pc-dot', ''); return;
-      }
-      try {
-        if (!auth.currentUser) await signInAnonymously(auth);
-        const snap = await getDoc(doc(db, 'mitarbeiter', empId));
-        if (!snap.exists()) {
-          document.getElementById('pc-error-1').textContent = 'Mitarbeiter nicht gefunden';
-          _pc1 = ''; updateDots('pc-dot', ''); return;
-        }
-        if (snap.data().pinHash !== await sha256(_pc1)) {
-          document.getElementById('pc-error-1').textContent = 'Falscher PIN';
-          _pc1 = ''; updateDots('pc-dot', ''); return;
-        }
-        _pc2 = ''; updateDots('pc-ndot', '');
-        document.getElementById('pc-error-2').textContent = '';
-        setStep(2);
-      } catch(e) {
-        document.getElementById('pc-error-1').textContent = 'Fehler: ' + e.message;
-        _pc1 = ''; updateDots('pc-dot', '');
-      }
-    }
-
-    async function saveNewPin() {
-      if (_pc3 !== _pc2) {
-        document.getElementById('pc-error-3').textContent = 'PINs stimmen nicht überein – von vorne beginnen';
-        _pc2 = ''; _pc3 = '';
-        updateDots('pc-ndot', ''); updateDots('pc-cdot', '');
-        document.getElementById('pc-error-2').textContent = '';
-        setStep(2);
-        return;
-      }
-      const empId = authGet('lager-employee-id');
-      try {
-        await updateDoc(doc(db, 'mitarbeiter', empId), { pinHash: await sha256(_pc3) });
-        closePinChange();
-        const t = document.createElement('div');
-        t.textContent = 'PIN erfolgreich geändert';
-        t.style.cssText = 'position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--surface);border:1px solid var(--ok);color:var(--ok);border-radius:12px;padding:10px 18px;font-size:13px;font-weight:600;z-index:3000;box-shadow:0 4px 16px rgba(0,0,0,.15);';
-        document.body.appendChild(t);
-        setTimeout(() => t.remove(), 3000);
-      } catch(e) {
-        document.getElementById('pc-error-3').textContent = 'Fehler: ' + e.message;
-        _pc3 = ''; updateDots('pc-cdot', '');
-      }
-    }
-  </script>
-
   <!-- Wachenleiter Login Modal -->
-  <div id="wl-login-wall" onclick="if(event.target===this)closeWlLogin()" style="
-    display:none; position:fixed; inset:0; z-index:2000;
-    background:rgba(8,8,12,0.55);
-    backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);">
-    <div style="
-      position:absolute; left:0; right:0; bottom:0;
-      background:var(--surface); border-radius:26px 26px 0 0;
-      padding:14px 20px calc(32px + env(safe-area-inset-bottom,0px));
-      box-shadow:0 -8px 32px rgba(0,0,0,.2);"
-      onclick="event.stopPropagation()">
-      <div style="width:40px;height:4px;background:var(--ink-4);border-radius:2px;margin:0 auto 20px;"></div>
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
-        <div style="width:44px;height:44px;border-radius:12px;flex-shrink:0;background:var(--brand-soft);color:var(--brand);display:flex;align-items:center;justify-content:center;box-shadow:inset 0 0 0 1px var(--brand-soft-2);">
+  <div id="wl-login-wall" class="m-sheet-overlay">
+    <div class="m-sheet-panel m-sheet-panel--wl">
+      <div class="m-sheet-handle"></div>
+      <div class="wl-header">
+        <div class="wl-icon">
           <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
         </div>
         <div>
-          <div style="font-size:17px;font-weight:700;letter-spacing:-0.3px;">Wachenleiter-Login</div>
-          <div style="font-size:12px;color:var(--ink-3);margin-top:2px;">E-Mail und Passwort eingeben</div>
+          <div class="wl-title">Wachenleiter-Login</div>
+          <div class="wl-sub">E-Mail und Passwort eingeben</div>
         </div>
       </div>
-      <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:12px;">
-        <input type="email" id="wl-email" placeholder="E-Mail-Adresse" autocomplete="email" style="
-          width:100%;height:48px;border-radius:12px;background:var(--surface-2);
-          border:1.5px solid var(--hairline-2);padding:0 14px;
-          font-family:var(--font-ui);font-size:15px;color:var(--ink);outline:none;box-sizing:border-box;"
-          onfocus="this.style.borderColor='var(--brand)'" onblur="this.style.borderColor='var(--hairline-2)'">
-        <input type="password" id="wl-password" placeholder="Passwort" autocomplete="current-password" style="
-          width:100%;height:48px;border-radius:12px;background:var(--surface-2);
-          border:1.5px solid var(--hairline-2);padding:0 14px;
-          font-family:var(--font-ui);font-size:15px;color:var(--ink);outline:none;box-sizing:border-box;"
-          onfocus="this.style.borderColor='var(--brand)'" onblur="this.style.borderColor='var(--hairline-2)'"
-          onkeydown="if(event.key==='Enter')doWlLogin()">
+      <div class="wl-fields">
+        <input type="email"    id="wl-modal-email"    class="wl-input" placeholder="E-Mail-Adresse"    autocomplete="email">
+        <input type="password" id="wl-modal-password" class="wl-input" placeholder="Passwort"          autocomplete="current-password">
       </div>
-      <div id="wl-error" style="font-size:12px;color:var(--crit);min-height:18px;margin-bottom:10px;text-align:center;"></div>
-      <div style="display:flex;gap:10px;">
-        <button onclick="closeWlLogin()" style="flex:0 0 110px;height:48px;border-radius:var(--r-md);border:none;background:var(--surface);color:var(--ink-2);cursor:pointer;font-family:var(--font-ui);font-size:14px;font-weight:500;box-shadow:inset 0 0 0 1px var(--hairline-2);">Abbrechen</button>
-        <button id="wl-login-btn" onclick="doWlLogin()" style="flex:1;height:48px;border-radius:var(--r-md);background:var(--brand);color:white;border:none;font-family:var(--font-ui);font-size:14px;font-weight:600;cursor:pointer;box-shadow:0 1px 0 rgba(255,255,255,.2) inset,0 6px 14px rgba(242,107,46,.28);">Anmelden</button>
+      <div id="wl-modal-error" class="wl-error"></div>
+      <div class="wl-actions">
+        <button id="wl-modal-cancel-btn" class="wl-cancel-btn">Abbrechen</button>
+        <button id="wl-modal-login-btn"  class="wl-login-btn">Anmelden</button>
       </div>
     </div>
   </div>
 
-  <script type="module">
-    import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-    import { getAuth, signInWithEmailAndPassword, signOut } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-    import { firebaseConfig } from '../js/firebase-config.js';
-
-    const _app  = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
-    const _auth = getAuth(_app);
-
-    window.openWlLogin = function() {
-      document.getElementById('wl-email').value    = '';
-      document.getElementById('wl-password').value = '';
-      document.getElementById('wl-error').textContent = '';
-      const btn = document.getElementById('wl-login-btn');
-      btn.disabled = false; btn.textContent = 'Anmelden';
-      document.getElementById('wl-login-wall').style.display = 'block';
-      document.body.style.overflow = 'hidden';
-      setTimeout(() => document.getElementById('wl-email').focus(), 150);
-    };
-
-    window.closeWlLogin = function() {
-      document.getElementById('wl-login-wall').style.display = 'none';
-      document.body.style.overflow = '';
-    };
-
-    window.doWlLogin = async function() {
-      const email    = document.getElementById('wl-email').value.trim();
-      const password = document.getElementById('wl-password').value;
-      const btn      = document.getElementById('wl-login-btn');
-      const errEl    = document.getElementById('wl-error');
-      if (!email || !password) { errEl.textContent = 'E-Mail und Passwort erforderlich'; return; }
-      btn.disabled = true; btn.textContent = 'Anmelden…';
-      errEl.textContent = '';
-      try {
-        await signInWithEmailAndPassword(_auth, email, password);
-        sessionStorage.setItem('lager-portal-role', 'wachenleiter');
-        closeWlLogin();
-        window.location.href = 'portal.html';
-      } catch(e) {
-        btn.disabled = false; btn.textContent = 'Anmelden';
-        const map = {
-          'auth/invalid-credential': 'E-Mail oder Passwort falsch',
-          'auth/user-not-found':     'Kein Konto mit dieser E-Mail',
-          'auth/wrong-password':     'Falsches Passwort',
-          'auth/invalid-email':      'Ungültige E-Mail-Adresse',
-          'auth/too-many-requests':  'Zu viele Versuche – kurz warten',
-        };
-        errEl.textContent = map[e.code] || 'Fehler: ' + e.message;
-      }
-    };
-
-    // Sign out of Firebase on logout so login.html auth guard doesn't redirect back
-    const _baseLogout = window.doLogout;
-    window.doLogout = async function() {
-      try { await signOut(_auth); } catch (_) {}
-      _baseLogout();
-    };
-  </script>
-
+  <script type="module" src="../js/mitarbeiter.js"></script>
   <script src="../js/pwa.js"></script>
 </body>
 </html>

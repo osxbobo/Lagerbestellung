@@ -11,348 +11,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Anmelden – LAGER//APP</title>
   <link rel="stylesheet" href="../css/main.css">
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: var(--font-ui);
-      background: var(--bg); color: var(--ink);
-      min-height: 100dvh; display: flex; flex-direction: column;
-    }
-    .hidden { display: none !important; }
-
-    /* ── Top Nav ── */
-    .ln-nav {
-      display: flex; align-items: center; gap: 10px;
-      padding: env(safe-area-inset-top, 12px) 20px 12px;
-      padding-top: max(env(safe-area-inset-top, 12px), 12px);
-    }
-    .ln-back {
-      width: 36px; height: 36px; border-radius: 18px;
-      background: var(--surface); border: none; cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      color: var(--ink-2); box-shadow: inset 0 0 0 1px var(--hairline);
-      touch-action: manipulation; flex-shrink: 0;
-    }
-    .ln-title {
-      flex: 1; text-align: center;
-      font-size: 13px; font-weight: 600; color: var(--ink);
-    }
-    .ln-help {
-      width: 36px; height: 36px; border-radius: 18px;
-      background: var(--surface-2); border: none; cursor: pointer;
-      display: flex; align-items: center; justify-content: center;
-      font-family: var(--font-mono); font-size: 11px; font-weight: 600;
-      color: var(--ink-3); box-shadow: inset 0 0 0 1px var(--hairline);
-      flex-shrink: 0;
-    }
-
-    /* ── Segmented Control ── */
-    .ln-tabs {
-      display: flex; padding: 4px;
-      background: var(--surface-3); border-radius: 12px;
-      box-shadow: inset 0 0 0 0.5px var(--hairline);
-      margin: 0 20px;
-    }
-    .ln-tab {
-      flex: 1; padding: 10px 0; text-align: center; border-radius: 9px;
-      font-size: 13px; font-weight: 500; color: var(--ink-3);
-      cursor: pointer; border: none; background: transparent;
-      font-family: var(--font-ui); transition: background .15s, color .15s;
-      touch-action: manipulation;
-    }
-    .ln-tab.active {
-      background: var(--surface); color: var(--ink); font-weight: 600;
-      box-shadow: var(--sh-1);
-    }
-
-    /* ── Shared Form Area ── */
-    .ln-body {
-      flex: 1; display: flex; flex-direction: column;
-      padding: 20px 24px 0; overflow: hidden;
-    }
-    .ln-icon {
-      width: 56px; height: 56px; border-radius: 18px;
-      background: var(--brand-soft); color: var(--brand);
-      display: flex; align-items: center; justify-content: center;
-      align-self: center; box-shadow: inset 0 0 0 1px var(--brand-soft-2);
-      flex-shrink: 0;
-    }
-    .ln-heading {
-      font-size: 22px; font-weight: 700; text-align: center;
-      letter-spacing: -0.5px; margin-top: 12px; line-height: 1.2;
-    }
-    .ln-sub {
-      font-size: 13px; color: var(--ink-3); text-align: center;
-      margin-top: 4px; line-height: 1.4;
-    }
-
-    /* ── Name Field ── */
-    .ln-field-label {
-      font-size: 11px; color: var(--ink-3); margin-bottom: 6px; padding-left: 4px;
-    }
-    .ln-name-field {
-      display: flex; align-items: center; gap: 10px;
-      height: 52px; padding: 0 14px;
-      background: var(--surface); border-radius: 14px;
-      box-shadow: inset 0 0 0 1px var(--hairline);
-      transition: box-shadow .15s;
-    }
-    .ln-name-field:focus-within {
-      box-shadow: inset 0 0 0 2px var(--brand);
-    }
-    .ln-name-input {
-      flex: 1; background: none; border: none; outline: none;
-      font-family: var(--font-ui); font-size: 15px; font-weight: 500; color: var(--ink);
-    }
-    .ln-name-input::placeholder { color: var(--ink-3); }
-
-    /* ── PIN dots ── */
-    .ln-pin-dots {
-      display: flex; justify-content: center; gap: 16px; padding: 6px 0;
-    }
-    .ln-pin-dot {
-      width: 16px; height: 16px; border-radius: 8px;
-      background: transparent;
-      box-shadow: inset 0 0 0 2px var(--ink-4);
-      transition: background .12s, box-shadow .12s, transform .12s;
-    }
-    .ln-pin-dot.filled {
-      background: var(--brand);
-      box-shadow: inset 0 0 0 2px var(--brand);
-      transform: scale(1.1);
-    }
-
-    /* ── Numpad ── */
-    .ln-numpad {
-      display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;
-      margin-top: auto; padding-bottom: env(safe-area-inset-bottom, 24px);
-      padding-bottom: max(env(safe-area-inset-bottom, 24px), 24px);
-    }
-    .ln-key {
-      height: 54px; border-radius: 14px;
-      background: var(--surface); border: none; cursor: pointer;
-      font-family: var(--font-mono); font-size: 24px; font-weight: 500;
-      color: var(--ink); display: flex; align-items: center; justify-content: center;
-      box-shadow: var(--sh-1), inset 0 0 0 0.5px var(--hairline);
-      transition: transform .1s, background .1s;
-      touch-action: manipulation;
-    }
-    .ln-key:active { transform: scale(0.91); background: var(--surface-3); }
-    .ln-key.cancel {
-      background: transparent; box-shadow: none;
-      font-family: var(--font-ui); font-size: 12px; font-weight: 600;
-      color: var(--ink-3);
-    }
-    .ln-key.del { background: var(--surface); }
-
-    .ln-pin-error {
-      text-align: center; font-size: 12px; color: var(--crit);
-      min-height: 18px; margin: 6px 0;
-    }
-
-    .ln-keep-row {
-      display: flex; align-items: center; justify-content: center;
-      gap: 8px; margin: 4px 0 2px; cursor: pointer;
-    }
-    .ln-keep-row input[type="checkbox"] { width: 16px; height: 16px; accent-color: var(--brand); cursor: pointer; }
-    .ln-keep-row span { font-size: 12px; color: var(--ink-3); }
-
-    /* ── Wachenleiter form ── */
-    .ln-wl-form {
-      display: flex; flex-direction: column; gap: 12px; margin-top: 20px;
-    }
-    .ln-input-wrap {
-      display: flex; align-items: center; gap: 10px;
-      height: 52px; padding: 0 14px;
-      background: var(--surface); border-radius: 14px;
-      box-shadow: inset 0 0 0 1px var(--hairline);
-      transition: box-shadow .15s;
-    }
-    .ln-input-wrap:focus-within { box-shadow: inset 0 0 0 2px var(--brand); }
-    .ln-input-wrap input {
-      flex: 1; background: none; border: none; outline: none;
-      font-family: var(--font-ui); font-size: 15px; color: var(--ink);
-    }
-    .ln-input-wrap input::placeholder { color: var(--ink-3); }
-    .ln-pw-toggle {
-      background: none; border: none; cursor: pointer;
-      font-size: 12px; font-weight: 600; color: var(--brand);
-      font-family: var(--font-ui); padding: 4px;
-    }
-    .ln-error-box {
-      background: var(--crit-soft); border: 1px solid rgba(220,38,38,.2);
-      color: var(--crit); border-radius: 10px; padding: 10px 14px;
-      font-size: 12px; text-align: center;
-    }
-    .ln-wl-actions {
-      margin-top: auto;
-      padding-bottom: env(safe-area-inset-bottom, 28px);
-      padding-bottom: max(env(safe-area-inset-bottom, 28px), 28px);
-      display: flex; flex-direction: column; gap: 10px;
-    }
-    .ln-btn-primary {
-      width: 100%; height: 56px; border-radius: var(--r-md); border: none;
-      background: var(--brand); color: white;
-      font-family: var(--font-ui); font-size: 15px; font-weight: 600;
-      cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
-      box-shadow: 0 1px 0 rgba(255,255,255,.2) inset, 0 6px 14px rgba(242,107,46,.28);
-      transition: opacity .15s, transform .15s; touch-action: manipulation;
-    }
-    .ln-btn-primary:active { transform: scale(0.98); }
-    .ln-btn-primary:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
-    .ln-btn-ghost {
-      width: 100%; height: 48px; border-radius: var(--r-md); border: none;
-      background: var(--surface); color: var(--ink-2);
-      font-family: var(--font-ui); font-size: 14px; font-weight: 500;
-      cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
-      box-shadow: inset 0 0 0 1px var(--hairline-2);
-      transition: background .15s; text-decoration: none;
-      touch-action: manipulation;
-    }
-    .ln-btn-ghost:hover { background: var(--surface-2); }
-    .ln-footer-note {
-      text-align: center; padding: 10px 20px 16px;
-      font-size: 12px; color: var(--ink-4);
-    }
-
-    .spinner-sm {
-      width: 16px; height: 16px;
-      border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff;
-      border-radius: 50%; animation: spin 0.7s linear infinite; flex-shrink: 0;
-    }
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    /* ── Desktop: side-by-side card ── */
-    @media (min-width: 768px) {
-      body { align-items: center; justify-content: center; }
-
-      .ln-nav { display: none; }
-      .ln-tabs { display: none; }
-      .ln-body { display: none; }
-      .ln-footer-note { display: none; }
-
-      .ln-desktop {
-        display: flex !important;
-        flex-direction: column;
-        width: 100%; max-width: 880px;
-        padding: 40px 20px;
-        gap: 28px;
-      }
-      .ln-desktop-header {
-        text-align: center; display: flex; flex-direction: column; gap: 6px; align-items: center;
-      }
-      .ln-desktop-wordmark {
-        font-family: var(--font-mono); font-size: 14px; font-weight: 600;
-        color: var(--ink); letter-spacing: 0.02em;
-        display: flex; align-items: center; gap: 4px;
-      }
-      .ln-desktop-wordmark .slash { color: var(--brand); }
-      .ln-desktop-sub { font-size: 13px; color: var(--ink-3); }
-
-      .ln-desktop-card {
-        background: var(--surface);
-        border-radius: var(--r-xl);
-        box-shadow: var(--sh-3), inset 0 0 0 0.5px var(--hairline);
-        display: flex; overflow: hidden;
-      }
-      .ln-desktop-col {
-        flex: 1; padding: 36px 32px;
-        display: flex; flex-direction: column; gap: 20px;
-      }
-      .ln-desktop-col + .ln-desktop-col {
-        border-left: 1px solid var(--hairline);
-      }
-      .ln-desktop-col-head { display: flex; flex-direction: column; gap: 8px; align-items: center; }
-      .ln-desktop-col-icon {
-        width: 52px; height: 52px; border-radius: 16px;
-        background: var(--brand-soft); color: var(--brand);
-        display: flex; align-items: center; justify-content: center;
-        box-shadow: inset 0 0 0 1px var(--brand-soft-2);
-      }
-      .ln-desktop-col-title { font-size: 18px; font-weight: 700; letter-spacing: -0.3px; }
-      .ln-desktop-col-sub { font-size: 12px; color: var(--ink-3); text-align: center; }
-
-      /* desktop name field */
-      .dsk-field-label { font-size: 11px; color: var(--ink-3); margin-bottom: 5px; padding-left: 3px; }
-      .dsk-input-row {
-        display: flex; align-items: center; gap: 10px;
-        height: 44px; padding: 0 12px;
-        background: var(--surface-2); border-radius: var(--r-sm);
-        box-shadow: inset 0 0 0 1px var(--hairline);
-        transition: box-shadow .15s;
-      }
-      .dsk-input-row:focus-within { box-shadow: inset 0 0 0 2px var(--brand); }
-      .dsk-input-row input {
-        flex: 1; background: none; border: none; outline: none;
-        font-family: var(--font-ui); font-size: 14px; color: var(--ink);
-      }
-      .dsk-input-row input::placeholder { color: var(--ink-3); }
-
-      /* desktop pin dots */
-      .dsk-pin-dots {
-        display: flex; justify-content: center; gap: 12px; padding: 4px 0;
-      }
-      .dsk-pin-dot {
-        width: 14px; height: 14px; border-radius: 7px;
-        background: transparent; box-shadow: inset 0 0 0 2px var(--ink-4);
-        transition: background .12s, box-shadow .12s, transform .12s;
-      }
-      .dsk-pin-dot.filled {
-        background: var(--brand); box-shadow: inset 0 0 0 2px var(--brand);
-        transform: scale(1.1);
-      }
-
-      /* desktop numpad — brand-ringed inner card */
-      .dsk-numpad-card {
-        border-radius: var(--r-md); padding: 14px;
-        box-shadow: inset 0 0 0 2px var(--brand-soft-2);
-      }
-      .dsk-numpad {
-        display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;
-      }
-      .dsk-key {
-        height: 44px; border-radius: var(--r-sm);
-        background: var(--surface-2); border: none; cursor: pointer;
-        font-family: var(--font-mono); font-size: 20px; font-weight: 500;
-        color: var(--ink); display: flex; align-items: center; justify-content: center;
-        box-shadow: var(--sh-1), inset 0 0 0 0.5px var(--hairline);
-        transition: transform .1s, background .1s;
-      }
-      .dsk-key:active { transform: scale(0.93); background: var(--surface-3); }
-      .dsk-key.del { font-size: 18px; }
-      .dsk-pin-error {
-        text-align: center; font-size: 11px; color: var(--crit); min-height: 16px;
-      }
-
-      .dsk-btn-primary {
-        width: 100%; height: 48px; border-radius: var(--r-md); border: none;
-        background: var(--brand); color: white;
-        font-family: var(--font-ui); font-size: 15px; font-weight: 600;
-        cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
-        box-shadow: 0 1px 0 rgba(255,255,255,.2) inset, 0 6px 14px rgba(242,107,46,.28);
-        transition: opacity .15s, transform .15s;
-      }
-      .dsk-btn-primary:active { transform: scale(0.98); }
-      .dsk-btn-primary:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
-
-      .dsk-info-note {
-        font-size: 12px; color: var(--ink-3); text-align: center; line-height: 1.5;
-      }
-      .dsk-error-box {
-        background: var(--crit-soft); border: 1px solid rgba(220,38,38,.2);
-        color: var(--crit); border-radius: var(--r-sm); padding: 8px 12px;
-        font-size: 12px; text-align: center;
-      }
-
-      .ln-desktop-footer {
-        text-align: center; padding: 8px 20px;
-        font-size: 12px; color: var(--ink-4);
-        border-top: 0.5px solid var(--hairline);
-        background: var(--surface-2);
-        border-radius: 0 0 var(--r-xl) var(--r-xl);
-      }
-    }
-  </style>
+  <link rel="stylesheet" href="../css/login.css">
 </head>
 <body>
 
@@ -366,13 +25,13 @@
       <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5l-5 5 5 5"/></svg>
     </button>
     <span class="ln-title">Anmelden</span>
-    <button class="ln-help" title="Hilfe" onclick="showHelp()">?</button>
+    <button class="ln-help" id="help-btn" title="Hilfe">?</button>
   </nav>
 
   <!-- Tab switcher -->
   <div class="ln-tabs">
-    <button class="ln-tab active" id="tab-ma" onclick="switchTab('mitarbeiter')">Mitarbeiter</button>
-    <button class="ln-tab"        id="tab-wl" onclick="switchTab('wachenleiter')">Wachenleiter</button>
+    <button class="ln-tab active" id="tab-ma">Mitarbeiter</button>
+    <button class="ln-tab"        id="tab-wl">Wachenleiter</button>
   </div>
 
   <!-- ── Mitarbeiter Tab ── -->
@@ -387,10 +46,10 @@
     <div class="ln-sub">Name + persönlicher PIN — danach zu allen Workflows</div>
 
     <!-- Name -->
-    <div style="margin-top:18px;">
+    <div class="ln-name-wrap">
       <div class="ln-field-label">Dein Name</div>
       <div class="ln-name-field">
-        <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" style="color:var(--ink-3);flex-shrink:0;">
+        <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" class="form-icon">
           <circle cx="10" cy="7" r="3"/><path d="M4 17c1-3 3.5-4 6-4s5 1 6 4"/>
         </svg>
         <input type="text" id="ma-name" class="ln-name-input"
@@ -400,7 +59,7 @@
     </div>
 
     <!-- PIN dots -->
-    <div style="margin-top:14px;">
+    <div class="ln-pin-wrap">
       <div class="ln-field-label">4-stelliger PIN</div>
       <div class="ln-pin-dots">
         <div class="ln-pin-dot" id="pd-0"></div>
@@ -416,20 +75,20 @@
       <span>Eingeloggt bleiben</span>
     </label>
 
-    <!-- Numpad -->
+    <!-- Numpad (mobile) — delegation via data-key -->
     <div class="ln-numpad">
-      <button class="ln-key" onclick="maKey('1')">1</button>
-      <button class="ln-key" onclick="maKey('2')">2</button>
-      <button class="ln-key" onclick="maKey('3')">3</button>
-      <button class="ln-key" onclick="maKey('4')">4</button>
-      <button class="ln-key" onclick="maKey('5')">5</button>
-      <button class="ln-key" onclick="maKey('6')">6</button>
-      <button class="ln-key" onclick="maKey('7')">7</button>
-      <button class="ln-key" onclick="maKey('8')">8</button>
-      <button class="ln-key" onclick="maKey('9')">9</button>
-      <button class="ln-key cancel" onclick="goBack()">Abbrechen</button>
-      <button class="ln-key" onclick="maKey('0')">0</button>
-      <button class="ln-key del" onclick="maDel()">
+      <button class="ln-key" data-key="1">1</button>
+      <button class="ln-key" data-key="2">2</button>
+      <button class="ln-key" data-key="3">3</button>
+      <button class="ln-key" data-key="4">4</button>
+      <button class="ln-key" data-key="5">5</button>
+      <button class="ln-key" data-key="6">6</button>
+      <button class="ln-key" data-key="7">7</button>
+      <button class="ln-key" data-key="8">8</button>
+      <button class="ln-key" data-key="9">9</button>
+      <button class="ln-key cancel" data-key="cancel">Abbrechen</button>
+      <button class="ln-key" data-key="0">0</button>
+      <button class="ln-key del" data-key="del">
         <svg viewBox="0 0 26 20" width="24" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
           <path d="M7 1h17a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H7L1 10 7 1z"/>
           <path d="M12 6l8 8M20 6l-8 8"/>
@@ -452,29 +111,29 @@
       <div>
         <div class="ln-field-label">E-Mail</div>
         <div class="ln-input-wrap">
-          <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="color:var(--ink-3);flex-shrink:0;">
+          <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" class="form-icon">
             <rect x="2" y="4" width="16" height="12" rx="2"/><path d="M2 6l8 6 8-6"/>
           </svg>
           <input type="email" id="wl-email" placeholder="name@drk-boeblingen.de"
-            autocomplete="email" style="color:var(--ink);">
+            autocomplete="email">
         </div>
       </div>
       <div>
         <div class="ln-field-label">Passwort</div>
         <div class="ln-input-wrap">
-          <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="color:var(--ink-3);flex-shrink:0;">
+          <svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" class="form-icon">
             <rect x="4" y="9" width="12" height="8" rx="2"/><path d="M6.5 9V6a3.5 3.5 0 1 1 7 0v3"/>
           </svg>
           <input type="password" id="wl-password" placeholder="••••••••"
-            autocomplete="current-password" style="color:var(--ink);">
-          <button class="ln-pw-toggle" id="wl-pw-toggle" onclick="togglePw()">Zeigen</button>
+            autocomplete="current-password">
+          <button class="ln-pw-toggle" id="wl-pw-toggle">Zeigen</button>
         </div>
       </div>
       <div id="wl-error" class="ln-error-box hidden"></div>
     </div>
 
     <div class="ln-wl-actions">
-      <button class="ln-btn-primary" id="wl-login-btn" onclick="doWlLogin()">
+      <button class="ln-btn-primary" id="wl-login-btn">
         <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <rect x="3" y="8" width="14" height="10" rx="2"/><path d="M7 8V6a3 3 0 0 1 6 0v2"/>
         </svg>
@@ -497,10 +156,7 @@
         LAGER<span class="slash">//</span>APP
       </div>
       <div class="ln-desktop-sub">Rettungswache Malmsheim</div>
-      <a href="../index.html" style="
-        margin-top:8px; display:inline-flex; align-items:center; gap:6px;
-        font-size:12px; color:var(--ink-3); text-decoration:none;
-        transition:color .15s;">
+      <a href="../index.html" class="dsk-back-link">
         <svg viewBox="0 0 20 20" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5l-5 5 5 5"/></svg>
         Zur Lagersuche
       </a>
@@ -523,7 +179,7 @@
         <div>
           <div class="dsk-field-label">Dein Name</div>
           <div class="dsk-input-row">
-            <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" style="color:var(--ink-3);flex-shrink:0;">
+            <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" class="form-icon">
               <circle cx="10" cy="7" r="3"/><path d="M4 17c1-3 3.5-4 6-4s5 1 6 4"/>
             </svg>
             <input type="text" id="dsk-ma-name" placeholder="Dein Name…"
@@ -539,20 +195,20 @@
             <div class="dsk-pin-dot" id="dpd-2"></div>
             <div class="dsk-pin-dot" id="dpd-3"></div>
           </div>
-          <div class="dsk-numpad-card" style="margin-top:8px;">
+          <div class="dsk-numpad-card">
             <div class="dsk-numpad">
-              <button class="dsk-key" onclick="dskKey('1')">1</button>
-              <button class="dsk-key" onclick="dskKey('2')">2</button>
-              <button class="dsk-key" onclick="dskKey('3')">3</button>
-              <button class="dsk-key" onclick="dskKey('4')">4</button>
-              <button class="dsk-key" onclick="dskKey('5')">5</button>
-              <button class="dsk-key" onclick="dskKey('6')">6</button>
-              <button class="dsk-key" onclick="dskKey('7')">7</button>
-              <button class="dsk-key" onclick="dskKey('8')">8</button>
-              <button class="dsk-key" onclick="dskKey('9')">9</button>
-              <button class="dsk-key" style="font-family:var(--font-ui);font-size:11px;color:var(--ink-4);" onclick="dskClearPin()">C</button>
-              <button class="dsk-key" onclick="dskKey('0')">0</button>
-              <button class="dsk-key del" onclick="dskDel()">
+              <button class="dsk-key" data-key="1">1</button>
+              <button class="dsk-key" data-key="2">2</button>
+              <button class="dsk-key" data-key="3">3</button>
+              <button class="dsk-key" data-key="4">4</button>
+              <button class="dsk-key" data-key="5">5</button>
+              <button class="dsk-key" data-key="6">6</button>
+              <button class="dsk-key" data-key="7">7</button>
+              <button class="dsk-key" data-key="8">8</button>
+              <button class="dsk-key" data-key="9">9</button>
+              <button class="dsk-key dsk-key--clear" data-key="c">C</button>
+              <button class="dsk-key" data-key="0">0</button>
+              <button class="dsk-key del" data-key="del">
                 <svg viewBox="0 0 26 20" width="20" height="15" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
                   <path d="M7 1h17a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H7L1 10 7 1z"/>
                   <path d="M12 6l8 8M20 6l-8 8"/>
@@ -562,12 +218,12 @@
           </div>
           <div class="dsk-pin-error" id="dsk-ma-error"></div>
         </div>
-        <label class="ln-keep-row" style="margin-top:10px;">
+        <label class="ln-keep-row dsk-keep">
           <input type="checkbox" id="dsk-keep-login">
           <span>Eingeloggt bleiben</span>
         </label>
 
-        <button class="dsk-btn-primary" id="dsk-ma-btn" onclick="dskMaLogin()">
+        <button class="dsk-btn-primary" id="dsk-ma-btn">
           <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <rect x="3" y="8" width="14" height="10" rx="2"/><path d="M7 8V6a3 3 0 0 1 6 0v2"/>
           </svg>
@@ -587,11 +243,11 @@
           <div class="ln-desktop-col-sub">E-Mail + Passwort · zum Portal</div>
         </div>
 
-        <div style="display:flex;flex-direction:column;gap:12px;">
+        <div class="dsk-wl-fields">
           <div>
             <div class="dsk-field-label">E-Mail</div>
             <div class="dsk-input-row">
-              <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="color:var(--ink-3);flex-shrink:0;">
+              <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" class="form-icon">
                 <rect x="2" y="4" width="16" height="12" rx="2"/><path d="M2 6l8 6 8-6"/>
               </svg>
               <input type="email" id="dsk-wl-email" placeholder="name@drk-boeblingen.de" autocomplete="email">
@@ -600,17 +256,17 @@
           <div>
             <div class="dsk-field-label">Passwort</div>
             <div class="dsk-input-row">
-              <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" style="color:var(--ink-3);flex-shrink:0;">
+              <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" class="form-icon">
                 <rect x="4" y="9" width="12" height="8" rx="2"/><path d="M6.5 9V6a3.5 3.5 0 1 1 7 0v3"/>
               </svg>
               <input type="password" id="dsk-wl-password" placeholder="••••••••" autocomplete="current-password">
-              <button class="ln-pw-toggle" id="dsk-pw-toggle" onclick="dskTogglePw()">Zeigen</button>
+              <button class="ln-pw-toggle" id="dsk-pw-toggle">Zeigen</button>
             </div>
           </div>
           <div id="dsk-wl-error" class="dsk-error-box hidden"></div>
         </div>
 
-        <button class="dsk-btn-primary" id="dsk-wl-btn" onclick="dskWlLogin()">
+        <button class="dsk-btn-primary" id="dsk-wl-btn">
           <svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <rect x="3" y="8" width="14" height="10" rx="2"/><path d="M7 8V6a3 3 0 0 1 6 0v2"/>
           </svg>
@@ -630,494 +286,32 @@
   </div>
 
   <!-- ── Help Sheet ── -->
-  <div id="help-sheet" onclick="if(event.target===this)closeHelp()" style="display:none;position:fixed;inset:0;z-index:3000;background:rgba(0,0,0,0.55);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);">
-    <div style="position:absolute;left:0;right:0;bottom:0;background:var(--surface);border-radius:26px 26px 0 0;padding:12px 20px calc(28px + env(safe-area-inset-bottom,0px));" onclick="event.stopPropagation()">
-      <div style="width:40px;height:4px;background:var(--ink-4);border-radius:2px;margin:0 auto 20px;"></div>
-      <div style="font-size:17px;font-weight:700;margin-bottom:16px;">Hilfe &amp; Kontakt</div>
-      <div style="display:flex;flex-direction:column;gap:14px;font-size:14px;color:var(--ink-2);line-height:1.5;">
+  <div id="help-sheet" class="help-sheet">
+    <div class="help-sheet-content" id="help-sheet-content">
+      <div class="help-sheet-handle"></div>
+      <div class="help-sheet-title">Hilfe &amp; Kontakt</div>
+      <div class="help-sheet-items">
         <div>
-          <div style="font-weight:600;color:var(--ink);margin-bottom:3px;">Kein PIN?</div>
+          <div class="help-sheet-item-title">Kein PIN?</div>
           Bitte deinen Wachenleiter ansprechen — er kann dir einen persönlichen PIN einrichten.
         </div>
         <div>
-          <div style="font-weight:600;color:var(--ink);margin-bottom:3px;">PIN vergessen oder gesperrt?</div>
+          <div class="help-sheet-item-title">PIN vergessen oder gesperrt?</div>
           Wachenleiter bitten, deinen PIN zurückzusetzen.
         </div>
         <div>
-          <div style="font-weight:600;color:var(--ink);margin-bottom:3px;">Kontakt</div>
-          <a href="mailto:wachenleiter@drk-malmsheim.de" style="color:var(--brand);text-decoration:none;font-weight:500;">wachenleiter@drk-malmsheim.de</a>
+          <div class="help-sheet-item-title">Kontakt</div>
+          <a href="mailto:wachenleiter@drk-malmsheim.de" class="help-sheet-link">wachenleiter@drk-malmsheim.de</a>
         </div>
       </div>
-      <button onclick="closeHelp()" style="margin-top:24px;width:100%;height:50px;border-radius:14px;border:none;background:var(--surface-2);color:var(--ink);font-family:var(--font-ui);font-size:15px;font-weight:600;cursor:pointer;box-shadow:inset 0 0 0 1px var(--hairline);touch-action:manipulation;">OK</button>
+      <button id="help-close-btn" class="help-sheet-close">OK</button>
     </div>
   </div>
 
   <!-- ══════════════════════════════════════════
        SCRIPTS
   ══════════════════════════════════════════ -->
-  <script type="module">
-    import { initializeApp, getApps } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js';
-    import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signInAnonymously, signOut }
-      from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
-    import { getFirestore, doc, getDoc, collection, query, where, getDocs, updateDoc }
-      from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
-    import { firebaseConfig } from '../js/firebase-config.js';
-
-    async function sha256(str) {
-      const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
-      return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
-    }
-
-    function normalizeName(n) {
-      return n.trim().toLowerCase().replace(/\s+/g, ' ');
-    }
-
-    function withTimeout(promise, ms = 10000) {
-      return Promise.race([
-        promise,
-        new Promise((_, reject) =>
-          setTimeout(() => reject(new Error('Zeitüberschreitung – bitte erneut versuchen')), ms))
-      ]);
-    }
-
-    // ── Theme ──
-    const savedTheme  = localStorage.getItem('lager-theme');
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    document.documentElement.setAttribute('data-theme',
-      savedTheme || (prefersDark ? 'dark' : 'light'));
-
-    // ── Responsive layout ──
-    function applyLayout() {
-      const isDesktop = window.innerWidth >= 768;
-      document.getElementById('ln-desktop').classList.toggle('hidden', !isDesktop);
-      // Mobile elements toggled by isDesktop
-      document.querySelector('.ln-nav').style.display    = isDesktop ? 'none' : '';
-      document.querySelector('.ln-tabs').style.display   = isDesktop ? 'none' : '';
-      document.querySelector('.ln-footer-note').style.display = isDesktop ? 'none' : '';
-      // Active mobile pane
-      if (!isDesktop) {
-        const activeTab = document.querySelector('.ln-tab.active')?.id === 'tab-wl' ? 'wachenleiter' : 'mitarbeiter';
-        document.getElementById('pane-mitarbeiter').classList.toggle('hidden', activeTab !== 'mitarbeiter');
-        document.getElementById('pane-wachenleiter').classList.toggle('hidden', activeTab !== 'wachenleiter');
-        document.getElementById('pane-mitarbeiter').style.display = '';
-        document.getElementById('pane-wachenleiter').style.display = '';
-      } else {
-        document.getElementById('pane-mitarbeiter').classList.add('hidden');
-        document.getElementById('pane-wachenleiter').classList.add('hidden');
-      }
-    }
-    applyLayout();
-    window.addEventListener('resize', applyLayout);
-
-    // ── URL params ──
-    const params    = new URLSearchParams(location.search);
-    const returnUrl = params.get('return') || '';
-    const initTab   = params.get('tab') || 'mitarbeiter';
-
-    // ── Pre-fill saved name ──
-    const savedName = localStorage.getItem('lager-saved-name') || '';
-    if (savedName) {
-      const ma = document.getElementById('ma-name');
-      if (ma) ma.value = savedName;
-      const dsk = document.getElementById('dsk-ma-name');
-      if (dsk) dsk.value = savedName;
-    }
-
-    // Auto-save name as user types (Bug 3: Name merken)
-    document.getElementById('ma-name')?.addEventListener('input', e => {
-      localStorage.setItem('lager-saved-name', e.target.value);
-    });
-    document.getElementById('dsk-ma-name')?.addEventListener('input', e => {
-      localStorage.setItem('lager-saved-name', e.target.value);
-    });
-
-    // ── "Eingeloggt bleiben" — restore checkbox state ──
-    const keepChecked = localStorage.getItem('lager-keep-login') === '1';
-    if (keepChecked) {
-      const cbM = document.getElementById('ma-keep-login');
-      const cbD = document.getElementById('dsk-keep-login');
-      if (cbM) cbM.checked = true;
-      if (cbD) cbD.checked = true;
-    }
-    // If already persistently logged in, skip login page
-    if (localStorage.getItem('lager-pin-auth') === 'true') {
-      window.location.replace(returnUrl || 'mitarbeiter.html');
-    }
-
-    // Returns the storage to use for auth data
-    function authStore() {
-      const cbM = document.getElementById('ma-keep-login');
-      const cbD = document.getElementById('dsk-keep-login');
-      const keep = (cbM?.checked || cbD?.checked);
-      localStorage.setItem('lager-keep-login', keep ? '1' : '0');
-      return keep ? localStorage : sessionStorage;
-    }
-
-    // ── Firebase ──
-    const app  = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db   = getFirestore(app);
-
-    // Already logged in as non-anonymous → redirect (skip if MA-PIN-Session aktiv,
-    // damit Mitarbeiter danach noch als WL einloggen können)
-    onAuthStateChanged(auth, async user => {
-      if (user && !user.isAnonymous) {
-        if (sessionStorage.getItem('lager-pin-auth') === 'true') return;
-        if (localStorage.getItem('lager-pin-auth') === 'true') return;
-        const role = await getRole(user.uid);
-        redirectByRole(role);
-      }
-    });
-
-    async function getRole(uid) {
-      try {
-        const snap = await getDoc(doc(db, 'users', uid));
-        return snap.exists() ? snap.data().role : 'mitarbeiter';
-      } catch { return 'mitarbeiter'; }
-    }
-
-    function redirectByRole(role) {
-      if (role === 'admin')             window.location.href = 'admin.html';
-      else if (role === 'wachenleiter') window.location.href = 'portal.html';
-      else signOut(auth).catch(() => {}); // PIN-Session abgelaufen → Firebase löschen, Login-Seite normal zeigen
-    }
-
-    // ── Tab switching (exposed for inline handlers) ──
-    window.switchTab = function(tab) {
-      document.getElementById('tab-ma').classList.toggle('active', tab === 'mitarbeiter');
-      document.getElementById('tab-wl').classList.toggle('active', tab === 'wachenleiter');
-      document.getElementById('pane-mitarbeiter').classList.toggle('hidden', tab !== 'mitarbeiter');
-      document.getElementById('pane-wachenleiter').classList.toggle('hidden', tab !== 'wachenleiter');
-    };
-
-    // Apply initial tab from URL param (must run after switchTab is defined)
-    if (initTab === 'wachenleiter') window.switchTab('wachenleiter');
-
-    // ── Back button ──
-    window.goBack = function() {
-      window.location.href = '../index.html';
-    };
-    document.getElementById('back-btn').onclick = goBack;
-
-    window.showHelp = function() {
-      document.getElementById('help-sheet').style.display = 'block';
-      document.body.style.overflow = 'hidden';
-    };
-    window.closeHelp = function() {
-      document.getElementById('help-sheet').style.display = 'none';
-      document.body.style.overflow = '';
-    };
-
-    // ══════════════════════════════════════
-    // MITARBEITER — PIN auth (mobile)
-    // ══════════════════════════════════════
-    let _pin = '', _attempts = 0, _lockedUntil = 0, _pinProcessing = false;
-
-    function updateDots() {
-      for (let i = 0; i < 4; i++) {
-        document.getElementById(`pd-${i}`)
-          ?.classList.toggle('filled', i < _pin.length);
-      }
-    }
-
-    window.maKey = function(d) {
-      if (_pin.length >= 4 || _pinProcessing) return;
-      _pin += d;
-      updateDots();
-      if (_pin.length === 4) setTimeout(maPinConfirm, 150);
-    };
-
-    window.maDel = function() {
-      if (_pinProcessing) return;
-      _pin = _pin.slice(0, -1);
-      updateDots();
-    };
-
-    async function maPinConfirm() {
-      if (_pinProcessing) return;
-      _pinProcessing = true;
-      const errEl = document.getElementById('ma-error');
-      errEl.textContent = '';
-
-      const fail = (msg) => { errEl.textContent = msg; _pin = ''; updateDots(); };
-
-      try {
-        const name = document.getElementById('ma-name').value.trim();
-        if (!name) { fail('Bitte deinen Namen eingeben'); return; }
-
-        if (Date.now() < _lockedUntil) {
-          fail(`Zu viele Versuche – bitte ${Math.ceil((_lockedUntil - Date.now()) / 1000)}s warten`); return;
-        }
-
-        // Bug 1: Vorherige nicht-anonyme WL-Session ausloggen
-        if (auth.currentUser && !auth.currentUser.isAnonymous) await signOut(auth);
-        if (!auth.currentUser) await signInAnonymously(auth);
-
-        const nameKey = normalizeName(name);
-        const pinHash = await sha256(_pin);
-        const snap = await withTimeout(
-          getDocs(query(collection(db, 'mitarbeiter'), where('nameKey', '==', nameKey)))
-        );
-
-        let loginName = name, employeeId = null;
-
-        if (!snap.empty) {
-          const empDoc = snap.docs[0];
-          if (empDoc.data().pinHash !== pinHash) {
-            _attempts++;
-            if (_attempts >= 5) {
-              _lockedUntil = Date.now() + 60000; _attempts = 0;
-              fail('Zu viele Versuche – bitte 60s warten');
-            } else {
-              fail(`Falscher PIN – noch ${5 - _attempts} Versuch(e)`);
-            }
-            return;
-          }
-          loginName  = empDoc.data().vorname + ' ' + empDoc.data().nachname;
-          employeeId = empDoc.id;
-        } else {
-          fail('Name nicht gefunden – bitte beim Wachenleiter melden');
-          return;
-        }
-
-        _attempts = 0;
-        // Sign in as real Firebase user (isStaff()) if credentials exist
-        if (employeeId && !snap.empty) {
-          const { fbEmail, fbPassword } = snap.docs[0].data();
-          if (fbEmail && fbPassword) {
-            if (auth.currentUser?.isAnonymous) await signOut(auth);
-            await signInWithEmailAndPassword(auth, fbEmail, fbPassword);
-          }
-        }
-        const store = authStore();
-        store.setItem('lager-pin-auth', 'true');
-        store.setItem('lager-pin-name', loginName);
-        if (employeeId) store.setItem('lager-employee-id', employeeId);
-        else { store.removeItem('lager-employee-id'); }
-        localStorage.setItem('lager-saved-name', name);
-        window.location.href = returnUrl || 'mitarbeiter.html';
-      } catch (e) {
-        fail(e.message || 'Fehler beim Anmelden');
-      } finally {
-        _pinProcessing = false;
-      }
-    }
-
-    // ══════════════════════════════════════
-    // MITARBEITER — PIN auth (desktop)
-    // ══════════════════════════════════════
-    let _dskPin = '', _dskAttempts = 0, _dskLockedUntil = 0, _dskPinProcessing = false;
-
-    function updateDskDots() {
-      for (let i = 0; i < 4; i++) {
-        document.getElementById(`dpd-${i}`)
-          ?.classList.toggle('filled', i < _dskPin.length);
-      }
-    }
-
-    window.dskKey = function(d) {
-      if (_dskPin.length >= 4 || _dskPinProcessing) return;
-      _dskPin += d;
-      updateDskDots();
-      if (_dskPin.length === 4) setTimeout(dskMaConfirm, 150);
-    };
-    window.dskDel = function() {
-      if (_dskPinProcessing) return;
-      _dskPin = _dskPin.slice(0, -1); updateDskDots();
-    };
-    window.dskClearPin = function() {
-      if (_dskPinProcessing) return;
-      _dskPin = ''; updateDskDots();
-    };
-
-    window.dskMaLogin = function() {
-      if (_dskPin.length < 4) {
-        document.getElementById('dsk-ma-error').textContent = 'Bitte 4-stelligen PIN eingeben';
-        return;
-      }
-      dskMaConfirm();
-    };
-
-    async function dskMaConfirm() {
-      if (_dskPinProcessing) return;
-      _dskPinProcessing = true;
-      const errEl = document.getElementById('dsk-ma-error');
-      errEl.textContent = '';
-      const btn = document.getElementById('dsk-ma-btn');
-      btn.disabled = true;
-      btn.innerHTML = '<div class="spinner-sm"></div> Anmelden…';
-
-      const fail = (msg) => { errEl.textContent = msg; _dskPin = ''; updateDskDots(); };
-
-      try {
-        const name = document.getElementById('dsk-ma-name').value.trim();
-        if (!name) { fail('Bitte deinen Namen eingeben'); return; }
-
-        if (Date.now() < _dskLockedUntil) {
-          fail(`Zu viele Versuche – bitte ${Math.ceil((_dskLockedUntil - Date.now()) / 1000)}s warten`); return;
-        }
-
-        // Bug 1: Vorherige nicht-anonyme WL-Session ausloggen
-        if (auth.currentUser && !auth.currentUser.isAnonymous) await signOut(auth);
-        if (!auth.currentUser) await signInAnonymously(auth);
-
-        const nameKey = normalizeName(name);
-        const pinHash = await sha256(_dskPin);
-        const snap = await withTimeout(
-          getDocs(query(collection(db, 'mitarbeiter'), where('nameKey', '==', nameKey)))
-        );
-
-        let loginName = name, employeeId = null;
-
-        if (!snap.empty) {
-          const empDoc = snap.docs[0];
-          if (empDoc.data().pinHash !== pinHash) {
-            _dskAttempts++;
-            if (_dskAttempts >= 5) {
-              _dskLockedUntil = Date.now() + 60000; _dskAttempts = 0;
-              fail('Zu viele Versuche – bitte 60s warten');
-            } else {
-              fail(`Falscher PIN – noch ${5 - _dskAttempts} Versuch(e)`);
-            }
-            return;
-          }
-          loginName  = empDoc.data().vorname + ' ' + empDoc.data().nachname;
-          employeeId = empDoc.id;
-        } else {
-          fail('Name nicht gefunden – bitte beim Wachenleiter melden');
-          return;
-        }
-
-        _dskAttempts = 0;
-        // Sign in as real Firebase user (isStaff()) if credentials exist
-        if (employeeId && !snap.empty) {
-          const { fbEmail, fbPassword } = snap.docs[0].data();
-          if (fbEmail && fbPassword) {
-            if (auth.currentUser?.isAnonymous) await signOut(auth);
-            await signInWithEmailAndPassword(auth, fbEmail, fbPassword);
-          }
-        }
-        const store = authStore();
-        store.setItem('lager-pin-auth', 'true');
-        store.setItem('lager-pin-name', loginName);
-        if (employeeId) store.setItem('lager-employee-id', employeeId);
-        else { store.removeItem('lager-employee-id'); }
-        localStorage.setItem('lager-saved-name', name);
-        window.location.href = returnUrl || 'mitarbeiter.html';
-      } catch (e) {
-        fail(e.message || 'Fehler beim Anmelden');
-      } finally {
-        _dskPinProcessing = false;
-        btn.disabled = false;
-        btn.innerHTML = '<svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="14" height="10" rx="2"/><path d="M7 8V6a3 3 0 0 1 6 0v2"/></svg> Anmelden';
-      }
-    }
-
-    // ══════════════════════════════════════
-    // WACHENLEITER — Email/Password auth (mobile)
-    // ══════════════════════════════════════
-    window.togglePw = function() {
-      const inp = document.getElementById('wl-password');
-      const btn = document.getElementById('wl-pw-toggle');
-      inp.type = inp.type === 'password' ? 'text' : 'password';
-      btn.textContent = inp.type === 'password' ? 'Zeigen' : 'Verbergen';
-    };
-
-    window.doWlLogin = async function() {
-      const email    = document.getElementById('wl-email').value.trim();
-      const password = document.getElementById('wl-password').value;
-      const errEl    = document.getElementById('wl-error');
-      const btn      = document.getElementById('wl-login-btn');
-
-      if (!email || !password) {
-        errEl.textContent = 'Bitte E-Mail und Passwort eingeben.';
-        errEl.classList.remove('hidden'); return;
-      }
-
-      btn.disabled = true;
-      btn.innerHTML = '<div class="spinner-sm"></div> Anmelden…';
-      errEl.classList.add('hidden');
-
-      try {
-        // Bug 1: Anonyme MA-Session zuerst ausloggen
-        if (auth.currentUser?.isAnonymous) await signOut(auth);
-        const cred = await withTimeout(signInWithEmailAndPassword(auth, email, password));
-        sessionStorage.removeItem('lager-pin-auth');
-        sessionStorage.removeItem('lager-pin-name');
-        sessionStorage.removeItem('lager-employee-id');
-        const role = await getRole(cred.user.uid);
-        redirectByRole(role);
-      } catch (e) {
-        errEl.textContent = wlError(e.code);
-        errEl.classList.remove('hidden');
-      } finally {
-        btn.disabled = false;
-        btn.innerHTML = '<svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="14" height="10" rx="2"/><path d="M7 8V6a3 3 0 0 1 6 0v2"/></svg> Anmelden';
-      }
-    };
-
-    document.getElementById('wl-password').addEventListener('keydown', e => {
-      if (e.key === 'Enter') doWlLogin();
-    });
-
-    // ══════════════════════════════════════
-    // WACHENLEITER — Email/Password auth (desktop)
-    // ══════════════════════════════════════
-    window.dskTogglePw = function() {
-      const inp = document.getElementById('dsk-wl-password');
-      const btn = document.getElementById('dsk-pw-toggle');
-      inp.type = inp.type === 'password' ? 'text' : 'password';
-      btn.textContent = inp.type === 'password' ? 'Zeigen' : 'Verbergen';
-    };
-
-    window.dskWlLogin = async function() {
-      const email    = document.getElementById('dsk-wl-email').value.trim();
-      const password = document.getElementById('dsk-wl-password').value;
-      const errEl    = document.getElementById('dsk-wl-error');
-      const btn      = document.getElementById('dsk-wl-btn');
-
-      if (!email || !password) {
-        errEl.textContent = 'Bitte E-Mail und Passwort eingeben.';
-        errEl.classList.remove('hidden'); return;
-      }
-
-      btn.disabled = true;
-      btn.innerHTML = '<div class="spinner-sm"></div> Anmelden…';
-      errEl.classList.add('hidden');
-
-      try {
-        if (auth.currentUser?.isAnonymous) await signOut(auth);
-        const cred = await withTimeout(signInWithEmailAndPassword(auth, email, password));
-        sessionStorage.removeItem('lager-pin-auth');
-        sessionStorage.removeItem('lager-pin-name');
-        sessionStorage.removeItem('lager-employee-id');
-        const role = await getRole(cred.user.uid);
-        redirectByRole(role);
-      } catch (e) {
-        errEl.textContent = wlError(e.code);
-        errEl.classList.remove('hidden');
-      } finally {
-        btn.disabled = false;
-        btn.innerHTML = '<svg viewBox="0 0 20 20" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="14" height="10" rx="2"/><path d="M7 8V6a3 3 0 0 1 6 0v2"/></svg> Anmelden';
-      }
-    };
-
-    document.getElementById('dsk-wl-password').addEventListener('keydown', e => {
-      if (e.key === 'Enter') dskWlLogin();
-    });
-
-    function wlError(code) {
-      const msgs = {
-        'auth/user-not-found':     'E-Mail nicht gefunden.',
-        'auth/wrong-password':     'Falsches Passwort.',
-        'auth/invalid-email':      'Ungültige E-Mail-Adresse.',
-        'auth/too-many-requests':  'Zu viele Versuche. Bitte warte kurz.',
-        'auth/invalid-credential': 'E-Mail oder Passwort falsch.',
-      };
-      return msgs[code] || 'Fehler beim Anmelden. Bitte erneut versuchen.';
-    }
-  </script>
-
+  <script type="module" src="../js/login.js"></script>
   <script src="../js/pwa.js"></script>
 </body>
 </html>
