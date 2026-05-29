@@ -1003,11 +1003,13 @@ function openFoto(url, name) {
 }
 
 /* ── Wire up static buttons ── */
-document.getElementById('btn-nav-back').addEventListener('click', navBack);
-document.getElementById('btn-finish').addEventListener('click', bereichFertig);
-document.getElementById('btn-cancel-bereich').addEventListener('click', cancelBereich);
-document.getElementById('btn-abschliessen').addEventListener('click', showSig);
-document.getElementById('btn-weiterer').addEventListener('click', goJoin);
-document.getElementById('btn-clear-sig').addEventListener('click', clearSig);
-document.getElementById('btn-submit').addEventListener('click', submitOrder);
-document.getElementById('btn-sig-back').addEventListener('click', () => showScreen('wait'));
+[
+  ['btn-nav-back',        navBack],
+  ['btn-finish',          bereichFertig],
+  ['btn-cancel-bereich',  cancelBereich],
+  ['btn-abschliessen',    showSig],
+  ['btn-weiterer',        goJoin],
+  ['btn-clear-sig',       clearSig],
+  ['btn-submit',          submitOrder],
+  ['btn-sig-back',        () => showScreen('wait')],
+].forEach(([id, fn]) => document.getElementById(id)?.addEventListener('click', fn));
