@@ -159,6 +159,7 @@ h1, h2, h3 { font-weight: 700; line-height: 1.2; }
   display: inline-flex; align-items: center; gap: 0;
 }
 .la-wordmark .slash { color: var(--brand); }
+a.la-wordmark { text-decoration: none; color: var(--ink); }
 .la-wordmark .dot {
   width: 6px; height: 6px; border-radius: 50%;
   background: var(--ok); box-shadow: 0 0 0 3px var(--ok-soft);
