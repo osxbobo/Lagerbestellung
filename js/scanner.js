@@ -65,9 +65,13 @@ onAuthStateChanged(auth, async user => {
 
 // ── Artikel laden ──
 async function load() {
-  const snap = await getDocs(collection(db, 'artikel'));
-  artikel = snap.docs.map(d => ({ id: d.id, ...d.data() }))
-    .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+  try {
+    const snap = await getDocs(collection(db, 'artikel'));
+    artikel = snap.docs.map(d => ({ id: d.id, ...d.data() }))
+      .sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+  } catch (e) {
+    console.warn('[scanner] Artikel laden fehlgeschlagen:', e.code || e.message);
+  }
 }
 
 // ── GS1 Parser ──
