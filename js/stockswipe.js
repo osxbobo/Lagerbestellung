@@ -8,7 +8,7 @@ import {
   getAuth, signInAnonymously, onAuthStateChanged,
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import {
-  initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
+  initializeFirestore, getFirestore, persistentLocalCache, persistentMultipleTabManager,
   collection, getDocs, getDocsFromCache, doc, getDoc, setDoc, addDoc, updateDoc, deleteDoc,
   query, orderBy, where, limit, serverTimestamp, runTransaction, onSnapshot, arrayUnion,
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js';
@@ -18,7 +18,8 @@ initTheme();
 document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
 
 /* ── Firebase ───────────────────────────────── */
-const db = initializeFirestore(app, { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) });
+let db;
+try { db = initializeFirestore(app, { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) }); } catch(e) { db = getFirestore(app); }
 
 /* ── Utilities ──────────────────────────────── */
 function esc(str) {

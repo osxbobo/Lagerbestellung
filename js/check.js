@@ -8,7 +8,7 @@ import {
   getAuth, signInAnonymously, onAuthStateChanged,
 } from 'https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js';
 import {
-  initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
+  initializeFirestore, getFirestore, persistentLocalCache, persistentMultipleTabManager,
   doc, collection,
   getDoc, getDocs, getDocsFromCache, getDocsFromServer, setDoc, updateDoc, addDoc, deleteDoc,
   query, where, orderBy, writeBatch,
@@ -28,7 +28,8 @@ initTheme();
 document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
 
 /* ── Firebase ───────────────────────────────── */
-const db   = initializeFirestore(app, { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) });
+let db;
+try { db = initializeFirestore(app, { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) }); } catch(e) { db = getFirestore(app); }
 const auth = getAuth(app);
 let rtdb   = null;
 try { rtdb = getDatabase(app); } catch(e) {}

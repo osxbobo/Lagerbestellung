@@ -27,11 +27,16 @@ async function sha256(str) {
 }
 
 // ── Firebase setup ──
-// Use initializeFirestore with persistent cache for Firestore;
-// use getFirestore for the PIN-change module (plain, no extra options needed there).
-const db = initializeFirestore(app, {
-  localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
-});
+// initializeFirestore with persistent cache; falls back to plain getFirestore
+// if the browser doesn't support Web Locks (e.g. older Safari / private mode).
+let db;
+try {
+  db = initializeFirestore(app, {
+    localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
+  });
+} catch (e) {
+  db = getFirestore(app);
+}
 const dbPlain = getFirestore(app);
 const auth = getAuth(app);
 

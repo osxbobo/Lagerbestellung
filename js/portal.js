@@ -1,7 +1,7 @@
     import { initializeApp, getApps, deleteApp }  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
     import { getAuth, onAuthStateChanged, signOut, createUserWithEmailAndPassword }
                               from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-    import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, collection, getDocs, doc, getDoc, setDoc, updateDoc, deleteDoc, addDoc, query, orderBy, limit, where, onSnapshot, Timestamp, writeBatch }
+    import { initializeFirestore, getFirestore, persistentLocalCache, persistentMultipleTabManager, collection, getDocs, doc, getDoc, setDoc, updateDoc, deleteDoc, addDoc, query, orderBy, limit, where, onSnapshot, Timestamp, writeBatch }
                               from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
     import { getStorage, ref as storageRef, getDownloadURL, getBytes }
                               from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
@@ -25,7 +25,7 @@
 
     const app     = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
     const auth    = getAuth(app);
-    const db      = initializeFirestore(app, { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) });
+    let db; try { db = initializeFirestore(app, { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) }); } catch(e) { db = getFirestore(app); }
     const storage = getStorage(app);
 
     const CLOUDINARY_CLOUD  = 'dvqug2dcx';
@@ -45,12 +45,23 @@
     // ── Auth ──
     onAuthStateChanged(auth, async user => {
       if (!user) { window.location.href = 'login.html'; return; }
-      const snap = await getDoc(doc(db, 'users', user.uid));
-      const role = snap.exists() ? snap.data().role : null;
-      if (role !== 'wachenleiter' && role !== 'admin') {
-        window.location.href = 'login.html?tab=wachenleiter'; return;
+      let snap, role;
+      try {
+        snap = await getDoc(doc(db, 'users', user.uid));
+        role = snap.exists() ? snap.data().role : null;
+      } catch (e) {
+        role = null;
       }
-      const displayName = snap.data()?.name || user.email;
+      // Fallback: sessionStorage role (set by doWlLogin after successful Firebase auth)
+      if (role !== 'wachenleiter' && role !== 'admin') {
+        const ssRole = sessionStorage.getItem('lager-portal-role');
+        if (ssRole === 'wachenleiter' || ssRole === 'admin') {
+          role = ssRole;
+        } else {
+          window.location.href = 'login.html?tab=wachenleiter'; return;
+        }
+      }
+      const displayName = snap?.data()?.name || user.email;
       window._portalDisplayName = displayName;
       document.getElementById('nav-user').textContent = user.email;
       document.getElementById('auth-loading').classList.add('hidden');
