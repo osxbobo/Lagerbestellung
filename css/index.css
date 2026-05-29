@@ -442,6 +442,8 @@ body { min-height: 100vh; display: flex; flex-direction: column; }
   position: relative;
   box-shadow: 0 20px 60px rgba(0,0,0,0.08);
   margin: auto;
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
 }
 
 .lagerapp-overlay .close-btn {
@@ -598,7 +600,8 @@ body { min-height: 100vh; display: flex; flex-direction: column; }
 }
 
 @media (max-width: 520px) {
-  .lagerapp-popup { padding: 28px 20px; border-radius: 28px; }
+  .lagerapp-overlay { align-items: flex-start; padding: 16px; }
+  .lagerapp-popup { padding: 28px 20px; border-radius: 28px; max-height: none; overflow-y: visible; }
   .preview-images img { width: 100%; border-radius: 18px; }
   .lagerapp-overlay .close-btn { top: 16px; right: 16px; width: 40px; height: 40px; font-size: 22px; }
 }
