@@ -1,0 +1,10 @@
+node_modules/
+serve.py
+.firebaserc
+firebase.json
+README.md
+LAGER_APP.png
+LAGER_APP_DARK.PNG
+mockup.html
+package.json
+manifest.json
