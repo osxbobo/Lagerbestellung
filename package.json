@@ -4,10 +4,15 @@
   "description": "Digitale Lagerverwaltung für die DRK Rettungswache Malmsheim. Progressive Web App (PWA) auf Basis von Firebase Firestore – ohne Framework, reines HTML/CSS/JavaScript.",
   "main": "sw.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "deploy": "wrangler deploy",
+    "preview": "wrangler dev"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs"
+  "type": "commonjs",
+  "devDependencies": {
+    "wrangler": "^4.110.0"
+  }
 }
