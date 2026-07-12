@@ -257,8 +257,8 @@
 
           // Meta info
           document.getElementById('sessions-active-meta').textContent =
-            `PIN ···· · Gestartet ${s.startedAt?.toDate
-              ? s.startedAt.toDate().toLocaleTimeString('de-DE', {hour:'2-digit',minute:'2-digit'})
+            `PIN ···· · Gestartet ${s.startzeit?.toDate
+              ? s.startzeit.toDate().toLocaleTimeString('de-DE', {hour:'2-digit',minute:'2-digit'})
               : 'Unbekannt'}`;
 
           // Teilnehmer

@@ -315,6 +315,15 @@ function renderJoin() {
     ([, bs]) => ACTIVE_STATS.has(bs.status) && bs.mitarbeiterId === S.user.id
   )?.[0] ?? null;
 
+  // Alle Bereiche erledigt → Abschluss auch von hier aus ermöglichen
+  // (sonst gibt es nach App-Neustart keinen Weg mehr zum Abschließen-Button)
+  const canFinish = sessionData?.status === 'aktiv' && S.bereiche.length > 0 &&
+    S.bereiche.every(b => bereichStatus[b.id]?.status === 'erledigt');
+  document.getElementById('join-finish-bar').classList.toggle('hidden', !canFinish);
+  if (canFinish) {
+    document.getElementById('join-sub').textContent = 'Alle Bereiche fertig – jetzt abschließen!';
+  }
+
   document.getElementById('bereich-list').innerHTML = S.bereiche.map(b => {
     const bs     = bereichStatus[b.id];
     const status = bs?.status || 'frei';
@@ -1009,6 +1018,7 @@ function openFoto(url, name) {
   ['btn-finish',          bereichFertig],
   ['btn-cancel-bereich',  cancelBereich],
   ['btn-abschliessen',    showSig],
+  ['btn-join-abschliessen', () => { showScreen('wait'); renderWait(); }],
   ['btn-weiterer',        goJoin],
   ['btn-clear-sig',       clearSig],
   ['btn-submit',          submitOrder],
